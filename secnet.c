@@ -281,7 +281,8 @@ static void run(void)
 	if (gettimeofday(&tv_now, NULL)!=0) {
 	    fatal_perror("main loop: gettimeofday");
 	}
-	now=(tv_now.tv_sec*1000)+(tv_now.tv_usec/1000);
+	now=((uint64_t)tv_now.tv_sec*(uint64_t)1000)+
+	    ((uint64_t)tv_now.tv_usec/(uint64_t)1000);
 	idx=0;
 	for (i=reg; i; i=i->next) {
 	    i->after(i->state, fds+idx, i->nfds, &tv_now, &now);

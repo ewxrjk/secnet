@@ -76,8 +76,6 @@ static list_t *dict_ilookup(dict_t *dict, atom_t key)
 static void dict_iadd(dict_t *dict, atom_t key, list_t *val)
 {
     struct entry *e;
-    /* XXX May want to permit redefinition of keys in the future */
-    /* (although it could be very confusing) */
     if (dict_ilookup_primitive(dict, key)) {
 	fatal("duplicate key \"%s\" in dictionary\n",key);
     }

@@ -15,10 +15,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-.PHONY:	all clean realclean dist install distclean
+.PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.11
+VERSION:=0.1.12
 
 @SET_MAKE@
 
@@ -54,10 +54,10 @@ DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	conffile.c conffile.fl conffile.h conffile.y \
 	conffile_internal.h config.h.bot \
 	config.h.in config.h.top configure \
-	configure.in debian dh.c \
+	configure.in debian depend.sh dh.c \
 	example.conf \
 	getopt.c getopt1.c getopt.h \
-	install.sh ipaddr.c ipaddr.h ipaddr.py linux log.c md5.c md5.h \
+	install-sh ipaddr.c ipaddr.h ipaddr.py linux log.c md5.c md5.h \
 	make-secnet-sites \
 	modules.c netlink.c netlink.h process.c process.h \
 	random.c resolver.c rsa.c \
@@ -98,20 +98,20 @@ config.status: configure
 	./config.status --recheck
 # End of config file remaking rules
 
-# Manual dependencies section - XXX use autodep eventually
-$(OBJECTS): config.h secnet.h util.h
-conffile.o conffile.tab.o conffile.yy.o: conffile.h conffile_internal.h
-secnet.o: conffile.h process.h
-process.o: process.h
-log.o: process.h
-md5.o: md5.h
-serpent.o transform.o: serpent.h
-serpent.o: serpentsboxes.h
-conffile.o: ipaddr.h
-site.c util.c: unaligned.h
+# C and header file dependency rules
+SOURCES:=$(OBJECTS:.o=.c)
+DEPENDS:=$(OBJECTS:.o=.d)
+
+$(DEPENDS): ${srcdir}/depend.sh
+
+%.d: %.c
+	${srcdir}/depend.sh $(srcdir) $(CFLAGS) $< > $@
+
+-include $(DEPENDS)
+
+# Manual dependencies section
 conffile.yy.c:	conffile.fl conffile.tab.c
 conffile.tab.c:	conffile.y
-netlink.o tun.o slip.o: netlink.h
 # End of manual dependencies section
 
 secnet:	$(OBJECTS)
@@ -120,15 +120,16 @@ version.c: Makefile
 	echo "char version[]=\"secnet-$(VERSION)\";" >version.c
 
 install: all
-	$(INSTALL_PROGRAM) -D secnet $(sbindir)/`echo secnet|sed '$(transform)'`
-	$(INSTALL_PROGRAM) -D make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
-	$(INSTALL) -D ipaddr.py $(prefix)/share/secnet/ipaddr.py
+	$(INSTALL) -d $(prefix)/share/secnet $(sbindir)
+	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
+	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
+	$(INSTALL) ${srcdir}/ipaddr.py $(prefix)/share/secnet/ipaddr.py
 
 clean:
 	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c
 
 realclean:	clean
-	$(RM) -f *~ Makefile config.h \
+	$(RM) -f *~ Makefile config.h  *.d \
 	config.log config.status config.cache \
 	stamp-h Makefile.bak
 

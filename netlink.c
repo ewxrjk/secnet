@@ -266,7 +266,8 @@ static bool_t netlink_check(struct netlink *st, struct buffer_if *buf)
 }
 
 /* Deliver a packet. "client" is the _origin_ of the packet, not its
-destination.  */
+   destination, and is NULL for packets from the host and packets
+   generated internally in secnet.  */
 static void netlink_packet_deliver(struct netlink *st,
 				   struct netlink_client *client,
 				   struct buffer_if *buf)
@@ -288,7 +289,7 @@ static void netlink_packet_deliver(struct netlink *st,
 	return;
     }
     
-    /* Packets from the host (client==NULL) will always be routed.  Packets
+    /* Packets from the host (client==NULL) may always be routed.  Packets
        from clients with the allow_route option will also be routed. */
     if (!client || (client && (client->options & OPT_ALLOWROUTE)))
 	allow_route=True;
@@ -301,8 +302,9 @@ static void netlink_packet_deliver(struct netlink *st,
 
     best_quality=0;
     best_match=-1;
-    for (i=0; i<st->n_routes; i++) {
-	if (st->routes[i].up && subnet_match(st->routes[i].net,dest)) {
+    for (i=0; i<st->n_clients; i++) {
+	if (st->routes[i]->up &&
+	    ipset_contains_addr(st->routes[i]->networks,dest)) {
 	    /* It's an available route to the correct destination. But is
 	       it better than the one we already have? */
 
@@ -310,14 +312,14 @@ static void netlink_packet_deliver(struct netlink *st,
 	       bother looking at routes we're not allowed to use.  If
 	       we don't yet have an allowed route we'll consider any.  */
 	    if (!allow_route && found_allowed) {
-		if (!(st->routes[i].c->options&OPT_ALLOWROUTE)) continue;
+		if (!(st->routes[i]->options&OPT_ALLOWROUTE)) continue;
 	    }
 	    
-	    if (st->routes[i].c->link_quality>best_quality
+	    if (st->routes[i]->link_quality>best_quality
 		|| best_quality==0) {
-		best_quality=st->routes[i].c->link_quality;
+		best_quality=st->routes[i]->link_quality;
 		best_match=i;
-		if (st->routes[i].c->options&OPT_ALLOWROUTE)
+		if (st->routes[i]->options&OPT_ALLOWROUTE)
 		    found_allowed=True;
 		/* If quality isn't perfect we may wish to
 		   consider kicking the tunnel with a 0-length
@@ -350,7 +352,7 @@ static void netlink_packet_deliver(struct netlink *st,
 	}
     } else {
 	if (!allow_route &&
-	    !(st->routes[best_match].c->options&OPT_ALLOWROUTE)) {
+	    !(st->routes[best_match]->options&OPT_ALLOWROUTE)) {
 	    string_t s,d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
@@ -365,9 +367,10 @@ static void netlink_packet_deliver(struct netlink *st,
 	    BUF_FREE(buf);
 	}
 	if (best_quality>0) {
-	    st->routes[best_match].c->deliver(
-		st->routes[best_match].c->dst, buf);
-	    st->routes[best_match].outcount++;
+	    /* XXX Fragment if required */
+	    st->routes[best_match]->deliver(
+		st->routes[best_match]->dst, buf);
+	    st->routes[best_match]->outcount++;
 	    BUF_ASSERT_FREE(buf);
 	} else {
 	    /* Generate ICMP destination unreachable */
@@ -465,9 +468,9 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
     source=ntohl(iph->saddr);
     dest=ntohl(iph->daddr);
 
-    /* Check source */
-    /* XXX consider generating ICMP if we're not point-to-point and we
-       don't like the packet */
+    /* Check source. If we don't like the source, there's no point
+       generating ICMP because we won't know how to get it to the
+       source of the packet. */
     if (client) {
 	/* Check that the packet source is appropriate for the tunnel
 	   it came down */
@@ -500,8 +503,8 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
     /* If this is a point-to-point device we don't examine the
        destination address at all; we blindly send it down our
        one-and-only registered tunnel, or to the host, depending on
-       where it came from. */
-    /* XXX I think we should check destination addresses */
+       where it came from.  It's up to external software to check
+       address validity and generate ICMP, etc. */
     if (st->ptp) {
 	if (client) {
 	    st->deliver_to_host(st->dst,buf);
@@ -512,8 +515,8 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	return;
     }
 
-    /* (st->secnet_address needs checking before matching destination
-       addresses) */
+    /* st->secnet_address needs checking before matching destination
+       addresses */
     if (dest==st->secnet_address) {
 	netlink_packet_local(st,client,buf);
 	BUF_ASSERT_FREE(buf);
@@ -538,33 +541,28 @@ static void netlink_dev_incoming(void *sst, struct buffer_if *buf)
     netlink_incoming(st,NULL,buf);
 }
 
-static void netlink_set_softlinks(struct netlink *st, struct netlink_client *c,
-				  bool_t up, uint32_t quality)
-{
-    uint32_t i;
-
-    if (!st->routes) return; /* Table has not yet been created */
-    for (i=0; i<st->n_routes; i++) {
-	if (st->routes[i].c==c) {
-	    st->routes[i].quality=quality;
-	    if (!st->routes[i].hard) {
-		st->routes[i].up=up;
-		st->set_route(st->dst,&st->routes[i]);
-	    }
-	}
-    }
-}
-
 static void netlink_set_quality(void *sst, uint32_t quality)
 {
     struct netlink_client *c=sst;
     struct netlink *st=c->nst;
 
     c->link_quality=quality;
-    if (c->link_quality==LINK_QUALITY_DOWN) {
-	netlink_set_softlinks(st,c,False,c->link_quality);
-    } else {
-	netlink_set_softlinks(st,c,True,c->link_quality);
+    c->up=(c->link_quality==LINK_QUALITY_DOWN)?False:True;
+    if (c->options&OPT_SOFTROUTE) {
+	st->set_routes(st->dst,c);
+    }
+}
+
+static void netlink_output_subnets(struct netlink *st, uint32_t loglevel,
+				   struct subnet_list *snets)
+{
+    uint32_t i;
+    string_t net;
+
+    for (i=0; i<snets->entries; i++) {
+	net=subnet_to_string(snets->list[i]);
+	Message(loglevel,"%s ",net);
+	free(net);
     }
 }
 
@@ -580,24 +578,19 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 	Message(c,"%s: point-to-point (remote end is %s); routes:\n",
 		st->name, net);
 	free(net);
-	for (i=0; i<st->n_routes; i++) {
-	    net=subnet_to_string(st->routes[i].net);
-	    Message(c,"%s ",net);
-	    free(net);
-	}
+	netlink_output_subnets(st,c,st->clients->subnets);
 	Message(c,"\n");
     } else {
 	Message(c,"%s: routing table:\n",st->name);
-	for (i=0; i<st->n_routes; i++) {
-	    net=subnet_to_string(st->routes[i].net);
-	    Message(c,"%s -> tunnel %s (%s,%s route,%s,quality %d,use %d)\n",net,
-		    st->routes[i].c->name,
-		    st->routes[i].hard?"hard":"soft",
-		    st->routes[i].allow_route?"free":"restricted",
-		    st->routes[i].up?"up":"down",
-		    st->routes[i].quality,
-		    st->routes[i].outcount);
-	    free(net);
+	for (i=0; i<st->n_clients; i++) {
+	    netlink_output_subnets(st,c,st->routes[i]->subnets);
+	    Message(c,"-> tunnel %s (%s,%s routes,%s,quality %d,use %d)\n",
+		    st->routes[i]->name,
+		    st->routes[i]->options&OPT_SOFTROUTE?"soft":"hard",
+		    st->routes[i]->options&OPT_ALLOWROUTE?"free":"restricted",
+		    st->routes[i]->up?"up":"down",
+		    st->routes[i]->link_quality,
+		    st->routes[i]->outcount);
 	}
 	net=ipaddr_to_string(st->secnet_address);
 	Message(c,"%s/32 -> netlink \"%s\" (use %d)\n",
@@ -613,13 +606,14 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
     }
 }
 
-static int netlink_compare_route_specificity(const void *ap, const void *bp)
+/* ap is a pointer to a member of the routes array */
+static int netlink_compare_client_priority(const void *ap, const void *bp)
 {
-    const struct netlink_route *a=ap;
-    const struct netlink_route *b=bp;
+    const struct netlink_client *const*a=ap;
+    const struct netlink_client *const*b=bp;
 
-    if (a->net.len==b->net.len) return 0;
-    if (a->net.len<b->net.len) return 1;
+    if ((*a)->priority==(*b)->priority) return 0;
+    if ((*a)->priority<(*b)->priority) return 1;
     return -1;
 }
 
@@ -627,42 +621,20 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
 {
     struct netlink *st=sst;
     struct netlink_client *c;
-    uint32_t i,j;
+    uint32_t i;
 
     /* All the networks serviced by the various tunnels should now
      * have been registered.  We build a routing table by sorting the
-     * routes into most-specific-first order.  */
-    st->routes=safe_malloc(st->n_routes*sizeof(*st->routes),
+     * clients by priority.  */
+    st->routes=safe_malloc(st->n_clients*sizeof(*st->routes),
 			   "netlink_phase_hook");
     /* Fill the table */
     i=0;
-    for (c=st->clients; c; c=c->next) {
-	for (j=0; j<c->subnets->entries; j++) {
-	    st->routes[i].net=c->subnets->list[j];
-	    st->routes[i].c=c;
-	    /* Hard routes are always up;
-	       soft routes default to down; routes with no 'deliver' function
-	       default to down */
-	    st->routes[i].up=c->deliver?
-		(c->options&OPT_SOFTROUTE?False:True):
-		False;
-	    st->routes[i].kup=False;
-	    st->routes[i].hard=c->options&OPT_SOFTROUTE?False:True;
-	    st->routes[i].allow_route=c->options&OPT_ALLOWROUTE?
-		True:False;
-	    st->routes[i].quality=c->link_quality;
-	    st->routes[i].outcount=0;
-	    i++;
-	}
-    }
-    /* ASSERT i==st->n_routes */
-    if (i!=st->n_routes) {
-	fatal("netlink: route count error: expected %d got %d\n",
-	      st->n_routes,i);
-    }
-    /* Sort the table in descending order of specificity */
-    qsort(st->routes,st->n_routes,sizeof(*st->routes),
-	  netlink_compare_route_specificity);
+    for (c=st->clients; c; c=c->next)
+	st->routes[i++]=c;
+    /* Sort the table in descending order of priority */
+    qsort(st->routes,st->n_clients,sizeof(*st->routes),
+	  netlink_compare_client_priority);
 
     netlink_dump_routes(st,False);
 }
@@ -695,6 +667,13 @@ static bool_t netlink_inst_check_config(void *sst, struct buffer_if *buf)
     return True;
 }
 
+static void netlink_inst_set_mtu(void *sst, uint32_t new_mtu)
+{
+    struct netlink_client *c=sst;
+
+    c->mtu=new_mtu;
+}
+
 static void netlink_inst_reg(void *sst, netlink_deliver_fn *deliver, 
 			     void *dst, uint32_t max_start_pad,
 			     uint32_t max_end_pad)
@@ -724,7 +703,7 @@ static closure_t *netlink_inst_create(struct netlink *st,
     struct netlink_client *c;
     string_t name;
     struct ipset *networks;
-    uint32_t options;
+    uint32_t options,priority,mtu;
     list_t *l;
 
     name=dict_read_string(dict, "name", True, st->name, loc);
@@ -736,7 +715,10 @@ static closure_t *netlink_inst_create(struct netlink *st,
     options=string_list_to_word(dict_lookup(dict,"options"),
 				netlink_option_table,st->name);
 
-    if ((options&OPT_SOFTROUTE) && !st->set_route) {
+    priority=dict_read_number(dict,"priority",False,st->name,loc,0);
+    mtu=dict_read_number(dict,"mtu",False,st->name,loc,0);
+
+    if ((options&OPT_SOFTROUTE) && !st->set_routes) {
 	cfgfatal(loc,st->name,"this netlink device does not support "
 		 "soft routes.\n");
 	return NULL;
@@ -772,18 +754,24 @@ static closure_t *netlink_inst_create(struct netlink *st,
     c->ops.set_quality=netlink_set_quality;
     c->ops.output_config=netlink_inst_output_config;
     c->ops.check_config=netlink_inst_check_config;
+    c->ops.set_mtu=netlink_inst_set_mtu;
     c->nst=st;
 
     c->networks=networks;
     c->subnets=ipset_to_subnet_list(networks);
+    c->priority=priority;
     c->deliver=NULL;
     c->dst=NULL;
     c->name=name;
-    c->options=options;
     c->link_quality=LINK_QUALITY_DOWN;
+    c->mtu=mtu?mtu:st->mtu;
+    c->options=options;
+    c->outcount=0;
+    c->up=False;
+    c->kup=False;
     c->next=st->clients;
     st->clients=c;
-    st->n_routes+=c->subnets->entries;
+    st->n_clients++;
 
     return &c->cl;
 }
@@ -811,7 +799,7 @@ static list_t *netlink_inst_apply(closure_t *self, struct cloc loc,
 netlink_deliver_fn *netlink_init(struct netlink *st,
 				 void *dst, struct cloc loc,
 				 dict_t *dict, string_t description,
-				 netlink_route_fn *set_route,
+				 netlink_route_fn *set_routes,
 				 netlink_deliver_fn *to_host)
 {
     item_t *sa, *ptpa;
@@ -825,7 +813,9 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
     st->max_start_pad=0;
     st->max_end_pad=0;
     st->clients=NULL;
-    st->set_route=set_route;
+    st->routes=NULL;
+    st->n_clients=0;
+    st->set_routes=set_routes;
     st->deliver_to_host=to_host;
 
     st->name=dict_read_string(dict,"name",False,description,loc);
@@ -866,14 +856,12 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
 	st->secnet_address=string_item_to_ipaddr(ptpa,"netlink");
 	st->ptp=True;
     }
-    /* XXX we may want to subtract secnet_address from networks here, to
-       be strictly correct.  It shouldn't make any practical difference,
+    /* To be strictly correct we could subtract secnet_address from
+       networks here.  It shouldn't make any practical difference,
        though, and will make the route dump look complicated... */
     st->subnets=ipset_to_subnet_list(st->networks);
     st->mtu=dict_read_number(dict, "mtu", False, "netlink", loc, DEFAULT_MTU);
     buffer_new(&st->icmp,ICMP_BUFSIZE);
-    st->n_routes=0;
-    st->routes=NULL;
     st->outcount=0;
     st->localcount=0;
 
@@ -898,17 +886,15 @@ struct null {
     struct netlink nl;
 };
 
-static bool_t null_set_route(void *sst, struct netlink_route *route)
+static bool_t null_set_route(void *sst, struct netlink_client *routes)
 {
     struct null *st=sst;
-    string_t t;
 
-    if (route->up!=route->kup) {
-	t=subnet_to_string(route->net);
-	Message(M_INFO,"%s: setting route %s to state %s\n",st->nl.name,
-		t, route->up?"up":"down");
-	free(t);
-	route->kup=route->up;
+    if (routes->up!=routes->kup) {
+	Message(M_INFO,"%s: setting routes for tunnel %s to state %s\n",
+		st->nl.name,routes->name,
+		routes->up?"up":"down");
+	routes->kup=routes->up;
 	return True;
     }
     return False;

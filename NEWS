@@ -5,6 +5,32 @@ Netlink device that implements an Ethernet bridge.
 Modular transform code: choice of block ciphers, modes, sequence
 numbers / timestamps, etc. similar to IWJ's udptunnel
 
+Path-MTU discovery for each tunnel, and fragmentation/DF support in
+netlink code.
+
+* New in version 0.1.12
+
+IMPORTANT: fix calculation of 'now' in secnet.c; necessary for correct
+operation.
+
+(Only interesting for people building and modifying secnet by hand:
+the Makefile now works out most dependencies automatically.)
+
+The netlink code no longer produces an internal routing table sorted
+by netmask length.  Instead, netlink instances have a 'priority'; the
+table of routes is sorted by priority.  Devices like laptops that have
+tunnels that must sometimes 'mask' parts of other tunnels should be
+given higher priorities.  If a priority is not specified it is assumed
+to be zero.
+
+Example usage:
+site laptop { ...
+	link netlink {
+		route "192.168.73.74/31";
+		priority 10;
+	};
+};
+
 * New in version 0.1.11
 
 Lists of IP addresses in the configuration file can now include

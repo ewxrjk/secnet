@@ -1,8 +1,5 @@
-secnet (0.1.11-1) unstable; urgency=low
+secnet (0.1.12-1) unstable; urgency=low
 
   * New upstream version.
-
-  * Note configuration file format has changed slightly; re-run
-    make-secnet-sites to fix it
 
  -- Stephen Early <steve@greenend.org.uk>  Sat, 27 Oct 2001 15:00:00 +0100

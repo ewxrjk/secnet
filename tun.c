@@ -81,22 +81,27 @@ static void tun_deliver_to_kernel(void *sst, struct buffer_if *buf)
     BUF_FREE(buf);
 }
 
-static bool_t tun_set_route(void *sst, struct netlink_route *route)
+static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 {
     struct tun *st=sst;
     string_t network, mask, secnetaddr;
+    struct subnet_list *nets;
+    uint32_t i;
 
-    if (route->up != route->kup) {
-	network=ipaddr_to_string(route->net.prefix);
-	mask=ipaddr_to_string(route->net.mask);
-	secnetaddr=ipaddr_to_string(st->nl.secnet_address);
-	Message(M_INFO,"%s: %s route %s/%d %s kernel routing table\n",
-		st->nl.name,route->up?"adding":"deleting",network,
-		route->net.len,route->up?"to":"from");
-	sys_cmd(st->route_path,"route",route->up?"add":"del","-net",network,
-		"netmask",mask,"gw",secnetaddr,(char *)0);
-	free(network); free(mask); free(secnetaddr);
-	route->kup=route->up;
+    if (routes->up != routes->kup) {
+	nets=routes->subnets;
+	for (i=0; i<nets->entries; i++) {
+	    network=ipaddr_to_string(nets->list[i].prefix);
+	    mask=ipaddr_to_string(nets->list[i].mask);
+	    secnetaddr=ipaddr_to_string(st->nl.secnet_address);
+	    Message(M_INFO,"%s: %s route %s/%d %s kernel routing table\n",
+		    st->nl.name,routes->up?"adding":"deleting",network,
+		    nets->list[i].len,routes->up?"to":"from");
+	    sys_cmd(st->route_path,"route",routes->up?"add":"del",
+		    "-net",network,"netmask",mask,"gw",secnetaddr,(char *)0);
+	    free(network); free(mask); free(secnetaddr);
+	}
+	routes->kup=routes->up;
 	return True;
     }
     return False;
@@ -107,9 +112,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
     struct tun *st=sst;
     string_t hostaddr,secnetaddr;
     uint8_t mtu[6];
-    string_t network,mask;
-    struct netlink_route *r;
-    int i;
+    struct netlink_client *r;
 
     if (st->tun_old) {
 	if (st->search_for_if) {
@@ -180,19 +183,15 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
     snprintf(mtu,6,"%d",st->nl.mtu);
     mtu[5]=0;
 
+    /* XXX on FreeBSD the "-broadcast" and "pointopoint" must be left
+       out. It assumes a point-to-point interface if two IP addresses
+       are specified. */
     sys_cmd(st->ifconfig_path,"ifconfig",st->interface_name,
 	    hostaddr,"netmask","255.255.255.255","-broadcast",
 	    "pointopoint",secnetaddr,"mtu",mtu,"up",(char *)0);
 
-    r=st->nl.routes;
-    for (i=0; i<st->nl.n_routes; i++) {
-	if (r[i].up && !r[i].kup) {
-	    network=ipaddr_to_string(r[i].net.prefix);
-	    mask=ipaddr_to_string(r[i].net.mask);
-	    sys_cmd(st->route_path,"route","add","-net",network,
-		    "netmask",mask,"gw",secnetaddr,(char *)0);
-	    r[i].kup=True;
-	}
+    for (r=st->nl.clients; r; r=r->next) {
+	tun_set_route(st,r);
     }
 
     /* Register for poll() */

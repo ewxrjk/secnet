@@ -37,7 +37,7 @@ static void slip_stuff(struct slip *st, struct buffer_if *buf, int fd)
 
     BUF_ASSERT_USED(buf);
 
-    /* XXX crunchy bytestuff code */
+    /* There's probably a much more efficient way of implementing this */
     txbuf[j++]=SLIP_END;
     for (i=buf->start; i<(buf->start+buf->size); i++) {
 	switch (*i) {
@@ -71,8 +71,6 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 {
     uint32_t i;
 
-    /* XXX really crude unstuff code */
-    /* XXX check for buffer overflow */
     BUF_ASSERT_USED(st->buff);
     for (i=0; i<l; i++) {
 	if (st->pending_esc) {
@@ -239,8 +237,8 @@ static void userv_invoke_userv(struct userv *st)
     string_t addrs;
     string_t nets;
     string_t s;
-    struct netlink_route *r;
-    struct ipset *isnets;
+    struct netlink_client *r;
+    struct ipset *allnets;
     struct subnet_list *snets;
     int i;
     uint8_t confirm;
@@ -257,21 +255,18 @@ static void userv_invoke_userv(struct userv *st)
 	     ipaddr_to_string(st->slip.local_address),
 	     ipaddr_to_string(st->slip.nl.secnet_address),st->slip.nl.mtu);
 
-    r=st->slip.nl.routes;
-    isnets=ipset_new();
-    for (i=0; i<st->slip.nl.n_routes; i++) {
-	if (r[i].up) {
-	    struct ipset *sn,*nis;
-	    r[i].kup=True;
-	    sn=ipset_from_subnet(r[i].net);
-	    nis=ipset_union(isnets,sn);
-	    ipset_free(sn);
-	    ipset_free(isnets);
-	    isnets=nis;
+    allnets=ipset_new();
+    for (r=st->slip.nl.clients; r; r=r->next) {
+	if (r->up) {
+	    struct ipset *nan;
+	    r->kup=True;
+	    nan=ipset_union(allnets,r->networks);
+	    ipset_free(allnets);
+	    allnets=nan;
 	}
     }
-    snets=ipset_to_subnet_list(isnets);
-    ipset_free(isnets);
+    snets=ipset_to_subnet_list(allnets);
+    ipset_free(allnets);
     nets=safe_malloc(20*snets->entries,"userv_invoke_userv:nets");
     *nets=0;
     for (i=0; i<snets->entries; i++) {
@@ -412,9 +407,4 @@ init_module slip_module;
 void slip_module(dict_t *dict)
 {
     add_closure(dict,"userv-ipif",userv_apply);
-#if 0
-    /* TODO */
-    add_closure(dict,"pty-slip",ptyslip_apply);
-    add_closure(dict,"slipd",slipd_apply);
-#endif /* 0 */
 }

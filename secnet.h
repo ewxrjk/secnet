@@ -368,6 +368,7 @@ typedef void netlink_register_fn(void *st, netlink_deliver_fn *deliver,
 				 uint32_t max_end_pad);
 typedef void netlink_output_config_fn(void *st, struct buffer_if *buf);
 typedef bool_t netlink_check_config_fn(void *st, struct buffer_if *buf);
+typedef void netlink_set_mtu_fn(void *st, uint32_t new_mtu);
 struct netlink_if {
     void *st;
     netlink_register_fn *reg;
@@ -375,6 +376,7 @@ struct netlink_if {
     netlink_link_quality_fn *set_quality;
     netlink_output_config_fn *output_config;
     netlink_check_config_fn *check_config;
+    netlink_set_mtu_fn *set_mtu;
 };
 
 /* DH interface */

@@ -2,7 +2,11 @@
 
 #include <errno.h>
 #include "secnet.h"
+#ifndef HAVE_LIBADNS
+#error secnet requires ADNS version 1.0 or above
+#endif
 #include <adns.h>
+
 
 struct adns {
     closure_t cl;

@@ -1,6 +1,3 @@
-Makefile.in: autodep stuff
-Make it work using the distributed install.sh (which doesn't support -D)
-
 dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
@@ -8,7 +5,7 @@ netlink.c: test the 'allow_route' option properly.
 
 process.c: capture output from children in sys_cmd() and log it
 
-random.c: test
+random.c: test properly
 
 resolver.c: ought to return a list of addresses for each address; the
 site code ought to remember them and try contacting them in turn.
