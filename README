@@ -1,0 +1,55 @@
+XXX under construction. For now, here are the comments that used to be
+at the top of the example configuration file:
+
+# This file defines a dictionary full of configuration information for
+# secnet. Two keys must be defined in this file for secnet to
+# start. One is "system", a dictionary containing systemwide control
+# parameters. The other is "sites", a list of all the sites that you
+# intend to communicate with.
+
+# Other files can be included inline by writing "include filename" at
+# the start of a line.
+
+# The configuration file has a fairly simple syntax:
+# key definition;  or key = definition; (the "=" is optional)
+# ...sets 'key' in the current dictionary to 'definition'.
+# 
+# "key" is [[:alpha:]_][[:alnum:]\-_]*
+# 
+# definition may be one of the following:
+#  a string, in quotes
+#  a number, in decimal
+#  a dictionary, in { }
+#  a path to a key that already exists, to reference that definition
+#  a "closure", followed by arguments
+#
+# paths are key1/key2/key3... (starting from wherever we find key1, i.e. in
+#  the current dictionary or any of its parents)
+# alternatively /key1/key2/key3... (to start from the root)
+# 
+# closures are followed by an argument list in ( ), and may return
+# whatever type they like (including other closures)
+#
+# closure { definitions } is short for closure({definitions}).
+#
+# Whenever secnet looks for a key it checks the (lexical) parent dictionaries
+# as well until it finds it or reaches the root. This is useful for setting
+# defaults for large collections of dictionaries (eg. defining sites).
+#
+# It is also permissible to list other dictionaries before a dictionary
+# definition, eg. <defaults,otherdefaults>{definitions}. These will be
+# searched in order for keys, before the lexical parent. (Not yet implemented)
+# 
+# secnet predefines some keys in the root dictionary; some useful ones are:
+#  yes, true, True, TRUE:   the boolean value True
+#  no, false, False, FALSE: the boolean value False
+#  makelist:   turns a dictionary (arg1) into a list (return value)
+#  readfile:   reads a file (arg1) and returns it as a string
+#
+# secnet modules also predefine keys, eg. "adns", "randomfile", etc.
+# See the module documentation for more information.
+
+# After the configuration file is read, secnet looks for particular keys
+# in configuration space to tell it what to do:
+#  system:     system-wide parameters (control, logging, etc.)
+#  sites:      a list of sites with which to communicate

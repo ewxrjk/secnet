@@ -101,10 +101,7 @@ system {
 
 netlink tun {
 	name "fred"; # Printed in log messages from this netlink
-	interface "fred";
-	# userv-path "/usr/bin/userv";
-	# service-user "root";
-	# service-name "ipif";
+#	interface "fred";
 
 	# local networks served by this netlink device
 	# incoming tunneled packets for other networks will be discarded

@@ -1,5 +1,13 @@
 INSTALLATION INSTRUCTIONS for SECNET
 
+USE AT YOUR OWN RISK. THIS IS ALPHA QUALITY SOFTWARE. I DO NOT
+GUARANTEE THAT THERE WILL BE PROTOCOL COMPATIBILITY BETWEEN DIFFERENT
+VERSIONS.
+
+* Preparation
+
+** System software support
+
 Ensure that you have libgmp2-dev and adns installed (and bison and
 flex, and for that matter gcc...).
 
@@ -14,10 +22,45 @@ kernel (it's under "network device support" in Linux) and that you've
 created the appropriate device files; see
 linux/Documentation/networking/tuntap.txt
 
-If you're using TUN/TAP on a platform other than Linux, see
+If you're using TUN/TAP on a platform other than Linux-2.4, see
 http://vtun.sourceforge.net/tun/
 
-Then, to install secnet do
+Note than TUN comes in two flavours, one (called 'tun' in the secnet
+config file) which has only one device file (usually /dev/net/tun) and
+the other (called 'tun-old') which has many device files
+(/dev/tun*). Linux-2.4 has new-style TUN, Linux-2.2, BSD and Solaris
+have old-style TUN. Currently only new-style TUN has been tested with
+secnet.
+
+** System and network configuration
+
+If you intend to start secnet as root, I suggest you create an userid
+for it to run as once it's ready to drop its privileges. Example (on
+Debian):
+# adduser --system --no-create-home secnet
+
+You will need to allocate two IP addresses for use by secnet. One will
+be for the tunnel interface on your tunnel endpoint machine (i.e. the
+address you see in 'ifconfig' when you look at the tunnel
+interface). The other will be for secnet itself. These addresses could
+possibly be allocated from the range used by your internal network: if
+you do this, you should think about providing appropriate proxy-ARP on
+the machine running secnet for the two addresses. Alternatively the
+addresses could be from some other range - this works well if the
+machine running secnet is the default route out of your network.
+
+http://www.ucam.org/cam-grin/ may be useful.
+
+Advanced users: secnet's IP address does not _have_ to be in the range
+of networks claimed by your end of the tunnel; it could be in the
+range of networks claimed by the other end. Doing this is confusing,
+but works (in the case where you can't get the administrator of the
+other end to allocate an IP address for his copy of secnet [hint hint
+Ian]).
+
+* Installation
+
+To install secnet do
 
 $ ./configure
 $ make
@@ -30,14 +73,19 @@ $ make
 (When upgrading, just install the new /usr/local/sbin/secnet; keep
 your current configuration file.)
 
-If you intend to start secnet as root, I suggest you create an userid
-for it to run as once it's ready to drop its privileges. Example:
-# adduser --system --no-create-home secnet
+Generate a site file fragment for your site (see below), and submit it
+for inclusion in the vpn-sites file. Download the vpn-sites file to
+/etc/secnet/sites - MAKE SURE YOU GET AN AUTHENTIC COPY because the
+sites file contains public keys for all the sites in the VPN.
 
-Generate a site file fragment for your site, and submit it for
-inclusion in the vpn-sites file. Download the vpn-sites file.
+* Configuration
 
-* Constructing a site file fragment
+Should be reasonably obvious - edit /etc/secnet/secnet.conf as
+prompted by the comments. XXX Fuller documentation of the
+configuration file format should be forthcoming in time. Its syntax is
+described in the README file at the moment.
+
+* Constructing your site file fragment
 
 You need the following information:
 
@@ -83,3 +131,5 @@ shortname {
 		networks "172.18.45.0/24";
 		key rsa-public("35","153279875126380522437827076871354104097683702803616313419670959273217685015951590424876274370401136371563604396779864283483623325238228723798087715987495590765759771552692972297669972616769731553560605291312242789575053620182470998166393580503400960149506261455420521811814445675652857085993458063584337404329");
 	};
+
+See 'example-sites-file' for more examples.
