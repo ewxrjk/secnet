@@ -13,6 +13,7 @@ extern init_module md5_module;
 extern init_module slip_module;
 extern init_module tun_module;
 extern init_module sha1_module;
+extern init_module log_module;
 
 void init_builtin_modules(dict_t *dict)
 {
@@ -29,4 +30,5 @@ void init_builtin_modules(dict_t *dict)
     slip_module(dict);
     tun_module(dict);
     sha1_module(dict);
+    log_module(dict);
 }

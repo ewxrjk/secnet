@@ -18,6 +18,7 @@ extern char version[];
 
 #include "util.h"
 #include "conffile.h"
+#include "process.h"
 
 /* XXX should be from autoconf */
 static char *configfile="/etc/secnet/secnet.conf";
@@ -28,6 +29,16 @@ bool_t background=True;
 static char *pidfile=NULL;
 bool_t require_root_privileges=False;
 string_t require_root_privileges_explanation=NULL;
+
+static pid_t secnet_pid;
+
+/* from log.c */
+extern uint32_t message_level;
+extern bool_t secnet_is_daemon;
+extern struct log_if *system_log;
+
+/* from process.c */
+extern void start_signal_handling(void);
 
 /* Structures dealing with poll() call */
 struct poll_interest {
@@ -251,9 +262,9 @@ static void run(void)
 	fatal("run: couldn't alloca\n");
     }
 
-    Message(M_NOTICE,"%s: starting\n",version);
+    Message(M_NOTICE,"%s [%d]: starting\n",version,secnet_pid);
 
-    while (!finished) {
+    do {
 	if (gettimeofday(&tv_now, NULL)!=0) {
 	    fatal_perror("main loop: gettimeofday");
 	}
@@ -282,6 +293,7 @@ static void run(void)
 	    i->nfds=nfds;
 	}
 	do {
+	    if (finished) break;
 	    rv=poll(fds, idx, timeout);
 	    if (rv<0) {
 		if (errno!=EINTR) {
@@ -289,7 +301,7 @@ static void run(void)
 		}
 	    }
 	} while (rv<0);
-    }
+    } while (!finished);
 }
 
 static void droppriv(void)
@@ -337,7 +349,19 @@ static void droppriv(void)
 	    exit(1);
 	}
     }
+    secnet_pid=getpid();
+}
 
+static signal_notify_fn finish,ignore_hup;
+static void finish(void *st, int signum)
+{
+    finished=True;
+    Message(M_NOTICE,"%s [%d]: received %s\n",version,secnet_pid,(string_t)st);
+}
+static void ignore_hup(void *st, int signum)
+{
+    Message(M_INFO,"%s [%d]: received SIGHUP\n",version,secnet_pid);
+    return;
 }
 
 int main(int argc, char **argv)
@@ -365,10 +389,14 @@ int main(int argc, char **argv)
     droppriv();
 
     enter_phase(PHASE_RUN);
+    start_signal_handling();
+    request_signal_notification(SIGTERM,finish,"SIGTERM");
+    if (!background) request_signal_notification(SIGINT,finish,"SIGINT");
+    request_signal_notification(SIGHUP,ignore_hup,NULL);
     run();
 
     enter_phase(PHASE_SHUTDOWN);
+    Message(M_NOTICE,"%s [%d]: finished\n",version,secnet_pid);
 
     return 0;
 }
-

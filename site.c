@@ -7,6 +7,7 @@
 
 #include <sys/mman.h>
 #include "util.h"
+#include "ipaddr.h"
 #include "unaligned.h"
 
 #define SETUP_BUFFER_LEN 2048

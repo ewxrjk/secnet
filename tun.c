@@ -48,6 +48,7 @@ static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds,
     struct tun *st=sst;
     int l;
 
+    if (nfds==0) return;
     if (fds[0].revents&POLLERR) {
 	printf("tun_afterpoll: hup!\n");
     }

@@ -10,10 +10,6 @@
 #include "secnet.h"
 #include <gmp.h>
 
-extern uint32_t message_level;
-extern bool_t secnet_is_daemon;
-extern struct log_if *system_log;
-
 #define BUF_ASSERT_FREE(buf) do { buffer_assert_free((buf), \
 						     __FILE__,__LINE__); } \
 while(0)
@@ -37,8 +33,6 @@ extern void *buf_unappend(struct buffer_if *buf, uint32_t amount);
 extern void *buf_unprepend(struct buffer_if *buf, uint32_t amount);
 
 extern void buf_append_string(struct buffer_if *buf, string_t s);
-
-extern void enter_phase(uint32_t new_phase);
 
 extern void read_mpbin(MP_INT *a, uint8_t *bin, int binsize);
 

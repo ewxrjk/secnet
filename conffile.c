@@ -12,7 +12,10 @@
 #include "conffile.h"
 #include "conffile_internal.h"
 #include "util.h"
-#include "modules.h"
+#include "ipaddr.h"
+
+/* from modules.c */
+extern void init_builtin_modules(dict_t *dict);
 
 static struct cloc no_loc={"none",0};
 
@@ -783,7 +786,7 @@ void dict_read_subnet_list(dict_t *dict, string_t key, bool_t required,
 	cfgfatal(loc,desc,"required parameter \"%s\" not found\n",key);
     }
     /* Count the items in the list */
-    for (li=l; li; li=li->next) e++;
+    e=list_length(l);
     if (e==0) return;
     sl->entries=e;
     sl->list=safe_malloc(sizeof(struct subnet)*e, "dict_read_subnet_list");

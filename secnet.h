@@ -31,16 +31,6 @@ struct subnet_list {
     struct subnet *list;
 };
 
-/* Match an address (in HOST byte order) with a subnet list.
-   Returns True if matched. */
-extern bool_t subnet_match(struct subnet *s, uint32_t address);
-extern bool_t subnet_matches_list(struct subnet_list *list, uint32_t address);
-extern bool_t subnets_intersect(struct subnet a, struct subnet b);
-extern bool_t subnet_intersects_with_list(struct subnet a,
-					  struct subnet_list *b);
-extern bool_t subnet_lists_intersect(struct subnet_list *a,
-				     struct subnet_list *b);
-
 /***** END of shared types *****/
 
 /***** CONFIGURATION support *****/
@@ -137,7 +127,7 @@ extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
 
 /***** END of configuration support *****/
 
-/***** UTILITY functions *****/
+/***** LOG functions *****/
 
 #define M_DEBUG_CONFIG 0x001
 #define M_DEBUG_PHASE  0x002
@@ -155,13 +145,14 @@ extern void fatal_status(int status, char *message, ...);
 extern void fatal_perror_status(int status, char *message, ...);
 extern void cfgfatal(struct cloc loc, string_t facility, char *message, ...);
 
-extern char *safe_strdup(char *string, char *message);
-extern void *safe_malloc(size_t size, char *message);
-
 extern void Message(uint32_t class, char *message, ...);
 
-extern string_t ipaddr_to_string(uint32_t addr);
-extern string_t subnet_to_string(struct subnet *sn);
+/***** END of log functions *****/
+
+/***** UTILITY functions *****/
+
+extern char *safe_strdup(char *string, char *message);
+extern void *safe_malloc(size_t size, char *message);
 
 extern int sys_cmd(const char *file, char *argc, ...);
 
@@ -210,6 +201,9 @@ extern void register_for_poll(void *st, beforepoll_fn *before,
 typedef void hook_fn(void *self, uint32_t newphase);
 bool_t add_hook(uint32_t phase, hook_fn *f, void *state);
 bool_t remove_hook(uint32_t phase, hook_fn *f, void *state);
+
+extern uint32_t current_phase;
+extern void enter_phase(uint32_t new_phase);
 
 extern bool_t require_root_privileges; /* Some features (like netlink
 					  'soft' routes) require that

@@ -10,6 +10,7 @@
 
 #include "secnet.h"
 #include "util.h"
+#include "ipaddr.h"
 #include "netlink.h"
 
 /* Generic IP checksum routine */

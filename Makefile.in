@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.5
+VERSION:=0.1.6
 
 @SET_MAKE@
 
@@ -45,7 +45,8 @@ TARGETS:=secnet
 
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	resolver.o random.o udp.o site.o transform.o netlink.o rsa.o dh.o \
-	serpent.o md5.o version.o tun.o slip.o sha1.o
+	serpent.o md5.o version.o tun.o slip.o sha1.o ipaddr.o log.o \
+	process.o
 
 DISTFILES:=COPYING CREDITS INSTALL Makefile.in NOTES README TODO \
 	conffile.c conffile.fl conffile.h conffile.y \
@@ -53,8 +54,8 @@ DISTFILES:=COPYING CREDITS INSTALL Makefile.in NOTES README TODO \
 	config.h.in config.h.top configure \
 	configure.in debian dh.c \
 	example-sites-file example.conf make-secnet-sites.py \
-	install.sh ipaddr.py linux md5.c md5.h \
-	modules.c modules.h netlink.c netlink.h \
+	install.sh ipaddr.c ipaddr.h ipaddr.py linux log.c md5.c md5.h \
+	modules.c netlink.c netlink.h process.c process.h \
 	random.c resolver.c rsa.c \
 	secnet.c secnet.h serpent.c serpent.h serpentsboxes.h \
 	sha1.c site.c slip.c stamp-h.in transform.c tun.c udp.c \
@@ -99,7 +100,7 @@ secnet.c: conffile.h
 md5.o: md5.h
 serpent.o transform.o: serpent.h
 serpent.o: serpentsboxes.h
-conffile.o: modules.h
+conffile.o: ipaddr.h
 site.c util.c: unaligned.h
 conffile.yy.c:	conffile.fl conffile.tab.c
 conffile.tab.c:	conffile.y

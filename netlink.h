@@ -1,6 +1,8 @@
 #ifndef netlink_h
 #define netlink_h
 
+#include "ipaddr.h"
+
 #define DEFAULT_BUFSIZE 2048
 #define DEFAULT_MTU 1000
 #define ICMP_BUFSIZE 1024
