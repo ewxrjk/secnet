@@ -106,7 +106,7 @@ static void parse_options(int argc, char **argv)
 	    break;
 
 	case 'v':
-	    message_level|=M_INFO|M_NOTICE|M_WARNING|M_ERROR|M_SECURITY|
+	    message_level|=M_INFO|M_NOTICE|M_WARNING|M_ERR|M_SECURITY|
 		M_FATAL;
 	    break;
 
@@ -141,12 +141,12 @@ static void parse_options(int argc, char **argv)
 	    break;
 
 	default:
-	    Message(M_ERROR,"secnet: Unknown getopt code %c\n",c);
+	    Message(M_ERR,"secnet: Unknown getopt code %c\n",c);
 	}
     }
 
     if (argc-optind != 0) {
-	Message(M_ERROR,"secnet: You gave extra command line parameters, "
+	Message(M_ERR,"secnet: You gave extra command line parameters, "
 		"which were ignored.\n");
     }
 }

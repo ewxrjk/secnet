@@ -135,7 +135,7 @@ extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
 #define M_INFO	       0x008
 #define M_NOTICE       0x010
 #define M_WARNING      0x020
-#define M_ERROR	       0x040
+#define M_ERR	       0x040
 #define M_SECURITY     0x080
 #define M_FATAL	       0x100
 
@@ -220,26 +220,26 @@ extern string_t require_root_privileges_explanation;
 /* Module initialisation function type - modules export one function of
    this type which is called to initialise them. For dynamically loaded
    modules it's called "secnet_module". */
-typedef void (init_module)(dict_t *dict);
+typedef void init_module(dict_t *dict);
 
 /***** END of module support *****/
 
 /***** CLOSURE TYPES and interface definitions *****/
 
-#define CL_PURE        0
-#define CL_RESOLVER    1
-#define CL_RANDOMSRC   2
-#define CL_RSAPUBKEY   3
-#define CL_RSAPRIVKEY  4
-#define CL_COMM        5
-#define CL_IPIF        6
-#define CL_LOG         7
-#define CL_SITE        8
-#define CL_TRANSFORM   9
-#define CL_NETLINK    10
-#define CL_DH         11
-#define CL_HASH       12
-#define CL_BUFFER     13
+#define CL_PURE         0
+#define CL_RESOLVER     1
+#define CL_RANDOMSRC    2
+#define CL_RSAPUBKEY    3
+#define CL_RSAPRIVKEY   4
+#define CL_COMM         5
+#define CL_IPIF         6
+#define CL_LOG          7
+#define CL_SITE         8
+#define CL_TRANSFORM    9
+#define CL_DH          11
+#define CL_HASH        12
+#define CL_BUFFER      13
+#define CL_NETLINK     14
 
 struct buffer_if;
 
@@ -374,7 +374,7 @@ struct transform_if {
    netlink_regnets_fn.  If buf has size 0 then the function is just
    being called for its site-effects (eg. making the site code attempt
    to bring up a network link) */
-typedef void netlink_deliver_fn(void *st, void *cid, struct buffer_if *buf);
+typedef void netlink_deliver_fn(void *st, struct buffer_if *buf);
 /* site code can tell netlink when outgoing packets will be dropped,
    so netlink can generate appropriate ICMP and make routing decisions */
 #define LINK_QUALITY_DOWN 0   /* No chance of a packet being delivered */
@@ -382,21 +382,14 @@ typedef void netlink_deliver_fn(void *st, void *cid, struct buffer_if *buf);
 #define LINK_QUALITY_DOWN_CURRENT_ADDRESS 2 /* Link down, current address information */
 #define LINK_QUALITY_UP 3     /* Link active */
 #define MAXIMUM_LINK_QUALITY 3
-typedef void netlink_link_quality_fn(void *st, void *cid, uint32_t quality);
-/* Register for packets from specified networks. Return value is
-   client identifier.  'hard_route' indicates whether the routes being
-   registered are permanent (hard) or temporary (soft); some types of
-   netlink device can only cope with hard routes. */
-#define NETLINK_OPTION_SOFTROUTE    1
-#define NETLINK_OPTION_ALLOW_ROUTE  2
-typedef void *netlink_regnets_fn(void *st, struct subnet_list *networks,
-				 netlink_deliver_fn *deliver, void *dst,
-				 uint32_t max_start_pad, uint32_t max_end_pad,
-				 uint32_t options, string_t client_name);
+typedef void netlink_link_quality_fn(void *st, uint32_t quality);
+typedef void netlink_register_fn(void *st, netlink_deliver_fn *deliver,
+				 void *dst, uint32_t max_start_pad,
+				 uint32_t max_end_pad);
 
 struct netlink_if {
     void *st;
-    netlink_regnets_fn *regnets;
+    netlink_register_fn *reg;
     netlink_deliver_fn *deliver;
     netlink_link_quality_fn *set_quality;
 };

@@ -335,6 +335,9 @@ static list_t *process_invocation(dict_t *context, struct p_node *i)
     if (cl->type != t_closure) {
 	cfgfatal(i->l->loc,"conffile","only closures can be invoked\n");
     }
+    if (!cl->data.closure->apply) {
+	cfgfatal(i->l->loc,"conffile","this closure cannot be invoked\n");
+    }
     args=process_ilist(context, i->r);
     return cl->data.closure->apply(cl->data.closure, i->loc, context, args);
 }
@@ -725,6 +728,13 @@ static struct subnet string_to_subnet(item_t *i, string_t desc)
 	cfgfatal(i->loc,desc,"expecting a string (subnet specification)\n");
     }
 
+    if (strcmp(i->data.string,"default")==0) {
+	s.prefix=0;
+	s.mask=0;
+	s.len=0;
+	return s;
+    }
+
     /* We expect strings of the form "a.b.c.d[/n]", i.e. the dots are
        NOT optional. The subnet mask is optional; if missing it is assumed
        to be /32. */
@@ -740,7 +750,7 @@ static struct subnet string_to_subnet(item_t *i, string_t desc)
 	cfgfatal(i->loc,desc,"\"%s\": range error\n",i->data.string);
     }
     s.prefix=(a<<24)|(b<<16)|(c<<8)|(d);
-    s.mask=(~0UL << (32-n));
+    s.mask=n?(~0UL << (32-n)):0;
     s.len=n;
     if (s.prefix & ~s.mask) {
 	cfgfatal(i->loc,desc,"\"%s\": prefix not fully contained "

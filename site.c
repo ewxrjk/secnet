@@ -1,13 +1,22 @@
 /* site.c - manage communication with a remote network site */
 
+/* The 'site' code doesn't know anything about the structure of the
+   packets it's transmitting.  In fact, under the new netlink
+   configuration scheme it doesn't need to know anything at all about
+   IP addresses, except how to contact its peer.  This means it could
+   potentially be used to tunnel other protocols too (IPv6, IPX, plain
+   old Ethernet frames) if appropriate netlink code can be written
+   (and that ought not to be too hard, eg. using the TUN/TAP device to
+   pretend to be an Ethernet interface).  */
+
 #include "secnet.h"
 #include <stdio.h>
+#include <string.h>
 /* MBM asserts the next one is needed for compilation under BSD. */
 #include <sys/socket.h>
 
 #include <sys/mman.h>
 #include "util.h"
-#include "ipaddr.h"
 #include "unaligned.h"
 
 #define SETUP_BUFFER_LEN 2048
@@ -120,12 +129,6 @@ static struct flagstr log_event_table[]={
     { NULL, 0 }
 };
 
-static struct flagstr netlink_option_table[]={
-    { "soft", NETLINK_OPTION_SOFTROUTE },
-    { "allow-route", NETLINK_OPTION_ALLOW_ROUTE },
-    { NULL, 0}
-};
-
 struct site {
     closure_t cl;
     struct site_if ops;
@@ -141,7 +144,6 @@ struct site {
     struct log_if *log;
     struct random_if *random;
     struct rsaprivkey_if *privkey;
-    struct subnet_list remotenets;
     struct rsapubkey_if *pubkey;
     struct transform_if *transform;
     struct dh_if *dh;
@@ -167,8 +169,6 @@ struct site {
 /* runtime information */
     uint32_t state;
     uint64_t now; /* Most recently seen time */
-
-    void *netlink_cid;
 
     uint32_t remote_session_id;
     struct transform_inst_if *current_transform;
@@ -210,8 +210,8 @@ static void slog(struct site *st, uint32_t event, string_t msg, ...)
 	case LOG_STATE: class=M_DEBUG; break;
 	case LOG_DROP: class=M_DEBUG; break;
 	case LOG_DUMP: class=M_DEBUG; break;
-	case LOG_ERROR: class=M_ERROR; break;
-	default: class=M_ERROR; break;
+	case LOG_ERROR: class=M_ERR; break;
+	default: class=M_ERR; break;
 	}
 
 	vsnprintf(buf,240,msg,ap);
@@ -636,7 +636,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
     switch(type) {
     case LABEL_MSG9:
 	/* Deliver to netlink layer */
-	st->netlink->deliver(st->netlink->st,st->netlink_cid,msg0);
+	st->netlink->deliver(st->netlink->st,msg0);
 	return True;
 	break;
     default:
@@ -770,7 +770,7 @@ static void set_link_quality(struct site *st)
     else
 	quality=LINK_QUALITY_DOWN;
 
-    st->netlink->set_quality(st->netlink->st,st->netlink_cid,quality);
+    st->netlink->set_quality(st->netlink->st,quality);
 }
 
 static void enter_state_run(struct site *st)
@@ -954,7 +954,7 @@ static void site_afterpoll(void *sst, struct pollfd *fds, int nfds,
 /* This function is called by the netlink device to deliver packets
    intended for the remote network. The packet is in "raw" wire
    format, but is guaranteed to be word-aligned. */
-static void site_outgoing(void *sst, void *cid, struct buffer_if *buf)
+static void site_outgoing(void *sst, struct buffer_if *buf)
 {
     struct site *st=sst;
     string_t transform_err;
@@ -1142,7 +1142,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct site *st;
     item_t *item;
     dict_t *dict;
-    uint32_t netlink_options;
 
     st=safe_malloc(sizeof(*st),"site_apply");
 
@@ -1171,7 +1170,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	free(st);
 	return NULL;
     }
-    st->netlink=find_cl_if(dict,"netlink",CL_NETLINK,True,"site",loc);
+    st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
     st->comm=find_cl_if(dict,"comm",CL_COMM,True,"site",loc);
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
     st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
@@ -1182,8 +1181,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (st->address)
 	st->remoteport=dict_read_number(dict,"port",True,"site",loc,0);
     else st->remoteport=0;
-    dict_read_subnet_list(dict, "networks", True, "site", loc,
-			  &st->remotenets);
     st->pubkey=find_cl_if(dict,"key",CL_RSAPUBKEY,True,"site",loc);
 
     st->transform=
@@ -1216,9 +1213,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
 				       log_event_table,"site");
 
-    netlink_options=string_list_to_word(dict_lookup(dict,"netlink-options"),
-					netlink_option_table,"site");
-
     st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
 			    "site_apply");
     sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
@@ -1249,17 +1243,9 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->sharedsecret=safe_malloc(st->transform->keylen,"site:sharedsecret");
 
     /* We need to register the remote networks with the netlink device */
-    st->netlink_cid=st->netlink->regnets(st->netlink->st, &st->remotenets,
-					 site_outgoing, st,
-					 st->transform->max_start_pad+(4*4),
-					 st->transform->max_end_pad,
-					 netlink_options, st->tunname);
-    if (!st->netlink_cid) {
-	Message(M_WARNING,"%s: netlink device did not let us register "
-		"our remote networks. This site will not start.\n",
-		st->tunname);
-	return NULL; /* XXX should free site first */
-    }
+    st->netlink->reg(st->netlink->st, site_outgoing, st,
+		     st->transform->max_start_pad+(4*4),
+		     st->transform->max_end_pad);
 
     st->comm->request_notify(st->comm->st, st, site_incoming);
 

@@ -8,6 +8,7 @@
    the packets sent over the wire. */
 
 #include <stdio.h>
+#include <string.h>
 #include "secnet.h"
 #include "util.h"
 #include "serpent.h"
@@ -53,7 +54,7 @@ static bool_t transform_setkey(void *sst, uint8_t *key, uint32_t keylen)
     struct transform_inst *ti=sst;
 
     if (keylen<REQUIRED_KEYLEN) {
-	Message(M_ERROR,"transform_create: insufficient key material supplied "
+	Message(M_ERR,"transform_create: insufficient key material supplied "
 		"(need %d bytes, got %d)\n",REQUIRED_KEYLEN,keylen);
 	return False;
     }

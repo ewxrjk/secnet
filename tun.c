@@ -64,14 +64,13 @@ static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds,
 	}
 	if (l>0) {
 	    st->buff->size=l;
-	    st->netlink_to_tunnel(&st->nl,NULL,st->buff);
+	    st->netlink_to_tunnel(&st->nl,st->buff);
 	    BUF_ASSERT_FREE(st->buff);
 	}
     }
 }
 
-static void tun_deliver_to_kernel(void *sst, void *cid,
-				  struct buffer_if *buf)
+static void tun_deliver_to_kernel(void *sst, struct buffer_if *buf)
 {
     struct tun *st=sst;
 
@@ -261,7 +260,7 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->netlink_to_tunnel=
 	netlink_init(&st->nl,st,loc,dict,
-		     "netlink-tun",NULL,tun_deliver_to_kernel);
+		     "netlink-tun",tun_set_route,tun_deliver_to_kernel);
 
     st->tun_old=True;
     st->device_path=dict_read_string(dict,"device",False,"tun-netlink",loc);

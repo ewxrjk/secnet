@@ -34,6 +34,20 @@ providing complete links between multiple sites to a simple
 laptop-to-host link), read the section in this file on 'Creating a
 VPN'.
 
+* Mailing lists and bug reporting
+
+There are two mailing lists associated with secnet: an 'announce' list
+and a 'discuss' list.  Their addresses are:
+http://www.chiark.greenend.org.uk/mailman/listinfo/secnet-announce
+http://www.chiark.greenend.org.uk/mailman/listinfo/secnet-discuss
+
+The -announce list receives one message per secnet release.  The
+-discuss list is for general discussion, including help with
+configuration, bug reports, feature requests, etc.
+
+Bug reports should be sent to <steve@greenend.org.uk>; they will be
+forwarded to the -discuss list by me.
+
 * Creating a VPN
 
 XXX TODO
@@ -151,7 +165,17 @@ in configuration space to tell it what to do:
 
 * secnet command line options
 
-XXX TODO
+Usage: secnet [OPTION]...
+
+  -f, --silent, --quiet   suppress error messages
+  -w, --nowarnings        suppress warnings
+  -v, --verbose           output extra diagnostics
+  -c, --config=filename   specify a configuration file
+  -j, --just-check-config stop after reading configfile
+  -n, --nodetach          do not run in background
+  -d, --debug=item,...    set debug options
+      --help              display this help and exit
+      --version           output version information and exit
 
 * secnet builtin modules
 
@@ -247,7 +271,7 @@ Defines:
 site: dict argument
   local-name (string): this site's name for itself
   name (string): the name of the site's peer
-  netlink (netlink closure)
+  link (netlink closure)
   comm (comm closure)
   resolver (resolver closure)
   random (randomsrc closure)
@@ -255,7 +279,6 @@ site: dict argument
   address (string): optional, DNS name used to find our peer
   port (integer): mandatory if 'address' is specified: the port used
     to contact our peer
-  networks (string list): networks that our peer may claim traffic for
   key (rsapubkey closure): our peer's public key
   transform (transform closure): how to mangle packets sent between sites
   dh (dh closure)
@@ -282,12 +305,6 @@ site: dict argument
     dump-packets: every key setup packet we see
     errors: failure of name resolution, internal errors
     all: everything (too much!)
-  netlink-options (string list): options to pass to netlink device when
-    registering remote networks
-    soft: create 'soft' routes that go away when there's no key established
-      with the peer
-    allow-route: allow packets from our peer to be sent down other tunnels,
-      as well as to the host
 
 ** transform
 
@@ -297,7 +314,7 @@ Defines:
 ** netlink
 
 Defines:
-  null-netlink (closure => netlink closure)
+  null-netlink (closure => closure or netlink closure)
 
 null-netlink: dict argument
   name (string): name for netlink device, used in log messages
@@ -309,9 +326,20 @@ null-netlink: dict argument
   ptp-address (string): IP address of the other end of a point-to-point link
   mtu (integer): MTU of host's tunnel interface
 
-Only one of secnet-address or ptp-address may be specified. If
-point-to-point mode is in use then precisely one tunnel must register
-with the netlink device.
+Only one of secnet-address or ptp-address may be specified.  If
+point-to-point mode is in use then the "routes" option must also be
+specified, and netlink returns a netlink closure that should be used
+directly with the "link" option to the site closure.  If
+point-to-point mode is not in use then netlink returns a closure that
+may be invoked using a dict argument with the following keys to yield
+a netlink closure:
+  routes (string list): networks reachable down the tunnel attached to
+    this instance of netlink
+  options (string list):
+    allow-route: allow packets coming from this tunnel to be routed to
+      other tunnels as well as the host (used for mobile devices like laptops)
+    soft-route: remove these routes from the host's routing table when
+      the tunnel link quality is zero
 
 Netlink will dump its current routing table to the system/log on
 receipt of SIGUSR1.

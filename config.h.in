@@ -79,6 +79,15 @@
 
 /* Define if you have the gnugetopt library (-lgnugetopt).  */
 #undef HAVE_LIBGNUGETOPT
+
+/* Define if you have the nsl library (-lnsl).  */
+#undef HAVE_LIBNSL
+
+/* Define if you have the resolv library (-lresolv).  */
+#undef HAVE_LIBRESOLV
+
+/* Define if you have the socket library (-lsocket).  */
+#undef HAVE_LIBSOCKET
 /* -*- c -*- */
 
 /* These are from config.h.bot, pasted onto the end of config.h.in. */
@@ -125,6 +134,8 @@ typedef unsigned char uint8_t;
 #endif
 
 #ifndef HAVE_SNPRINTF
+#include <stdio.h>
+#include <stdarg.h>
 #include "snprintf.h"
 #endif
 

@@ -44,6 +44,8 @@ typedef unsigned char uint8_t;
 #endif
 
 #ifndef HAVE_SNPRINTF
+#include <stdio.h>
+#include <stdarg.h>
 #include "snprintf.h"
 #endif
 

@@ -7,8 +7,13 @@
 #define DEFAULT_MTU 1000
 #define ICMP_BUFSIZE 1024
 
+struct netlink;
+
 struct netlink_client {
-    struct subnet_list *networks;
+    closure_t cl;
+    struct netlink_if ops;
+    struct netlink *nst;
+    struct subnet_list networks;
     netlink_deliver_fn *deliver;
     void *dst;
     string_t name;
@@ -24,6 +29,7 @@ struct netlink_route {
     bool_t up;
     bool_t kup;
     uint32_t quality; /* provided by client */
+    uint32_t outcount;
     struct netlink_client *c;
 };
 
@@ -35,15 +41,14 @@ typedef bool_t netlink_route_fn(void *cst, struct netlink_route *route);
 
 struct netlink {
     closure_t cl;
-    struct netlink_if ops;
     void *dst; /* Pointer to host interface state */
     string_t name;
     uint32_t max_start_pad;
     uint32_t max_end_pad;
     struct subnet_list networks;
     struct subnet_list exclude_remote_networks;
-    uint32_t secnet_address; /* our own address, or possibly the address of
-				the other end of a point-to-point link */
+    uint32_t secnet_address; /* our own address, or the address of the
+				other end of a point-to-point link */
     bool_t ptp;
     uint32_t mtu;
     struct netlink_client *clients;
@@ -52,6 +57,8 @@ struct netlink {
     struct buffer_if icmp; /* Buffer for assembly of outgoing ICMP */
     uint32_t n_routes; /* How many routes do we know about? */
     struct netlink_route *routes;
+    uint32_t outcount; /* Packets sent to host */
+    uint32_t localcount; /* Packets sent to secnet */
 };
 
 extern netlink_deliver_fn *netlink_init(struct netlink *st,

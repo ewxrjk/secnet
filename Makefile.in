@@ -15,10 +15,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-.PHONY:	all clean realclean dist install
+.PHONY:	all clean realclean dist install distclean
 
 PACKAGE:=secnet
-VERSION:=0.1.9
+VERSION:=0.1.10
 
 @SET_MAKE@
 
@@ -131,6 +131,8 @@ realclean:	clean
 	$(RM) -f *~ Makefile config.h \
 	config.log config.status config.cache \
 	stamp-h Makefile.bak
+
+distclean:	realclean
 
 pfname:=$(PACKAGE)-$(VERSION)
 dist:

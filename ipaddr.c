@@ -74,7 +74,8 @@ string_t subnet_to_string(struct subnet *sn)
 	mask=(mask<<1);
     }
     if (i!=sn->len) {
-	fatal("subnet_to_string: invalid subnet structure!\n");
+	fatal("subnet_to_string: invalid subnet structure "
+	      "(i=%d sn->len=%d mask=0x%08x)!\n",i,sn->len,sn->mask);
     }
     snprintf(s, 19, "%d.%d.%d.%d/%d", a, b, c, d, sn->len);
     return s;

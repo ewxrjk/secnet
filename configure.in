@@ -21,12 +21,18 @@ AC_CHECK_SIZEOF(unsigned int)
 AC_CHECK_SIZEOF(unsigned short)
 AC_CHECK_SIZEOF(unsigned char)
 
+dnl the order in which libraries is checked is important
+dnl eg. adns on Solaris 2.5.1 depends on -lnsl and -lsocket
 AC_CHECK_LIB(gmp,mpz_init_set_str)
 AC_CHECK_LIB(gmp2,mpz_init_set_str)
+AC_CHECK_LIB(gmp,__gmpz_init_set_str)
 AC_CHECK_LIB(fl,yywrap)
-AC_CHECK_LIB(adns,adns_init)
+AC_CHECK_LIB(nsl,inet_ntoa)
 AC_CHECK_LIB(getopt,getopt_long)
 AC_CHECK_LIB(gnugetopt,getopt_long)
+AC_CHECK_LIB(socket,socket)
+AC_CHECK_LIB(resolv,inet_aton)
+AC_CHECK_LIB(adns,adns_init)
 
 dnl check for getopt in standard library
 AC_SUBST(LIBOBJS)

@@ -7,7 +7,7 @@ ipaddr.c: implement the useful functionality from ipaddr.py
 
 netlink.c: investigate why 'default' routes don't appear to work
 (reported by JDA).
-Implement the 'allow_route' option properly.
+Test the 'allow_route' option properly.
 
 random.c: test
 
@@ -27,13 +27,11 @@ fails in use?
 userv-ipif doesn't like the same bit of network to be specified
 twice. Use the new functionality in ipaddr.c once it's done to prevent
 this.
-
-tun.c: jdamery reports tun-old code works on Linux-2.2.
-Unresolved problem with ioctl(TUNSETIFF) sometimes returning EINVAL, seems
-to be related to early 2.4.x (x<=5) series kernels. 2.4.9 and above seem ok;
-2.4.[678] untested.
+Work out why slip.c doesn't compile on Solaris-2.5.1
 
 transform.c: separate the transforms into multiple parts, which can
 then be combined in the configuration file.  Will allow the user to
 plug in different block ciphers, invent an authenticity-only mode,
 etc.
+
+udp.c: actually send NAKs rather than just complaining.

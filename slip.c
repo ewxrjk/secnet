@@ -91,8 +91,7 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 	    switch (buf[i]) {
 	    case SLIP_END:
 		if (st->buff->size>0) {
-		    st->netlink_to_tunnel(&st->nl,NULL,
-					  st->buff);
+		    st->netlink_to_tunnel(&st->nl,st->buff);
 		    BUF_ALLOC(st->buff,"userv_afterpoll");
 		}
 		buffer_init(st->buff,st->nl.max_start_pad);
@@ -162,7 +161,7 @@ static void userv_afterpoll(void *sst, struct pollfd *fds, int nfds,
     if (nfds==0) return;
 
     if (fds[1].revents&POLLERR) {
-	Message(M_ERROR,"%s: userv_afterpoll: POLLERR!\n",st->slip.nl.name);
+	Message(M_ERR,"%s: userv_afterpoll: POLLERR!\n",st->slip.nl.name);
     }
     if (fds[1].revents&POLLIN) {
 	l=read(st->rxfd,rxbuf,DEFAULT_BUFSIZE);
@@ -178,8 +177,7 @@ static void userv_afterpoll(void *sst, struct pollfd *fds, int nfds,
 }
 
 /* Send buf to the kernel. Free buf before returning. */
-static void userv_deliver_to_kernel(void *sst, void *cid,
-				    struct buffer_if *buf)
+static void userv_deliver_to_kernel(void *sst, struct buffer_if *buf)
 {
     struct userv *st=sst;
 
@@ -214,8 +212,8 @@ static void userv_userv_callback(void *sst, pid_t pid, int status)
 struct userv_entry_rec {
     string_t path;
     char **argv;
-    int stdin;
-    int stdout;
+    int in;
+    int out;
     /* XXX perhaps we should collect and log stderr? */
 };
 
@@ -223,8 +221,8 @@ static void userv_entry(void *sst)
 {
     struct userv_entry_rec *st=sst;
 
-    dup2(st->stdin,0);
-    dup2(st->stdout,1);
+    dup2(st->in,0);
+    dup2(st->out,1);
 
     /* XXX close all other fds */
     setsid();
@@ -288,8 +286,8 @@ static void userv_invoke_userv(struct userv *st)
 
     er=safe_malloc(sizeof(*r),"userv_invoke_userv: er");
 
-    er->stdin=c_stdin[0];
-    er->stdout=c_stdout[1];
+    er->in=c_stdin[0];
+    er->out=c_stdout[1];
     /* The arguments are:
        userv
        service-user
@@ -307,8 +305,8 @@ static void userv_invoke_userv(struct userv *st)
 
     st->pid=makesubproc(userv_entry, userv_userv_callback,
 			er, st, st->slip.nl.name);
-    close(er->stdin);
-    close(er->stdout);
+    close(er->in);
+    close(er->out);
     free(er->argv);
     free(er);
     free(addrs);

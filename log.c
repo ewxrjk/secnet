@@ -8,7 +8,7 @@
 #include "process.h"
 
 bool_t secnet_is_daemon=False;
-uint32_t message_level=M_WARNING|M_ERROR|M_SECURITY|M_FATAL;
+uint32_t message_level=M_WARNING|M_ERR|M_SECURITY|M_FATAL;
 struct log_if *system_log=NULL;
 
 static void vMessage(uint32_t class, char *message, va_list args)
@@ -32,7 +32,7 @@ static void vMessage(uint32_t class, char *message, va_list args)
     } else {
 	/* Messages go to stdout/stderr */
 	if (class & message_level) {
-	    if (class&M_FATAL || class&M_ERROR || class&M_WARNING) {
+	    if (class&M_FATAL || class&M_ERR || class&M_WARNING) {
 		dest=stderr;
 	    }
 	    vfprintf(dest,message,args);
@@ -271,11 +271,11 @@ static struct flagstr message_class_table[]={
     { "info", M_INFO },
     { "notice", M_NOTICE },
     { "warning", M_WARNING },
-    { "error", M_ERROR },
+    { "error", M_ERR },
     { "security", M_SECURITY },
     { "fatal", M_FATAL },
-    { "default", M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
-    { "verbose", M_INFO|M_NOTICE|M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
+    { "default", M_WARNING|M_ERR|M_SECURITY|M_FATAL },
+    { "verbose", M_INFO|M_NOTICE|M_WARNING|M_ERR|M_SECURITY|M_FATAL },
     { "quiet", M_FATAL },
     { NULL, 0 }
 };
@@ -334,7 +334,7 @@ static int msgclass_to_syslogpriority(uint32_t m)
     case M_INFO: return LOG_INFO;
     case M_NOTICE: return LOG_NOTICE;
     case M_WARNING: return LOG_WARNING;
-    case M_ERROR: return LOG_ERR;
+    case M_ERR: return LOG_ERR;
     case M_SECURITY: return LOG_CRIT;
     case M_FATAL: return LOG_EMERG;
     default: return LOG_NOTICE;
