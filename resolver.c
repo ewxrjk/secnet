@@ -21,7 +21,8 @@ struct query {
     adns_query query;
 };
 
-static bool_t resolve_request(void *sst, string_t name,
+static resolve_request_fn resolve_request;
+static bool_t resolve_request(void *sst, cstring_t name,
 			      resolve_answer_fn *cb, void *cst)
 {
     struct adns *st=sst;

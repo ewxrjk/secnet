@@ -52,8 +52,8 @@ extern string_t ipaddr_to_string(uint32_t addr);
 extern string_t subnet_to_string(struct subnet sn);
 
 extern struct ipset *string_list_to_ipset(list_t *l,struct cloc loc,
-					  string_t module,string_t param);
+					  cstring_t module, cstring_t param);
 					  
-extern uint32_t string_item_to_ipaddr(item_t *i, string_t desc);
+extern uint32_t string_item_to_ipaddr(item_t *i, cstring_t desc);
 
 #endif /* ipaddr_h */

@@ -43,7 +43,7 @@
 #define DEFAULT_BUFFER_SIZE 4096
 #define MAX_BUFFER_SIZE 131072
 
-static char *hexdigits="0123456789abcdef";
+static const char *hexdigits="0123456789abcdef";
 
 uint32_t current_phase=0;
 
@@ -55,7 +55,7 @@ struct phase_hook {
 
 static struct phase_hook *hooks[NR_PHASES]={NULL,};
 
-char *safe_strdup(char *s, char *message)
+char *safe_strdup(const char *s, const char *message)
 {
     char *d;
     d=strdup(s);
@@ -65,7 +65,7 @@ char *safe_strdup(char *s, char *message)
     return d;
 }
 
-void *safe_malloc(size_t size, char *message)
+void *safe_malloc(size_t size, const char *message)
 {
     void *r;
     r=malloc(size);
@@ -155,7 +155,7 @@ uint32_t write_mpbin(MP_INT *a, uint8_t *buffer, uint32_t buflen)
     return i;
 }
 
-static char *phases[NR_PHASES]={
+static const char *phases[NR_PHASES]={
     "PHASE_INIT",
     "PHASE_GETOPTS",
     "PHASE_READCONFIG",
@@ -198,7 +198,7 @@ bool_t remove_hook(uint32_t phase, hook_fn *fn, void *state)
     return False;
 }
 
-void log(struct log_if *lf, int priority, char *message, ...)
+void log(struct log_if *lf, int priority, const char *message, ...)
 {
     va_list ap;
     
@@ -212,7 +212,8 @@ struct buffer {
     struct buffer_if ops;
 };
 
-void buffer_assert_free(struct buffer_if *buffer, string_t file, uint32_t line)
+void buffer_assert_free(struct buffer_if *buffer, cstring_t file,
+			uint32_t line)
 {
     if (!buffer->free) {
 	fatal("BUF_ASSERT_FREE, %s line %d, owned by %s",
@@ -220,7 +221,8 @@ void buffer_assert_free(struct buffer_if *buffer, string_t file, uint32_t line)
     }
 }
 
-void buffer_assert_used(struct buffer_if *buffer, string_t file, uint32_t line)
+void buffer_assert_used(struct buffer_if *buffer, cstring_t file,
+			uint32_t line)
 {
     if (buffer->free) {
 	fatal("BUF_ASSERT_USED, %s line %d, last owned by %s",
@@ -261,7 +263,7 @@ void *buf_unprepend(struct buffer_if *buf, uint32_t amount) {
 
 /* Append a two-byte length and the string to the buffer. Length is in
    network byte order. */
-void buf_append_string(struct buffer_if *buf, string_t s)
+void buf_append_string(struct buffer_if *buf, cstring_t s)
 {
     uint16_t len;
 

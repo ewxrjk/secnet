@@ -30,7 +30,7 @@ static sigset_t registered,pending;
 
 struct child {
     pid_t pid;
-    string_t desc;
+    cstring_t desc;
     process_callback_fn *cb;
     void *cst;
     bool_t finished;
@@ -57,7 +57,7 @@ static void set_default_signals(void);
    their exit status using the callback function.  We block SIGCHLD
    until signal processing has begun. */
 pid_t makesubproc(process_entry_fn *entry, process_callback_fn *cb,
-		 void *est, void *cst, string_t desc)
+		 void *est, void *cst, cstring_t desc)
 {
     struct child *c;
     pid_t p;
@@ -140,7 +140,7 @@ static void sigchld_handler(void *st, int signum)
     }
 }
 
-int sys_cmd(const char *path, char *arg, ...)
+int sys_cmd(const char *path, const char *arg, ...)
 {
     va_list ap;
     int rv;
@@ -155,7 +155,12 @@ int sys_cmd(const char *path, char *arg, ...)
 	char *args[100];
 	int i;
 	/* Child -> exec command */
-	args[0]=arg;
+	/* Really we ought to strcpy() the arguments into the args array,
+	   since the arguments are const char *.  Since we'll exit anyway
+	   if the execvp() fails this seems somewhat pointless, and
+	   increases the chance of the child process failing before it
+	   gets to exec(). */
+	args[0]=(char *)arg;
 	i=1;
 	while ((args[i++]=va_arg(ap,char *)));
 	execvp(path,args);

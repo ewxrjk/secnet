@@ -17,7 +17,7 @@ static struct p_node *node(uint32_t type, struct p_node *l, struct p_node *r);
 
 static struct p_node *result;
 
-static void yyerror(char *s);
+static void yyerror(const char *s);
 
 %}
 
@@ -73,7 +73,7 @@ item:		  TOK_STRING
 
 %%
 
-static void yyerror(char *s)
+static void yyerror(const char *s)
 {
 	Message(M_FATAL,"config file %s line %d: %s\n",config_file,
 		config_lineno,s);

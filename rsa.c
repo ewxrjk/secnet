@@ -1,3 +1,5 @@
+/* CRT work by Simon Tatham */
+
 #include <stdio.h>
 #include <gmp.h>
 #include "secnet.h"
@@ -5,12 +7,16 @@
 
 #define AUTHFILE_ID_STRING "SSH PRIVATE KEY FILE FORMAT 1.1\n"
 
+#define mpp(s,n) do { char *p = mpz_get_str(NULL,16,n); printf("%s 0x%sL\n", s, p); free(p); } while (0)
+
 struct rsapriv {
     closure_t cl;
     struct rsaprivkey_if ops;
     struct cloc loc;
-    MP_INT d;
     MP_INT n;
+    MP_INT p, dp;
+    MP_INT q, dq;
+    MP_INT w;
 };
 struct rsapub {
     closure_t cl;
@@ -21,12 +27,12 @@ struct rsapub {
 };
 /* Sign data. NB data must be smaller than modulus */
 
-static char *hexchars="0123456789abcdef";
+static const char *hexchars="0123456789abcdef";
 
 static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
 {
     struct rsapriv *st=sst;
-    MP_INT a, b;
+    MP_INT a, b, u, v, tmp, tmp2;
     char buff[2048];
     int msize, i;
     string_t signature;
@@ -55,7 +61,39 @@ static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
 
     mpz_set_str(&a, buff, 16);
 
-    mpz_powm(&b, &a, &st->d, &st->n);
+    /*
+     * Produce an RSA signature (a^d mod n) using the Chinese
+     * Remainder Theorem. We compute:
+     * 
+     *   u = a^dp mod p    (== a^d mod p, since dp == d mod (p-1))
+     *   v = a^dq mod q    (== a^d mod q, similarly)
+     * 
+     * We also know w == iqmp * q, which has the property that w ==
+     * 0 mod q and w == 1 mod p. So (1-w) has the reverse property
+     * (congruent to 0 mod p and to 1 mod q). Hence we now compute
+     * 
+     *   b = w * u + (1-w) * v
+     *     = w * (u-v) + v
+     * 
+     * so that b is congruent to a^d both mod p and mod q. Hence b,
+     * reduced mod n, is the required signature.
+     */
+    mpz_init(&tmp);
+    mpz_init(&tmp2);
+    mpz_init(&u);
+    mpz_init(&v);
+
+    mpz_powm(&u, &a, &st->dp, &st->p);
+    mpz_powm(&v, &a, &st->dq, &st->q);
+    mpz_sub(&tmp, &u, &v);
+    mpz_mul(&tmp2, &tmp, &st->w);
+    mpz_add(&tmp, &tmp2, &v);
+    mpz_mod(&b, &tmp, &st->n);
+
+    mpz_clear(&tmp);
+    mpz_clear(&tmp2);
+    mpz_clear(&u);
+    mpz_clear(&v);
 
     signature=write_mpstring(&b);
 
@@ -64,8 +102,9 @@ static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
     return signature;
 }
 
+static rsa_checksig_fn rsa_sig_check;
 static bool_t rsa_sig_check(void *sst, uint8_t *data, uint32_t datalen,
-			    string_t signature)
+			    cstring_t signature)
 {
     struct rsapub *st=sst;
     MP_INT a, b, c;
@@ -178,12 +217,12 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 {
     struct rsapriv *st;
     FILE *f;
-    string_t filename;
+    cstring_t filename;
     item_t *i;
     long length;
     uint8_t *b, *c;
     int cipher_type;
-    MP_INT e,sig,plain,check;
+    MP_INT e,d,iqmp,tmp,tmp2,tmp3;
 
     st=safe_malloc(sizeof(*st),"rsapriv_apply");
     st->cl.description="rsapriv";
@@ -202,7 +241,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	}
 	filename=i->data.string;
     } else {
-	filename=""; /* Make compiler happy */
+	filename=NULL; /* Make compiler happy */
 	cfgfatal(loc,"rsa-private","you must provide a filename\n");
     }
 
@@ -290,38 +329,128 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	cfgfatal_maybefile(f,loc,"rsa-private",
 			   "error reading decryption key\n");
     }
-    mpz_init(&st->d);
-    read_mpbin(&st->d,b,length);
+    mpz_init(&d);
+    read_mpbin(&d,b,length);
+    free(b);
+    /* Read iqmp (inverse of q mod p) */
+    length=(keyfile_get_short(loc,f)+7)/8;
+    if (length>1024) {
+	cfgfatal(loc,"rsa-private","implausibly long (%ld)"
+		 " iqmp auxiliary value\n", length);
+    }
+    b=safe_malloc(length,"rsapriv_apply");
+    if (fread(b,length,1,f)!=1) {
+	cfgfatal_maybefile(f,loc,"rsa-private",
+			   "error reading decryption key\n");
+    }
+    mpz_init(&iqmp);
+    read_mpbin(&iqmp,b,length);
+    free(b);
+    /* Read q (the smaller of the two primes) */
+    length=(keyfile_get_short(loc,f)+7)/8;
+    if (length>1024) {
+	cfgfatal(loc,"rsa-private","implausibly long (%ld) q value\n",
+		 length);
+    }
+    b=safe_malloc(length,"rsapriv_apply");
+    if (fread(b,length,1,f)!=1) {
+	cfgfatal_maybefile(f,loc,"rsa-private",
+			   "error reading q value\n");
+    }
+    mpz_init(&st->q);
+    read_mpbin(&st->q,b,length);
+    free(b);
+    /* Read p (the larger of the two primes) */
+    length=(keyfile_get_short(loc,f)+7)/8;
+    if (length>1024) {
+	cfgfatal(loc,"rsa-private","implausibly long (%ld) p value\n",
+		 length);
+    }
+    b=safe_malloc(length,"rsapriv_apply");
+    if (fread(b,length,1,f)!=1) {
+	cfgfatal_maybefile(f,loc,"rsa-private",
+			   "error reading p value\n");
+    }
+    mpz_init(&st->p);
+    read_mpbin(&st->p,b,length);
     free(b);
     
     if (fclose(f)!=0) {
 	fatal_perror("rsa-private (%s:%d): fclose",loc.file,loc.line);
     }
 
-    /* Now do trial signature/check to make sure it's a real keypair:
-       sign the comment string! */
+    /*
+     * Now verify the validity of the key, and set up the auxiliary
+     * values for fast CRT signing.
+     */
     i=list_elem(args,1);
     if (i && i->type==t_bool && i->data.bool==False) {
 	Message(M_INFO,"rsa-private (%s:%d): skipping RSA key validity "
 		"check\n",loc.file,loc.line);
     } else {
-	mpz_init(&sig);
-	mpz_init(&plain);
-	mpz_init(&check);
-	read_mpbin(&plain,c,strlen(c));
-	mpz_powm(&sig, &plain, &st->d, &st->n);
-	mpz_powm(&check, &sig, &e, &st->n);
-	if (mpz_cmp(&plain,&check)!=0) {
+	int valid = 0;
+	mpz_init(&tmp);
+	mpz_init(&tmp2);
+	mpz_init(&tmp3);
+
+	/* Verify that p*q is equal to n. */
+	mpz_mul(&tmp, &st->p, &st->q);
+	if (mpz_cmp(&tmp, &st->n) != 0)
+	    goto done_checks;
+
+	/*
+	 * Verify that d*e is congruent to 1 mod (p-1), and mod
+	 * (q-1). This is equivalent to it being congruent to 1 mod
+	 * lcm(p-1,q-1), i.e. congruent to 1 mod phi(n). Note that
+	 * phi(n) is _not_ simply (p-1)*(q-1).
+	 */
+	mpz_mul(&tmp, &d, &e);
+	mpz_sub_ui(&tmp2, &st->p, 1);
+	mpz_mod(&tmp3, &tmp, &tmp2);
+	if (mpz_cmp_si(&tmp3, 1) != 0)
+	    goto done_checks;
+	mpz_sub_ui(&tmp2, &st->q, 1);
+	mpz_mod(&tmp3, &tmp, &tmp2);
+	if (mpz_cmp_si(&tmp3, 1) != 0)
+	    goto done_checks;
+
+	/* Verify that q*iqmp is congruent to 1 mod p. */
+	mpz_mul(&tmp, &st->q, &iqmp);
+	mpz_mod(&tmp2, &tmp, &st->p);
+	if (mpz_cmp_si(&tmp2, 1) != 0)
+	    goto done_checks;
+
+	/* Now we know the key is valid. */
+	valid = 1;
+
+	/*
+	 * Now we compute auxiliary values dp, dq and w to allow us
+	 * to use the CRT optimisation when signing.
+	 * 
+	 *   dp == d mod (p-1)      so that a^dp == a^d mod p, for all a
+	 *   dq == d mod (q-1)      similarly mod q
+	 *   w == iqmp * q          so that w == 0 mod q, and w == 1 mod p
+	 */
+	mpz_sub_ui(&tmp, &st->p, 1);
+	mpz_mod(&st->dp, &d, &tmp);
+	mpz_sub_ui(&tmp, &st->q, 1);
+	mpz_mod(&st->dq, &d, &tmp);
+	mpz_mul(&st->w, &iqmp, &st->q);
+
+	done_checks:
+	if (!valid) {
 	    cfgfatal(loc,"rsa-private","file \"%s\" does not contain a "
 		     "valid RSA key!\n",filename);
 	}
-	mpz_clear(&sig);
-	mpz_clear(&plain);
-	mpz_clear(&check);
+	mpz_clear(&tmp);
+	mpz_clear(&tmp2);
+	mpz_clear(&tmp3);
     }
 
     free(c);
     mpz_clear(&e);
+    mpz_clear(&d);
+    mpz_clear(&iqmp);
 
 assume_valid:
     return new_closure(&st->cl);

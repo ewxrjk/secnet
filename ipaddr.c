@@ -346,13 +346,13 @@ string_t subnet_to_string(struct subnet sn)
     return s;
 }
 
-static struct subnet string_item_to_subnet(item_t *i, string_t desc,
+static struct subnet string_item_to_subnet(item_t *i, cstring_t desc,
 					   bool_t *invert)
 {
     struct subnet s;
     uint32_t a, b, c, d, n;
     uint32_t match;
-    string_t in;
+    cstring_t in;
 
     *invert=False;
 
@@ -397,7 +397,7 @@ static struct subnet string_item_to_subnet(item_t *i, string_t desc,
     return s;
 }
 
-uint32_t string_item_to_ipaddr(item_t *i, string_t desc)
+uint32_t string_item_to_ipaddr(item_t *i, cstring_t desc)
 {
     uint32_t a, b, c, d;
     uint32_t match;
@@ -419,7 +419,7 @@ uint32_t string_item_to_ipaddr(item_t *i, string_t desc)
 }
 
 struct ipset *string_list_to_ipset(list_t *l, struct cloc loc,
-				   string_t module, string_t param)
+				   cstring_t module, cstring_t param)
 {
     struct ipset *r, *n, *isn;
     uint32_t e,i;

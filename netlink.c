@@ -935,7 +935,7 @@ static list_t *netlink_inst_apply(closure_t *self, struct cloc loc,
 
 netlink_deliver_fn *netlink_init(struct netlink *st,
 				 void *dst, struct cloc loc,
-				 dict_t *dict, string_t description,
+				 dict_t *dict, cstring_t description,
 				 netlink_route_fn *set_routes,
 				 netlink_deliver_fn *to_host)
 {

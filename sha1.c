@@ -319,7 +319,7 @@ void sha1_module(dict_t *dict)
 {
     struct sha1 *st;
     void *ctx;
-    string_t testinput="abcdbcdecdefdefgefghfghigh"
+    cstring_t testinput="abcdbcdecdefdefgefghfghigh"
 	"ijhijkijkljklmklmnlmnomnopnopq";
     uint8_t expected[20]=
     { 0x84,0x98,0x3e,0x44,

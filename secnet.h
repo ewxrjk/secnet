@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 
 typedef char *string_t;
+typedef const char *cstring_t;
 typedef enum {False,True} bool_t;
 
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
@@ -31,7 +32,7 @@ typedef struct list list_t;        /* A list of items */
 
 /* Configuration file location, for error-reporting */
 struct cloc {
-    string_t file;
+    cstring_t file;
     uint32_t line;
 };
 
@@ -41,7 +42,7 @@ struct cloc {
 typedef list_t *(apply_fn)(closure_t *self, struct cloc loc,
 			   dict_t *context, list_t *data);
 struct closure {
-    string_t description; /* For debugging */
+    cstring_t description; /* For debugging */
     uint32_t type; /* Central registry... */
     apply_fn *apply;
     void *interface; /* Interface for use inside secnet; depends on type */
@@ -69,13 +70,13 @@ struct list {
 
 /* In the following two lookup functions, NULL means 'not found' */
 /* Lookup a value in the specified dictionary, or its parents */
-extern list_t *dict_lookup(dict_t *dict, string_t key);
+extern list_t *dict_lookup(dict_t *dict, cstring_t key);
 /* Lookup a value in just the specified dictionary */
-extern list_t *dict_lookup_primitive(dict_t *dict, string_t key);
+extern list_t *dict_lookup_primitive(dict_t *dict, cstring_t key);
 /* Add a value to the specified dictionary */
-extern void dict_add(dict_t *dict, string_t key, list_t *val);
+extern void dict_add(dict_t *dict, cstring_t key, list_t *val);
 /* Obtain an array of keys in the dictionary. malloced; caller frees */
-extern string_t *dict_keys(dict_t *dict);
+extern cstring_t *dict_keys(dict_t *dict);
 
 /* List-manipulation functions */
 extern list_t *list_new(void);
@@ -87,35 +88,36 @@ extern item_t *list_elem(list_t *l, uint32_t index);
 
 /* Convenience functions */
 extern list_t *new_closure(closure_t *cl);
-extern void add_closure(dict_t *dict, string_t name, apply_fn apply);
-extern void *find_cl_if(dict_t *dict, string_t name, uint32_t type,
-			bool_t fail_if_invalid, string_t desc,
+extern void add_closure(dict_t *dict, cstring_t name, apply_fn apply);
+extern void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
+			bool_t fail_if_invalid, cstring_t desc,
 			struct cloc loc);
-extern item_t *dict_find_item(dict_t *dict, string_t key, bool_t required,
-			      string_t desc, struct cloc loc);
-extern string_t dict_read_string(dict_t *dict, string_t key, bool_t required,
-				 string_t desc, struct cloc loc);
-extern uint32_t dict_read_number(dict_t *dict, string_t key, bool_t required,
-				 string_t desc, struct cloc loc, uint32_t def);
-extern bool_t dict_read_bool(dict_t *dict, string_t key, bool_t required,
-			     string_t desc, struct cloc loc, bool_t def);
+extern item_t *dict_find_item(dict_t *dict, cstring_t key, bool_t required,
+			      cstring_t desc, struct cloc loc);
+extern string_t dict_read_string(dict_t *dict, cstring_t key, bool_t required,
+				 cstring_t desc, struct cloc loc);
+extern uint32_t dict_read_number(dict_t *dict, cstring_t key, bool_t required,
+				 cstring_t desc, struct cloc loc,
+				 uint32_t def);
+extern bool_t dict_read_bool(dict_t *dict, cstring_t key, bool_t required,
+			     cstring_t desc, struct cloc loc, bool_t def);
 struct flagstr {
-    string_t name;
+    cstring_t name;
     uint32_t value;
 };
-extern uint32_t string_to_word(string_t s, struct cloc loc,
-			       struct flagstr *f, string_t desc);
+extern uint32_t string_to_word(cstring_t s, struct cloc loc,
+			       struct flagstr *f, cstring_t desc);
 extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
-				    string_t desc);
+				    cstring_t desc);
 
 /***** END of configuration support *****/
 
 /***** UTILITY functions *****/
 
-extern char *safe_strdup(char *string, char *message);
-extern void *safe_malloc(size_t size, char *message);
+extern char *safe_strdup(const char *string, const char *message);
+extern void *safe_malloc(size_t size, const char *message);
 
-extern int sys_cmd(const char *file, char *argc, ...);
+extern int sys_cmd(const char *file, const char *argc, ...);
 
 /***** END of utility functions *****/
 
@@ -139,7 +141,7 @@ typedef void afterpoll_fn(void *st, struct pollfd *fds, int nfds,
    *nfds_io. */
 extern void register_for_poll(void *st, beforepoll_fn *before,
 			      afterpoll_fn *after, uint32_t max_nfds,
-			      string_t desc);
+			      cstring_t desc);
 
 /***** END of scheduling support */
 
@@ -170,7 +172,7 @@ extern void enter_phase(uint32_t new_phase);
    retain root privileges.  They should indicate that here when
    appropriate. */
 extern bool_t require_root_privileges;
-extern string_t require_root_privileges_explanation;
+extern cstring_t require_root_privileges_explanation;
 
 /***** END of program lifetime support *****/
 
@@ -212,7 +214,7 @@ struct buffer_if;
    order. */
 /* XXX extend to be able to provide multiple answers */
 typedef void resolve_answer_fn(void *st, struct in_addr *addr);
-typedef bool_t resolve_request_fn(void *st, string_t name,
+typedef bool_t resolve_request_fn(void *st, cstring_t name,
 				  resolve_answer_fn *cb, void *cst);
 struct resolver_if {
     void *st;
@@ -233,7 +235,7 @@ struct random_if {
 /* RSAPUBKEY interface */
 
 typedef bool_t rsa_checksig_fn(void *st, uint8_t *data, uint32_t datalen,
-			       string_t signature);
+			       cstring_t signature);
 struct rsapubkey_if {
     void *st;
     rsa_checksig_fn *check;
@@ -270,15 +272,16 @@ struct comm_if {
 
 /* LOG interface */
 
-typedef void log_msg_fn(void *st, int class, char *message, ...);
-typedef void log_vmsg_fn(void *st, int class, char *message, va_list args);
+typedef void log_msg_fn(void *st, int class, const char *message, ...);
+typedef void log_vmsg_fn(void *st, int class, const char *message,
+			 va_list args);
 struct log_if {
     void *st;
     log_msg_fn *log;
     log_vmsg_fn *vlog;
 };
 /* (convenience function, defined in util.c) */
-extern void log(struct log_if *lf, int class, char *message, ...)
+extern void log(struct log_if *lf, int class, const char *message, ...)
 FORMAT(printf,3,4);
 
 /* SITE interface */
@@ -311,7 +314,7 @@ typedef void transform_delkey_fn(void *st);
 typedef void transform_destroyinstance_fn(void *st);
 /* Returns 0 for 'all is well', any other value for a problem */
 typedef uint32_t transform_apply_fn(void *st, struct buffer_if *buf,
-				    char **errmsg);
+				    const char **errmsg);
 
 struct transform_inst_if {
     void *st;
@@ -369,7 +372,7 @@ typedef string_t dh_makepublic_fn(void *st, uint8_t *secret,
 				  uint32_t secretlen);
 /* Fills buffer (up to buflen) with shared secret */
 typedef void dh_makeshared_fn(void *st, uint8_t *secret,
-			      uint32_t secretlen, string_t rempublic,
+			      uint32_t secretlen, cstring_t rempublic,
 			      uint8_t *sharedsecret, uint32_t buflen);
 struct dh_if {
     void *st;
@@ -394,7 +397,7 @@ struct hash_if {
 
 struct buffer_if {
     bool_t free;
-    string_t owner; /* Set to constant string */
+    cstring_t owner; /* Set to constant string */
     uint32_t flags; /* How paranoid should we be? */
     struct cloc loc; /* Where we were defined */
     uint8_t *base;
@@ -416,22 +419,25 @@ struct buffer_if {
 #define M_FATAL	       0x100
 
 /* The fatal() family of functions require messages that do not end in '\n' */
-extern NORETURN(fatal(char *message, ...));
-extern NORETURN(fatal_perror(char *message, ...));
-extern NORETURN(fatal_status(int status, char *message, ...));
-extern NORETURN(fatal_perror_status(int status, char *message, ...));
+extern NORETURN(fatal(const char *message, ...));
+extern NORETURN(fatal_perror(const char *message, ...));
+extern NORETURN(fatal_status(int status, const char *message, ...));
+extern NORETURN(fatal_perror_status(int status, const char *message, ...));
 
 /* The cfgfatal() family of functions require messages that end in '\n' */
-extern NORETURN(cfgfatal(struct cloc loc, string_t facility, char *message,
-			 ...));
+extern NORETURN(cfgfatal(struct cloc loc, cstring_t facility,
+			 const char *message, ...));
 extern void cfgfile_postreadcheck(struct cloc loc, FILE *f);
 extern NORETURN(vcfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
-				    string_t facility, char *message,
+				    cstring_t facility, const char *message,
 				    va_list));
 extern NORETURN(cfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
-				   string_t facility, char *message, ...));
+				   cstring_t facility,
+				   const char *message, ...));
 
-extern void Message(uint32_t class, char *message, ...) FORMAT(printf,2,3);
+extern void Message(uint32_t class, const char *message, ...)
+    FORMAT(printf,2,3);
+extern void log_from_fd(int fd, cstring_t prefix, struct log_if *log);
 
 /***** END of log functions *****/
 

@@ -24,13 +24,13 @@ do{									\
 struct include_stack_item {
 	YY_BUFFER_STATE bst;
 	uint32_t lineno;
-	string_t file;
+	cstring_t file;
 };
 struct include_stack_item include_stack[MAX_INCLUDE_DEPTH];
 int include_stack_ptr=0;
 
 uint32_t config_lineno=0;
-string_t config_file="xxx";
+cstring_t config_file="xxx";
 
 static struct p_node *leafnode(uint32_t type)
 {
@@ -92,6 +92,14 @@ include			BEGIN(incl);
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 	BEGIN(INITIAL);
 	}
+<incl>\n		{ /* include with no filename */
+	Message(M_FATAL,"config file %s line %d: %s\n",config_file,
+		config_lineno,"``include'' requires a filename");
+	BEGIN(INITIAL);
+	++config_lineno;
+	++yynerrs;
+}
+
 <<EOF>>		{
 	if (--include_stack_ptr < 0) {
 		yyterminate();

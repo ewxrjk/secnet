@@ -106,7 +106,7 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 }
 
 static void slip_init(struct slip *st, struct cloc loc, dict_t *dict,
-		      string_t name, netlink_deliver_fn *to_host)
+		      cstring_t name, netlink_deliver_fn *to_host)
 {
     st->netlink_to_tunnel=
 	netlink_init(&st->nl,st,loc,dict,
@@ -124,9 +124,9 @@ struct userv {
     struct slip slip;
     int txfd; /* We transmit to userv */
     int rxfd; /* We receive from userv */
-    string_t userv_path;
-    string_t service_user;
-    string_t service_name;
+    cstring_t userv_path;
+    cstring_t service_user;
+    cstring_t service_name;
     pid_t pid;
     bool_t expecting_userv_exit;
 };
@@ -140,9 +140,9 @@ static int userv_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     if (st->rxfd!=-1) {
 	*nfds_io=2;
 	fds[0].fd=st->txfd;
-	fds[0].events=POLLERR; /* Might want to pick up POLLOUT sometime */
+	fds[0].events=0; /* Might want to pick up POLLOUT sometime */
 	fds[1].fd=st->rxfd;
-	fds[1].events=POLLIN|POLLERR|POLLHUP;
+	fds[1].events=POLLIN;
     } else {
 	*nfds_io=0;
     }
@@ -208,8 +208,8 @@ static void userv_userv_callback(void *sst, pid_t pid, int status)
 }
 
 struct userv_entry_rec {
-    string_t path;
-    char **argv;
+    cstring_t path;
+    const char **argv;
     int in;
     int out;
     /* XXX perhaps we should collect and log stderr? */
@@ -224,7 +224,9 @@ static void userv_entry(void *sst)
 
     /* XXX close all other fds */
     setsid();
-    execvp(st->path,st->argv);
+    /* XXX We really should strdup() all of argv[] but because we'll just
+       exit anyway if execvp() fails it doesn't seem worth bothering. */
+    execvp(st->path,(char *const*)st->argv);
     perror("userv-entry: execvp()");
     exit(1);
 }

@@ -90,7 +90,7 @@ static void transform_delkey(void *sst)
 }
 
 static uint32_t transform_forward(void *sst, struct buffer_if *buf,
-				  char **errmsg)
+				  const char **errmsg)
 {
     struct transform_inst *ti=sst;
     uint8_t *padp;
@@ -201,7 +201,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
 }
 
 static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
-				  char **errmsg)
+				  const char **errmsg)
 {
     struct transform_inst *ti=sst;
     uint8_t *padp;

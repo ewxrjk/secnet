@@ -6,7 +6,7 @@
 
 extern FILE *yyin;
 
-typedef string_t atom_t;
+typedef cstring_t atom_t;
 
 /* Parse tree for configuration file */
 
@@ -38,12 +38,13 @@ struct p_node {
 };
 
 extern int yylex(void);
-extern string_t config_file;
+extern cstring_t config_file;
 extern uint32_t config_lineno;
+extern int yynerrs;
 
 /* Keys in dictionaries are 'atoms', which are constructed from strings
    using this call. Atoms may be compared using '=='. */
-extern atom_t intern(string_t string);
+extern atom_t intern(cstring_t string);
 
 extern struct p_node *parse_conffile(FILE *conffile);
 

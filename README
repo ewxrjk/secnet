@@ -121,12 +121,6 @@ f is a dictionary:
 
 Note that f/g/e is NOT 4.
 
-In a future version of secnet it will also be permissible to list
-other dictionaries before a dictionary definition,
-eg. <defaults,otherdefaults>{definitions}.  These will be searched in
-order for keys, before the lexical parent.  (This is not yet
-implemented)
-
 Elements that are lists are inserted into lists in definitions, not
 referenced by them (i.e. you can't have lists of lists).
 
@@ -140,8 +134,8 @@ closure { definitions } is short for closure({definitions}).
 The main body of secnet, and all the additional modules, predefine
 some keys in the root dictionary.  The main ones are:
 
-  yes, true, True, TRUE:   the boolean value True
-  no, false, False, FALSE: the boolean value False
+  yes, true, True, TRUE, on:   the boolean value True
+  no, false, False, FALSE, off: the boolean value False
   makelist:   turns a dictionary (arg1) into a list of definitions
               (ignoring the keys)
   readfile:   reads a file (arg1) and returns it as a string

@@ -498,7 +498,7 @@ static dict_t *process_config(struct p_node *c)
 
 /***** Externally accessible functions */
 
-atom_t intern(string_t s)
+atom_t intern(cstring_t s)
 {
     struct atomlist *i;
 
@@ -516,22 +516,22 @@ atom_t intern(string_t s)
     return i->a;
 }
 
-list_t *dict_lookup(dict_t *dict, string_t key)
+list_t *dict_lookup(dict_t *dict, cstring_t key)
 {
     return dict_ilookup(dict, intern(key));
 }
 
-list_t *dict_lookup_primitive(dict_t *dict, string_t key)
+list_t *dict_lookup_primitive(dict_t *dict, cstring_t key)
 {
     return dict_ilookup_primitive(dict, intern(key));
 }
 
-void dict_add(dict_t *dict, string_t key, list_t *val)
+void dict_add(dict_t *dict, cstring_t key, list_t *val)
 {
     dict_iadd(dict,intern(key),val);
 }
 
-string_t *dict_keys(dict_t *dict)
+cstring_t *dict_keys(dict_t *dict)
 {
     atom_t *r, *j;
     struct entry *i;
@@ -614,7 +614,7 @@ list_t *new_closure(closure_t *cl)
     return list_append(NULL,i);
 }
 
-void add_closure(dict_t *dict, string_t name, apply_fn apply)
+void add_closure(dict_t *dict, cstring_t name, apply_fn apply)
 {
     closure_t *c;
     c=safe_malloc(sizeof(*c),"add_closure");
@@ -625,8 +625,8 @@ void add_closure(dict_t *dict, string_t name, apply_fn apply)
     dict_add(dict,name,new_closure(c));
 }
 
-void *find_cl_if(dict_t *dict, string_t name, uint32_t type,
-		 bool_t fail_if_invalid, string_t desc, struct cloc loc)
+void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
+		 bool_t fail_if_invalid, cstring_t desc, struct cloc loc)
 {
     list_t *l;
     item_t *i;
@@ -651,8 +651,8 @@ void *find_cl_if(dict_t *dict, string_t name, uint32_t type,
 }
 
 /* Convenience functions for modules reading configuration dictionaries */
-item_t *dict_find_item(dict_t *dict, string_t key, bool_t required,
-		       string_t desc, struct cloc loc)
+item_t *dict_find_item(dict_t *dict, cstring_t key, bool_t required,
+		       cstring_t desc, struct cloc loc)
 {
     list_t *l;
     item_t *i;
@@ -666,8 +666,8 @@ item_t *dict_find_item(dict_t *dict, string_t key, bool_t required,
     return i;
 }
 
-string_t dict_read_string(dict_t *dict, string_t key, bool_t required,
-			  string_t desc, struct cloc loc)
+string_t dict_read_string(dict_t *dict, cstring_t key, bool_t required,
+			  cstring_t desc, struct cloc loc)
 {
     item_t *i;
     string_t r;
@@ -681,8 +681,8 @@ string_t dict_read_string(dict_t *dict, string_t key, bool_t required,
     return r;
 }
 
-uint32_t dict_read_number(dict_t *dict, string_t key, bool_t required,
-			  string_t desc, struct cloc loc, uint32_t def)
+uint32_t dict_read_number(dict_t *dict, cstring_t key, bool_t required,
+			  cstring_t desc, struct cloc loc, uint32_t def)
 {
     item_t *i;
     uint32_t r;
@@ -696,8 +696,8 @@ uint32_t dict_read_number(dict_t *dict, string_t key, bool_t required,
     return r;
 }
 
-bool_t dict_read_bool(dict_t *dict, string_t key, bool_t required,
-		      string_t desc, struct cloc loc, bool_t def)
+bool_t dict_read_bool(dict_t *dict, cstring_t key, bool_t required,
+		      cstring_t desc, struct cloc loc, bool_t def)
 {
     item_t *i;
     bool_t r;
@@ -711,8 +711,8 @@ bool_t dict_read_bool(dict_t *dict, string_t key, bool_t required,
     return r;
 }
 
-uint32_t string_to_word(string_t s, struct cloc loc,
-			struct flagstr *f, string_t desc)
+uint32_t string_to_word(cstring_t s, struct cloc loc,
+			struct flagstr *f, cstring_t desc)
 {
     struct flagstr *j;
     for (j=f; j->name; j++)
@@ -722,7 +722,7 @@ uint32_t string_to_word(string_t s, struct cloc loc,
     return 0;
 }
 
-uint32_t string_list_to_word(list_t *l, struct flagstr *f, string_t desc)
+uint32_t string_list_to_word(list_t *l, struct flagstr *f, cstring_t desc)
 {
     list_t *i;
     uint32_t r=0;
@@ -739,7 +739,7 @@ uint32_t string_list_to_word(list_t *l, struct flagstr *f, string_t desc)
     return r;
 }
 
-dict_t *read_conffile(char *name)
+dict_t *read_conffile(const char *name)
 {
     FILE *conffile;
     struct p_node *config;

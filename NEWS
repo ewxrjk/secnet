@@ -18,6 +18,18 @@ etc.
 
 See also file "TODO".
 
+* New in version 0.1.15
+
+Now terminates with an error when an "include" filename is not
+specified in the configuration file (thanks to RJK).
+
+RSA private key operations optimised using CRT. Thanks to SGT.
+
+Now compiles cleanly with -Wwrite-strings turned on in gcc.
+
+Anything sent to stderr once secnet has started running in the
+background is now redirected to the system/log facility.
+
 * New in version 0.1.14
 
 The --help and --version options now send their output to stdout.

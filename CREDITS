@@ -7,3 +7,5 @@ Cendio Systems AB - ipaddr.py
 Mark Martinec <mark.martinec@ijs.si> - portable snprintf
 
 Simon Tatham, Jonathan Amery, Ian Jackson - testing and debugging
+Simon Tatham - RSA signatures using Chinese Remainder Theorem
+Richard Kettlewell - assorted bugfixes

@@ -15,15 +15,15 @@ extern char version[];
 #include "process.h"
 
 /* XXX should be from autoconf */
-static char *configfile="/etc/secnet/secnet.conf";
-static char *sites_key="sites";
+static const char *configfile="/etc/secnet/secnet.conf";
+static const char *sites_key="sites";
 bool_t just_check_config=False;
 static char *userid=NULL;
 static uid_t uid=0;
 bool_t background=True;
 static char *pidfile=NULL;
 bool_t require_root_privileges=False;
-string_t require_root_privileges_explanation=NULL;
+cstring_t require_root_privileges_explanation=NULL;
 
 static pid_t secnet_pid;
 
@@ -42,7 +42,7 @@ struct poll_interest {
     void *state;
     uint32_t max_nfds;
     uint32_t nfds;
-    string_t desc;
+    cstring_t desc;
     struct poll_interest *next;
 };
 static struct poll_interest *reg=NULL;
@@ -229,7 +229,7 @@ static void setup(dict_t *config)
 }
 
 void register_for_poll(void *st, beforepoll_fn *before,
-		       afterpoll_fn *after, uint32_t max_nfds, string_t desc)
+		       afterpoll_fn *after, uint32_t max_nfds, cstring_t desc)
 {
     struct poll_interest *i;
 
@@ -315,6 +315,7 @@ static void droppriv(void)
 {
     FILE *pf=NULL;
     pid_t p;
+    int errfds[2];
 
     add_hook(PHASE_SHUTDOWN,system_phase_hook,NULL);
 
@@ -349,15 +350,20 @@ static void droppriv(void)
 	} else if (p==0) {
 	    /* Child process - all done, just carry on */
 	    if (pf) fclose(pf);
-	    /* Close stdin, stdout and stderr; we don't need them any more */
-	    /* XXX we must leave stderr pointing to something useful -
-               a pipe to a log destination, for example, or just leave
-               it alone. */
+	    /* Close stdin and stdout; we don't need them any more.
+               stderr is redirected to the system/log facility */
+	    if (pipe(errfds)!=0) {
+		fatal_perror("can't create pipe for stderr");
+	    }
 	    close(0);
 	    close(1);
-	    /* XXX close(2); */
+	    close(2);
+	    dup2(errfds[1],0);
+	    dup2(errfds[1],1);
+	    dup2(errfds[1],2);
 	    secnet_is_daemon=True;
 	    setsid();
+	    log_from_fd(errfds[0],"stderr",system_log);
 	} else {
 	    /* Error */
 	    fatal_perror("cannot fork");
@@ -404,8 +410,9 @@ int main(int argc, char **argv)
     droppriv();
 
     start_signal_handling();
-    request_signal_notification(SIGTERM,finish,"SIGTERM");
-    if (!background) request_signal_notification(SIGINT,finish,"SIGINT");
+    request_signal_notification(SIGTERM,finish,safe_strdup("SIGTERM","run"));
+    if (!background) request_signal_notification(SIGINT,finish,
+						 safe_strdup("SIGINT","run"));
     request_signal_notification(SIGHUP,ignore_hup,NULL);
     enter_phase(PHASE_RUN);
     run();

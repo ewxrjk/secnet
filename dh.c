@@ -31,8 +31,9 @@ static string_t dh_makepublic(void *sst, uint8_t *secret, uint32_t secretlen)
     return r;
 }
 
+static dh_makeshared_fn dh_makeshared;
 static void dh_makeshared(void *sst, uint8_t *secret, uint32_t secretlen,
-			  string_t rempublic, uint8_t *sharedsecret,
+			  cstring_t rempublic, uint8_t *sharedsecret,
 			  uint32_t buflen)
 {
     struct dh *st=sst;

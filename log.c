@@ -6,13 +6,14 @@
 #include <errno.h>
 #include <syslog.h>
 #include <assert.h>
+#include <unistd.h>
 #include "process.h"
 
 bool_t secnet_is_daemon=False;
 uint32_t message_level=M_WARNING|M_ERR|M_SECURITY|M_FATAL;
 struct log_if *system_log=NULL;
 
-static void vMessage(uint32_t class, char *message, va_list args)
+static void vMessage(uint32_t class, const char *message, va_list args)
 {
     FILE *dest=stdout;
 #define MESSAGE_BUFLEN 1023
@@ -41,7 +42,7 @@ static void vMessage(uint32_t class, char *message, va_list args)
     }
 }  
 
-void Message(uint32_t class, char *message, ...)
+void Message(uint32_t class, const char *message, ...)
 {
     va_list ap;
 
@@ -50,10 +51,11 @@ void Message(uint32_t class, char *message, ...)
     va_end(ap);
 }
 
-static NORETURN(vfatal(int status, bool_t perror, char *message,
+static NORETURN(vfatal(int status, bool_t perror, const char *message,
 		       va_list args));
 
-static void vfatal(int status, bool_t perror, char *message, va_list args)
+static void vfatal(int status, bool_t perror, const char *message,
+		   va_list args)
 {
     int err;
 
@@ -69,7 +71,7 @@ static void vfatal(int status, bool_t perror, char *message, va_list args)
     exit(status);
 }
 
-void fatal(char *message, ...)
+void fatal(const char *message, ...)
 {
     va_list args;
     va_start(args,message);
@@ -77,7 +79,7 @@ void fatal(char *message, ...)
     va_end(args);
 }
 
-void fatal_status(int status, char *message, ...)
+void fatal_status(int status, const char *message, ...)
 {
     va_list args;
     va_start(args,message);
@@ -85,7 +87,7 @@ void fatal_status(int status, char *message, ...)
     va_end(args);
 }
 
-void fatal_perror(char *message, ...)
+void fatal_perror(const char *message, ...)
 {
     va_list args;
     va_start(args,message);
@@ -93,7 +95,7 @@ void fatal_perror(char *message, ...)
     va_end(args);
 }
 
-void fatal_perror_status(int status, char *message, ...)
+void fatal_perror_status(int status, const char *message, ...)
 {
     va_list args;
     va_start(args,message);
@@ -102,7 +104,7 @@ void fatal_perror_status(int status, char *message, ...)
 }
 
 void vcfgfatal_maybefile(FILE *maybe_f /* or 0 */, struct cloc loc,
-			 string_t facility, char *message, va_list args)
+			 cstring_t facility, const char *message, va_list args)
 {
     enter_phase(PHASE_SHUTDOWN);
 
@@ -127,8 +129,8 @@ void vcfgfatal_maybefile(FILE *maybe_f /* or 0 */, struct cloc loc,
     exit(current_phase);
 }
 
-void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, string_t facility,
-			char *message, ...)
+void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, cstring_t facility,
+			const char *message, ...)
 {
     va_list args;
 
@@ -137,7 +139,7 @@ void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, string_t facility,
     va_end(args);
 }    
 
-void cfgfatal(struct cloc loc, string_t facility, char *message, ...)
+void cfgfatal(struct cloc loc, cstring_t facility, const char *message, ...)
 {
     va_list args;
 
@@ -165,7 +167,7 @@ struct loglist {
     struct loglist *next;
 };
 
-static void log_vmulti(void *sst, int class, char *message, va_list args)
+static void log_vmulti(void *sst, int class, const char *message, va_list args)
 {
     struct loglist *st=sst, *i;
 
@@ -179,7 +181,7 @@ static void log_vmulti(void *sst, int class, char *message, va_list args)
     }
 }
 
-static void log_multi(void *st, int priority, char *message, ...)
+static void log_multi(void *st, int priority, const char *message, ...)
 {
     va_list ap;
 
@@ -236,16 +238,17 @@ struct logfile {
     FILE *f;
 };
 
-static string_t months[]={
+static cstring_t months[]={
     "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
 
-static void logfile_vlog(void *sst, int class, char *message, va_list args)
+static void logfile_vlog(void *sst, int class, const char *message,
+			 va_list args)
 {
     struct logfile *st=sst;
     time_t t;
     struct tm *tm;
 
-    if (secnet_is_daemon) {
+    if (secnet_is_daemon && st->f) {
 	if (class&st->level) {
 	    t=time(NULL);
 	    tm=localtime(&t);
@@ -262,12 +265,12 @@ static void logfile_vlog(void *sst, int class, char *message, va_list args)
     }
 }
 
-static void logfile_log(void *state, int priority, char *message, ...)
+static void logfile_log(void *state, int class, const char *message, ...)
 {
     va_list ap;
 
     va_start(ap,message);
-    logfile_vlog(state,priority,message,ap);
+    logfile_vlog(state,class,message,ap);
     va_end(ap);
 }
 
@@ -337,7 +340,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.log=logfile_log;
     st->ops.vlog=logfile_vlog;
     st->loc=loc;
-    st->f=stderr;
+    st->f=NULL;
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict) {
@@ -378,7 +381,7 @@ static int msgclass_to_syslogpriority(uint32_t m)
     }
 }
     
-static void syslog_vlog(void *sst, int class, char *message,
+static void syslog_vlog(void *sst, int class, const char *message,
 			 va_list args)
 {
     struct syslog *st=sst;
@@ -391,7 +394,7 @@ static void syslog_vlog(void *sst, int class, char *message,
     }
 }
 
-static void syslog_log(void *sst, int priority, char *message, ...)
+static void syslog_log(void *sst, int priority, const char *message, ...)
 {
     va_list ap;
 
@@ -468,6 +471,88 @@ static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     return new_closure(&st->cl);
 }    
+
+/* Read from a fd and output to a log.  This is a quick hack to
+   support logging stderr, and needs code adding to tidy up before it
+   can be used for anything else. */
+#define FDLOG_BUFSIZE 1024
+struct fdlog {
+    struct log_if *log;
+    int fd;
+    cstring_t prefix;
+    string_t buffer;
+    int i;
+    bool_t finished;
+};
+
+static int log_from_fd_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
+				  int *timeout_io,
+				  const struct timeval *tv_now, uint64_t *now)
+{
+    struct fdlog *st=sst;
+    if (!st->finished) {
+	*nfds_io=1;
+	fds[0].fd=st->fd;
+	fds[0].events=POLLIN;
+    }
+    return 0;
+}
+
+static void log_from_fd_afterpoll(void *sst, struct pollfd *fds, int nfds,
+				  const struct timeval *tv_now, uint64_t *now)
+{
+    struct fdlog *st=sst;
+    int r,remain,i;
+
+    if (nfds==0) return;
+    if (fds[0].revents&POLLERR) {
+	st->finished=True;
+    }
+    if (fds[0].revents&POLLIN) {
+	remain=FDLOG_BUFSIZE-st->i-1;
+	if (remain<=0) {
+	    st->buffer[FDLOG_BUFSIZE-1]=0;
+	    st->log->log(st->log,M_WARNING,"%s: overlong line: %s",
+			 st->prefix,st->buffer);
+	    st->i=0;
+	    remain=FDLOG_BUFSIZE-1;
+	}
+	r=read(st->fd,st->buffer+st->i,remain);
+	if (r>0) {
+	    st->i+=r;
+	    for (i=0; i<st->i; i++) {
+		if (st->buffer[i]=='\n') {
+		    st->buffer[i]=0;
+		    st->log->log(st->log->st,M_INFO,"%s: %s",
+				 st->prefix,st->buffer);
+		    i++;
+		    memmove(st->buffer,st->buffer+i,st->i-i);
+		    st->i-=i;
+		    i=-1;
+		}
+	    }
+	} else {
+	    Message(M_WARNING,"log_from_fd: %s\n",strerror(errno));
+	    st->finished=True;
+	}
+    }
+}
+		
+void log_from_fd(int fd, cstring_t prefix, struct log_if *log)
+{
+    struct fdlog *st;
+
+    st=safe_malloc(sizeof(*st),"log_from_fd");
+    st->log=log;
+    st->fd=fd;
+    st->prefix=prefix;
+    st->buffer=safe_malloc(FDLOG_BUFSIZE,"log_from_fd");
+    st->i=0;
+    st->finished=False;
+
+    register_for_poll(st,log_from_fd_beforepoll,log_from_fd_afterpoll,1,
+		      prefix);
+}
 
 init_module log_module;
 void log_module(dict_t *dict)

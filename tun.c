@@ -68,12 +68,12 @@ static struct flagstr config_types[]={
 struct tun {
     struct netlink nl;
     int fd;
-    string_t device_path;
-    string_t ip_path;
+    cstring_t device_path;
+    cstring_t ip_path;
     string_t interface_name;
-    string_t ifconfig_path;
+    cstring_t ifconfig_path;
     uint32_t ifconfig_type;
-    string_t route_path;
+    cstring_t route_path;
     uint32_t route_type;
     uint32_t tun_flavour;
     bool_t search_for_if; /* Applies to tun-BSD only */
@@ -83,7 +83,7 @@ struct tun {
     uint32_t local_address; /* host interface address */
 };
 
-static string_t tun_flavour_str(uint32_t flavour)
+static cstring_t tun_flavour_str(uint32_t flavour)
 {
     switch (flavour) {
     case TUN_FLAVOUR_GUESS: return "guess";
@@ -101,7 +101,7 @@ static int tun_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     struct tun *st=sst;
     *nfds_io=1;
     fds[0].fd=st->fd;
-    fds[0].events=POLLIN|POLLERR|POLLHUP;
+    fds[0].events=POLLIN;
     return 0;
 }
 
@@ -336,7 +336,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
     snprintf(mtu,6,"%d",st->nl.mtu);
     mtu[5]=0;
 
-    switch (st->route_type) {
+    switch (st->ifconfig_type) {
     case TUN_CONFIG_LINUX:
 	sys_cmd(st->ifconfig_path,"ifconfig",st->interface_name,
 		hostaddr,"netmask","255.255.255.255","-broadcast",

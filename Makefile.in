@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.14
+VERSION:=0.1.15
 
 @SET_MAKE@
 
@@ -31,7 +31,8 @@ CC:=@CC@
 INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 
-CFLAGS:=@CFLAGS@ @DEFS@ -Wall -I$(srcdir) -I.
+CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@
+ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS)
 LDFLAGS:=@LDFLAGS@
 LDLIBS:=@LIBS@
 
@@ -75,6 +76,8 @@ DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 %.tab.c:	%.y
 	bison -d -o $@ $<
 
+%.o: %.c
+	$(CC) $(CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
 
 all:	$(TARGETS)
 
@@ -106,7 +109,7 @@ DEPENDS:=$(OBJECTS:.o=.d)
 $(DEPENDS): ${srcdir}/depend.sh
 
 %.d: %.c
-	${srcdir}/depend.sh $(srcdir) $(CFLAGS) $< > $@
+	${srcdir}/depend.sh $(srcdir) $(ALL_CFLAGS) $< > $@
 
 -include $(DEPENDS)
 
@@ -116,6 +119,7 @@ conffile.tab.c:	conffile.y
 # End of manual dependencies section
 
 secnet:	$(OBJECTS)
+	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
 
 version.c: Makefile
 	echo "char version[]=\"secnet $(VERSION)\";" >version.c
@@ -141,6 +145,6 @@ dist:
 	$(RM) -rf $(pfname)
 	mkdir $(pfname)
 	for i in $(DISTFILES) ; do ln -s ../$(srcdir)/$$i $(pfname)/ ; done
-	tar hcf ../$(pfname).tar $(pfname)
+	tar hcf ../$(pfname).tar --exclude=CVS --exclude=.cvsignore $(pfname)
 	gzip -9f ../$(pfname).tar
 	$(RM) -rf $(pfname)

@@ -211,7 +211,8 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 	if (c==0) {
 	    char *argv[4];
 	    argv[0]=st->authbind;
-	    argv[1]="00000000";
+	    argv[1]=strdup("00000000");
+	    if (!argv[1]) exit(ENOMEM);
 	    argv[2]=alloca(8);
 	    if (!argv[2]) exit(ENOMEM);
 	    sprintf(argv[2],"%04X",htons(st->port));
