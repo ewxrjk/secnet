@@ -317,19 +317,25 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     /* Now do trial signature/check to make sure it's a real keypair:
        sign the comment string! */
-    mpz_init(&sig);
-    mpz_init(&plain);
-    mpz_init(&check);
-    read_mpbin(&plain,c,strlen(c));
-    mpz_powm(&sig, &plain, &st->d, &st->n);
-    mpz_powm(&check, &sig, &e, &st->n);
-    if (mpz_cmp(&plain,&check)!=0) {
-	cfgfatal(loc,"rsa-private","file \"%s\" does not contain a "
-		 "valid RSA key!\n",filename);
+    i=list_elem(args,1);
+    if (i && i->type==t_bool && i->data.bool==False) {
+	Message(M_INFO,"rsa-private (%s:%d): skipping RSA key validity "
+		"check\n",loc.file,loc.line);
+    } else {
+	mpz_init(&sig);
+	mpz_init(&plain);
+	mpz_init(&check);
+	read_mpbin(&plain,c,strlen(c));
+	mpz_powm(&sig, &plain, &st->d, &st->n);
+	mpz_powm(&check, &sig, &e, &st->n);
+	if (mpz_cmp(&plain,&check)!=0) {
+	    cfgfatal(loc,"rsa-private","file \"%s\" does not contain a "
+		     "valid RSA key!\n",filename);
+	}
+	mpz_clear(&sig);
+	mpz_clear(&plain);
+	mpz_clear(&check);
     }
-    mpz_clear(&sig);
-    mpz_clear(&plain);
-    mpz_clear(&check);
 
     free(c);
     mpz_clear(&e);

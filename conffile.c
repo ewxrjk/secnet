@@ -681,6 +681,7 @@ static struct subnet string_to_subnet(item_t *i, string_t desc)
     }
     s.prefix=(a<<24)|(b<<16)|(c<<8)|(d);
     s.mask=(~0UL << (32-n));
+    s.len=n;
     if (s.prefix & ~s.mask) {
 	cfgfatal(i->loc,desc,"\"%s\": prefix not fully contained "
 		 "in mask\n",i->data.string);

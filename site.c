@@ -704,7 +704,7 @@ static void enter_state_run(struct site *st)
     slog(st,LOG_STATE,"entering state RUN");
     st->state=SITE_RUN;
     st->timeout=0;
-    st->netlink->set_delivery(st->netlink->st,st->netlink_cid,True);
+    st->netlink->set_quality(st->netlink->st,st->netlink_cid,LINK_QUALITY_UP);
     /* XXX get rid of key setup data */
 }
 
@@ -821,7 +821,8 @@ static void enter_state_wait(struct site *st)
     st->timeout=st->now+st->wait_timeout;
     st->state=SITE_WAIT;
     st->peer_valid=False;
-    st->netlink->set_delivery(st->netlink->st,st->netlink_cid,False);
+    st->netlink->set_quality(st->netlink->st,st->netlink_cid,
+			     LINK_QUALITY_DOWN);
     BUF_FREE(&st->buffer); /* will have had an outgoing packet in it */
     /* XXX Erase keys etc. */
 }
@@ -892,13 +893,15 @@ static void site_outgoing(void *sst, void *cid, struct buffer_if *buf)
        a valid key and a valid address to send it to. */
     if (st->current_valid && st->peer_valid) {
 	/* Transform it and send it */
-	buf_prepend_uint32(buf,LABEL_MSG9);
-	st->current_transform->forwards(st->current_transform->st,
-					buf, &transform_err);
-	buf_prepend_uint32(buf,LABEL_MSG0);
-	buf_prepend_uint32(buf,(uint32_t)st);
-	buf_prepend_uint32(buf,st->remote_session_id);
-	st->comm->sendmsg(st->comm->st,buf,&st->peer);
+	if (buf->size>0) {
+	    buf_prepend_uint32(buf,LABEL_MSG9);
+	    st->current_transform->forwards(st->current_transform->st,
+					    buf, &transform_err);
+	    buf_prepend_uint32(buf,LABEL_MSG0);
+	    buf_prepend_uint32(buf,(uint32_t)st);
+	    buf_prepend_uint32(buf,st->remote_session_id);
+	    st->comm->sendmsg(st->comm->st,buf,&st->peer);
+	}
 	BUF_FREE(buf);
 	return;
     }
@@ -912,7 +915,7 @@ static void site_outgoing(void *sst, void *cid, struct buffer_if *buf)
 
     /* Otherwise we're in the middle of key setup or a wait - just
        throw the outgoing packet away */
-    slog(st,LOG_DROP,"discarding outgoing packet");
+    slog(st,LOG_DROP,"discarding outgoing packet of size %d",buf->size);
     BUF_FREE(buf);
     return;
 }
@@ -1169,6 +1172,11 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 					 st->transform->max_start_pad+(4*4),
 					 st->transform->max_end_pad,
 					 st->tunname);
+    if (!st->netlink_cid) {
+	fatal("%s: netlink device did not let us register our remote "
+	      "networks. Check that they are not local or excluded.\n",
+	      st->tunname);
+    }
 
     st->comm->request_notify(st->comm->st, st, site_incoming);
 

@@ -48,8 +48,13 @@ struct netlink_client {
     netlink_deliver_fn *deliver;
     void *dst;
     string_t name;
-    bool_t can_deliver;
+    uint32_t link_quality;
     struct netlink_client *next;
+};
+
+struct netlink_route {
+    struct subnet net;
+    struct netlink_client *c;
 };
 
 /* Netlink provides one function to the device driver, to call to deliver
@@ -71,6 +76,8 @@ struct netlink {
     struct netlink_client *clients;
     netlink_deliver_fn *deliver_to_host; /* Provided by driver */
     struct buffer_if icmp; /* Buffer for assembly of outgoing ICMP */
+    uint32_t n_routes; /* How many routes do we know about? */
+    struct netlink_route *routes;
 };
 
 /* Generic IP checksum routine */
@@ -174,7 +181,9 @@ struct icmphdr {
     } d;
 };
     
-static void netlink_packet_deliver(struct netlink *st, struct buffer_if *buf);
+static void netlink_packet_deliver(struct netlink *st,
+				   struct netlink_client *client,
+				   struct buffer_if *buf);
 
 static struct icmphdr *netlink_icmp_tmpl(struct netlink *st,
 					 uint32_t dest,uint16_t len)
@@ -264,7 +273,10 @@ static uint16_t netlink_icmp_reply_len(struct buffer_if *buf)
     return (hlen>plen?plen:hlen);
 }
 
+/* client indicates where the packet we're constructing a response to
+   comes from. NULL indicates the host. */
 static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
+				struct netlink_client *client,
 				uint8_t type, uint8_t code)
 {
     struct iphdr *iph=(struct iphdr *)buf->start;
@@ -277,7 +289,7 @@ static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
 	h->type=type; h->code=code;
 	memcpy(buf_append(&st->icmp,len),buf->start,len);
 	netlink_icmp_csum(h);
-	netlink_packet_deliver(st,&st->icmp);
+	netlink_packet_deliver(st,NULL,&st->icmp);
 	BUF_ASSERT_FREE(&st->icmp);
     }
 }
@@ -321,11 +333,19 @@ static bool_t netlink_check(struct netlink *st, struct buffer_if *buf)
     return True;
 }
 
-static void netlink_packet_deliver(struct netlink *st, struct buffer_if *buf)
+/* Deliver a packet. "client" points to the _origin_ of the packet, not
+   its destination. (May be used when sending ICMP response - avoid
+   asymmetric routing.) */
+static void netlink_packet_deliver(struct netlink *st,
+				   struct netlink_client *client,
+				   struct buffer_if *buf)
 {
     struct iphdr *iph=(struct iphdr *)buf->start;
     uint32_t dest=ntohl(iph->daddr);
-    struct netlink_client *c;
+    uint32_t source=ntohl(iph->saddr);
+    uint32_t best_quality;
+    int best_match;
+    int i;
 
     BUF_ASSERT_USED(buf);
 
@@ -335,30 +355,69 @@ static void netlink_packet_deliver(struct netlink *st, struct buffer_if *buf)
 	return;
     }
     
-    for (c=st->clients; c; c=c->next) {
-	if (subnet_match(c->networks,dest)) {
-	    if (c->can_deliver) {
-		c->deliver(c->dst,c,buf);
+    if (!client) {
+	/* Origin of packet is host or secnet. Might be for a tunnel. */
+	best_quality=0;
+	best_match=-1;
+	for (i=0; i<st->n_routes; i++) {
+	    if (subnet_match(&st->routes[i].net,dest)) {
+		if (st->routes[i].c->link_quality>best_quality
+		    || best_quality==0) {
+		    best_quality=st->routes[i].c->link_quality;
+		    best_match=i;
+		    /* If quality isn't perfect we may wish to
+		       consider kicking the tunnel with a 0-length
+		       packet to prompt it to perform a key setup.
+		       Then it'll eventually decide it's up or
+		       down. */
+		    /* If quality is perfect we don't need to search
+                       any more. */
+		    if (best_quality>=MAXIMUM_LINK_QUALITY) break;
+		}
+	    }
+	}
+	if (best_match==-1) {
+	    /* Not going down a tunnel. Might be for the host. 
+	       XXX think about this - only situation should be if we're
+	       sending ICMP. */
+	    if (source!=st->secnet_address) {
+		Message(M_ERROR,"netlink_packet_deliver: outgoing packet "
+			"from host that won't fit down any of our tunnels!\n");
+		BUF_FREE(buf);
+	    } else {
+		st->deliver_to_host(st->dst,NULL,buf);
+		BUF_ASSERT_FREE(buf);
+	    }
+	} else {
+	    if (best_quality>0) {
+		st->routes[best_match].c->deliver(
+		    st->routes[best_match].c->dst,
+		    st->routes[best_match].c, buf);
 		BUF_ASSERT_FREE(buf);
 	    } else {
 		/* Generate ICMP destination unreachable */
-		netlink_icmp_simple(st,buf,3,0);
+		netlink_icmp_simple(st,buf,client,3,0); /* client==NULL */
 		BUF_FREE(buf);
 	    }
-	    return;
+	}
+    } else { /* client is set */
+	/* We know the origin is a tunnel - packet must be for the host */
+	if (subnet_matches_list(&st->networks,dest)) {
+	    st->deliver_to_host(st->dst,NULL,buf);
+	    BUF_ASSERT_FREE(buf);
+	} else {
+	    Message(M_ERROR,"%s: packet from tunnel %s can't be delivered "
+		    "to the host\n",st->name,client->name);
+	    netlink_icmp_simple(st,buf,client,3,0);
+	    BUF_FREE(buf);
 	}
     }
-    if (subnet_match(&st->networks,dest)) {
-	st->deliver_to_host(st->dst,NULL,buf);
-	BUF_ASSERT_FREE(buf);
-	return;
-    }
-    Message(M_ERROR,"%s: failed to deliver a packet (bad destination address)"
-	    "\nXXX make this message clearer\n");
-    BUF_FREE(buf);
+    BUF_ASSERT_FREE(buf);
 }
 
-static void netlink_packet_forward(struct netlink *st, struct buffer_if *buf)
+static void netlink_packet_forward(struct netlink *st, 
+				   struct netlink_client *client,
+				   struct buffer_if *buf)
 {
     struct iphdr *iph=(struct iphdr *)buf->start;
     
@@ -367,7 +426,7 @@ static void netlink_packet_forward(struct netlink *st, struct buffer_if *buf)
     /* Packet has already been checked */
     if (iph->ttl<=1) {
 	/* Generate ICMP time exceeded */
-	netlink_icmp_simple(st,buf,11,0);
+	netlink_icmp_simple(st,buf,client,11,0);
 	BUF_FREE(buf);
 	return;
     }
@@ -375,13 +434,15 @@ static void netlink_packet_forward(struct netlink *st, struct buffer_if *buf)
     iph->check=0;
     iph->check=ip_fast_csum((uint8_t *)iph,iph->ihl);
 
-    netlink_packet_deliver(st,buf);
+    netlink_packet_deliver(st,client,buf);
     BUF_ASSERT_FREE(buf);
 }
 
 /* Someone has been foolish enough to address a packet to us. I
    suppose we should reply to it, just to be polite. */
-static void netlink_packet_local(struct netlink *st, struct buffer_if *buf)
+static void netlink_packet_local(struct netlink *st,
+				 struct netlink_client *client,
+				 struct buffer_if *buf)
 {
     struct icmphdr *h;
 
@@ -405,13 +466,13 @@ static void netlink_packet_local(struct netlink *st, struct buffer_if *buf)
 	    h->iph.check=0;
 	    h->iph.check=ip_fast_csum((uint8_t *)h,h->iph.ihl);
 	    netlink_icmp_csum(h);
-	    netlink_packet_deliver(st,buf);
+	    netlink_packet_deliver(st,NULL,buf);
 	    return;
 	}
 	Message(M_WARNING,"%s: unknown incoming ICMP\n",st->name);
     } else {
 	/* Send ICMP protocol unreachable */
-	netlink_icmp_simple(st,buf,3,2);
+	netlink_icmp_simple(st,buf,client,3,2);
 	BUF_FREE(buf);
 	return;
     }
@@ -441,8 +502,8 @@ static void netlink_from_tunnel(void *sst, void *cst, struct buffer_if *buf)
     dest=ntohl(iph->daddr);
 
     /* Check that the packet source is in 'nets' and its destination is
-       in client->networks */
-    if (!subnet_match(client->networks,source)) {
+       in st->networks */
+    if (!subnet_matches_list(client->networks,source)) {
 	string_t s,d;
 	s=ipaddr_to_string(source);
 	d=ipaddr_to_string(dest);
@@ -456,11 +517,11 @@ static void netlink_from_tunnel(void *sst, void *cst, struct buffer_if *buf)
        st->networks because secnet's IP address may not be in the
        range the host is willing to deal with) */
     if (dest==st->secnet_address) {
-        netlink_packet_local(st,buf);
+        netlink_packet_local(st,client,buf);
 	BUF_ASSERT_FREE(buf);
 	return;
     }
-    if (!subnet_match(&st->networks,dest)) {
+    if (!subnet_matches_list(&st->networks,dest)) {
 	string_t s,d;
 	s=ipaddr_to_string(source);
 	d=ipaddr_to_string(dest);
@@ -472,7 +533,7 @@ static void netlink_from_tunnel(void *sst, void *cst, struct buffer_if *buf)
 	return;
     }
 
-    netlink_packet_forward(st,buf);
+    netlink_packet_forward(st,client,buf);
 
     BUF_ASSERT_FREE(buf);
 }
@@ -498,7 +559,7 @@ static void netlink_from_host(void *sst, void *cid, struct buffer_if *buf)
     source=ntohl(iph->saddr);
     dest=ntohl(iph->daddr);
 
-    if (!subnet_match(&st->networks,source)) {
+    if (!subnet_matches_list(&st->networks,source)) {
 	string_t s,d;
 	s=ipaddr_to_string(source);
 	d=ipaddr_to_string(dest);
@@ -509,19 +570,19 @@ static void netlink_from_host(void *sst, void *cid, struct buffer_if *buf)
 	return;
     }
     if (dest==st->secnet_address) {
-	netlink_packet_local(st,buf);
+	netlink_packet_local(st,NULL,buf);
 	BUF_ASSERT_FREE(buf);
 	return;
     }
-    netlink_packet_forward(st,buf);
+    netlink_packet_forward(st,NULL,buf);
     BUF_ASSERT_FREE(buf);
 }
 
-static void netlink_set_delivery(void *sst, void *cid, bool_t can_deliver)
+static void netlink_set_quality(void *sst, void *cid, uint32_t quality)
 {
     struct netlink_client *c=cid;
 
-    c->can_deliver=can_deliver;
+    c->link_quality=quality;
 }
 
 static void *netlink_regnets(void *sst, struct subnet_list *nets,
@@ -555,13 +616,69 @@ static void *netlink_regnets(void *sst, struct subnet_list *nets,
     c->deliver=deliver;
     c->dst=dst;
     c->name=client_name; /* XXX copy it? */
-    c->can_deliver=False;
+    c->link_quality=LINK_QUALITY_DOWN;
     c->next=st->clients;
     st->clients=c;
     if (max_start_pad > st->max_start_pad) st->max_start_pad=max_start_pad;
     if (max_end_pad > st->max_end_pad) st->max_end_pad=max_end_pad;
+    st->n_routes+=nets->entries;
 
     return c;
+}
+
+static int netlink_compare_route_specificity(const void *ap, const void *bp)
+{
+    const struct netlink_route *a=ap;
+    const struct netlink_route *b=bp;
+
+    if (a->net.len==b->net.len) return 0;
+    if (a->net.len<b->net.len) return 1;
+    return -1;
+}
+
+static void netlink_phase_hook(void *sst, uint32_t new_phase)
+{
+    struct netlink *st=sst;
+    struct netlink_client *c;
+    uint32_t i,j;
+
+    /* All the networks serviced by the various tunnels should now
+     * have been registered.  We build a routing table by sorting the
+     * routes into most-specific-first order.  */
+    st->routes=safe_malloc(st->n_routes*sizeof(*st->routes),
+			   "netlink_phase_hook");
+    /* Fill the table */
+    i=0;
+    for (c=st->clients; c; c=c->next) {
+	for (j=0; j<c->networks->entries; j++) {
+	    st->routes[i].net=c->networks->list[j];
+	    st->routes[i].c=c;
+	    i++;
+	}
+    }
+    /* ASSERT i==st->n_routes */
+    if (i!=st->n_routes) {
+	fatal("netlink: route count error: expected %d got %d\n",
+	      st->n_routes,i);
+    }
+    /* Sort the table in descending order of specificity */
+    qsort(st->routes,st->n_routes,sizeof(*st->routes),
+	  netlink_compare_route_specificity);
+    Message(M_INFO,"%s: routing table:\n",st->name);
+    for (i=0; i<st->n_routes; i++) {
+	string_t net;
+	net=subnet_to_string(&st->routes[i].net);
+	Message(M_INFO,"%s -> tunnel %s\n",net,st->routes[i].c->name);
+	free(net);
+    }
+    Message(M_INFO,"%s/32 -> netlink \"%s\"\n",
+	    ipaddr_to_string(st->secnet_address),st->name);
+    for (i=0; i<st->networks.entries; i++) {
+	string_t net;
+	net=subnet_to_string(&st->networks.list[i]);
+	Message(M_INFO,"%s -> host\n",net);
+	free(net);
+    }
 }
 
 static netlink_deliver_fn *netlink_init(struct netlink *st,
@@ -577,7 +694,7 @@ static netlink_deliver_fn *netlink_init(struct netlink *st,
     st->ops.st=st;
     st->ops.regnets=netlink_regnets;
     st->ops.deliver=netlink_from_tunnel;
-    st->ops.set_delivery=netlink_set_delivery;
+    st->ops.set_quality=netlink_set_quality;
     st->max_start_pad=0;
     st->max_end_pad=0;
     st->clients=NULL;
@@ -598,6 +715,10 @@ static netlink_deliver_fn *netlink_init(struct netlink *st,
 	dict_find_item(dict,"secnet-address", True, "netlink", loc),"netlink");
     st->mtu=dict_read_number(dict, "mtu", False, "netlink", loc, DEFAULT_MTU);
     buffer_new(&st->icmp,ICMP_BUFSIZE);
+    st->n_routes=0;
+    st->routes=NULL;
+
+    add_hook(PHASE_SETUP,netlink_phase_hook,st);
 
     return netlink_from_host;
 }
@@ -972,6 +1093,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 						no extra headers */
 	if (st->interface_name)
 	    strncpy(ifr.ifr_name,st->interface_name,IFNAMSIZ);
+	Message(M_INFO,"%s: about to ioctl(TUNSETIFF)...\n",st->nl.name);
 	if (ioctl(st->fd,TUNSETIFF,&ifr)<0) {
 	    fatal_perror("%s: ioctl(TUNSETIFF)",st->nl.name);
 	}

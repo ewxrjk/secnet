@@ -239,7 +239,12 @@ uint32_t write_mpbin(MP_INT *a, uint8_t *buffer, uint32_t buflen)
     return i;
 }
 
-bool_t subnet_match(struct subnet_list *list, uint32_t address)
+bool_t subnet_match(struct subnet *s, uint32_t address)
+{
+    return (s->prefix==(address&s->mask));
+}
+
+bool_t subnet_matches_list(struct subnet_list *list, uint32_t address)
 {
     uint32_t i;
     for (i=0; i<list->entries; i++) {
@@ -303,7 +308,10 @@ string_t subnet_to_string(struct subnet *sn)
     for (i=0; mask; i++) {
 	mask=(mask<<1);
     }
-    snprintf(s, 19, "%d.%d.%d.%d/%d", a, b, c, d, i);
+    if (i!=sn->len) {
+	fatal("subnet_to_string: invalid subnet structure!\n");
+    }
+    snprintf(s, 19, "%d.%d.%d.%d/%d", a, b, c, d, sn->len);
     return s;
 }
 
@@ -607,7 +615,7 @@ static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     buffer_new(&st->ops,len);
     if (lockdown) {
-	Message(M_WARNING,"buffer: XXX lockdown\n");
+	/* XXX mlock the buffer if possible */
     }
     
     return new_closure(&st->cl);

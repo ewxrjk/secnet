@@ -8,6 +8,7 @@ dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
 netlink.c: done. jdamery reports tun-old code works on Linux-2.2
+Unresolved problem with ioctl(TUNSETIFF) sometimes return EINVAL.
 
 random.c: test
 

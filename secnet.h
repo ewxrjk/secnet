@@ -24,6 +24,7 @@ typedef enum {False,True} bool_t;
 struct subnet {
     uint32_t prefix;
     uint32_t mask;
+    uint32_t len;
 };
 
 struct subnet_list {
@@ -33,7 +34,8 @@ struct subnet_list {
 
 /* Match an address (in HOST byte order) with a subnet list.
    Returns True if matched. */
-extern bool_t subnet_match(struct subnet_list *list, uint32_t address);
+extern bool_t subnet_match(struct subnet *s, uint32_t address);
+extern bool_t subnet_matches_list(struct subnet_list *list, uint32_t address);
 extern bool_t subnets_intersect(struct subnet a, struct subnet b);
 extern bool_t subnet_intersects_with_list(struct subnet a,
 					  struct subnet_list *b);
@@ -353,12 +355,20 @@ struct transform_if {
 
 /* NETLINK interface */
 
-/* Used by netlink to deliver to site, and by site to deliver to netlink.
-   cid is the client identifier returned by netlink_regnets_fn */
+/* Used by netlink to deliver to site, and by site to deliver to
+   netlink.  cid is the client identifier returned by
+   netlink_regnets_fn.  If buf has size 0 then the function is just
+   being called for its site-effects (eg. making the site code attempt
+   to bring up a network link) */
 typedef void netlink_deliver_fn(void *st, void *cid, struct buffer_if *buf);
 /* site code can tell netlink when outgoing packets will be dropped,
-   so netlink can generate appropriate ICMP */
-typedef void netlink_can_deliver_fn(void *st, void *cid, bool_t can_deliver);
+   so netlink can generate appropriate ICMP and make routing decisions */
+#define LINK_QUALITY_DOWN 0   /* No chance of a packet being delivered */
+#define LINK_QUALITY_DOWN_STALE_ADDRESS 1 /* Link down, old address information */
+#define LINK_QUALITY_DOWN_CURRENT_ADDRESS 2 /* Link down, current address information */
+#define LINK_QUALITY_UP 3     /* Link active */
+#define MAXIMUM_LINK_QUALITY 3
+typedef void netlink_link_quality_fn(void *st, void *cid, uint32_t quality);
 /* Register for packets from specified networks. Return value is client
    identifier. */
 typedef void *netlink_regnets_fn(void *st, struct subnet_list *networks,
@@ -370,7 +380,7 @@ struct netlink_if {
     void *st;
     netlink_regnets_fn *regnets;
     netlink_deliver_fn *deliver;
-    netlink_can_deliver_fn *set_delivery;
+    netlink_link_quality_fn *set_quality;
 };
 
 /* DH interface */

@@ -135,9 +135,15 @@ static list_t *dh_apply(closure_t *self, struct cloc loc, dict_t *context,
 	cfgfatal(loc,"diffie-hellman","you must provide a generator\n");
     }
 
-    /* Test that the modulus is really prime */
-    if (mpz_probab_prime_p(&st->p,5)==0) {
-	cfgfatal(loc,"diffie-hellman","modulus must be a prime\n");
+    i=list_elem(args,2);
+    if (i && i->type==t_bool && i->data.bool==False) {
+	Message(M_INFO,"diffie-hellman (%s:%d): skipping modulus "
+		"primality check\n",loc.file,loc.line);
+    } else {
+	/* Test that the modulus is really prime */
+	if (mpz_probab_prime_p(&st->p,5)==0) {
+	    cfgfatal(loc,"diffie-hellman","modulus must be a prime\n");
+	}
     }
     st->ops.len=mpz_sizeinbase(&st->p,2)/8;
 
