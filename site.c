@@ -1090,17 +1090,25 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	cfgfatal(loc,"site","parameter must be a dictionary\n");
     
     dict=item->data.dict;
+    st->localname=dict_read_string(dict, "local-name", True, "site", loc);
+    st->remotename=dict_read_string(dict, "name", True, "site", loc);
+    /* Sanity check (which also allows the 'sites' file to include
+       site() closures for all sites including our own): refuse to
+       talk to ourselves */
+    if (strcmp(st->localname,st->remotename)==0) {
+	Message(M_INFO,"site %s: talking to ourselves!\n",st->localname);
+	free(st);
+	return NULL;
+    }
     st->netlink=find_cl_if(dict,"netlink",CL_NETLINK,True,"site",loc);
     st->comm=find_cl_if(dict,"comm",CL_COMM,True,"site",loc);
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
     st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
-    st->localname=dict_read_string(dict, "local-name", True, "site", loc);
     st->privkey=find_cl_if(dict,"local-key",CL_RSAPRIVKEY,True,"site",loc);
     st->remoteport=dict_read_number(dict,"port",True,"site",loc,0);
 
-    st->remotename=dict_read_string(dict, "name", True, "site", loc);
     st->address=dict_read_string(dict, "address", False, "site", loc);
     dict_read_subnet_list(dict, "networks", True, "site", loc,
 			  &st->remotenets);

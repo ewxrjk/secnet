@@ -65,6 +65,16 @@ $ ./configure
 $ make
 # make install
 
+(Note: you may see the following warning while compiling
+conffile.tab.c; I believe this is a bison bug:
+/usr/share/bison/bison.simple: In function `yyparse':
+/usr/share/bison/bison.simple:285: warning: `yyval' might be used
+ uninitialized in this function
+)
+
+Any other warnings or errors should be reported to
+steve@greenend.org.uk.
+
 If installing for the first time, do
 
 # mkdir /etc/secnet
@@ -78,8 +88,8 @@ $ gmake CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib"
 XXX this should eventually be worked out automatically by 'configure'.]
 
 Generate a site file fragment for your site (see below), and submit it
-for inclusion in the vpn-sites file.  Download the vpn-sites file to
-/etc/secnet/sites - MAKE SURE YOU GET AN AUTHENTIC COPY because the
+for inclusion in your VPN's 'sites' file.  Download the vpn-sites file
+to /etc/secnet/sites - MAKE SURE YOU GET AN AUTHENTIC COPY because the
 sites file contains public keys for all the sites in the VPN.
 
 * Configuration
@@ -116,9 +126,9 @@ match the port number on the machine running secnet.
 6. the public part of the RSA key you generated during installation
 (in /etc/secnet/key.pub if you followed the installation
 instructions).  This file contains three numbers and a comment on one
-line.  The first number is the key length in bits, and can be ignored.
-The second number (typically small) is the encryption key 'e', and the
-third number (large) is the modulus 'n'.
+line.  The first number is the key length in bits, and should be
+ignored.  The second number (typically small) is the encryption key
+'e', and the third number (large) is the modulus 'n'.
 
 If you are running secnet on a particularly slow machine, you may like
 to specify a larger value for the key setup retry timeout than the

@@ -23,7 +23,7 @@ static void yyerror(char *s);
 
 %%
 
-input:		  assignments { result = $1; }
+input:		  assignments { result = $1; $$=result; }
 		;
 
 assignments:	  assignments assignment { $$=node(T_ALIST, $2, $1); }

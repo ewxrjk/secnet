@@ -1,55 +1,196 @@
-XXX under construction. For now, here are the comments that used to be
-at the top of the example configuration file:
+secnet - flexible VPN software
 
-# This file defines a dictionary full of configuration information for
-# secnet. Two keys must be defined in this file for secnet to
-# start. One is "system", a dictionary containing systemwide control
-# parameters. The other is "sites", a list of all the sites that you
-# intend to communicate with.
+* Introduction
 
-# Other files can be included inline by writing "include filename" at
-# the start of a line.
+secnet allows large virtual private networks to be constructed
+spanning multiple separate sites.  It is designed for the case where a
+private network connecting many hosts is 'hidden' behind a single
+globally-routable IP address, but can also be applied in other
+circumstances.  It communicates entirely using UDP, and works well
+with gateways that implement network address translation.
 
-# The configuration file has a fairly simple syntax:
-# key definition;  or key = definition; (the "=" is optional)
-# ...sets 'key' in the current dictionary to 'definition'.
-# 
-# "key" is [[:alpha:]_][[:alnum:]\-_]*
-# 
-# definition may be one of the following:
-#  a string, in quotes
-#  a number, in decimal
-#  a dictionary, in { }
-#  a path to a key that already exists, to reference that definition
-#  a "closure", followed by arguments
-#
-# paths are key1/key2/key3... (starting from wherever we find key1, i.e. in
-#  the current dictionary or any of its parents)
-# alternatively /key1/key2/key3... (to start from the root)
-# 
-# closures are followed by an argument list in ( ), and may return
-# whatever type they like (including other closures)
-#
-# closure { definitions } is short for closure({definitions}).
-#
-# Whenever secnet looks for a key it checks the (lexical) parent dictionaries
-# as well until it finds it or reaches the root. This is useful for setting
-# defaults for large collections of dictionaries (eg. defining sites).
-#
-# It is also permissible to list other dictionaries before a dictionary
-# definition, eg. <defaults,otherdefaults>{definitions}. These will be
-# searched in order for keys, before the lexical parent. (Not yet implemented)
-# 
-# secnet predefines some keys in the root dictionary; some useful ones are:
-#  yes, true, True, TRUE:   the boolean value True
-#  no, false, False, FALSE: the boolean value False
-#  makelist:   turns a dictionary (arg1) into a list (return value)
-#  readfile:   reads a file (arg1) and returns it as a string
-#
-# secnet modules also predefine keys, eg. "adns", "randomfile", etc.
-# See the module documentation for more information.
+If you are installing secnet to join an existing VPN, you should read
+the 'INSTALL' file and your particular VPN's documentation now.  You
+may need to refer back to this file for information on the netlink and
+comm sections of the configuration file.
 
-# After the configuration file is read, secnet looks for particular keys
-# in configuration space to tell it what to do:
-#  system:     system-wide parameters (control, logging, etc.)
-#  sites:      a list of sites with which to communicate
+If you are thinking about setting up a new VPN of any size (from one
+providing complete links between multiple sites to a simple
+laptop-to-host link), read the section in this file on 'Creating a
+VPN'.
+
+* Creating a VPN
+
+XXX TODO
+
+* secnet configuration file format
+
+By default secnet on linux reads /etc/secnet/secnet.conf.  The default
+may be different on other platforms.
+
+This file defines a dictionary (a mapping from keys to values) full of
+configuration information for secnet.  Two keys must be defined in
+this file for secnet to start.  One is "system", a dictionary
+containing systemwide control parameters.  The other is "sites", a
+list of all the sites that you intend to communicate with.
+
+The configuration file has a very simple syntax; keys are defined as
+follows:
+
+key definition;
+or
+key = definition;
+
+(the "=" is optional)
+
+Keys must match the following regular expression:
+[[:alpha:]_][[:alnum:]\-_]*
+
+i.e. the first character must be an alpha or an underscore, and the
+remaining characters may be alphanumeric, '-' or '_'.
+
+Keys can be defined to be a comma-separated list of any of the
+following types:
+
+  a boolean
+  a string, in quotes
+  a number, in decimal
+  a dictionary of definitions, enclosed in { }
+  a "closure", followed by arguments
+  a path to a key that already exists, to reference that definition
+
+Note that dictionaries can be nested: a key in one dictionary can
+refer to another dictionary. When secnet looks for a key in a
+particular directory and can't find it, it looks in the dictionary's
+lexical 'parents' in turn until it finds it (or fails to find it at
+all and stops with an error).
+
+Definitions can refer to previous definitions by naming them with a
+path.  Paths are key1/key2/key3... (starting from wherever we find
+key1, i.e. in the current dictionary or any of its parents), or
+alternatively /key1/key2/key3... (to start from the root).
+Definitions cannot refer to future definitions.
+
+Example:
+
+a=1;
+b=2;
+c={ d=3; e=a; };
+f={ a=4; g=c; };
+
+The following paths are valid:
+a is 1
+b is 2
+c is a dictionary:
+ c/d is 3
+ c/e is 1
+f is a dictionary:
+ f/a is 4
+ f/g is a dictionary:
+  f/g/d is 3
+  f/g/e is 1
+
+Note that f/g/e is NOT 4.
+
+In a future version of secnet it will also be permissible to list
+other dictionaries before a dictionary definition,
+eg. <defaults,otherdefaults>{definitions}.  These will be searched in
+order for keys, before the lexical parent.  (This is not yet
+implemented)
+
+Elements that are lists are inserted into lists in definitions, not
+referenced by them (i.e. you can't have lists of lists).
+
+Some closures may be followed by an argument list in ( ), and may
+return any number of whatever type they like (including other
+closures).  Some types of closure (typically those returned from
+invokations of other closures) cannot be invoked.
+
+closure { definitions } is short for closure({definitions}).
+
+The main body of secnet, and all the additional modules, predefine
+some keys in the root dictionary.  The main ones are:
+
+  yes, true, True, TRUE:   the boolean value True
+  no, false, False, FALSE: the boolean value False
+  makelist:   turns a dictionary (arg1) into a list of definitions
+              (ignoring the keys)
+  readfile:   reads a file (arg1) and returns it as a string
+
+Keys defined by modules are described below, in the module
+documentation.
+
+Other configuration files can be included inline by writing "include
+filename" at the start of a line.
+
+After the configuration file is read, secnet looks for particular keys
+in configuration space to tell it what to do:
+
+ system: a dictionary which can contain the following keys:
+   log (log closure): a destination for system messages
+   userid (string): the userid for secnet to run as once it drops privileges
+   pidfile (string): where to store its PID
+   
+ sites: a list of closures of type 'site', which define other tunnel
+        endpoints that secnet will attempt to communicate with
+
+* secnet command line options
+
+XXX TODO
+
+* secnet builtin modules
+
+** resolver
+
+Defines:
+  adns (closure => resolver closure)
+
+** random
+
+Defines:
+  randomsrc (closure => randomsrc closure)
+
+** udp
+
+Defines:
+  udp (closure => comm closure)
+
+** util
+
+Defines:
+  logfile (closure => log closure)
+  sysbuffer (closure => buffer closure)
+
+** site
+
+Defines:
+  site (closure => site closure)
+
+** transform
+
+Defines:
+  serpent256-cbc (closure => transform closure)
+
+** netlink
+
+Defines:
+  userv-ipif (closure => netlink closure)
+  tun (closure => netlink closure) [only on linux-2.4]
+  tun-old (closure => netlink closure)
+  null-netlink (closure => netlink closure)
+
+** rsa
+
+Defines:
+  rsa-private (closure => rsaprivkey closure)
+  rsa-public (closure => rsapubkey closure)
+
+** dh
+
+Defines:
+  diffie-hellman (closure => dh closure)
+
+** md5
+
+Defines:
+  md5 (hash closure)

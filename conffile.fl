@@ -10,6 +10,8 @@
 #include "conffile.tab.h"
 #include "util.h"
 
+#define YY_NO_UNPUT
+
 #define MAX_INCLUDE_DEPTH 10
 struct include_stack_item {
 	YY_BUFFER_STATE bst;
