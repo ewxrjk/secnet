@@ -15,12 +15,13 @@
 #include <errno.h>
 #include <syslog.h>
 #include <unistd.h>
-#include <values.h>
+#include <limits.h>
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "util.h"
 #include "secnet.h"
+#include "unaligned.h"
 
 #define MIN_BUFFER_SIZE 64
 #define DEFAULT_BUFFER_SIZE 4096
@@ -522,7 +523,7 @@ void buf_append_string(struct buffer_if *buf, string_t s)
     uint16_t len;
 
     len=strlen(s);
-    *(uint16_t *)buf_append(buf,2)=htons(len);
+    buf_append_uint16(buf,len);
     memcpy(buf_append(buf,len),s,len);
 }
 

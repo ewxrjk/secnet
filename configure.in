@@ -12,11 +12,15 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PATH_PROG(RM,rm)
 AC_STDC_HEADERS
+AC_CHECK_HEADERS(stdint.h inttypes.h)
 AC_CHECK_HEADERS(linux/if.h)
 AC_C_BIGENDIAN
 
+AC_CHECK_LIB(gmp,mpz_init_set_str)
 AC_CHECK_LIB(gmp2,mpz_init_set_str)
 AC_CHECK_LIB(fl,yywrap)
 AC_CHECK_LIB(adns,adns_init)
+AC_CHECK_LIB(getopt,getopt_long)
+AC_CHECK_LIB(gnugetopt,getopt_long)
 
 AC_OUTPUT(Makefile)

@@ -18,8 +18,6 @@
    packet to the kernel we check that the tunnel it came over could
    reasonably have produced it. */
 
-/* XXX now implement TUN. Kernel needs recompiling. */
-
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -961,8 +959,10 @@ static list_t *tun_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->device_path=dict_read_string(dict,"device",False,"tun-netlink",loc);
     st->interface_name=dict_read_string(dict,"interface",False,
 					"tun-netlink",loc);
-    st->ifconfig_path=dict_read_string(dict,"device",False,"tun-netlink",loc);
-    st->route_path=dict_read_string(dict,"device",False,"tun-netlink",loc);
+    st->ifconfig_path=dict_read_string(dict,"ifconfig-path",
+				       False,"tun-netlink",loc);
+    st->route_path=dict_read_string(dict,"route-path",
+				    False,"tun-netlink",loc);
 
     if (!st->device_path) st->device_path="/dev/net/tun";
     if (!st->ifconfig_path) st->ifconfig_path="ifconfig";
@@ -1026,8 +1026,9 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
 					"tun-netlink",loc);
     search_for_if=dict_read_bool(dict,"interface-search",False,"tun-netlink",
 				 loc,st->device_path==NULL);
-    st->ifconfig_path=dict_read_string(dict,"device",False,"tun-netlink",loc);
-    st->route_path=dict_read_string(dict,"device",False,"tun-netlink",loc);
+    st->ifconfig_path=dict_read_string(dict,"ifconfig-path",False,
+				       "tun-netlink",loc);
+    st->route_path=dict_read_string(dict,"route-path",False,"tun-netlink",loc);
 
     if (!st->device_path) st->device_path="/dev/tun";
     if (!st->ifconfig_path) st->ifconfig_path="ifconfig";
@@ -1056,7 +1057,7 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
 		sprintf(st->interface_name,"tun%d",i);
 		Message(M_INFO,"%s: allocated network interface %s "
 			"through %s\n",st->nl.name,st->interface_name,dname);
-		continue;
+		break;
 	    }
 	}
 	if (st->fd==-1) {

@@ -3,13 +3,12 @@
 #ifndef secnet_h
 #define secnet_h
 
+#include "config.h"
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdarg.h>
 #include <syslog.h>
 #include <sys/poll.h>
 #include <netinet/in.h>
-#include "config.h"
 
 
 typedef char *string_t;

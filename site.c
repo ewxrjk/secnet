@@ -5,12 +5,13 @@
 
 #include "secnet.h"
 #include "util.h"
+#include "unaligned.h"
 
 #define SETUP_BUFFER_LEN 2048
 
-#define DEFAULT_KEY_LIFETIME 15000
+#define DEFAULT_KEY_LIFETIME 3600000
 #define DEFAULT_SETUP_RETRIES 5
-#define DEFAULT_SETUP_TIMEOUT 500
+#define DEFAULT_SETUP_TIMEOUT 1000
 #define DEFAULT_WAIT_TIME 10000
 
 /* Each site can be in one of several possible states. */
@@ -94,7 +95,7 @@ static string_t state_name(uint32_t state)
 #define LOG_SETUP_TIMEOUT 0x00000004
 #define LOG_ACTIVATE_KEY  0x00000008
 #define LOG_TIMEOUT_KEY   0x00000010
-#define LOG_SECURITY      0x00000020
+#define LOG_SEC      0x00000020
 #define LOG_STATE         0x00000040
 #define LOG_DROP          0x00000080
 #define LOG_DUMP          0x00000100
@@ -186,7 +187,7 @@ static void enter_state_wait(struct site *st);
 #define CHECK_EMPTY(b) do { if ((b)->size!=0) return False; } while(0)
 #define CHECK_TYPE(b,t) do { uint32_t type; \
     CHECK_AVAIL((b),4); \
-    type=*(uint32_t *)buf_unprepend((b),4); \
+    type=buf_unprepend_uint32((b)); \
     if (type!=(t)) return False; } while(0)
 
 struct msg {
@@ -217,10 +218,10 @@ static bool_t generate_msg(struct site *st, uint32_t type, string_t what)
     st->retries=st->setup_retries;
     BUF_ALLOC(&st->buffer,what);
     buffer_init(&st->buffer,0);
-    *(uint32_t *)buf_append(&st->buffer,4)=
-	(type==LABEL_MSG1?0:st->setup_session_id);
-    *(uint32_t *)buf_append(&st->buffer,4)=(uint32_t)st;
-    *(uint32_t *)buf_append(&st->buffer,4)=type;
+    buf_append_uint32(&st->buffer,
+	(type==LABEL_MSG1?0:st->setup_session_id));
+    buf_append_uint32(&st->buffer,(uint32_t)st);
+    buf_append_uint32(&st->buffer,type);
     buf_append_string(&st->buffer,st->localname);
     buf_append_string(&st->buffer,st->remotename);
     memcpy(buf_append(&st->buffer,NONCELEN),st->localN,NONCELEN);
@@ -244,16 +245,16 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
 {
     m->hashstart=msg->start;
     CHECK_AVAIL(msg,4);
-    m->dest=*(uint32_t *)buf_unprepend(msg,4);
+    m->dest=buf_unprepend_uint32(msg);
     CHECK_AVAIL(msg,4);
-    m->source=*(uint32_t *)buf_unprepend(msg,4);
+    m->source=buf_unprepend_uint32(msg);
     CHECK_TYPE(msg,type);
     CHECK_AVAIL(msg,2);
-    m->remlen=ntohs(*(uint16_t *)buf_unprepend(msg,2));
+    m->remlen=buf_unprepend_uint16(msg);
     CHECK_AVAIL(msg,m->remlen);
     m->remote=buf_unprepend(msg,m->remlen);
     CHECK_AVAIL(msg,2);
-    m->loclen=ntohs(*(uint16_t *)buf_unprepend(msg,2));
+    m->loclen=buf_unprepend_uint16(msg);
     CHECK_AVAIL(msg,m->loclen);
     m->local=buf_unprepend(msg,m->loclen);
     CHECK_AVAIL(msg,NONCELEN);
@@ -269,12 +270,12 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
 	return True;
     }
     CHECK_AVAIL(msg,2);
-    m->pklen=ntohs(*(uint16_t *)buf_unprepend(msg,2));
+    m->pklen=buf_unprepend_uint16(msg);
     CHECK_AVAIL(msg,m->pklen);
     m->pk=buf_unprepend(msg,m->pklen);
     m->hashlen=msg->start-m->hashstart;
     CHECK_AVAIL(msg,2);
-    m->siglen=ntohs(*(uint16_t *)buf_unprepend(msg,2));
+    m->siglen=buf_unprepend_uint16(msg);
     CHECK_AVAIL(msg,m->siglen);
     m->sig=buf_unprepend(msg,m->siglen);
     CHECK_EMPTY(msg);
@@ -322,15 +323,15 @@ static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
     /* Check that the site names and our nonce have been sent
        back correctly, and then store our peer's nonce. */ 
     if (memcmp(m.remote,st->remotename,strlen(st->remotename)!=0)) {
-	slog(st,LOG_SECURITY,"msg2: bad B (remote site name)");
+	slog(st,LOG_SEC,"msg2: bad B (remote site name)");
 	return False;
     }
     if (memcmp(m.local,st->localname,strlen(st->localname)!=0)) {
-	slog(st,LOG_SECURITY,"msg2: bad A (local site name)");
+	slog(st,LOG_SEC,"msg2: bad A (local site name)");
 	return False;
     }
     if (memcmp(m.nL,st->localN,NONCELEN)!=0) {
-	slog(st,LOG_SECURITY,"msg2: bad nA (locally generated nonce)");
+	slog(st,LOG_SEC,"msg2: bad nA (locally generated nonce)");
 	return False;
     }
     st->setup_session_id=m.source;
@@ -358,19 +359,19 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     /* Check that the site names and nonces have been sent back
        correctly */
     if (memcmp(m.remote,st->remotename,strlen(st->remotename)!=0)) {
-	slog(st,LOG_SECURITY,"msg3: bad A (remote site name)");
+	slog(st,LOG_SEC,"msg3: bad A (remote site name)");
 	return False;
     }
     if (memcmp(m.local,st->localname,strlen(st->localname)!=0)) {
-	slog(st,LOG_SECURITY,"msg3: bad B (local site name)");
+	slog(st,LOG_SEC,"msg3: bad B (local site name)");
 	return False;
     }
     if (memcmp(m.nR,st->remoteN,NONCELEN)!=0) {
-	slog(st,LOG_SECURITY,"msg3: bad nA (remotely generated nonce)");
+	slog(st,LOG_SEC,"msg3: bad nA (remotely generated nonce)");
 	return False;
     }
     if (memcmp(m.nL,st->localN,NONCELEN)!=0) {
-	slog(st,LOG_SECURITY,"msg3: bad nB (locally generated nonce)");
+	slog(st,LOG_SEC,"msg3: bad nB (locally generated nonce)");
 	return False;
     }
     
@@ -381,7 +382,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     /* Terminate signature with a '0' - cheating, but should be ok */
     m.sig[m.siglen]=0;
     if (!st->pubkey->check(st->pubkey->st,hash,st->hash->len,m.sig)) {
-	slog(st,LOG_SECURITY,"msg3 signature failed check!");
+	slog(st,LOG_SEC,"msg3 signature failed check!");
 	return False;
     }
 
@@ -420,19 +421,19 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
     /* Check that the site names and nonces have been sent back
        correctly */
     if (memcmp(m.remote,st->remotename,strlen(st->remotename)!=0)) {
-	slog(st,LOG_SECURITY,"msg4: bad B (remote site name)");
+	slog(st,LOG_SEC,"msg4: bad B (remote site name)");
 	return False;
     }
     if (memcmp(m.local,st->localname,strlen(st->localname)!=0)) {
-	slog(st,LOG_SECURITY,"msg4: bad A (local site name)");
+	slog(st,LOG_SEC,"msg4: bad A (local site name)");
 	return False;
     }
     if (memcmp(m.nR,st->remoteN,NONCELEN)!=0) {
-	slog(st,LOG_SECURITY,"msg4: bad nB (remotely generated nonce)");
+	slog(st,LOG_SEC,"msg4: bad nB (remotely generated nonce)");
 	return False;
     }
     if (memcmp(m.nL,st->localN,NONCELEN)!=0) {
-	slog(st,LOG_SECURITY,"msg4: bad nA (locally generated nonce)");
+	slog(st,LOG_SEC,"msg4: bad nA (locally generated nonce)");
 	return False;
     }
     
@@ -443,7 +444,7 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
     /* Terminate signature with a '0' - cheating, but should be ok */
     m.sig[m.siglen]=0;
     if (!st->pubkey->check(st->pubkey->st,hash,st->hash->len,m.sig)) {
-	slog(st,LOG_SECURITY,"msg4 signature failed check!");
+	slog(st,LOG_SEC,"msg4 signature failed check!");
 	return False;
     }
 
@@ -466,12 +467,12 @@ static bool_t generate_msg5(struct site *st)
     BUF_ALLOC(&st->buffer,"site:MSG5");
     /* We are going to add three words to the transformed message */
     buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
-    *(uint32_t *)buf_append(&st->buffer,4)=LABEL_MSG5;
+    buf_append_uint32(&st->buffer,LABEL_MSG5);
     st->new_transform->forwards(st->new_transform->st,&st->buffer,
 				&transform_err);
-    *(uint32_t *)buf_prepend(&st->buffer,4)=LABEL_MSG5;
-    *(uint32_t *)buf_prepend(&st->buffer,4)=(uint32_t)st;
-    *(uint32_t *)buf_prepend(&st->buffer,4)=st->setup_session_id;
+    buf_prepend_uint32(&st->buffer,LABEL_MSG5);
+    buf_prepend_uint32(&st->buffer,(uint32_t)st);
+    buf_prepend_uint32(&st->buffer,st->setup_session_id);
 
     st->retries=st->setup_retries;
     return True;
@@ -487,11 +488,11 @@ static bool_t unpick_msg0(struct site *st, struct buffer_if *msg0,
 			  struct msg0 *m)
 {
     CHECK_AVAIL(msg0,4);
-    m->dest=*(uint32_t *)buf_unprepend(msg0,4);
+    m->dest=buf_unprepend_uint32(msg0);
     CHECK_AVAIL(msg0,4);
-    m->source=*(uint32_t *)buf_unprepend(msg0,4);
+    m->source=buf_unprepend_uint32(msg0);
     CHECK_AVAIL(msg0,4);
-    m->type=*(uint32_t *)buf_unprepend(msg0,4);
+    m->type=buf_unprepend_uint32(msg0);
     return True;
     /* Leaves transformed part of buffer untouched */
 }
@@ -507,13 +508,13 @@ static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
     if (st->new_transform->reverse(st->new_transform->st,
 				   msg5,&transform_err)) {
 	/* There's a problem */
-	slog(st,LOG_SECURITY,"process_msg5: transform: %s",transform_err);
+	slog(st,LOG_SEC,"process_msg5: transform: %s",transform_err);
 	return False;
     }
     /* Buffer should now contain untransformed PING packet data */
     CHECK_AVAIL(msg5,4);
-    if ((*(uint32_t *)buf_unprepend(msg5,4))!=LABEL_MSG5) {
-	slog(st,LOG_SECURITY,"MSG5/PING packet contained invalid data");
+    if (buf_unprepend_uint32(msg5)!=LABEL_MSG5) {
+	slog(st,LOG_SEC,"MSG5/PING packet contained invalid data");
 	return False;
     }
     CHECK_EMPTY(msg5);
@@ -527,12 +528,12 @@ static bool_t generate_msg6(struct site *st)
     BUF_ALLOC(&st->buffer,"site:MSG6");
     /* We are going to add three words to the transformed message */
     buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
-    *(uint32_t *)buf_append(&st->buffer,4)=LABEL_MSG6;
+    buf_append_uint32(&st->buffer,LABEL_MSG6);
     st->new_transform->forwards(st->new_transform->st,&st->buffer,
 				&transform_err);
-    *(uint32_t *)buf_prepend(&st->buffer,4)=LABEL_MSG6;
-    *(uint32_t *)buf_prepend(&st->buffer,4)=(uint32_t)st;
-    *(uint32_t *)buf_prepend(&st->buffer,4)=st->setup_session_id;
+    buf_prepend_uint32(&st->buffer,LABEL_MSG6);
+    buf_prepend_uint32(&st->buffer,(uint32_t)st);
+    buf_prepend_uint32(&st->buffer,st->setup_session_id);
 
     st->retries=1; /* Peer will retransmit MSG5 if necessary */
     return True;
@@ -549,13 +550,13 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
     if (st->new_transform->reverse(st->new_transform->st,
 				   msg6,&transform_err)) {
 	/* There's a problem */
-	slog(st,LOG_SECURITY,"process_msg6: transform: %s",transform_err);
+	slog(st,LOG_SEC,"process_msg6: transform: %s",transform_err);
 	return False;
     }
     /* Buffer should now contain untransformed PING packet data */
     CHECK_AVAIL(msg6,4);
-    if ((*(uint32_t *)buf_unprepend(msg6,4))!=LABEL_MSG6) {
-	slog(st,LOG_SECURITY,"MSG6/PONG packet contained invalid data");
+    if (buf_unprepend_uint32(msg6)!=LABEL_MSG6) {
+	slog(st,LOG_SEC,"MSG6/PONG packet contained invalid data");
 	return False;
     }
     CHECK_EMPTY(msg6);
@@ -584,11 +585,11 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
     if (st->current_transform->reverse(st->current_transform->st,
 				       msg0,&transform_err)) {
 	/* There's a problem */
-	slog(st,LOG_SECURITY,"transform: %s",transform_err);
+	slog(st,LOG_SEC,"transform: %s",transform_err);
 	return False;
     }
     CHECK_AVAIL(msg0,4);
-    type=*(uint32_t *)buf_unprepend(msg0,4);
+    type=buf_unprepend_uint32(msg0);
     switch(type) {
     case LABEL_MSG9:
 	/* Deliver to netlink layer */
@@ -596,7 +597,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 	return True;
 	break;
     default:
-	slog(st,LOG_SECURITY,"incoming message of type %08x (unknown)",type);
+	slog(st,LOG_SEC,"incoming message of type %08x (unknown)",type);
 	break;
     }
     return False;
@@ -605,9 +606,9 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 static void dump_packet(struct site *st, struct buffer_if *buf,
 			struct sockaddr_in *addr, bool_t incoming)
 {
-    uint32_t dest=*(uint32_t *)buf->start;
-    uint32_t source=*(uint32_t *)(buf->start+4);
-    uint32_t msgtype=*(uint32_t *)(buf->start+8);
+    uint32_t dest=ntohl(*(uint32_t *)buf->start);
+    uint32_t source=ntohl(*(uint32_t *)(buf->start+4));
+    uint32_t msgtype=ntohl(*(uint32_t *)(buf->start+8));
 
     if (st->log_events & LOG_DUMP)
 	log(st->log,0,"(%s,%s): %s: %08x<-%08x: %08x:",
@@ -887,12 +888,12 @@ static void site_outgoing(void *sst, void *cid, struct buffer_if *buf)
        a valid key and a valid address to send it to. */
     if (st->current_valid && st->peer_valid) {
 	/* Transform it and send it */
-	*(uint32_t *)buf_prepend(buf,4)=LABEL_MSG9;
+	buf_prepend_uint32(buf,LABEL_MSG9);
 	st->current_transform->forwards(st->current_transform->st,
 					buf, &transform_err);
-	*(uint32_t *)buf_prepend(buf,4)=LABEL_MSG0;
-	*(uint32_t *)buf_prepend(buf,4)=(uint32_t)st;
-	*(uint32_t *)buf_prepend(buf,4)=st->remote_session_id;
+	buf_prepend_uint32(buf,LABEL_MSG0);
+	buf_prepend_uint32(buf,(uint32_t)st);
+	buf_prepend_uint32(buf,st->remote_session_id);
 	st->comm->sendmsg(st->comm->st,buf,&st->peer);
 	BUF_FREE(buf);
 	return;
@@ -918,7 +919,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 			    struct sockaddr_in *source)
 {
     struct site *st=sst;
-    uint32_t dest=*(uint32_t *)buf->start;
+    uint32_t dest=ntohl(*(uint32_t *)buf->start);
 
     if (dest==0) {
 	if (buf->size<(st->setupsiglen+8+NONCELEN)) return False;
@@ -971,7 +972,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	return False; /* Not for us. */
     }
     if (dest==(uint32_t)st) {
-	uint32_t msgtype=*(uint32_t *)(buf->start+8);
+	uint32_t msgtype=ntohl(*(uint32_t *)(buf->start+8));
 	/* Explicitly addressed to us */
 	if (msgtype!=LABEL_MSG0) dump_packet(st,buf,source,True);
 	switch (msgtype) {
@@ -981,7 +982,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	case LABEL_MSG1:
 	    /* Setup packet: should not have been explicitly addressed
 	       to us */
-	    slog(st,LOG_SECURITY,"incoming explicitly addressed msg1");
+	    slog(st,LOG_SEC,"incoming explicitly addressed msg1");
 	    break;
 	case LABEL_MSG2:
 	    /* Setup packet: expected only in state SENTMSG1 */
@@ -990,7 +991,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    } else if (process_msg2(st,buf,source))
 		enter_state_sentmsg3(st);
 	    else {
-		slog(st,LOG_SECURITY,"invalid MSG2");
+		slog(st,LOG_SEC,"invalid MSG2");
 	    }
 	    break;
 	case LABEL_MSG3:
@@ -1000,7 +1001,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    } else if (process_msg3(st,buf,source))
 		enter_state_sentmsg4(st);
 	    else {
-		slog(st,LOG_SECURITY,"invalid MSG3");
+		slog(st,LOG_SEC,"invalid MSG3");
 	    }
 	    break;
 	case LABEL_MSG4:
@@ -1010,7 +1011,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    } else if (process_msg4(st,buf,source))
 		enter_state_sentmsg5(st);
 	    else {
-		slog(st,LOG_SECURITY,"invalid MSG4");
+		slog(st,LOG_SEC,"invalid MSG4");
 	    }
 	    break;
 	case LABEL_MSG5:
@@ -1025,7 +1026,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    } else if (process_msg5(st,buf,source)) {
 		send_msg6(st);
 	    } else {
-		slog(st,LOG_SECURITY,"invalid MSG5");
+		slog(st,LOG_SEC,"invalid MSG5");
 	    }
 	    break;
 	case LABEL_MSG6:
@@ -1036,7 +1037,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		BUF_FREE(&st->buffer); /* Free message 5 */
 		activate_new_key(st);
 	    } else {
-		slog(st,LOG_SECURITY,"invalid MSG6");
+		slog(st,LOG_SEC,"invalid MSG6");
 	    }
 	    break;
 	case LABEL_MSG8:
@@ -1044,7 +1045,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    slog(st,LOG_ERROR,"received a NAK");
 	    break;
 	default:
-	    slog(st,LOG_SECURITY,"received message of unknown type 0x%08x",
+	    slog(st,LOG_SEC,"received message of unknown type 0x%08x",
 		 msgtype);
 	    break;
 	}
@@ -1116,7 +1117,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->wait_timeout=dict_read_number(dict,"wait-time",
 				      False,"site",loc,DEFAULT_WAIT_TIME);
     /* XXX should be configurable */
-    st->log_events=LOG_SECURITY|LOG_ERROR|
+    st->log_events=LOG_SEC|LOG_ERROR|
 	LOG_ACTIVATE_KEY|LOG_TIMEOUT_KEY|LOG_SETUP_INIT|LOG_SETUP_TIMEOUT;
 
     st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
@@ -1124,6 +1125,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
 
     /* The information we expect to see in incoming messages of type 1 */
+    /* XXX fix this bit for unaligned access */
     st->setupsiglen=strlen(st->remotename)+strlen(st->localname)+8;
     st->setupsig=safe_malloc(st->setupsiglen,"site_apply");
     *(uint32_t *)&(st->setupsig[0])=LABEL_MSG1;

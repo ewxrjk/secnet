@@ -4,12 +4,16 @@ USE AT YOUR OWN RISK.  THIS IS ALPHA TEST SOFTWARE.  I DO NOT
 GUARANTEE THAT THERE WILL BE PROTOCOL COMPATIBILITY BETWEEN DIFFERENT
 VERSIONS.
 
+PROTOCOL COMPATIBILITY WAS BROKEN BETWEEN secnet-0.06 AND secnet-0.07
+
 * Preparation
 
 ** System software support
 
 Ensure that you have libgmp2-dev and adns installed (and bison and
 flex, and for that matter gcc...).
+
+[On BSD install /usr/ports/devel/bison and /usr/ports/devel/libgnugetopt]
 
 If you intend to configure secnet to obtain packets from the kernel
 through userv-ipif, install and configure userv-ipif.  It is part of

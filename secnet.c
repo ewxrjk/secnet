@@ -11,6 +11,7 @@ extern char version[];
 #include <getopt.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <sys/time.h>
@@ -18,7 +19,6 @@ extern char version[];
 #include <arpa/inet.h>
 #include <adns.h>
 #include <pwd.h>
-#include <sys/types.h>
 
 #include "secnet.h"
 #include "util.h"

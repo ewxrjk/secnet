@@ -2,8 +2,14 @@
 
 /* These are from config.h.bot, pasted onto the end of config.h.in. */
 
-#ifdef HAVE_SYS_CDEFS_H
-#include <sys/cdefs.h>
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#else
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#else
+#error you must define uint32_t, uint16_t etc.
+#endif
 #endif
 
 #endif /* _CONFIG_H */

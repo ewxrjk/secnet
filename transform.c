@@ -11,9 +11,21 @@
 #include "secnet.h"
 #include "util.h"
 #include "serpent.h"
+#include "unaligned.h"
 
 /* Required key length in bytes */
 #define REQUIRED_KEYLEN ((512+64+32)/8)
+
+#ifdef WORDS_BIGENDIAN
+static inline uint32_t byteswap(uint32_t a)
+{
+    return
+	((a&0x000000ff)<<24) |
+	((a&0x0000ff00)<<8) |
+	((a&0x00ff0000)>>8) |
+	((a&0xff000000)>>24);
+}
+#endif
 
 struct transform {
     closure_t cl;
@@ -58,9 +70,9 @@ static bool_t transform_setkey(void *sst, uint8_t *key, uint32_t keylen)
 
     serpent_makekey(&ti->cryptkey,256,key);
     serpent_makekey(&ti->mackey,256,key+32);
-    ti->cryptiv=*(uint32_t *)(key+64);
-    ti->maciv=*(uint32_t *)(key+68);
-    ti->sendseq=*(uint32_t *)(key+72);
+    ti->cryptiv=ntohl(*(uint32_t *)(key+64));
+    ti->maciv=ntohl(*(uint32_t *)(key+68));
+    ti->sendseq=ntohl(*(uint32_t *)(key+72));
     ti->lastrecvseq=ti->sendseq;
     ti->keyed=True;
 
@@ -93,7 +105,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     }
 
     /* Sequence number */
-    *(uint32_t *)buf_prepend(buf,4)=htonl(ti->sendseq);
+    buf_prepend_uint32(buf,ti->sendseq);
     ti->sendseq++;
 
     /* PKCS5, stolen from IWJ */
@@ -119,13 +131,26 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
        block encrypted once again. */
     for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
     {
+#ifdef WORDS_BIGENDIAN
+	macplain[0]=macacc[0]^byteswap(n[0]);
+	macplain[1]=macacc[1]^byteswap(n[1]);
+	macplain[2]=macacc[2]^byteswap(n[2]);
+	macplain[3]=macacc[3]^byteswap(n[3]);
+#else
 	macplain[0]=macacc[0]^n[0];
 	macplain[1]=macacc[1]^n[1];
 	macplain[2]=macacc[2]^n[2];
 	macplain[3]=macacc[3]^n[3];
+#endif
 	serpent_encrypt(&ti->mackey,macplain,macacc);
     }
     serpent_encrypt(&ti->mackey,macacc,macacc);
+#ifdef WORDS_BIGENDIAN
+    macacc[0]=byteswap(macacc[0]);
+    macacc[1]=byteswap(macacc[1]);
+    macacc[2]=byteswap(macacc[2]);
+    macacc[3]=byteswap(macacc[3]);
+#endif
     memcpy(buf_append(buf,16),macacc,16);
 
     /* Serpent-CBC. We expand the ID as for CBCMAC, do the encryption,
@@ -139,15 +164,22 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     p=iv;
     for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
     {
+#ifdef WORDS_BIGENDIAN
+	n[0]=byteswap(p[0]^n[0]);
+	n[1]=byteswap(p[1]^n[1]);
+	n[2]=byteswap(p[2]^n[2]);
+	n[3]=byteswap(p[3]^n[3]);
+#else
 	n[0]=p[0]^n[0];
 	n[1]=p[1]^n[1];
 	n[2]=p[2]^n[2];
 	n[3]=p[3]^n[3];
+#endif
 	serpent_encrypt(&ti->cryptkey,n,n);
 	p=n;
     }
 
-    *(uint32_t *)buf_prepend(buf,4)=ti->cryptiv;
+    buf_prepend_uint32(buf,ti->cryptiv);
     ti->cryptiv++;
 
     return 0;
@@ -175,17 +207,24 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 
     /* CBC */
     memset(iv,0,16);
-    iv[0]=*(uint32_t *)buf_unprepend(buf,4);
+    iv[0]=buf_unprepend_uint32(buf);
     serpent_encrypt(&ti->cryptkey,iv,iv);
     /* XXX assert bufsize is multiple of blocksize */
     for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
     {
 	pct[0]=n[0]; pct[1]=n[1]; pct[2]=n[2]; pct[3]=n[3];
 	serpent_decrypt(&ti->cryptkey,n,n);
+#ifdef WORDS_BIGENDIAN
+	n[0]=byteswap(iv[0]^n[0]);
+	n[1]=byteswap(iv[1]^n[1]);
+	n[2]=byteswap(iv[2]^n[2]);
+	n[3]=byteswap(iv[3]^n[3]);
+#else
 	n[0]=iv[0]^n[0];
 	n[1]=iv[1]^n[1];
 	n[2]=iv[2]^n[2];
 	n[3]=iv[3]^n[3];
+#endif
 	iv[0]=pct[0]; iv[1]=pct[1]; iv[2]=pct[2]; iv[3]=pct[3];
     }
 
@@ -199,13 +238,26 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
        block encrypted once again. */
     for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
     {
+#ifdef WORDS_BIGENDIAN
+	macplain[0]=macacc[0]^byteswap(n[0]);
+	macplain[1]=macacc[1]^byteswap(n[1]);
+	macplain[2]=macacc[2]^byteswap(n[2]);
+	macplain[3]=macacc[3]^byteswap(n[3]);
+#else
 	macplain[0]=macacc[0]^n[0];
 	macplain[1]=macacc[1]^n[1];
 	macplain[2]=macacc[2]^n[2];
 	macplain[3]=macacc[3]^n[3];
+#endif
 	serpent_encrypt(&ti->mackey,macplain,macacc);
     }
     serpent_encrypt(&ti->mackey,macacc,macacc);
+#ifdef WORDS_BIGENDIAN
+    macacc[0]=byteswap(macacc[0]);
+    macacc[1]=byteswap(macacc[1]);
+    macacc[2]=byteswap(macacc[2]);
+    macacc[3]=byteswap(macacc[3]);
+#endif
     if (memcmp(macexpected,macacc,16)!=0) {
 	*errmsg="invalid MAC";
 	return 1;
@@ -230,7 +282,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 
     /* Sequence number must be within max_skew of lastrecvseq; lastrecvseq
        is only allowed to increase. */
-    seqnum=ntohl(*(uint32_t *)buf_unprepend(buf,4));
+    seqnum=buf_unprepend_uint32(buf);
     skew=seqnum-ti->lastrecvseq;
     if (skew<10) {
 	/* Ok */
