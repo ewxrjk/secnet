@@ -61,7 +61,7 @@ log logfile("secnet","local2"); # Not yet implemented, goes to stderr
 # userid	who we try to run as after setup
 # pidfile
 system {
-#	userid "steve";
+	userid "steve";
 #	pidfile "/var/run/secnet.pid";
 	pidfile "foo.pid";
 };
@@ -99,8 +99,9 @@ system {
 # setup-timeout         wait between retransmits of key setup packets, in ms
 # wait-time             wait between unsuccessful key setup attempts, in ms
 
-netlink userv-ipif {
-	name "userv-ipif"; # Printed in log messages from this netlink
+netlink tun {
+	name "fred"; # Printed in log messages from this netlink
+	interface "fred";
 	# userv-path "/usr/bin/userv";
 	# service-user "root";
 	# service-name "ipif";

@@ -6,27 +6,4 @@
 #include <sys/cdefs.h>
 #endif
 
-#if 0
-/* Use the definitions: */
-
-/* Give us an unsigned 32-bit data type. */
-#if SIZEOF_UNSIGNED_LONG==4
-#define UWORD32 unsigned long
-#elif SIZEOF_UNSIGNED_INT==4
-#define UWORD32 unsigned int
-#else
-#error I do not know what to use for a UWORD32.
-#endif
-
-/* An unsigned 8-bit data type */
-#if SIZEOF_UNSIGNED_CHAR==1
-#define UBYTE8 unsigned char
-#else
-#error I do not know what to use for a UBYTE8
-#endif
-
-
-#endif /* 0 */
-
-
 #endif /* _CONFIG_H */

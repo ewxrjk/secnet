@@ -156,7 +156,7 @@ static void setup(dict_t *config)
 	fatal("configuration does not include a system/log facility\n");
     }
     log=init_log(l);
-    log->log(log->st,LOG_DEBUG,"setup: logging started");
+    log->log(log->st,LOG_DEBUG,"secnet " VERSION ": logging started");
 
     /* Who are we supposed to run as? */
     userid=dict_read_string(system,"userid",False,"system",loc);

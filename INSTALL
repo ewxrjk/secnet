@@ -8,6 +8,15 @@ through userv-ipif, install and configure userv-ipif. It is part of
 userv-utils, available from ftp.chiark.greenend.org.uk in
 /users/ian/userv
 
+If you intend to configure secnet to obtain packets from the kernel
+using the universal TUN/TAP driver, make sure it's configured in your
+kernel (it's under "network device support" in Linux) and that you've
+created the appropriate device files; see
+linux/Documentation/networking/tuntap.txt
+
+If you're using TUN/TAP on a platform other than Linux, see
+http://vtun.sourceforge.net/tun/
+
 Then, to install secnet do
 
 $ ./configure

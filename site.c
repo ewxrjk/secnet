@@ -106,6 +106,7 @@ struct site {
 /* configuration information */
     string_t localname;
     string_t remotename;
+    string_t tunname; /* localname<->remotename by default */
     string_t address; /* DNS name for bootstrapping, optional */
     int remoteport;
     struct netlink_if *netlink;
@@ -167,8 +168,7 @@ static void slog(struct site *st, uint32_t event, string_t msg, ...)
 
     if (event&st->log_events) {
 	vsnprintf(buf,240,msg,ap);
-	st->log->log(st->log->st,0,"%s<->%s: %s",st->localname,st->remotename,
-		     buf);
+	st->log->log(st->log->st,0,"%s: %s",st->tunname,buf);
     }
     va_end(ap);
 }
@@ -699,6 +699,7 @@ static void enter_state_run(struct site *st)
     slog(st,LOG_STATE,"entering state RUN");
     st->state=SITE_RUN;
     st->timeout=0;
+    st->netlink->set_delivery(st->netlink->st,st->netlink_cid,True);
     /* XXX get rid of key setup data */
 }
 
@@ -815,6 +816,7 @@ static void enter_state_wait(struct site *st)
     st->timeout=st->now+st->wait_timeout;
     st->state=SITE_WAIT;
     st->peer_valid=False;
+    st->netlink->set_delivery(st->netlink->st,st->netlink_cid,False);
     BUF_FREE(&st->buffer); /* will have had an outgoing packet in it */
     /* XXX Erase keys etc. */
 }
@@ -1012,8 +1014,13 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    }
 	    break;
 	case LABEL_MSG5:
-	    /* Setup packet: expected only in state SENTMSG4 or RUN */
-	    if (st->state!=SITE_SENTMSG4 && st->state!=SITE_RUN) {
+	    /* Setup packet: expected only in state SENTMSG4 */
+	    /* (may turn up in state RUN if our return MSG6 was lost
+	       and the new key has already been activated. In that
+	       case we should treat it as an ordinary PING packet. We
+	       can't pass it to process_msg5() because the
+	       new_transform will now be null. XXX) */
+	    if (st->state!=SITE_SENTMSG4) {
 		slog(st,LOG_UNEXPECTED,"unexpected MSG5");
 	    } else if (process_msg5(st,buf,source)) {
 		send_msg6(st);
@@ -1112,6 +1119,10 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log_events=LOG_SECURITY|LOG_ERROR|
 	LOG_ACTIVATE_KEY|LOG_TIMEOUT_KEY|LOG_SETUP_INIT|LOG_SETUP_TIMEOUT;
 
+    st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
+			    "site_apply");
+    sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
+
     /* The information we expect to see in incoming messages of type 1 */
     st->setupsiglen=strlen(st->remotename)+strlen(st->localname)+8;
     st->setupsig=safe_malloc(st->setupsiglen,"site_apply");
@@ -1142,7 +1153,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->netlink_cid=st->netlink->regnets(st->netlink->st, &st->remotenets,
 					 site_outgoing, st,
 					 st->transform->max_start_pad+(4*4),
-					 st->transform->max_end_pad);
+					 st->transform->max_end_pad,
+					 st->tunname);
 
     st->comm->request_notify(st->comm->st, st, site_incoming);
 

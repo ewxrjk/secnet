@@ -141,6 +141,8 @@ extern void Message(uint32_t class, char *message, ...);
 extern string_t ipaddr_to_string(uint32_t addr);
 extern string_t subnet_to_string(struct subnet *sn);
 
+extern int sys_cmd(const char *file, char *argc, ...);
+
 /***** END of utility functions *****/
 
 /***** SCHEDULING support */
@@ -345,16 +347,21 @@ struct transform_if {
 /* Used by netlink to deliver to site, and by site to deliver to netlink.
    cid is the client identifier returned by netlink_regnets_fn */
 typedef void netlink_deliver_fn(void *st, void *cid, struct buffer_if *buf);
+/* site code can tell netlink when outgoing packets will be dropped,
+   so netlink can generate appropriate ICMP */
+typedef void netlink_can_deliver_fn(void *st, void *cid, bool_t can_deliver);
 /* Register for packets from specified networks. Return value is client
    identifier. */
 typedef void *netlink_regnets_fn(void *st, struct subnet_list *networks,
 				 netlink_deliver_fn *deliver, void *dst,
-				 uint32_t max_start_pad, uint32_t max_end_pad);
+				 uint32_t max_start_pad, uint32_t max_end_pad,
+				 string_t client_name);
 
 struct netlink_if {
     void *st;
     netlink_regnets_fn *regnets;
     netlink_deliver_fn *deliver;
+    netlink_can_deliver_fn *set_delivery;
 };
 
 /* DH interface */

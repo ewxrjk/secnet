@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <values.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include "util.h"
 #include "secnet.h"
 
@@ -283,6 +285,35 @@ string_t subnet_to_string(struct subnet *sn)
     return s;
 }
 
+int sys_cmd(const char *path, char *arg, ...)
+{
+    va_list ap;
+    int rv;
+    pid_t c;
+
+    va_start(ap,arg);
+    c=fork();
+    if (c) {
+	/* Parent -> wait for child */
+	waitpid(c,&rv,0);
+    } else if (c==0) {
+	char *args[100];
+	int i;
+	/* Child -> exec command */
+	args[0]=arg;
+	i=1;
+	while ((args[i++]=va_arg(ap,char *)));
+	execvp(path,args);
+	exit(1);
+    } else {
+	/* Error */
+	fatal_perror("sys_cmd(%s,%s,...)");
+    }
+
+    va_end(ap);
+    return rv;
+}
+
 /* Take a list of log closures and merge them */
 struct loglist {
     struct log_if *l;
@@ -515,19 +546,13 @@ static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *item;
     dict_t *dict;
     bool_t lockdown=False;
+    uint32_t len=DEFAULT_BUFFER_SIZE;
     
     st=safe_malloc(sizeof(*st),"buffer_apply");
     st->cl.description="buffer";
     st->cl.type=CL_BUFFER;
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
-    st->ops.free=True;
-    st->ops.owner=NULL;
-    st->ops.flags=0;
-    st->ops.loc=loc;
-    st->ops.size=0;
-    st->ops.len=DEFAULT_BUFFER_SIZE;
-    st->ops.start=NULL;
 
     /* First argument, if present, is buffer length */
     item=list_elem(args,0);
@@ -536,11 +561,11 @@ static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
 	    cfgfatal(st->ops.loc,"buffer","first parameter must be a "
 		     "number (buffer size)\n");
 	}
-	st->ops.len=item->data.number;
-	if (st->ops.len<MIN_BUFFER_SIZE) {
+	len=item->data.number;
+	if (len<MIN_BUFFER_SIZE) {
 	    cfgfatal(st->ops.loc,"buffer","ludicrously small buffer size\n");
 	}
-	if (st->ops.len>MAX_BUFFER_SIZE) {
+	if (len>MAX_BUFFER_SIZE) {
 	    cfgfatal(st->ops.loc,"buffer","ludicrously large buffer size\n");
 	}
     }
@@ -556,7 +581,7 @@ static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
 				False);
     }
 
-    st->ops.base=safe_malloc(st->ops.len,"buffer");
+    buffer_new(&st->ops,len);
     if (lockdown) {
 	Message(M_WARNING,"buffer: XXX lockdown\n");
     }

@@ -95,15 +95,15 @@ system {
 # A buffer for all sites to share, to construct outgoing packets
 buffer sysbuffer(4096,{lockdown=yes;});
 
-netlink userv-ipif {
-	name "userv-ipif"; # Printed in log messages from this netlink
+netlink tun {
+#	name "foo"; # Printed in log messages from this netlink
 	# userv-path "/usr/bin/userv";
 	# service-user "root";
 	# service-name "ipif";
 
 	# local networks served by this netlink device
 	# incoming tunneled packets for other networks will be discarded
-	networks "192.168.73.74/32";
+	networks "192.168.73.74/32","192.168.73.75/32";
 	local-address "192.168.73.74"; # IP address of interface
 	secnet-address "192.168.73.75"; # IP address of secnet
 	mtu 1400;

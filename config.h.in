@@ -26,21 +26,6 @@
 #define _CONFIG_H
 
 
-/* Define to empty if the keyword does not work.  */
-#undef const
-
-/* Define if you don't have vprintf but do have _doprnt.  */
-#undef HAVE_DOPRNT
-
-/* Define if you have the vprintf function.  */
-#undef HAVE_VPRINTF
-
-/* Define to `int' if <sys/types.h> doesn't define.  */
-#undef pid_t
-
-/* Define to `unsigned' if <sys/types.h> doesn't define.  */
-#undef size_t
-
 /* Define if you have the ANSI C header files.  */
 #undef STDC_HEADERS
 
@@ -48,14 +33,17 @@
    byte first (like Motorola and SPARC, unlike Intel and VAX).  */
 #undef WORDS_BIGENDIAN
 
+/* Define if you have the <linux/if.h> header file.  */
+#undef HAVE_LINUX_IF_H
+
 /* Define if you have the adns library (-ladns).  */
 #undef HAVE_LIBADNS
 
 /* Define if you have the fl library (-lfl).  */
 #undef HAVE_LIBFL
 
-/* Define if you have the gmp library (-lgmp).  */
-#undef HAVE_LIBGMP
+/* Define if you have the gmp2 library (-lgmp2).  */
+#undef HAVE_LIBGMP2
 /* -*- c -*- */
 
 /* These are from config.h.bot, pasted onto the end of config.h.in. */
@@ -63,28 +51,5 @@
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
 #endif
-
-#if 0
-/* Use the definitions: */
-
-/* Give us an unsigned 32-bit data type. */
-#if SIZEOF_UNSIGNED_LONG==4
-#define UWORD32 unsigned long
-#elif SIZEOF_UNSIGNED_INT==4
-#define UWORD32 unsigned int
-#else
-#error I do not know what to use for a UWORD32.
-#endif
-
-/* An unsigned 8-bit data type */
-#if SIZEOF_UNSIGNED_CHAR==1
-#define UBYTE8 unsigned char
-#else
-#error I do not know what to use for a UBYTE8
-#endif
-
-
-#endif /* 0 */
-
 
 #endif /* _CONFIG_H */

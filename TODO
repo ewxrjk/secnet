@@ -1,9 +1,12 @@
+configure.in: cut down to just the required tests. Support for installation.
+
+Makefile.in: support for installation.
+
 conffile.c: deal with line numbers from included conffiles correctly
 
 dh.c: change format to binary from decimal string
 
-netlink.c: initial implementation done, needs basic router functionality
-adding. Can wait. Also support tun device.
+netlink.c: done. Test tun-old code.
 
 random.c: test
 
