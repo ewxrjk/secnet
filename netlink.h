@@ -42,7 +42,9 @@ struct netlink {
     uint32_t max_end_pad;
     struct subnet_list networks;
     struct subnet_list exclude_remote_networks;
-    uint32_t secnet_address; /* our own address */
+    uint32_t secnet_address; /* our own address, or possibly the address of
+				the other end of a point-to-point link */
+    bool_t ptp;
     uint32_t mtu;
     struct netlink_client *clients;
     netlink_deliver_fn *deliver_to_host; /* Provided by driver */

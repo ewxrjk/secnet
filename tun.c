@@ -12,7 +12,7 @@
 #include <linux/if_tun.h>
 #endif
 
-/* XXX where do we find if_tun on other platforms? */
+/* Where do we find if_tun on other platforms? */
 
 /* Connection to the kernel through the universal TUN/TAP driver */
 
@@ -76,8 +76,8 @@ static void tun_deliver_to_kernel(void *sst, void *cid,
     struct tun *st=sst;
 
     BUF_ASSERT_USED(buf);
-
-    /* No error checking, because we'd just throw the packet away anyway */
+    /* No error checking, because we'd just throw the packet away
+       anyway if it didn't work. */
     write(st->fd,buf->start,buf->size);
     BUF_FREE(buf);
 }

@@ -308,10 +308,10 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
        is only allowed to increase. */
     seqnum=buf_unprepend_uint32(buf);
     skew=seqnum-ti->lastrecvseq;
-    if (skew<10) {
+    if (skew<0x8fffffff) {
 	/* Ok */
 	ti->lastrecvseq=seqnum;
-    } else if ((0-skew)<10) {
+    } else if ((0-skew)<ti->max_skew) {
 	/* Ok */
     } else {
 	/* Too much skew */

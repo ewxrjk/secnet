@@ -3,16 +3,11 @@ Makefile.in: autodep stuff
 dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
+ipaddr.c: implement the useful functionality from ipaddr.py
+
 netlink.c: investigate why 'default' routes don't appear to work
 (reported by JDA).
-
-slip.c: restart userv-ipif to cope with soft routes? Restart it if it
-fails in use?
-
-tun.c: jdamery reports tun-old code works on Linux-2.2.
-Unresolved problem with ioctl(TUNSETIFF) sometimes returning EINVAL, seems
-to be related to early 2.4.x (x<=5) series kernels. 2.4.9 and above seem ok;
-2.4.[678] untested.
+Implement the 'allow_route' option properly.
 
 random.c: test
 
@@ -22,12 +17,23 @@ rsa.c: check padding type, change format to binary from decimal string
 site.c: the site_incoming() routing could be implemented much more
 cleanly using a table. There's still quite a lot of redundancy in this
 file. Abandon key exchanges when a bad packet is received. Modify
-protocol to include version fields, as described in the NOTES file.
+protocol to include version fields, as described in the NOTES
+file. Implement keepalive mode. Make policy about when to initiate key
+exchanges more configurable (how many NAKs / bad reverse-transforms
+does it take to prompt a key exchange?)
+
+slip.c: restart userv-ipif to cope with soft routes? Restart it if it
+fails in use?
+userv-ipif doesn't like the same bit of network to be specified
+twice. Use the new functionality in ipaddr.c once it's done to prevent
+this.
+
+tun.c: jdamery reports tun-old code works on Linux-2.2.
+Unresolved problem with ioctl(TUNSETIFF) sometimes returning EINVAL, seems
+to be related to early 2.4.x (x<=5) series kernels. 2.4.9 and above seem ok;
+2.4.[678] untested.
 
 transform.c: separate the transforms into multiple parts, which can
 then be combined in the configuration file.  Will allow the user to
 plug in different block ciphers, invent an authenticity-only mode,
 etc.
-
-sha1.c: test
-

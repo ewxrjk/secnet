@@ -8,13 +8,6 @@
    packet to the kernel we check that the tunnel it came over could
    reasonably have produced it. */
 
-/* XXX new feature: "point-to-point" mode.  Instead of specifying a
-   secnet-address in the configuration dictionary, the user specifies
-   the address of the machine at the other end of the (one and only)
-   tunnel.  We bypass all IP packet processing code.  This mode is
-   useful for leafnodes like laptops, which don't require a secnet
-   router address. */
-
 #include "secnet.h"
 #include "util.h"
 #include "ipaddr.h"
@@ -442,8 +435,8 @@ static void netlink_incoming(void *sst, void *cid, struct buffer_if *buf)
 
     /* Check source */
     if (client) {
-	/* Check that the packet source is in 'nets' and its destination is
-	   in st->networks */
+	/* Check that the packet source is appropriate for the tunnel
+	   it came down */
 	if (!subnet_matches_list(client->networks,source)) {
 	    string_t s,d;
 	    s=ipaddr_to_string(source);
@@ -455,6 +448,9 @@ static void netlink_incoming(void *sst, void *cid, struct buffer_if *buf)
 	    return;
 	}
     } else {
+	/* Check that the packet originates in our configured local
+	   network, and hasn't been forwarded from elsewhere or
+	   generated with the wrong source address */
 	if (!subnet_matches_list(&st->networks,source)) {
 	    string_t s,d;
 	    s=ipaddr_to_string(source);
@@ -466,6 +462,20 @@ static void netlink_incoming(void *sst, void *cid, struct buffer_if *buf)
 	    return;
 	}
     }
+
+    /* If this is a point-to-point device we don't examine the packet at
+       all; we blindly send it down our one-and-only registered tunnel,
+       or to the host, depending on where it came from. */
+    if (st->ptp) {
+	if (client) {
+	    st->deliver_to_host(st->dst,NULL,buf);
+	} else {
+	    st->clients->deliver(st->clients->dst,NULL,buf);
+	}
+	BUF_ASSERT_FREE(buf);
+	return;
+    }
+
     /* (st->secnet_address needs checking before matching destination
        addresses) */
     if (dest==st->secnet_address) {
@@ -552,14 +562,20 @@ static void *netlink_regnets(void *sst, struct subnet_list *nets,
 	Message(M_ERROR,"%s: site %s specifies networks that "
 		"intersect with the explicitly excluded remote networks\n",
 		st->name,client_name);
-	return False;
+	return NULL;
+    }
+
+    if (st->clients && st->ptp) {
+	fatal("%s: only one site may use a point-to-point netlink device\n",
+	      st->name);
+	return NULL;
     }
 
     c=safe_malloc(sizeof(*c),"netlink_regnets");
     c->networks=nets;
     c->deliver=deliver;
     c->dst=dst;
-    c->name=client_name; /* XXX copy it? */
+    c->name=client_name;
     c->options=options;
     c->link_quality=LINK_QUALITY_DOWN;
     c->next=st->clients;
@@ -614,6 +630,13 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
     struct netlink_client *c;
     uint32_t i,j;
 
+    if (!st->clients && st->ptp) {
+	/* Point-to-point netlink devices must have precisely one
+	   client. If none has registered by now, complain. */
+	fatal("%s: point-to-point netlink devices must have precisely "
+	      "one client. This one doesn't have any.\n",st->name);
+    }
+
     /* All the networks serviced by the various tunnels should now
      * have been registered.  We build a routing table by sorting the
      * routes into most-specific-first order.  */
@@ -661,6 +684,8 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
 				 netlink_route_fn *set_route,
 				 netlink_deliver_fn *to_host)
 {
+    item_t *sa, *ptpa;
+
     st->dst=dst;
     st->cl.description=description;
     st->cl.type=CL_NETLINK;
@@ -685,8 +710,23 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
     /* secnet-address does not have to be in local-networks;
        however, it should be advertised in the 'sites' file for the
        local site. */
-    st->secnet_address=string_to_ipaddr(
-	dict_find_item(dict,"secnet-address", True, "netlink", loc),"netlink");
+    sa=dict_find_item(dict,"secnet-address",False,"netlink",loc);
+    ptpa=dict_find_item(dict,"ptp-address", False, "netlink", loc);
+    if (sa && ptpa) {
+	cfgfatal(loc,st->name,"you may not specify secnet-address and "
+		 "ptp-address in the same netlink device\n");
+    }
+    if (!(sa || ptpa)) {
+	cfgfatal(loc,st->name,"you must specify secnet-address or "
+		 "ptp-address for this netlink device\n");
+    }
+    if (sa) {
+	st->secnet_address=string_to_ipaddr(sa,"netlink");
+	st->ptp=False;
+    } else {
+	st->secnet_address=string_to_ipaddr(ptpa,"netlink");
+	st->ptp=True;
+    }
     st->mtu=dict_read_number(dict, "mtu", False, "netlink", loc, DEFAULT_MTU);
     buffer_new(&st->icmp,ICMP_BUFSIZE);
     st->n_routes=0;

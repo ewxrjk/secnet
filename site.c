@@ -629,7 +629,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 				       msg0,&transform_err)) {
 	/* There's a problem */
 	slog(st,LOG_SEC,"transform: %s",transform_err);
-	return False;
+	return initiate_key_setup(st);
     }
     CHECK_AVAIL(msg0,4);
     type=buf_unprepend_uint32(msg0);

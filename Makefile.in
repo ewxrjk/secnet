@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.7
+VERSION:=0.1.8
 
 @SET_MAKE@
 
@@ -48,12 +48,12 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	serpent.o md5.o version.o tun.o slip.o sha1.o ipaddr.o log.o \
 	process.o
 
-DISTFILES:=COPYING CREDITS INSTALL Makefile.in NOTES README TODO \
+DISTFILES:=COPYING CREDITS INSTALL Makefile.in NEWS NOTES README TODO \
 	conffile.c conffile.fl conffile.h conffile.y \
 	conffile_internal.h config.h.bot \
 	config.h.in config.h.top configure \
 	configure.in debian dh.c \
-	example-sites-file example.conf make-secnet-sites.py \
+	example.conf make-secnet-sites.py \
 	install.sh ipaddr.c ipaddr.h ipaddr.py linux log.c md5.c md5.h \
 	modules.c netlink.c netlink.h process.c process.h \
 	random.c resolver.c rsa.c \

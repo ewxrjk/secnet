@@ -291,7 +291,12 @@ null-netlink: dict argument
     by any remote site using this netlink device
   local-address (string): IP address of host's tunnel interface
   secnet-address (string): IP address of this netlink device
+  ptp-address (string): IP address of the other end of a point-to-point link
   mtu (integer): MTU of host's tunnel interface
+
+Only one of secnet-address or ptp-address may be specified. If
+point-to-point mode is in use then precisely one tunnel must register
+with the netlink device.
 
 Netlink will dump its current routing table to the system/log on
 receipt of SIGUSR1.
@@ -331,6 +336,9 @@ tun-old: dict argument
   route-path (string): optional, path to route command
  plus generic netlink options, as for 'null-netlink'
 
+ I recommend you don't specify the 'interface' option unless you're
+ doing something that requires the interface name to be constant.
+
 ** rsa
 
 Defines:
@@ -364,3 +372,21 @@ Defines:
 
 Defines:
   sha1 (hash closure)
+
+** conffile
+
+Defines:
+  makelist (dictionary => list of definitions)
+  readfile (string => string)
+  map (closure,list => list)
+
+makelist: dictionary
+  returns a list consisting of the definitions in the dictionary. The keys
+  are discarded.
+
+readfile: string
+  reads the named file and returns its contents as a string
+
+map:
+  applies the closure specified as arg1 to each of the elements in the list.
+  Returns a list made up of the outputs of the closure.
