@@ -1,0 +1,76 @@
+INSTALLATION INSTRUCTIONS for SECNET
+
+Ensure that you have libgmp2-dev and adns installed (and bison and
+flex, and for that matter gcc...).
+
+If you intend to configure secnet to obtain packets from the kernel
+through userv-ipif, install and configure userv-ipif. It is part of
+userv-utils, available from ftp.chiark.greenend.org.uk in
+/users/ian/userv
+
+Then, to install secnet do
+
+$ ./configure
+$ make
+# cp secnet /usr/local/sbin/secnet
+# mkdir /etc/secnet
+# cp example.conf /etc/secnet/secnet.conf
+# cd /etc/secnet
+# ssh-keygen -f key -N ""
+
+(When upgrading, just install the new /usr/local/sbin/secnet; keep
+your current configuration file.)
+
+If you intend to start secnet as root, I suggest you create an userid
+for it to run as once it's ready to drop its privileges. Example:
+# adduser --system --no-create-home secnet
+
+Generate a site file fragment for your site, and submit it for
+inclusion in the vpn-sites file. Download the vpn-sites file.
+
+* Constructing a site file fragment
+
+You need the following information:
+
+1.  a short name for your site, eg. "greenend". This is used to
+identify your site in the vpn-sites file.
+
+2.  the name your site will use in the key setup protocol,
+eg. "greenend" (these two will usually be similar or the same).
+
+3.  the DNS name of the machine that will be the "front-end" for your
+secnet installation. This will typically be the name of the gateway
+machine for your network, eg. sinister.dynamic.greenend.org.uk
+
+secnet does not actually have to run on this machine, as long as the
+machine can be configured to forward UDP packets to the machine that
+is running secnet.
+
+4.  the port number used to contact secnet at your site. This is the
+port number on the front-end machine, and does not necessarily have to
+match the port number on the machine running secnet.
+
+5.  the list of networks accessible at your site over the VPN.
+
+6.  the public part of the RSA key you generated during installation
+(in /etc/secnet/key.pub if you followed the installation
+instructions). This file contains three numbers and a comment on one
+line. The first number is the key length in bits, and can be
+ignored. The second number (typically small) is the encryption key
+'e', and the third number (large) is the modulus 'n'.
+
+If you are running secnet on a particularly slow machine, you may like
+to specify a larger value for the key setup retry timeout than the
+default, to prevent unnecessary retransmissions of key setup
+packets. See the notes in the example configuration file for more on
+this.
+
+The site file fragment should look something like this:
+
+shortname {
+		name "sitename";
+		address "your.public.address.org.uk";
+		port 5678;
+		networks "172.18.45.0/24";
+		key rsa-public("35","153279875126380522437827076871354104097683702803616313419670959273217685015951590424876274370401136371563604396779864283483623325238228723798087715987495590765759771552692972297669972616769731553560605291312242789575053620182470998166393580503400960149506261455420521811814445675652857085993458063584337404329");
+	};

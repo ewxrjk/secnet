@@ -1,0 +1,54 @@
+/*
+ * $Log$
+ */
+
+#ifndef conffile_internal_h
+#define conffile_internal_h
+
+#include <stdio.h>
+#include "secnet.h"
+
+extern FILE *yyin;
+
+typedef string_t atom_t;
+
+/* Parse tree for configuration file */
+
+#define YYSTYPE struct p_node *
+
+#define T_STRING 1
+#define T_NUMBER 2
+#define T_KEY    3
+#define T_ASSIGNMENT 10
+#define T_LISTITEM   11
+#define T_EXEC       12
+#define T_PATHELEM   13
+#define T_ABSPATH    14
+#define T_RELPATH    15
+#define T_DICT       16
+#define T_ALIST      17
+#define T_ERROR      20
+
+struct p_node {
+    uint32_t type;
+    struct cloc loc;
+    union {
+	atom_t key;
+	string_t string;
+	uint32_t number;
+    } data;
+    struct p_node *l;
+    struct p_node *r;
+};
+
+extern int yylex(void);
+extern string_t config_file;
+extern uint32_t config_lineno;
+
+/* Keys in dictionaries are 'atoms', which are constructed from strings
+   using this call. Atoms may be compared using '=='. */
+extern atom_t intern(string_t string);
+
+extern struct p_node *parse_conffile(FILE *conffile);
+
+#endif /* conffile_internal_h */

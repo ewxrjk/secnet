@@ -1,0 +1,24 @@
+conffile.c: deal with line numbers from included conffiles correctly
+
+dh.c: change format to binary from decimal string
+
+netlink.c: initial implementation done, needs basic router functionality
+adding. Can wait. Also support tun device.
+
+random.c: test
+
+resolver.c: done
+
+rsa.c: check padding type, change format to binary from decimal string
+
+secnet.c: done
+
+site.c: the site_incoming() routing could be implemented much more
+cleanly using a table. There's still quite a lot of redundancy in this
+file.
+
+transform.c: done
+
+udp.c: done
+
+util.c: sort out logging

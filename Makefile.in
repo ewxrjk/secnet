@@ -1,0 +1,52 @@
+.DUMMY:	all clean realclean dist install
+
+PACKAGE:=secnet
+VERSION:=0.03
+
+@SET_MAKE@
+
+srcdir:=@srcdir@
+VPATH:=@srcdir@
+
+CFLAGS:=@CFLAGS@ @DEFS@ -DVERSION=\"$(VERSION)\" -Wall
+
+LDFLAGS:=@LDFLAGS@
+
+LDLIBS:=@LIBS@
+
+TARGETS:=secnet
+
+OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
+	resolver.o random.o udp.o site.o transform.o netlink.o rsa.o dh.o \
+	serpent.o md5.o
+
+%.c:	%.y
+
+%.yy.c:	%.fl
+	flex -o$@ $<
+
+%.tab.c:	%.y
+	bison -d $<
+
+RM:=@RM@
+
+all:	$(TARGETS)
+
+secnet:	$(OBJECTS)
+
+clean:
+	$(RM) -f $(srcdir)/*.o $(srcdir)/*~ $(srcdir)/*.yy.c \
+		$(srcdir)/*.tab.[ch]
+
+realclean:	clean
+	$(RM) -f $(TARGETS) $(srcdir)/Makefile $(srcdir)/config.h \
+	$(srcdir)/config.log $(srcdir)/config.status $(srcdir)/config.cache \
+	$(srcdir)/Makefile.bak core
+
+dist:	realclean
+	(cd .. ; ln -s $(PACKAGE) $(PACKAGE)-$(VERSION) ; tar hcf - \
+	$(PACKAGE)-$(VERSION) | \
+	gzip -9 > $(PACKAGE)-$(VERSION).tar.gz ; rm $(PACKAGE)-$(VERSION) )
+
+conffile.yy.c:	conffile.fl conffile.tab.c
+conffile.tab.c:	conffile.y

@@ -1,0 +1,153 @@
+# secnet configuration file
+
+# This file defines a dictionary full of configuration information for
+# secnet. Two keys must be defined in this file for secnet to
+# start. One is "system", a dictionary containing systemwide control
+# parameters. The other is "sites", a list of all the sites that you
+# intend to communicate with.
+
+# Other files can be included inline by writing "include filename" at
+# the start of a line.
+
+# The configuration file has a fairly simple syntax:
+# key definition;  or key = definition; (the "=" is optional)
+# ...sets 'key' in the current dictionary to 'definition'.
+# 
+# "key" is [[:alpha:]_][[:alnum:]\-_]*
+# 
+# definition may be one of the following:
+#  a string, in quotes
+#  a number, in decimal
+#  a dictionary, in { }
+#  a path to a key that already exists, to reference that definition
+#  a "closure", followed by arguments
+#
+# paths are key1/key2/key3... (starting from wherever we find key1, i.e. in
+#  the current dictionary or any of its parents)
+# alternatively /key1/key2/key3... (to start from the root)
+# 
+# closures are followed by an argument list in ( ), and may return
+# whatever type they like (including other closures)
+#
+# closure { definitions } is short for closure({definitions}).
+#
+# Whenever secnet looks for a key it checks the (lexical) parent dictionaries
+# as well until it finds it or reaches the root. This is useful for setting
+# defaults for large collections of dictionaries (eg. defining sites).
+#
+# It is also permissible to list other dictionaries before a dictionary
+# definition, eg. <defaults,otherdefaults>{definitions}. These will be
+# searched in order for keys, before the lexical parent. (Not yet implemented)
+# 
+# secnet predefines some keys in the root dictionary; some useful ones are:
+#  yes, true, True, TRUE:   the boolean value True
+#  no, false, False, FALSE: the boolean value False
+#  makelist:   turns a dictionary (arg1) into a list (return value)
+#  readfile:   reads a file (arg1) and returns it as a string
+#
+# secnet modules also predefine keys, eg. "adns", "randomfile", etc.
+# See the module documentation for more information.
+
+# After the configuration file is read, secnet looks for particular keys
+# in configuration space to tell it what to do:
+#  system:     system-wide parameters (control, logging, etc.)
+#  sites:      a list of sites with which to communicate
+
+# Log facility
+log logfile("secnet","local2"); # Not yet implemented, goes to stderr
+
+# Systemwide configuration (all other configuration is per-site):
+# log		a log facility for program messages
+# userid	who we try to run as after setup
+# pidfile
+system {
+#	userid "tunnel";
+#	pidfile "/var/run/secnet.pid";
+};
+
+# Parameters for each remote site (arguments to the site() closure):
+#  things we configure locally
+# buffer                buffer for constructing/sending/receiving packets
+# netlink		user/kernel netlink device for this tunnel
+# comm			UDP communication
+# resolver		resolver to use for name lookups
+# log			a log destination for this connection
+# log-events		string list: which events we log
+# random                a source of randomness
+
+#  our local configuration visible to the outside world
+# local-name		string: how we identify ourselves to them
+# local-key		our own private RSA key
+# local-port		port number we listen on
+
+#  their configuration visible to us
+# name			string: how they identify themselves
+# address		string: use with resolver to find their IP address
+# networks		string list: their networks for us
+# key			the remote site's RSA public key
+# port			port we send to to contact remote site
+
+#  things both ends must agree on
+# transform             routine for bulk encryption
+# dh			Diffie-Hellman parameters
+# hash			secure hash function
+
+# A buffer for all sites to share, to construct outgoing packets
+buffer sysbuffer(4096,{lockdown=yes;});
+
+netlink userv-ipif {
+	name "userv-ipif"; # Printed in log messages from this netlink
+	# userv-path "/usr/bin/userv";
+	# service-user "root";
+	# service-name "ipif";
+
+	# local networks served by this netlink device
+	# incoming tunneled packets for other networks will be discarded
+	networks "192.168.73.74/32";
+	local-address "192.168.73.74"; # IP address of interface
+	secnet-address "192.168.73.75"; # IP address of secnet
+	mtu 1400;
+
+	buffer sysbuffer(); # userv/ipif needs a buffer to build incoming
+		# packets from the netlink device before passing them
+		# to the site layer
+};
+comm udp {
+	port 5678;
+	# buffer shared with sites
+};
+resolver adns {
+	noenv=yes;	# yes is a name for the boolean "true"
+	nameservers "127.0.0.1","192.168.73.4";
+};
+# log is defined earlier - we share it with the system
+log-events "init","up","down";
+random randomfile("/dev/urandom",no);
+
+local-name "zealot";
+local-key rsa-private("private-key");
+
+transform serpent256-cbc {
+	max-sequence-skew 10;
+};
+
+dh diffie-hellman("8db5f2c15ac96d9f3382d1ef4688fba14dc7908ae7dfd71a9cfe7f479a75d506dc53f159aeaf488bde073fe544bc91c099f101fcf60074f30c06e36263c03ca9e07931ce3fc235fe1171dc6d9316fb097bd4362891e2c36e234e7c16b038fd97b1f165c710e90537de66ee4f54001f5712b050d4e07de3fba07607b19b64f6c3","2");
+hash md5;
+
+zealot {
+		name "zealot";
+		address "zealot.sinister.greenend.org.uk";
+		port 5678;
+		networks "192.168.73.74/32", "192.168.73.75/32";
+		key rsa-public("35","131453873229748492184986747327990913828179255774895541667982108408897406369168730551214152673574619385573519088922707364993860644376262000057302119569116289693520981276177337391324943049983046703853106890057346878967444626093102422836819979338760420960495059950787838142162794317002315919126174831103379472833");
+	};
+
+myrddin {
+		name "myrddin";
+		address "myrddin.sinister.greenend.org.uk";
+		port 1234;
+		networks "192.168.73.72/32", "192.168.73.73/32";
+		key rsa-public("35","154107175724781677184264293617887954015562225725852111745852699493257053099810379926047345975839848434403852210573185384327420788855664167034282567346429150999373740871227795773749618022407366186555483566435251279808390618987056868368084933125373643004284007109877210578088697520329039753099981203724057693543");
+	};
+
+sites site(myrddin);

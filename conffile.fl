@@ -1,0 +1,101 @@
+/* the "incl" state is used for picking up the name of an include file */
+%x incl
+
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "conffile_internal.h"
+#include "conffile.tab.h"
+#include "util.h"
+
+#define MAX_INCLUDE_DEPTH 10
+YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+int include_stack_ptr=0;
+
+uint32_t config_lineno=0;
+string_t config_file="xxx";
+
+static struct p_node *leafnode(uint32_t type)
+{
+	struct p_node *r;
+
+	r=safe_malloc(sizeof(*r),"leafnode");
+	r->type=type;
+	r->loc.file=config_file;
+	r->loc.line=config_lineno;
+	r->l=NULL; r->r=NULL;
+	return r;
+}
+
+static struct p_node *keynode(atom_t key)
+{
+	struct p_node *r;
+	r=leafnode(T_KEY);
+	r->data.key=intern(key);
+	return r;
+}
+
+static struct p_node *stringnode(string_t string)
+{
+	struct p_node *r;
+	r=leafnode(T_STRING);
+	string++;
+	string[strlen(string)-1]=0;
+	r->data.string=safe_strdup(string,"stringnode");
+	return r;
+}
+
+static struct p_node *numnode(string_t number)
+{
+	struct p_node *r;
+	r=leafnode(T_NUMBER);
+	r->data.number=atoi(number);
+	return r;
+}
+
+%}
+
+%%
+include			BEGIN(incl);
+<incl>[ \t]*		/* eat the whitespace */
+<incl>[^ \t\n]+		{ /* got the include filename */
+	if (include_stack_ptr >= MAX_INCLUDE_DEPTH) {
+		fatal("Configuration file includes nested too deeply");
+	}
+	include_stack[include_stack_ptr++]=
+		YY_CURRENT_BUFFER;
+	yyin=fopen(yytext,"r");
+	if (!yyin) {
+		fatal("Can't open included file %s",yytext);
+	}
+	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+	BEGIN(INITIAL);
+	}
+<<EOF>>		{
+	if (--include_stack_ptr < 0) {
+		yyterminate();
+		}
+	else {
+		fclose(yyin);
+		yy_delete_buffer(YY_CURRENT_BUFFER);
+		yy_switch_to_buffer(include_stack[include_stack_ptr]);
+	}
+	}
+\"[^\"]*\"		yylval=stringnode(yytext); return TOK_STRING;
+
+[[:alpha:]_][[:alnum:]\-_]*	yylval=keynode(yytext); return TOK_KEY;
+
+[[:digit:]]+		yylval=numnode(yytext); return TOK_NUMBER;
+
+	/* Eat comments */
+\#.*\n			config_lineno++;
+	/* Count lines */
+\n			config_lineno++;
+	/* Eat whitespace */
+[[:blank:]\j]
+
+	/* Return all unclaimed single characters to the parser */
+.			return *yytext;
+
