@@ -1,18 +1,19 @@
 /* User-kernel network link */
 
-/* We will eventually support a variety of methods for extracting
-   packets from the kernel: userv-ipif, ipif on its own (when we run
-   as root), the kernel TUN driver, SLIP to a pty, an external netlink
-   daemon. There is a performance/security tradeoff. */
+/* We support a variety of methods for extracting packets from the
+   kernel: userv-ipif, ipif on its own (when we run as root), the
+   kernel TUN driver.  Possible future methods: SLIP to a pty, an
+   external netlink daemon.  There is a performance/security
+   tradeoff. */
 
 /* When dealing with SLIP (to a pty, or ipif) we have separate rx, tx
-   and client buffers. When receiving we may read() any amount, not
-   just whole packets. When transmitting we need to bytestuff anyway,
+   and client buffers.  When receiving we may read() any amount, not
+   just whole packets.  When transmitting we need to bytestuff anyway,
    and may be part-way through receiving. */
 
-/* Each netlink device is actually a router, with its own IP
-   address. We do things like decreasing the TTL and recalculating the
-   header checksum, generating ICMP, responding to pings, etc. */
+/* Each netlink device is actually a router, with its own IP address.
+   We do things like decreasing the TTL and recalculating the header
+   checksum, generating ICMP, responding to pings, etc. */
 
 /* This is where we have the anti-spoofing paranoia - before sending a
    packet to the kernel we check that the tunnel it came over could
@@ -31,7 +32,7 @@
 #include <linux/if_tun.h>
 #endif
 
-/* XXX where do we find if_tun on other architectures? */
+/* XXX where do we find if_tun on other platforms? */
 
 #define DEFAULT_BUFSIZE 2048
 #define DEFAULT_MTU 1000
@@ -63,6 +64,7 @@ struct netlink {
     uint32_t max_start_pad;
     uint32_t max_end_pad;
     struct subnet_list networks;
+    struct subnet_list exclude_remote_networks;
     uint32_t local_address; /* host interface address */
     uint32_t secnet_address; /* our own address */
     uint32_t mtu;
@@ -534,6 +536,20 @@ static void *netlink_regnets(void *sst, struct subnet_list *nets,
 	    "max_start_pad=%d, max_end_pad=%d\n",
 	    nets->entries,max_start_pad,max_end_pad);
 
+    /* Check that nets does not intersect with st->networks or
+       st->exclude_remote_networks; refuse to register if it does. */
+    if (subnet_lists_intersect(&st->networks,nets)) {
+	Message(M_ERROR,"%s: site %s specifies networks that "
+		"intersect with our local networks\n",st->name,client_name);
+	return False;
+    }
+    if (subnet_lists_intersect(&st->exclude_remote_networks,nets)) {
+	Message(M_ERROR,"%s: site %s specifies networks that "
+		"intersect with the explicitly excluded remote networks\n",
+		st->name,client_name);
+	return False;
+    }
+
     c=safe_malloc(sizeof(*c),"netlink_regnets");
     c->networks=nets;
     c->deliver=deliver;
@@ -571,13 +587,15 @@ static netlink_deliver_fn *netlink_init(struct netlink *st,
     if (!st->name) st->name=description;
     dict_read_subnet_list(dict, "networks", True, "netlink", loc,
 			  &st->networks);
+    dict_read_subnet_list(dict, "exclude-remote-networks", False, "netlink",
+			  loc, &st->exclude_remote_networks);
+    /* local-address and secnet-address do not have to be in local-networks;
+       however, they should be advertised in the 'sites' file for the
+       local site. */
     st->local_address=string_to_ipaddr(
 	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
     st->secnet_address=string_to_ipaddr(
 	dict_find_item(dict,"secnet-address", True, "netlink", loc),"netlink");
-    if (!subnet_match(&st->networks,st->local_address)) {
-	cfgfatal(loc,"netlink","local-address must be in local networks\n");
-    }
     st->mtu=dict_read_number(dict, "mtu", False, "netlink", loc, DEFAULT_MTU);
     buffer_new(&st->icmp,ICMP_BUFSIZE);
 
@@ -842,6 +860,8 @@ struct tun {
     string_t interface_name;
     string_t ifconfig_path;
     string_t route_path;
+    bool_t tun_old;
+    bool_t search_for_if; /* Applies to tun-old only */
     struct buffer_if *buff; /* We receive packets into here
 			       and send them to the netlink code. */
     netlink_deliver_fn *netlink_to_tunnel;
@@ -906,6 +926,65 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
     struct netlink_client *c;
     int i;
 
+    if (st->tun_old) {
+	if (st->search_for_if) {
+	    string_t dname;
+	    int i;
+
+	    /* ASSERT st->interface_name */
+	    dname=safe_malloc(strlen(st->device_path)+4,"tun_old_apply");
+	    st->interface_name=safe_malloc(8,"tun_phase_hook");
+	
+	    for (i=0; i<255; i++) {
+		sprintf(dname,"%s%d",st->device_path,i);
+		if ((st->fd=open(dname,O_RDWR))>0) {
+		    sprintf(st->interface_name,"tun%d",i);
+		    Message(M_INFO,"%s: allocated network interface %s "
+			    "through %s\n",st->nl.name,st->interface_name,
+			    dname);
+		    break;
+		}
+	    }
+	    if (st->fd==-1) {
+		fatal("%s: unable to open any TUN device (%s...)\n",
+		      st->nl.name,st->device_path);
+	    }
+	} else {
+	    st->fd=open(st->device_path,O_RDWR);
+	    if (st->fd==-1) {
+		fatal_perror("%s: unable to open TUN device file %s",
+			     st->nl.name,st->device_path);
+	    }
+	}
+    } else {
+#ifdef HAVE_LINUX_IF_H
+	struct ifreq ifr;
+
+	/* New TUN interface: open the device, then do ioctl TUNSETIFF
+	   to set or find out the network interface name. */
+	st->fd=open(st->device_path,O_RDWR);
+	if (st->fd==-1) {
+	    fatal_perror("%s: can't open device file %s",st->nl.name,
+			 st->device_path);
+	}
+	memset(&ifr,0,sizeof(ifr));
+	ifr.ifr_flags = IFF_TUN | IFF_NO_PI; /* Just send/receive IP packets,
+						no extra headers */
+	if (st->interface_name)
+	    strncpy(ifr.ifr_name,st->interface_name,IFNAMSIZ);
+	if (ioctl(st->fd,TUNSETIFF,&ifr)<0) {
+	    fatal_perror("%s: ioctl(TUNSETIFF)",st->nl.name);
+	}
+	if (!st->interface_name) {
+	    st->interface_name=safe_malloc(strlen(ifr.ifr_name)+1,"tun_apply");
+	    strcpy(st->interface_name,ifr.ifr_name);
+	    Message(M_INFO,"%s: allocated network interface %s\n",st->nl.name,
+		    st->interface_name);
+	}
+#else
+	fatal("netlink.c:tun_phase_hook:!tun_old unexpected\n");
+#endif /* HAVE_LINUX_IF_H */
+    }
     /* All the networks we'll be using have been registered. Invoke ifconfig
        to set the TUN device's address, and route to add routes to all
        our networks. */
@@ -939,7 +1018,6 @@ static list_t *tun_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct tun *st;
     item_t *item;
     dict_t *dict;
-    struct ifreq ifr;
 
     st=safe_malloc(sizeof(*st),"tun_apply");
 
@@ -954,6 +1032,7 @@ static list_t *tun_apply(closure_t *self, struct cloc loc, dict_t *context,
 	netlink_init(&st->nl,st,loc,dict,
 		     "netlink-tun",tun_deliver_to_kernel);
 
+    st->tun_old=False;
     st->device_path=dict_read_string(dict,"device",False,"tun-netlink",loc);
     st->interface_name=dict_read_string(dict,"interface",False,
 					"tun-netlink",loc);
@@ -967,29 +1046,7 @@ static list_t *tun_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (!st->route_path) st->route_path="route";
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"tun-netlink",loc);
 
-    /* New TUN interface: open the device, then do ioctl TUNSETIFF
-       to set or find out the network interface name. */
-    st->fd=open(st->device_path,O_RDWR);
-    if (st->fd==-1) {
-	fatal_perror("%s: can't open device file %s",st->nl.name,
-		     st->device_path);
-    }
-    memset(&ifr,0,sizeof(ifr));
-    ifr.ifr_flags = IFF_TUN | IFF_NO_PI; /* Just send/receive IP packets,
-					    no extra headers */
-    if (st->interface_name)
-	strncpy(ifr.ifr_name,st->interface_name,IFNAMSIZ);
-    if (ioctl(st->fd,TUNSETIFF,&ifr)<0) {
-	fatal_perror("%s: ioctl(TUNSETIFF)",st->nl.name);
-    }
-    if (!st->interface_name) {
-	st->interface_name=safe_malloc(strlen(ifr.ifr_name)+1,"tun_apply");
-	strcpy(st->interface_name,ifr.ifr_name);
-	Message(M_INFO,"%s: allocated network interface %s\n",st->nl.name,
-		st->interface_name);
-    }
-
-    add_hook(PHASE_DROPPRIV,tun_phase_hook,st);
+    add_hook(PHASE_GETRESOURCES,tun_phase_hook,st);
 
     return new_closure(&st->nl.cl);
 }
@@ -1001,7 +1058,6 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct tun *st;
     item_t *item;
     dict_t *dict;
-    bool_t search_for_if;
 
     st=safe_malloc(sizeof(*st),"tun_old_apply");
 
@@ -1019,11 +1075,12 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
 	netlink_init(&st->nl,st,loc,dict,
 		     "netlink-tun",tun_deliver_to_kernel);
 
+    st->tun_old=True;
     st->device_path=dict_read_string(dict,"device",False,"tun-netlink",loc);
     st->interface_name=dict_read_string(dict,"interface",False,
 					"tun-netlink",loc);
-    search_for_if=dict_read_bool(dict,"interface-search",False,"tun-netlink",
-				 loc,st->device_path==NULL);
+    st->search_for_if=dict_read_bool(dict,"interface-search",False,
+				     "tun-netlink",loc,st->device_path==NULL);
     st->ifconfig_path=dict_read_string(dict,"ifconfig-path",False,
 				       "tun-netlink",loc);
     st->route_path=dict_read_string(dict,"route-path",False,"tun-netlink",loc);
@@ -1038,43 +1095,17 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
        'device' as the prefix and try numbers from 0--255. If it's set
        to false, treat 'device' as the whole name, and require than an
        appropriate interface name be specified. */
-    if (search_for_if) {
-	string_t dname;
-	int i;
-
-	if (st->interface_name) {
-	    cfgfatal(loc,"tun-old","you may not specify an interface name "
-		     "in interface-search mode\n");
-	}
-	dname=safe_malloc(strlen(st->device_path)+4,"tun_old_apply");
-	st->interface_name=safe_malloc(8,"tun_old_apply");
-	
-	for (i=0; i<255; i++) {
-	    sprintf(dname,"%s%d",st->device_path,i);
-	    if ((st->fd=open(dname,O_RDWR))>0) {
-		sprintf(st->interface_name,"tun%d",i);
-		Message(M_INFO,"%s: allocated network interface %s "
-			"through %s\n",st->nl.name,st->interface_name,dname);
-		break;
-	    }
-	}
-	if (st->fd==-1) {
-	    fatal("%s: unable to open any TUN device (%s...)\n",
-		  st->nl.name,st->device_path);
-	}
-    } else {
-	if (!st->interface_name) {
-	    cfgfatal(loc,"tun-old","you must specify an interface name "
-		     "when you explicitly specify a TUN device file\n");
-	}
-	st->fd=open(st->device_path,O_RDWR);
-	if (st->fd==-1) {
-	    fatal_perror("%s: unable to open TUN device file %s",
-			 st->nl.name,st->device_path);
-	}
+    if (st->search_for_if && st->interface_name) {
+	cfgfatal(loc,"tun-old","you may not specify an interface name "
+		 "in interface-search mode\n");
+    }
+    if (!st->search_for_if && !st->interface_name) {
+	cfgfatal(loc,"tun-old","you must specify an interface name "
+		 "when you explicitly specify a TUN device file\n");
     }
 
-    add_hook(PHASE_DROPPRIV,tun_phase_hook,st);
+
+    add_hook(PHASE_GETRESOURCES,tun_phase_hook,st);
 
     return new_closure(&st->nl.cl);
 }

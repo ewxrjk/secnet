@@ -41,6 +41,7 @@ struct udp {
     closure_t cl;
     struct comm_if ops;
     struct cloc loc;
+    uint16_t port;
     int fd;
     struct buffer_if *rbuf;
     struct notify_list *notify;
@@ -145,14 +146,40 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
     return True;
 }
 
+static void udp_phase_hook(void *sst, uint32_t new_phase)
+{
+    struct udp *st=sst;
+    struct sockaddr_in addr;
+
+    st->fd=socket(AF_INET, SOCK_DGRAM, 0);
+    if (st->fd<0) {
+	fatal_perror("udp (%s:%d): socket",st->loc.file,st->loc.line);
+    }
+    if (fcntl(st->fd, F_SETFL, fcntl(st->fd, F_GETFL)|O_NONBLOCK)==-1) {
+	fatal_perror("udp (%s:%d): fcntl(set O_NONBLOCK)",
+		     st->loc.file,st->loc.line);
+    }
+    if (fcntl(st->fd, F_SETFD, FD_CLOEXEC)==-1) {
+	fatal_perror("udp (%s:%d): fcntl(set FD_CLOEXEC)",
+		     st->loc.file,st->loc.line);
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family=AF_INET;
+    addr.sin_port=htons(st->port);
+    if (bind(st->fd, (struct sockaddr *)&addr, sizeof(addr))!=0) {
+	fatal_perror("udp (%s:%d): bind",st->loc.file,st->loc.line);
+    }
+
+    register_for_poll(st,udp_beforepoll,udp_afterpoll,1,"udp");
+}
+
 static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 			 list_t *args)
 {
     struct udp *st;
     item_t *i;
     dict_t *d;
-    uint16_t local_port=0;
-    struct sockaddr_in addr;
 
     st=safe_malloc(sizeof(*st),"udp_apply(st)");
     st->loc=loc;
@@ -164,6 +191,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.request_notify=request_notify;
     st->ops.release_notify=release_notify;
     st->ops.sendmsg=udp_sendmsg;
+    st->port=0;
 
     i=list_elem(args,0);
     if (!i || i->type!=t_dict) {
@@ -171,32 +199,10 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
     d=i->data.dict;
 
-    local_port=dict_read_number(d,"port",False,"udp",st->loc,0);
+    st->port=dict_read_number(d,"port",True,"udp",st->loc,0);
     st->rbuf=find_cl_if(d,"buffer",CL_BUFFER,True,"udp",st->loc);
 
-    st->fd=socket(AF_INET, SOCK_DGRAM, 0);
-    if (st->fd<0) {
-	fatal_perror("udp_apply (%s:%d): socket",loc.file,loc.line);
-    }
-    if (fcntl(st->fd, F_SETFL, fcntl(st->fd, F_GETFL)|O_NONBLOCK)==-1) {
-	fatal_perror("udp_apply (%s:%d): fcntl(set O_NONBLOCK)",
-		     loc.file,loc.line);
-    }
-    if (fcntl(st->fd, F_SETFD, FD_CLOEXEC)==-1) {
-	fatal_perror("udp_apply (%s:%d): fcntl(set FD_CLOEXEC)",
-		     loc.file,loc.line);
-    }
-
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family=AF_INET;
-    if (local_port) {
-	addr.sin_port=htons(local_port);
-    }
-    if (bind(st->fd, (struct sockaddr *)&addr, sizeof(addr))!=0) {
-	fatal_perror("udp_apply (%s:%d): bind",loc.file,loc.line);
-    }
-
-    register_for_poll(st,udp_beforepoll,udp_afterpoll,1,"udp");
+    add_hook(PHASE_GETRESOURCES,udp_phase_hook,st);
 
     return new_closure(&st->cl);
 }

@@ -34,10 +34,18 @@ struct subnet_list {
 /* Match an address (in HOST byte order) with a subnet list.
    Returns True if matched. */
 extern bool_t subnet_match(struct subnet_list *list, uint32_t address);
+extern bool_t subnets_intersect(struct subnet a, struct subnet b);
+extern bool_t subnet_intersects_with_list(struct subnet a,
+					  struct subnet_list *b);
+extern bool_t subnet_lists_intersect(struct subnet_list *a,
+				     struct subnet_list *b);
 
 /***** END of shared types *****/
 
 /***** CONFIGURATION support *****/
+
+extern bool_t just_check_config; /* If True then we're going to exit after
+				    reading the configuration file */
 
 typedef struct dict dict_t;        /* Configuration dictionary */
 typedef struct closure closure_t;
@@ -179,10 +187,11 @@ extern void register_for_poll(void *st, beforepoll_fn *before,
 #define PHASE_GETOPTS       1  /* Process command-line arguments */
 #define PHASE_READCONFIG    2  /* Parse and process configuration file */
 #define PHASE_SETUP         3  /* Process information in configuration */
-#define PHASE_DROPPRIV      4  /* Last chance for privileged operations */
-#define PHASE_RUN           5
-#define PHASE_SHUTDOWN      6  /* About to die; delete key material, etc. */
-#define NR_PHASES           7
+#define PHASE_GETRESOURCES  4  /* Obtain all external resources */
+#define PHASE_DROPPRIV      5  /* Last chance for privileged operations */
+#define PHASE_RUN           6
+#define PHASE_SHUTDOWN      7  /* About to die; delete key material, etc. */
+#define NR_PHASES           8
 
 typedef void hook_fn(void *self, uint32_t newphase);
 bool_t add_hook(uint32_t phase, hook_fn *f, void *state);

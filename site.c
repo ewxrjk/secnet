@@ -1096,7 +1096,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
        site() closures for all sites including our own): refuse to
        talk to ourselves */
     if (strcmp(st->localname,st->remotename)==0) {
-	Message(M_INFO,"site %s: talking to ourselves!\n",st->localname);
+	Message(M_INFO,"site %s: local-name==name -> ignoring this site\n",
+		st->localname);
 	free(st);
 	return NULL;
     }

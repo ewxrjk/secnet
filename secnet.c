@@ -21,6 +21,7 @@ extern char version[];
 
 /* Command-line options (possibly config-file options too) */
 static char *configfile="/etc/secnet/secnet.conf";
+bool_t just_check_config=False;
 static char *userid=NULL;
 static uid_t uid=0;
 static bool_t background=True;
@@ -58,10 +59,11 @@ static void parse_options(int argc, char **argv)
 	    {"quiet", 0, 0, 'f'},
 	    {"debug", 1, 0, 'd'},
 	    {"config", 1, 0, 'c'},
+	    {"just-check-config", 0, 0, 'j'},
 	    {0,0,0,0}
 	};
 
-	c=getopt_long(argc, argv, "vwdnc:ft:",
+	c=getopt_long(argc, argv, "vwdnjc:ft:",
 		      long_options, &option_index);
 	if (c==-1)
 	    break;
@@ -75,6 +77,7 @@ static void parse_options(int argc, char **argv)
 		    "  -w, --nowarnings        suppress warnings\n"
 		    "  -v, --verbose           output extra diagnostics\n"
 		    "  -c, --config=filename   specify a configuration file\n"
+		    "  -j, --just-check-config stop after reading configfile\n"
 		    "  -n, --nodetach          do not run in background\n"
 		    "  -d, --debug=item,...    set debug options\n"
 		    "      --help              display this help and exit\n"
@@ -110,6 +113,10 @@ static void parse_options(int argc, char **argv)
 		configfile=safe_strdup(optarg,"config_filename");
 	    else
 		fatal("secnet: no config filename specified");
+	    break;
+
+	case 'j':
+	    just_check_config=True;
 	    break;
 
 	case '?':
@@ -339,6 +346,14 @@ int main(int argc, char **argv)
 
     enter_phase(PHASE_SETUP);
     setup(config);
+
+    if (just_check_config) {
+	Message(M_INFO,"configuration file check complete\n");
+	exit(0);
+    }
+
+    enter_phase(PHASE_GETRESOURCES);
+    /* Appropriate phase hooks will have been run */
     
     enter_phase(PHASE_DROPPRIV);
     droppriv();

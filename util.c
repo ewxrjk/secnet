@@ -248,6 +248,31 @@ bool_t subnet_match(struct subnet_list *list, uint32_t address)
     return False;
 }
 
+bool_t subnets_intersect(struct subnet a, struct subnet b)
+{
+    uint32_t mask=a.mask&b.mask;
+    return ((a.prefix&mask)==(b.prefix&mask));
+}
+
+bool_t subnet_intersects_with_list(struct subnet a, struct subnet_list *b)
+{
+    uint32_t i;
+
+    for (i=0; i<b->entries; i++) {
+	if (subnets_intersect(a,b->list[i])) return True;
+    }
+    return False;
+}
+
+bool_t subnet_lists_intersect(struct subnet_list *a, struct subnet_list *b)
+{
+    uint32_t i;
+    for (i=0; i<a->entries; i++) {
+	if (subnet_intersects_with_list(a->list[i],b)) return True;
+    }
+    return False;
+}
+
 /* The string buffer must be at least 16 bytes long */
 string_t ipaddr_to_string(uint32_t addr)
 {
@@ -415,6 +440,7 @@ static char *phases[NR_PHASES]={
     "PHASE_GETOPTS",
     "PHASE_READCONFIG",
     "PHASE_SETUP",
+    "PHASE_GETRESOURCES",
     "PHASE_DROPPRIV",
     "PHASE_RUN",
     "PHASE_SHUTDOWN"
@@ -424,12 +450,13 @@ void enter_phase(uint32_t new_phase)
 {
     struct phase_hook *i;
 
-    Message(M_DEBUG_PHASE,"entering %s... ", phases[new_phase]);
+    if (hooks[new_phase])
+	Message(M_DEBUG_PHASE,"Running hooks for %s...\n", phases[new_phase]);
     current_phase=new_phase;
 
     for (i=hooks[new_phase]; i; i=i->next)
 	i->fn(i->state, new_phase);
-    Message(M_DEBUG_PHASE,"now in %s\n",phases[new_phase]);
+    Message(M_DEBUG_PHASE,"Now in %s\n",phases[new_phase]);
 }
 
 bool_t add_hook(uint32_t phase, hook_fn *fn, void *state)

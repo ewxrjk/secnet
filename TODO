@@ -20,11 +20,10 @@ secnet.c: done
 
 site.c: the site_incoming() routing could be implemented much more
 cleanly using a table. There's still quite a lot of redundancy in this
-file. Abandon key exchanges when a bad packet is received. Tell
-netlink link is down if it's down and we don't have address for other
-end.
+file. Abandon key exchanges when a bad packet is received. Modify
+protocol to include version fields, as described in the NOTES file.
 
-transform.c: done. Needs checking for endianness problems.
+transform.c: done. JDA reports endianness problems are fixed.
 
 udp.c: done
 
