@@ -5,6 +5,7 @@
 #include <time.h>
 #include <errno.h>
 #include <syslog.h>
+#include <assert.h>
 #include "process.h"
 
 bool_t secnet_is_daemon=False;
@@ -49,6 +50,9 @@ void Message(uint32_t class, char *message, ...)
     va_end(ap);
 }
 
+static NORETURN(vfatal(int status, bool_t perror, char *message,
+		       va_list args));
+
 static void vfatal(int status, bool_t perror, char *message, va_list args)
 {
     int err;
@@ -56,15 +60,12 @@ static void vfatal(int status, bool_t perror, char *message, va_list args)
     err=errno;
 
     enter_phase(PHASE_SHUTDOWN);
-    if (perror) {
-	Message(M_FATAL, "secnet fatal error: ");
-	vMessage(M_FATAL, message, args);
+    Message(M_FATAL, "secnet fatal error: ");
+    vMessage(M_FATAL, message, args);
+    if (perror)
 	Message(M_FATAL, ": %s\n",strerror(err));
-    }
-    else {
-	Message(M_FATAL, "secnet fatal error: ");
-	vMessage(M_FATAL,message,args);
-    }
+    else
+	Message(M_FATAL, "\n");
     exit(status);
 }
 
@@ -100,15 +101,20 @@ void fatal_perror_status(int status, char *message, ...)
     va_end(args);
 }
 
-void cfgfatal(struct cloc loc, string_t facility, char *message, ...)
+void vcfgfatal_maybefile(FILE *maybe_f /* or 0 */, struct cloc loc,
+			 string_t facility, char *message, va_list args)
 {
-    va_list args;
-
-    va_start(args,message);
-
     enter_phase(PHASE_SHUTDOWN);
 
-    if (loc.file && loc.line) {
+    if (maybe_f && ferror(maybe_f)) {
+	assert(loc.file);
+	Message(M_FATAL, "error reading config file (%s, %s): %s",
+		facility, loc.file, strerror(errno));
+    } else if (maybe_f && feof(maybe_f)) {
+	assert(loc.file);
+	Message(M_FATAL, "unexpected end of config file (%s, %s)",
+		facility, loc.file);
+    } else if (loc.file && loc.line) {
 	Message(M_FATAL, "config error (%s, %s:%d): ",facility,loc.file,
 		loc.line);
     } else if (!loc.file && loc.line) {
@@ -118,8 +124,39 @@ void cfgfatal(struct cloc loc, string_t facility, char *message, ...)
     }
     
     vMessage(M_FATAL,message,args);
-    va_end(args);
     exit(current_phase);
+}
+
+void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, string_t facility,
+			char *message, ...)
+{
+    va_list args;
+
+    va_start(args,message);
+    vcfgfatal_maybefile(maybe_f,loc,facility,message,args);
+    va_end(args);
+}    
+
+void cfgfatal(struct cloc loc, string_t facility, char *message, ...)
+{
+    va_list args;
+
+    va_start(args,message);
+    vcfgfatal_maybefile(0,loc,facility,message,args);
+    va_end(args);
+}
+
+void cfgfile_postreadcheck(struct cloc loc, FILE *f)
+{
+    assert(loc.file);
+    if (ferror(f)) {
+	Message(M_FATAL, "error reading config file (%s): %s",
+		loc.file, strerror(errno));
+	exit(current_phase);
+    } else if (feof(f)) {
+	Message(M_FATAL, "unexpected end of config file (%s)", loc.file);
+	exit(current_phase);
+    }
 }
 
 /* Take a list of log closures and merge them */

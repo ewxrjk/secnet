@@ -5,3 +5,5 @@ Steve Reid <sreid@sea-to-sky.net>, James H. Brown <jbrown@burgoyne.com> -
   SHA1 implementation
 Cendio Systems AB - ipaddr.py
 Mark Martinec <mark.martinec@ijs.si> - portable snprintf
+
+Simon Tatham, Jonathan Amery, Ian Jackson - testing and debugging

@@ -123,7 +123,7 @@ static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds,
 	    fatal_perror("tun_afterpoll: read()");
 	}
 	if (l==0) {
-	    fatal("tun_afterpoll: read()=0; device gone away?\n");
+	    fatal("tun_afterpoll: read()=0; device gone away?");
 	}
 	if (l>0) {
 	    st->buff->size=l;
@@ -211,12 +211,12 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 		fatal_perror("tun_set_route: ioctl()");
 	    }
 #else
-	    fatal("tun_set_route: ioctl method not supported\n");
+	    fatal("tun_set_route: ioctl method not supported");
 #endif
 	}
 	break;
 	default:
-	    fatal("tun_set_route: unsupported route command type\n");
+	    fatal("tun_set_route: unsupported route command type");
 	    break;
 	}
 	free(network); free(mask);
@@ -255,7 +255,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 		}
 	    }
 	    if (st->fd==-1) {
-		fatal("%s: unable to open any TUN device (%s...)\n",
+		fatal("%s: unable to open any TUN device (%s...)",
 		      st->nl.name,st->device_path);
 	    }
 	} else {
@@ -291,7 +291,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 		    st->interface_name);
 	}
 #else
-	fatal("tun_phase_hook: TUN_FLAVOUR_LINUX unexpected\n");
+	fatal("tun_phase_hook: TUN_FLAVOUR_LINUX unexpected");
 #endif /* LINUX_TUN_SUPPORTED */
     } else if (st->tun_flavour==TUN_FLAVOUR_STREAMS) {
 #ifdef HAVE_TUN_STREAMS
@@ -322,10 +322,10 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	sprintf(st->interface_name,"tun%d",ppa);
 	st->fd=tun_fd;
 #else
-	fatal("tun_phase_hook: TUN_FLAVOUR_STREAMS unexpected\n");
+	fatal("tun_phase_hook: TUN_FLAVOUR_STREAMS unexpected");
 #endif /* HAVE_TUN_STREAMS */
     } else {
-	fatal("tun_phase_hook: unknown flavour of TUN\n");
+	fatal("tun_phase_hook: unknown flavour of TUN");
     }
     /* All the networks we'll be using have been registered. Invoke ifconfig
        to set the TUN device's address, and route to add routes to all
@@ -405,11 +405,11 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	close(fd);
     }
 #else
-    fatal("tun_apply: ifconfig by ioctl() not supported\n");
+    fatal("tun_apply: ifconfig by ioctl() not supported");
 #endif /* HAVE_NET_IF_H */
     break;
     default:
-	fatal("tun_apply: unsupported ifconfig method\n");
+	fatal("tun_apply: unsupported ifconfig method");
 	break;
     }
 	
@@ -501,7 +501,9 @@ static list_t *tun_create(closure_t *self, struct cloc loc, dict_t *context,
 	    st->ifconfig_type=TUN_CONFIG_IOCTL;
 	    break;
 	case TUN_FLAVOUR_BSD:
-	    st->ifconfig_type=TUN_CONFIG_BSD;
+	    /* XXX on Linux we still want TUN_CONFIG_IOCTL.  Perhaps we can
+	       use this on BSD too. */
+	    st->ifconfig_type=TUN_CONFIG_IOCTL;
 	    break;
 	case TUN_FLAVOUR_STREAMS:
 	    st->ifconfig_type=TUN_CONFIG_BSD;

@@ -37,7 +37,7 @@ static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
     msize=mpz_sizeinbase(&st->n, 16);
 
     if (datalen*2+4>=msize) {
-	fatal("rsa_sign: message too big\n");
+	fatal("rsa_sign: message too big");
     }
 
     strcpy(buff,"0001");
@@ -153,21 +153,23 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
-static uint32_t keyfile_get_int(FILE *f)
+static uint32_t keyfile_get_int(struct cloc loc, FILE *f)
 {
     uint32_t r;
     r=fgetc(f)<<24;
     r|=fgetc(f)<<16;
     r|=fgetc(f)<<8;
     r|=fgetc(f);
+    cfgfile_postreadcheck(loc,f);
     return r;
 }
 
-static uint16_t keyfile_get_short(FILE *f)
+static uint16_t keyfile_get_short(struct cloc loc, FILE *f)
 {
     uint16_t r;
     r=fgetc(f)<<8;
     r|=fgetc(f);
+    cfgfile_postreadcheck(loc,f);
     return r;
 }
 
@@ -221,69 +223,72 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     length=strlen(AUTHFILE_ID_STRING)+1;
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1 || memcmp(b,AUTHFILE_ID_STRING,length)!=0) {
-	cfgfatal(loc,"rsa-private","file \"%s\" is not a "
-		 "SSH1 private keyfile\n",filename);
+	cfgfatal_maybefile(f,loc,"rsa-private","failed to read magic ID"
+			   " string from SSH1 private keyfile \"%s\"\n",
+			   filename);
     }
     free(b);
 
     cipher_type=fgetc(f);
-    keyfile_get_int(f); /* "Reserved data" */
+    keyfile_get_int(loc,f); /* "Reserved data" */
     if (cipher_type != 0) {
 	cfgfatal(loc,"rsa-private","we don't support encrypted keyfiles\n");
     }
 
     /* Read the public key */
-    keyfile_get_int(f); /* Not sure what this is */
-    length=(keyfile_get_short(f)+7)/8;
+    keyfile_get_int(loc,f); /* Not sure what this is */
+    length=(keyfile_get_short(loc,f)+7)/8;
     if (length>1024) {
 	cfgfatal(loc,"rsa-private","implausible length %ld for modulus\n",
 		 length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f) != 1) {
-	cfgfatal(loc,"rsa-private","error reading modulus\n");
+	cfgfatal_maybefile(f,loc,"rsa-private","error reading modulus");
     }
     mpz_init(&st->n);
     read_mpbin(&st->n,b,length);
     free(b);
-    length=(keyfile_get_short(f)+7)/8;
+    length=(keyfile_get_short(loc,f)+7)/8;
     if (length>1024) {
 	cfgfatal(loc,"rsa-private","implausible length %ld for e\n",length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1) {
-	cfgfatal(loc,"rsa-private","error reading e\n");
+	cfgfatal_maybefile(f,loc,"rsa-private","error reading e\n");
     }
     mpz_init(&e);
     read_mpbin(&e,b,length);
     free(b);
     
-    length=keyfile_get_int(f);
+    length=keyfile_get_int(loc,f);
     if (length>1024) {
 	cfgfatal(loc,"rsa-private","implausibly long (%ld) key comment\n",
 		 length);
     }
     c=safe_malloc(length+1,"rsapriv_apply");
     if (fread(c,length,1,f)!=1) {
-	cfgfatal(loc,"rsa-private","error reading key comment\n");
+	cfgfatal_maybefile(f,loc,"rsa-private","error reading key comment\n");
     }
     c[length]=0;
 
     /* Check that the next two pairs of characters are identical - the
        keyfile is not encrypted, so they should be */
-    if (keyfile_get_short(f) != keyfile_get_short(f)) {
+
+    if (keyfile_get_short(loc,f) != keyfile_get_short(loc,f)) {
 	cfgfatal(loc,"rsa-private","corrupt keyfile\n");
     }
 
     /* Read d */
-    length=(keyfile_get_short(f)+7)/8;
+    length=(keyfile_get_short(loc,f)+7)/8;
     if (length>1024) {
 	cfgfatal(loc,"rsa-private","implausibly long (%ld) decryption key\n",
 		 length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1) {
-	cfgfatal(loc,"rsa-private","error reading decryption key\n");
+	cfgfatal_maybefile(f,loc,"rsa-private",
+			   "error reading decryption key\n");
     }
     mpz_init(&st->d);
     read_mpbin(&st->d,b,length);

@@ -74,7 +74,7 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds,
 	} else if (rv==EAGAIN || rv==ESRCH) {
 	    break;
 	} else {
-	    fatal("resolver_afterpoll: adns_check() returned %d\n",rv);
+	    fatal("resolver_afterpoll: adns_check() returned %d",rv);
 	}
     }
 

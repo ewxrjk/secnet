@@ -68,7 +68,7 @@ pid_t makesubproc(process_entry_fn *entry, process_callback_fn *cb,
     c->cst=cst;
 
     if (!signal_handling) {
-	fatal("makesubproc called before signal handling started\n");
+	fatal("makesubproc called before signal handling started");
     }
     p=fork();
     if (p==0) {

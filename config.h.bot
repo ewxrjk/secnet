@@ -55,4 +55,12 @@ typedef unsigned char uint8_t;
 #include "snprintf.h"
 #endif
 
+#ifdef __GNUC__
+#define NORETURN(_x) void _x __attribute__ ((noreturn))
+#define FORMAT(_a,_b,_c) __attribute__ ((format (_a,_b,_c)))
+#else
+#define NORETURN(_x) _x
+#define FORMAT(_a,_b,_c)
+#endif
+
 #endif /* _CONFIG_H */

@@ -405,14 +405,14 @@ void transform_module(dict_t *dict)
 	ciphertext[2]!=0x83C31E69 ||
 	ciphertext[1]!=0xec52bd82 ||
 	ciphertext[0]!=0x27a46120) {
-	fatal("transform_module: serpent failed self-test (encrypt)\n");
+	fatal("transform_module: serpent failed self-test (encrypt)");
     }
     serpent_decrypt(&k,ciphertext,plaintext);
     if (plaintext[0]!=0 ||
 	plaintext[1]!=1 ||
 	plaintext[2]!=2 ||
 	plaintext[3]!=3) {
-	fatal("transform_module: serpent failed self-test (decrypt)\n");
+	fatal("transform_module: serpent failed self-test (decrypt)");
     }
 
     add_closure(dict,"serpent256-cbc",transform_apply);

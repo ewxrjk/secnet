@@ -28,7 +28,7 @@
 #define DEFAULT_KEY_LIFETIME 3600000 /* One hour */
 #define DEFAULT_KEY_RENEGOTIATE_GAP 300000 /* Five minutes */
 #define DEFAULT_SETUP_RETRIES 5
-#define DEFAULT_SETUP_TIMEOUT 1000
+#define DEFAULT_SETUP_TIMEOUT 2000
 #define DEFAULT_WAIT_TIME 20000
 
 /* Each site can be in one of several possible states. */
@@ -763,7 +763,7 @@ static void delete_key(struct site *st, string_t reason, uint32_t loglevel)
 
 static void state_assert(struct site *st, bool_t ok)
 {
-    if (!ok) fatal("state_assert\n");
+    if (!ok) fatal("site:state_assert");
 }
 
 static void enter_state_stop(struct site *st)
@@ -853,7 +853,7 @@ static bool_t enter_new_state(struct site *st, uint32_t next)
 	break;
     default:
 	gen=NULL;
-	fatal("enter_new_state(%s): invalid new state\n",state_name(next));
+	fatal("enter_new_state(%s): invalid new state",state_name(next));
 	break;
     }
 

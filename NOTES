@@ -60,6 +60,17 @@ explicit option. NB packets may be routed if the source OR the
 destination is marked as allowing routing [otherwise packets couldn't
 get back from eg. chiark to a laptop at greenend]).
 
+[the even newer plan]
+
+secnet sites are configured to grant access to particular IP address
+ranges to the holder of a particular public key.  The key can certify
+other keys, which will then be permitted to use a subrange of the IP
+address range of the certifying key.
+
+This means that secnet won't know in advance (i.e. at configuration
+time) how many tunnels it might be required to support, so we have to
+be able to create them (and routes, and so on) on the fly.
+
 ** VPN-level configuration
 
 At a high level we just want to be able to indicate which groups of
@@ -259,3 +270,9 @@ Keepalives are probably a good idea.
 **** Protocol sub-goal 3: send a packet
 
 9) i?,i?,msg0,(send-packet/msg9,packet)_k
+
+Some messages may take a long time to prepare (software modexp on slow
+machines); this is a "please wait" message to indicate that a message
+is in preparation.
+
+10) i?,i?,msg8,A,B,nA,nB,msg?

@@ -296,7 +296,7 @@ void md5_module(dict_t *dict)
     md5_final(ctx,digest);
     for (i=0; i<16; i++) {
 	if (digest[i]!=expected[i]) {
-	    fatal("md5 module failed self-test\n");
+	    fatal("md5 module failed self-test");
 	}
     }
 }

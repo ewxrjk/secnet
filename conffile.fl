@@ -12,6 +12,14 @@
 
 #define YY_NO_UNPUT
 
+#define YY_INPUT(buf,result,max_size)					\
+do{									\
+	(result)= fread((buf),1,(max_size),yyin);			\
+	if (ferror(yyin))						\
+		fatal_perror("Error reading configuration file (%s)",	\
+			     config_file);				\
+}while(0)
+
 #define MAX_INCLUDE_DEPTH 10
 struct include_stack_item {
 	YY_BUFFER_STATE bst;

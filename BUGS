@@ -1,2 +1,11 @@
 Known bugs in secnet
 
+(Complaints from Ian:)
+Your init.d script makes it hard to start secnet as non-root, too.
+
+secnet -jv has printed a large routing table full of stuff I wasn't
+interested in.
+
+Make explicit in the documentation that -n causes all log output to go
+to stderr.  Provide an option that is _really_ just "don't fork()" for
+people who want to run secnet from init.

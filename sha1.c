@@ -347,7 +347,7 @@ void sha1_module(dict_t *dict)
     sha1_final(ctx,digest);
     for (i=0; i<20; i++) {
 	if (digest[i]!=expected[i]) {
-	    fatal("sha1 module failed self-test\n");
+	    fatal("sha1 module failed self-test");
 	}
     }
 }

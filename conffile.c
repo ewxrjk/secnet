@@ -73,7 +73,7 @@ static void dict_iadd(dict_t *dict, atom_t key, list_t *val)
 {
     struct entry *e;
     if (dict_ilookup_primitive(dict, key)) {
-	fatal("duplicate key \"%s\" in dictionary\n",key);
+	fatal("duplicate key \"%s\" in dictionary",key);
     }
     e=safe_malloc(sizeof(*e),"dict_add");
     e->next=dict->entries;
@@ -128,25 +128,25 @@ static void ptree_mangle(struct p_node *t)
     ptree_mangle(t->r);
     switch (t->type) {
     case T_DICT:
-	/* ASSERT !t->l || t->l->type==T_ALIST */
-	/* ASSERT !t->r || t->r->type==T_LISTITEM */
+	ASSERT(!t->l || t->l->type==T_ALIST);
+	ASSERT(!t->r || t->r->type==T_LISTITEM);
 	t->l=list_reverse(t->l);
 	t->r=list_reverse(t->r);
 	break;
     case T_ASSIGNMENT:
-	/* ASSERT t->l->type==T_KEY */
-	/* ASSERT t->r->type==T_LISTITEM */
+	ASSERT(t->l->type==T_KEY);
+	ASSERT(t->r->type==T_LISTITEM);
 	t->r=list_reverse(t->r);
 	break;
     case T_ABSPATH:
     case T_RELPATH:
-	/* ASSERT t->l==NULL */
-	/* ASSERT t->r->type==T_PATHELEM */
+	ASSERT(t->l==NULL);
+	ASSERT(t->r->type==T_PATHELEM);
 	t->r=list_reverse(t->r);
 	break;
     case T_EXEC:
-	/* ASSERT t->l */
-	/* ASSERT t->r->type==T_LISTITEM */
+	ASSERT(t->l);
+	ASSERT(t->r==NULL || t->r->type==T_LISTITEM);
 	t->r=list_reverse(t->r);
 	break;
     }
@@ -220,8 +220,8 @@ static list_t *dict_lookup_path(dict_t *context, struct p_node *p)
     dict_t *i;
     list_t *l;
 
-    /* ASSERT p->type==T_PATHELEM */
-    /* ASSERT p->l->type==T_KEY */
+    ASSERT(p->type==T_PATHELEM);
+    ASSERT(p->l->type==T_KEY);
     l=dict_ilookup(context, p->l->data.key);
     if (!l) {
 	cfgfatal(p->loc,"conffile","can't find key %s\n",
@@ -288,7 +288,7 @@ static list_t *process_item(dict_t *context, struct p_node *i)
     default:
 #ifdef DUMP_PARSE_TREE
 	ptree_dump(i,0);
-	fatal("process_item: invalid node type for a list item (%s)\n",
+	fatal("process_item: invalid node type for a list item (%s)",
 	      ntype(i->type));
 #else
 	fatal("process_item: list item has invalid node type %d - recompile "
@@ -305,7 +305,7 @@ static list_t *process_ilist(dict_t *context, struct p_node *l)
     struct p_node *i;
     list_t *r;
 
-    /* ASSERT l->type==T_LISTITEM */
+    ASSERT(!l || l->type==T_LISTITEM);
 
     r=list_new();
 
@@ -321,9 +321,8 @@ static list_t *process_invocation(dict_t *context, struct p_node *i)
     item_t *cl;
     list_t *args;
 
-    /* ASSERT i->type==T_EXEC */
-    /* ASSERT i->r->type==T_LISTITEM */
-    /* XXX it might be null too */
+    ASSERT(i->type==T_EXEC);
+    ASSERT(i->r==NULL || i->r->type==T_LISTITEM);
     cll=process_item(context,i->l);
     cl=cll->item;
     if (cl->type != t_closure) {
@@ -344,15 +343,15 @@ static void process_alist(dict_t *context, struct p_node *c)
 
     if (!c) return; /* NULL assignment lists are valid (empty dictionary) */
 
-    /* ASSERT c->type==T_ALIST */
+    ASSERT(c->type==T_ALIST);
     if (c->type!=T_ALIST) {
-	fatal("invalid node type in assignment list\n");
+	fatal("invalid node type in assignment list");
     }
 
     for (i=c; i; i=i->r) {
-	/* ASSERT i->l && i->l->type==T_ASSIGNMENT */
-	/* ASSERT i->l->l->type==T_KEY */
-	/* ASSERT i->l->r->type==T_LISTITEM */
+	ASSERT(i->l && i->l->type==T_ASSIGNMENT);
+	ASSERT(i->l->l->type==T_KEY);
+	ASSERT(i->l->r->type==T_LISTITEM);
 	k=i->l->l->data.key;
 	l=process_ilist(context, i->l->r);
 	dict_iadd(context, k, l);
@@ -444,8 +443,9 @@ static list_t *readfile(closure_t *self, struct cloc loc,
     r=new_item(t_string,loc);
     r->data.string=safe_malloc(length+1,"readfile");
     if (fread(r->data.string,length,1,f)!=1) {
-	fatal("readfile (%s:%d): fread: could not read all of file\n",
-	      loc.file,loc.line);
+	(ferror(f) ? fatal_perror : fatal)
+	    ("readfile (%s:%d): fread: could not read all of file",
+	     loc.file,loc.line);
     }
     r->data.string[length]=0;
     if (fclose(f)!=0) {

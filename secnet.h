@@ -6,6 +6,7 @@
 #include "config.h"
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -15,7 +16,7 @@ typedef char *string_t;
 typedef enum {False,True} bool_t;
 
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
-					 __FILE__ "\n",__LINE__); } } while(0)
+					 __FILE__,__LINE__); } } while(0)
 
 /***** CONFIGURATION support *****/
 
@@ -108,28 +109,6 @@ extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
 				    string_t desc);
 
 /***** END of configuration support *****/
-
-/***** LOG functions *****/
-
-#define M_DEBUG_CONFIG 0x001
-#define M_DEBUG_PHASE  0x002
-#define M_DEBUG        0x004
-#define M_INFO	       0x008
-#define M_NOTICE       0x010
-#define M_WARNING      0x020
-#define M_ERR	       0x040
-#define M_SECURITY     0x080
-#define M_FATAL	       0x100
-
-extern void fatal(char *message, ...);
-extern void fatal_perror(char *message, ...);
-extern void fatal_status(int status, char *message, ...);
-extern void fatal_perror_status(int status, char *message, ...);
-extern void cfgfatal(struct cloc loc, string_t facility, char *message, ...);
-
-extern void Message(uint32_t class, char *message, ...);
-
-/***** END of log functions *****/
 
 /***** UTILITY functions *****/
 
@@ -299,7 +278,8 @@ struct log_if {
     log_vmsg_fn *vlog;
 };
 /* (convenience function, defined in util.c) */
-extern void log(struct log_if *lf, int class, char *message, ...);
+extern void log(struct log_if *lf, int class, char *message, ...)
+FORMAT(printf,3,4);
 
 /* SITE interface */
 
@@ -422,5 +402,37 @@ struct buffer_if {
     uint32_t size; /* Size of buffer contents */
     uint32_t len; /* Total length allocated at base */
 };
+
+/***** LOG functions *****/
+
+#define M_DEBUG_CONFIG 0x001
+#define M_DEBUG_PHASE  0x002
+#define M_DEBUG        0x004
+#define M_INFO	       0x008
+#define M_NOTICE       0x010
+#define M_WARNING      0x020
+#define M_ERR	       0x040
+#define M_SECURITY     0x080
+#define M_FATAL	       0x100
+
+/* The fatal() family of functions require messages that do not end in '\n' */
+extern NORETURN(fatal(char *message, ...));
+extern NORETURN(fatal_perror(char *message, ...));
+extern NORETURN(fatal_status(int status, char *message, ...));
+extern NORETURN(fatal_perror_status(int status, char *message, ...));
+
+/* The cfgfatal() family of functions require messages that end in '\n' */
+extern NORETURN(cfgfatal(struct cloc loc, string_t facility, char *message,
+			 ...));
+extern void cfgfile_postreadcheck(struct cloc loc, FILE *f);
+extern NORETURN(vcfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
+				    string_t facility, char *message,
+				    va_list));
+extern NORETURN(cfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
+				   string_t facility, char *message, ...));
+
+extern void Message(uint32_t class, char *message, ...) FORMAT(printf,2,3);
+
+/***** END of log functions *****/
 
 #endif /* secnet_h */

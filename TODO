@@ -1,6 +1,8 @@
 dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
+log.c: implement a file-descriptor-to-log module
+
 netlink.c: test the 'allow_route' option properly.
 Add fragmentation code.  Check that we comply with RFC1812.
 
@@ -30,9 +32,6 @@ transform.c: separate the transforms into multiple parts, which can
 then be combined in the configuration file.  Will allow the user to
 plug in different block ciphers, invent an authenticity-only mode,
 etc. (similar to udptunnel)
-
-tun.c: Solaris support, and configuring the interface and
-creating/deleting routes using ioctl()
 
 udp.c: option for path-MTU discovery (once fragmentation support is
 implemented in netlink)

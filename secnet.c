@@ -80,28 +80,27 @@ static void parse_options(int argc, char **argv)
 	switch(c) {
 	case 2:
 	    /* Help */
-	    fprintf(stderr,
-		    "Usage: secnet [OPTION]...\n\n"
-		    "  -f, --silent, --quiet   suppress error messages\n"
-		    "  -w, --nowarnings        suppress warnings\n"
-		    "  -v, --verbose           output extra diagnostics\n"
-		    "  -c, --config=filename   specify a configuration file\n"
-		    "  -j, --just-check-config stop after reading "
-		    "configuration file\n"
-		    "  -s, --sites-key=name    configuration key that "
-		    "specifies active sites\n"
-		    "  -n, --nodetach          do not run in background\n"
-		    "  -d, --debug=item,...    set debug options\n"
-		    "      --help              display this help and exit\n"
-		    "      --version           output version information "
-		    "and exit\n"
+	    printf("Usage: secnet [OPTION]...\n\n"
+		   "  -f, --silent, --quiet   suppress error messages\n"
+		   "  -w, --nowarnings        suppress warnings\n"
+		   "  -v, --verbose           output extra diagnostics\n"
+		   "  -c, --config=filename   specify a configuration file\n"
+		   "  -j, --just-check-config stop after reading "
+		   "configuration file\n"
+		   "  -s, --sites-key=name    configuration key that "
+		   "specifies active sites\n"
+		   "  -n, --nodetach          do not run in background\n"
+		   "  -d, --debug=item,...    set debug options\n"
+		   "      --help              display this help and exit\n"
+		   "      --version           output version information "
+		   "and exit\n"
 		);
 	    exit(0);
 	    break;
       
 	case 1:
 	    /* Version */
-	    fprintf(stderr,"%s\n",version);
+	    printf("%s\n",version);
 	    exit(0);
 	    break;
 
@@ -170,7 +169,7 @@ static void setup(dict_t *config)
     l=dict_lookup(config,"system");
 
     if (!l || list_elem(l,0)->type!=t_dict) {
-	fatal("configuration does not include a \"system\" dictionary\n");
+	fatal("configuration does not include a \"system\" dictionary");
     }
     system=list_elem(l,0)->data.dict;
     loc=list_elem(l,0)->loc;
@@ -178,7 +177,7 @@ static void setup(dict_t *config)
     /* Arrange systemwide log facility */
     l=dict_lookup(system,"log");
     if (!l) {
-	fatal("configuration does not include a system/log facility\n");
+	fatal("configuration does not include a system/log facility");
     }
     system_log=init_log(l);
 
@@ -194,7 +193,7 @@ static void setup(dict_t *config)
 	} while(pw);
 	endpwent();
 	if (uid==0) {
-	    fatal("userid \"%s\" not found\n",userid);
+	    fatal("userid \"%s\" not found",userid);
 	}
     }
 
@@ -203,8 +202,8 @@ static void setup(dict_t *config)
 
     /* Check whether we need root privileges */
     if (require_root_privileges && uid!=0) {
-	fatal("the following configured feature (\"%s\") requires "
-	      "that secnet retain root privileges while running.\n",
+	fatal("the configured feature \"%s\" requires "
+	      "that secnet retain root privileges while running.",
 	      require_root_privileges_explanation);
     }
 
@@ -266,7 +265,7 @@ static void run(void)
 
     fds=alloca(sizeof(*fds)*total_nfds);
     if (!fds) {
-	fatal("run: couldn't alloca\n");
+	fatal("run: couldn't alloca");
     }
 
     Message(M_NOTICE,"%s [%d]: starting\n",version,secnet_pid);
@@ -291,10 +290,10 @@ static void run(void)
 	    if (rv!=0) {
 		/* XXX we need to handle this properly: increase the
 		   nfds available */
-		fatal("run: beforepoll_fn (%s) returns %d\n",i->desc,rv);
+		fatal("run: beforepoll_fn (%s) returns %d",i->desc,rv);
 	    }
 	    if (timeout<-1) {
-		fatal("run: beforepoll_fn (%s) set timeout to %d\n",timeout);
+		fatal("run: beforepoll_fn (%s) set timeout to %d",timeout);
 	    }
 	    idx+=nfds;
 	    remain-=nfds;

@@ -193,7 +193,7 @@ bool_t add_hook(uint32_t phase, hook_fn *fn, void *state)
 
 bool_t remove_hook(uint32_t phase, hook_fn *fn, void *state)
 {
-    fatal("remove_hook: not implemented\n");
+    fatal("remove_hook: not implemented");
 
     return False;
 }
@@ -215,7 +215,7 @@ struct buffer {
 void buffer_assert_free(struct buffer_if *buffer, string_t file, uint32_t line)
 {
     if (!buffer->free) {
-	fatal("BUF_ASSERT_FREE, %s line %d, owned by %s\n",
+	fatal("BUF_ASSERT_FREE, %s line %d, owned by %s",
 	      file,line,buffer->owner);
     }
 }
@@ -223,7 +223,7 @@ void buffer_assert_free(struct buffer_if *buffer, string_t file, uint32_t line)
 void buffer_assert_used(struct buffer_if *buffer, string_t file, uint32_t line)
 {
     if (buffer->free) {
-	fatal("BUF_ASSERT_USED, %s line %d, last owned by %s\n",
+	fatal("BUF_ASSERT_USED, %s line %d, last owned by %s",
 	      file,line,buffer->owner);
     }
 }

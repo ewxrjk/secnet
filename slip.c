@@ -83,7 +83,7 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 		*(uint8_t *)buf_append(st->buff,1)=SLIP_ESC;
 		break;
 	    default:
-		fatal("userv_afterpoll: bad SLIP escape character\n");
+		fatal("userv_afterpoll: bad SLIP escape character");
 	    }
 	} else {
 	    switch (buf[i]) {
@@ -168,7 +168,7 @@ static void userv_afterpoll(void *sst, struct pollfd *fds, int nfds,
 		fatal_perror("%s: userv_afterpoll: read(rxfd)",
 			     st->slip.nl.name);
 	} else if (l==0) {
-	    fatal("%s: userv_afterpoll: read(rxfd)=0; userv gone away?\n",
+	    fatal("%s: userv_afterpoll: read(rxfd)=0; userv gone away?",
 		  st->slip.nl.name);
 	} else slip_unstuff(&st->slip,rxbuf,l);
     }
@@ -193,13 +193,13 @@ static void userv_userv_callback(void *sst, pid_t pid, int status)
     }
     if (!st->expecting_userv_exit) {
 	if (WIFEXITED(status)) {
-	    fatal("%s: userv exited unexpectedly with status %d\n",
+	    fatal("%s: userv exited unexpectedly with status %d",
 		  st->slip.nl.name,WEXITSTATUS(status));
 	} else if (WIFSIGNALED(status)) {
-	    fatal("%s: userv exited unexpectedly: uncaught signal %d\n",
+	    fatal("%s: userv exited unexpectedly: uncaught signal %d",
 		  st->slip.nl.name,WTERMSIG(status));
 	} else {
-	    fatal("%s: userv stopped unexpectedly\n");
+	    fatal("%s: userv stopped unexpectedly");
 	}
     }
     Message(M_WARNING,"%s: userv subprocess died with status %d\n",
@@ -240,11 +240,11 @@ static void userv_invoke_userv(struct userv *st)
     struct netlink_client *r;
     struct ipset *allnets;
     struct subnet_list *snets;
-    int i;
+    int i, nread;
     uint8_t confirm;
 
     if (st->pid) {
-	fatal("userv_invoke_userv: already running\n");
+	fatal("userv_invoke_userv: already running");
     }
 
     /* This is where we actually invoke userv - all the networks we'll
@@ -323,22 +323,24 @@ static void userv_invoke_userv(struct userv *st)
     Message(M_INFO,"%s: userv-ipif pid is %d\n",st->slip.nl.name,st->pid);
     /* Read a single character from the pipe to confirm userv-ipif is
        running. If we get a SIGCHLD at this point then we'll get EINTR. */
-    if (read(st->rxfd,&confirm,1)!=1) {
+    if ((nread=read(st->rxfd,&confirm,1))!=1) {
 	if (errno==EINTR) {
 	    Message(M_WARNING,"%s: read of confirmation byte was "
 		    "interrupted\n",st->slip.nl.name);
 	} else {
-	    fatal_perror("%s: read() of confirmation byte",st->slip.nl.name);
+	    if (nread<0) {
+		fatal_perror("%s: error reading confirmation byte",
+			     st->slip.nl.name);
+	    } else {
+		fatal("%s: unexpected EOF instead of confirmation byte"
+		      " - userv ipif failed?", st->slip.nl.name);
+	    }
 	}
     } else {
 	if (confirm!=SLIP_END) {
-	    fatal("%s: bad confirmation byte %d from userv-ipif\n",
+	    fatal("%s: bad confirmation byte %d from userv-ipif",
 		  st->slip.nl.name,confirm);
 	}
-    }
-    /* Mark rxfd non-blocking */
-    if (fcntl(st->rxfd, F_SETFL, fcntl(st->rxfd, F_GETFL)|O_NONBLOCK)==-1) {
-	fatal_perror("%s: fcntl(O_NONBLOCK)",st->slip.nl.name);
     }
 }
 

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <assert.h>
 
 struct rgen_data {
     closure_t cl;
@@ -16,9 +17,29 @@ static random_fn random_generate;
 static bool_t random_generate(void *data, uint32_t bytes, uint8_t *buff)
 {
     struct rgen_data *st=data;
+    int r;
 
-    /* XXX XXX error checking */
-    read(st->fd,buff,bytes);
+    r= read(st->fd,buff,bytes);
+
+    assert(r == bytes);
+    /* This is totally crap error checking, but AFAICT many callers of
+     * this function do not check the return value.  This is a minimal
+     * change to make the code not fail silently-but-insecurely.
+     *
+     * A proper fix requires either:
+     *  - Declare all random number generation failures as fatal
+     *    errors, and make this return void, and fix all callers,
+     *    and make this call some appropriate function if it fails.
+     *  - Make this have proper error checking (and reporting!)
+     *    and make all callers check the error (and report!);
+     *    this will be tricky, I think, because you have to report
+     *    the errno somewhere.
+     *
+     * There's also the issue that this is only one possible
+     * implementation of a random number source; others may not rely
+     * on reading from a file descriptor, and may not produce
+     * appropriate settings of errno.
+     */
 
     return True;
 }
@@ -45,7 +66,7 @@ static list_t *random_apply(closure_t *self, struct cloc loc,
     arg2=list_elem(args,1);
 
     if (!arg1) {
-	fatal("randomsource: requires a filename\n");
+	cfgfatal(loc,"randomsource","requires a filename\n");
     }
     if (arg1->type != t_string) {
 	cfgfatal(arg1->loc,"randomsource",
@@ -62,7 +83,7 @@ static list_t *random_apply(closure_t *self, struct cloc loc,
     }
 
     if (!filename) {
-	fatal("randomsource requires a filename");
+	cfgfatal(loc,"randomsource","requires a filename\n");
     }
     st->fd=open(filename,O_RDONLY);
     if (st->fd<0) {

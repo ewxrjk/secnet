@@ -414,7 +414,7 @@ static void netlink_packet_deliver(struct netlink *st,
     BUF_ASSERT_USED(buf);
 
     if (dest==st->secnet_address) {
-	Message(M_ERR,"%s: trying to deliver a packet to myself!\n");
+	Message(M_ERR,"%s: trying to deliver a packet to myself!\n",st->name);
 	BUF_FREE(buf);
 	return;
     }
@@ -961,9 +961,10 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
     if (l) 
 	st->networks=string_list_to_ipset(l,loc,st->name,"networks");
     else {
-	Message(M_WARNING,"%s: no local networks (parameter \"networks\") "
-		"defined\n",st->name);
-	st->networks=ipset_new();
+	struct ipset *empty;
+	empty=ipset_new();
+	st->networks=ipset_complement(empty);
+	ipset_free(empty);
     }
     l=dict_lookup(dict,"remote-networks");
     if (l) {

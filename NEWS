@@ -18,9 +18,21 @@ etc.
 
 See also file "TODO".
 
-* Planned for version 0.1.14
+* New in version 0.1.14
 
-RFC1812-compliance in netlink.c
+The --help and --version options now send their output to stdout.
+
+Bugfix: TUN flavour "BSD" no longer implies a BSD-style ifconfig and
+route command invocation.  Instead "ioctl"-style is used, which should
+work on both BSD and linux-2.2 systems.
+
+If no "networks" parameter is specified for a netlink device then it
+is assumed to be 0.0.0.0/0 rather than the empty set.  So, by default
+there is a default route from each netlink device to the host machine.
+The "networks" parameter can be used to implement a primitive
+firewall, restricting the destination addresses of packets received
+through tunnels; if a more complex firewall is required then implement
+it on the host.
 
 * New in version 0.1.13
 
