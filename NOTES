@@ -113,6 +113,22 @@ networks a b c ...
 pubkey x y z: x=keylen, y=encryption key, z=modulus
 mobile: declare this to be a 'mobile' site
 
+** Logging etc.
+
+There are several possible ways of running secnet:
+
+'reporting' only: --version, --help, etc. command line options and the
+--just-check-config mode.
+
+'normal' run: perform setup in the foreground, and then background.
+
+'failed' run: setup in the foreground, and terminate with an error
+before going to background.
+
+'reporting' modes should never output anything except to stdout/stderr.
+'normal' and 'failed' runs output to stdout/stderr before
+backgrounding, then thereafter output only to log destinations.
+
 ** Protocols
 
 *** Protocol environment:

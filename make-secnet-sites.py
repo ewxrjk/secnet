@@ -55,7 +55,7 @@ import sys
 import os
 import ipaddr
 
-VERSION="0.1.4"
+VERSION="0.1.5"
 
 class vpn:
 	def __init__(self,name):
@@ -106,41 +106,49 @@ class nets:
 
 class dhgroup:
 	def __init__(self,w):
-		self.w=w
+		self.mod=w[1]
+		self.gen=w[2]
 	def out(self):
-		return 'dh diffie-hellman("%s","%s");'%(self.w[1],self.w[2])
+		return 'dh diffie-hellman("%s","%s");'%(self.mod,self.gen)
 
 class hash:
 	def __init__(self,w):
-		self.w=w
-		if (w[1]!='md5' and w[1]!='sha1'):
-			complain("unknown hash type %s"%(w[1]))
+		self.ht=w[1]
+		if (self.ht!='md5' and self.ht!='sha1'):
+			complain("unknown hash type %s"%(self.ht))
 	def out(self):
-		return 'hash %s;'%(self.w[1])
+		return 'hash %s;'%(self.ht)
 
 class email:
 	def __init__(self,w):
-		self.w=w
+		self.addr=w[1]
 	def out(self):
-		return '# Contact email address: <%s>'%(self.w[1])
+		return '# Contact email address: <%s>'%(self.addr)
 
 class num:
 	def __init__(self,w):
-		self.w=w
+		self.what=w[0]
+		self.n=string.atol(w[1])
 	def out(self):
-		return '%s %s;'%(self.w[0],self.w[1])
+		return '%s %d;'%(self.what,self.n)
 
 class address:
 	def __init__(self,w):
 		self.w=w
+		self.adr=w[1]
+		self.port=string.atoi(w[2])
+		if (self.port<1 or self.port>65535):
+			complain("invalid port number")
 	def out(self):
-		return 'address "%s"; port %s;'%(self.w[1],self.w[2])
+		return 'address "%s"; port %d;'%(self.adr,self.port)
 
 class rsakey:
 	def __init__(self,w):
-		self.w=w
+		self.l=string.atoi(w[1])
+		self.e=w[2]
+		self.n=w[3]
 	def out(self):
-		return 'key rsa-public("%s","%s");'%(self.w[2],self.w[3])
+		return 'key rsa-public("%s","%s");'%(self.e,self.n)
 
 class mobileoption:
 	def __init__(self,w):
@@ -294,9 +302,9 @@ def outputsites(w):
 	for i in vpns.values():
 		w.write("  %s {\n"%(i.name))
 		for l in i.locations.values():
-			slist=map(lambda x:"vpn-data/%s/%s/%s"%
-				(i.name,l.name,x.name),
-				l.sites.values())
+			tmpl="vpn-data/%s/%s/%%s"%(i.name,l.name)
+			slist=[]
+			for s in l.sites.values(): slist.append(tmpl%s.name)
 			w.write("    %s %s;\n"%(l.name,string.join(slist,",")))
 		w.write("\n    all-sites %s;\n"%
 			string.join(i.locations.keys(),","))

@@ -47,7 +47,7 @@ binary-arch: build install
 	dh_testroot
 #	dh_installdebconf	
 	dh_installdocs INSTALL README NOTES TODO
-	dh_installexamples example.conf example-sites-file
+	dh_installexamples example.conf make-secnet-sites.py ipaddr.py
 #	dh_installmenu
 #	dh_installlogrotate
 #	dh_installemacsen

@@ -659,11 +659,9 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
 			  &st->networks);
     dict_read_subnet_list(dict, "exclude-remote-networks", False, "netlink",
 			  loc, &st->exclude_remote_networks);
-    /* local-address and secnet-address do not have to be in local-networks;
-       however, they should be advertised in the 'sites' file for the
+    /* secnet-address does not have to be in local-networks;
+       however, it should be advertised in the 'sites' file for the
        local site. */
-    st->local_address=string_to_ipaddr(
-	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
     st->secnet_address=string_to_ipaddr(
 	dict_find_item(dict,"secnet-address", True, "netlink", loc),"netlink");
     st->mtu=dict_read_number(dict, "mtu", False, "netlink", loc, DEFAULT_MTU);

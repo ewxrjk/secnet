@@ -11,7 +11,8 @@
 #include <gmp.h>
 
 extern uint32_t message_level;
-extern uint32_t syslog_level;
+extern bool_t secnet_is_daemon;
+extern struct log_if *system_log;
 
 #define BUF_ASSERT_FREE(buf) do { buffer_assert_free((buf), \
 						     __FILE__,__LINE__); } \

@@ -194,12 +194,27 @@ static void slog(struct site *st, uint32_t event, string_t msg, ...)
 {
     va_list ap;
     uint8_t buf[240];
+    uint32_t class;
 
     va_start(ap,msg);
 
     if (event&st->log_events) {
+	switch(event) {
+	case LOG_UNEXPECTED: class=M_INFO; break;
+	case LOG_SETUP_INIT: class=M_INFO; break;
+	case LOG_SETUP_TIMEOUT: class=M_NOTICE; break;
+	case LOG_ACTIVATE_KEY: class=M_INFO; break;
+	case LOG_TIMEOUT_KEY: class=M_INFO; break;
+	case LOG_SEC: class=M_SECURITY; break;
+	case LOG_STATE: class=M_DEBUG; break;
+	case LOG_DROP: class=M_DEBUG; break;
+	case LOG_DUMP: class=M_DEBUG; break;
+	case LOG_ERROR: class=M_ERROR; break;
+	default: class=M_ERROR; break;
+	}
+
 	vsnprintf(buf,240,msg,ap);
-	st->log->log(st->log->st,0,"%s: %s",st->tunname,buf);
+	st->log->log(st->log->st,class,"%s: %s",st->tunname,buf);
     }
     va_end(ap);
 }
@@ -638,7 +653,7 @@ static void dump_packet(struct site *st, struct buffer_if *buf,
     uint32_t msgtype=ntohl(*(uint32_t *)(buf->start+8));
 
     if (st->log_events & LOG_DUMP)
-	log(st->log,0,"%s: %s: %08x<-%08x: %08x:",
+	log(st->log,M_DEBUG,"%s: %s: %08x<-%08x: %08x:",
 	    st->tunname,incoming?"incoming":"outgoing",
 	    dest,source,msgtype);
 }
@@ -1150,7 +1165,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
        site() closures for all sites including our own): refuse to
        talk to ourselves */
     if (strcmp(st->localname,st->remotename)==0) {
-	Message(M_INFO,"site %s: local-name==name -> ignoring this site\n",
+	Message(M_DEBUG,"site %s: local-name==name -> ignoring this site\n",
 		st->localname);
 	free(st);
 	return NULL;

@@ -29,6 +29,7 @@ struct userv {
 			       and send them to the site code. */
     bool_t pending_esc;
     netlink_deliver_fn *netlink_to_tunnel;
+    uint32_t local_address; /* host interface address */
 };
 
 static int userv_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
@@ -155,7 +156,7 @@ static void userv_phase_hook(void *sst, uint32_t newphase)
        be using should already have been registered. */
 
     addrs=safe_malloc(512,"userv_phase_hook:addrs");
-    snprintf(addrs,512,"%s,%s,%d,slip",ipaddr_to_string(st->nl.local_address),
+    snprintf(addrs,512,"%s,%s,%d,slip",ipaddr_to_string(st->local_address),
 	     ipaddr_to_string(st->nl.secnet_address),st->nl.mtu);
 
     nets=safe_malloc(1024,"userv_phase_hook:nets");
@@ -259,6 +260,8 @@ static list_t *userv_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (!st->service_user) st->service_user="root";
     if (!st->service_name) st->service_name="ipif";
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"userv-netlink",loc);
+    st->local_address=string_to_ipaddr(
+	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
     BUF_ALLOC(st->buff,"netlink:userv_apply");
 
     st->rxfd=-1; st->txfd=-1;

@@ -1,21 +1,43 @@
-/* $Log: util.c,v $
- * Revision 1.2  1996/04/14 16:34:36  sde1000
- * Added syslog support
- * mpbin/mpstring functions moved from dh.c
+/*
+ * util.c
+ * - output and logging support
+ * - program lifetime support
+ * - IP address and subnet munging routines
+ * - MPI convenience functions
+ */
+/*
+ *  This file is
+ *    Copyright (C) 1995--2001 Stephen Early <steve@greenend.org.uk>
  *
- * Revision 1.1  1996/03/14 17:05:03  sde1000
- * Initial revision
- *
+ *  It is part of secnet, which is
+ *    Copyright (C) 1995--2001 Stephen Early <steve@greenend.org.uk>
+ *    Copyright (C) 1998 Ross Anderson, Eli Biham, Lars Knudsen
+ *  
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software Foundation,
+ *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
 #include "secnet.h"
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <syslog.h>
 #include <unistd.h>
 #include <limits.h>
 #include <assert.h>
 #include <sys/wait.h>
+#include <time.h>
 #include "util.h"
 #include "unaligned.h"
 
@@ -25,8 +47,9 @@
 
 static char *hexdigits="0123456789abcdef";
 
-uint32_t message_level=M_WARNING|M_ERROR|M_FATAL;
-uint32_t syslog_level=M_WARNING|M_ERROR|M_FATAL;
+bool_t secnet_is_daemon=False;
+uint32_t message_level=M_WARNING|M_ERROR|M_SECURITY|M_FATAL;
+struct log_if *system_log=NULL;
 static uint32_t current_phase=0;
 
 struct phase_hook {
@@ -40,19 +63,30 @@ static struct phase_hook *hooks[NR_PHASES]={NULL,};
 static void vMessage(uint32_t class, char *message, va_list args)
 {
     FILE *dest=stdout;
-    if (class & message_level) {
-	if (class&M_FATAL || class&M_ERROR || class&M_WARNING) {
-	    dest=stderr;
+#define MESSAGE_BUFLEN 1023
+    static char buff[MESSAGE_BUFLEN+1]={0,};
+    uint32_t bp;
+    char *nlp;
+
+    if (secnet_is_daemon) {
+	/* Messages go to the system log interface */
+	bp=strlen(buff);
+	vsnprintf(buff+bp,MESSAGE_BUFLEN-bp,message,args);
+	/* Each line is sent separately */
+	while ((nlp=strchr(buff,'\n'))) {
+	    *nlp=0;
+	    log(system_log,class,buff);
+	    memmove(buff,nlp+1,strlen(nlp+1)+1);
 	}
-	vfprintf(dest,message,args);
+    } else {
+	/* Messages go to stdout/stderr */
+	if (class & message_level) {
+	    if (class&M_FATAL || class&M_ERROR || class&M_WARNING) {
+		dest=stderr;
+	    }
+	    vfprintf(dest,message,args);
+	}
     }
-/* XXX do something about syslog output here */
-#if 0
-    /* Maybe send message to syslog */
-    vsprintf(buff, message, args);
-    /* XXX Send each line as a separate log entry */
-    log(syslog_prio[level], buff);
-#endif /* 0 */
 }  
 
 void Message(uint32_t class, char *message, ...)
@@ -60,9 +94,7 @@ void Message(uint32_t class, char *message, ...)
     va_list ap;
 
     va_start(ap,message);
-
     vMessage(class,message,ap);
-
     va_end(ap);
 }
 
@@ -138,6 +170,295 @@ void cfgfatal(struct cloc loc, string_t facility, char *message, ...)
     va_end(args);
     exit(current_phase);
 }
+
+/* Take a list of log closures and merge them */
+struct loglist {
+    struct log_if *l;
+    struct loglist *next;
+};
+
+static void log_vmulti(void *sst, int class, char *message, va_list args)
+{
+    struct loglist *st=sst, *i;
+
+    if (secnet_is_daemon) {
+	for (i=st; i; i=i->next) {
+	    i->l->vlog(i->l->st,class,message,args);
+	}
+    } else {
+	vMessage(class,message,args);
+	Message(class,"\n");
+    }
+}
+
+static void log_multi(void *st, int priority, char *message, ...)
+{
+    va_list ap;
+
+    va_start(ap,message);
+    log_vmulti(st,priority,message,ap);
+    va_end(ap);
+}
+
+struct log_if *init_log(list_t *ll)
+{
+    int i=0;
+    item_t *item;
+    closure_t *cl;
+    struct loglist *l=NULL, *n;
+    struct log_if *r;
+
+    if (list_length(ll)==1) {
+	item=list_elem(ll,0);
+	cl=item->data.closure;
+	if (cl->type!=CL_LOG) {
+	    cfgfatal(item->loc,"init_log","closure is not a logger");
+	}
+	return cl->interface;
+    }
+    while ((item=list_elem(ll,i++))) {
+	if (item->type!=t_closure) {
+	    cfgfatal(item->loc,"init_log","item is not a closure");
+	}
+	cl=item->data.closure;
+	if (cl->type!=CL_LOG) {
+	    cfgfatal(item->loc,"init_log","closure is not a logger");
+	}
+	n=safe_malloc(sizeof(*n),"init_log");
+	n->l=cl->interface;
+	n->next=l;
+	l=n;
+    }
+    if (!l) {
+	fatal("init_log: no log");
+    }
+    r=safe_malloc(sizeof(*r), "init_log");
+    r->st=l;
+    r->log=log_multi;
+    r->vlog=log_vmulti;
+    return r;
+}
+
+struct logfile {
+    closure_t cl;
+    struct log_if ops;
+    struct cloc loc;
+    string_t logfile;
+    uint32_t level;
+    FILE *f;
+};
+
+static string_t months[]={
+    "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+
+static void logfile_vlog(void *sst, int class, char *message, va_list args)
+{
+    struct logfile *st=sst;
+    time_t t;
+    struct tm *tm;
+
+    if (secnet_is_daemon) {
+	if (class&st->level) {
+	    t=time(NULL);
+	    tm=localtime(&t);
+	    fprintf(st->f,"%s %2d %02d:%02d:%02d ",
+		    months[tm->tm_mon],tm->tm_mday,tm->tm_hour,tm->tm_min,
+		    tm->tm_sec);
+	    vfprintf(st->f,message,args);
+	    fprintf(st->f,"\n");
+	    fflush(st->f);
+	}
+    } else {
+	vMessage(class,message,args);
+	Message(class,"\n");
+    }
+}
+
+static void logfile_log(void *state, int priority, char *message, ...)
+{
+    va_list ap;
+
+    va_start(ap,message);
+    logfile_vlog(state,priority,message,ap);
+    va_end(ap);
+}
+
+static void logfile_phase_hook(void *sst, uint32_t new_phase)
+{
+    struct logfile *st=sst;
+    FILE *f;
+
+    if (background) {
+	f=fopen(st->logfile,"a");
+	if (!f) fatal_perror("logfile (%s:%d): cannot open \"%s\"",
+			     st->loc.file,st->loc.line,st->logfile);
+	st->f=f;
+    }
+}
+
+static struct flagstr message_class_table[]={
+    { "debug-config", M_DEBUG_CONFIG },
+    { "debug-phase", M_DEBUG_PHASE },
+    { "debug", M_DEBUG },
+    { "all-debug", M_DEBUG|M_DEBUG_PHASE|M_DEBUG_CONFIG },
+    { "info", M_INFO },
+    { "notice", M_NOTICE },
+    { "warning", M_WARNING },
+    { "error", M_ERROR },
+    { "security", M_SECURITY },
+    { "fatal", M_FATAL },
+    { "default", M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
+    { "verbose", M_INFO|M_NOTICE|M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
+    { "quiet", M_FATAL },
+    { NULL, 0 }
+};
+
+static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
+			     list_t *args)
+{
+    struct logfile *st;
+    item_t *item;
+    dict_t *dict;
+
+    /* We should defer opening the logfile until the getresources
+       phase.  We should defer writing into the logfile until after we
+       become a daemon. */
+    
+    st=safe_malloc(sizeof(*st),"logfile_apply");
+    st->cl.description="logfile";
+    st->cl.type=CL_LOG;
+    st->cl.apply=NULL;
+    st->cl.interface=&st->ops;
+    st->ops.st=st;
+    st->ops.log=logfile_log;
+    st->ops.vlog=logfile_vlog;
+    st->loc=loc;
+    st->f=stderr;
+
+    item=list_elem(args,0);
+    if (!item || item->type!=t_dict) {
+	cfgfatal(loc,"logfile","argument must be a dictionary\n");
+    }
+    dict=item->data.dict;
+
+    st->logfile=dict_read_string(dict,"filename",True,"logfile",loc);
+    st->level=string_list_to_word(dict_lookup(dict,"class"),
+				       message_class_table,"logfile");
+
+    add_hook(PHASE_GETRESOURCES,logfile_phase_hook,st);
+
+    return new_closure(&st->cl);
+}
+
+struct syslog {
+    closure_t cl;
+    struct log_if ops;
+    string_t ident;
+    int facility;
+    bool_t open;
+};
+
+static int msgclass_to_syslogpriority(uint32_t m)
+{
+    switch (m) {
+    case M_DEBUG_CONFIG: return LOG_DEBUG;
+    case M_DEBUG_PHASE: return LOG_DEBUG;
+    case M_DEBUG: return LOG_DEBUG;
+    case M_INFO: return LOG_INFO;
+    case M_NOTICE: return LOG_NOTICE;
+    case M_WARNING: return LOG_WARNING;
+    case M_ERROR: return LOG_ERR;
+    case M_SECURITY: return LOG_CRIT;
+    case M_FATAL: return LOG_EMERG;
+    default: return LOG_NOTICE;
+    }
+}
+    
+static void syslog_vlog(void *sst, int class, char *message,
+			 va_list args)
+{
+    struct syslog *st=sst;
+
+    if (st->open)
+	vsyslog(msgclass_to_syslogpriority(class),message,args);
+    else {
+	vMessage(class,message,args);
+	Message(class,"\n");
+    }
+}
+
+static void syslog_log(void *sst, int priority, char *message, ...)
+{
+    va_list ap;
+
+    va_start(ap,message);
+    syslog_vlog(sst,priority,message,ap);
+    va_end(ap);
+}
+
+static struct flagstr syslog_facility_table[]={
+    { "authpriv", LOG_AUTHPRIV },
+    { "cron", LOG_CRON },
+    { "daemon", LOG_DAEMON },
+    { "kern", LOG_KERN },
+    { "local0", LOG_LOCAL0 },
+    { "local1", LOG_LOCAL1 },
+    { "local2", LOG_LOCAL2 },
+    { "local3", LOG_LOCAL3 },
+    { "local4", LOG_LOCAL4 },
+    { "local5", LOG_LOCAL5 },
+    { "local6", LOG_LOCAL6 },
+    { "local7", LOG_LOCAL7 },
+    { "lpr", LOG_LPR },
+    { "mail", LOG_MAIL },
+    { "news", LOG_NEWS },
+    { "syslog", LOG_SYSLOG },
+    { "user", LOG_USER },
+    { "uucp", LOG_UUCP },
+    { NULL, 0 }
+};
+
+static void syslog_phase_hook(void *sst, uint32_t newphase)
+{
+    struct syslog *st=sst;
+
+    if (background) {
+	openlog(st->ident,0,st->facility);
+	st->open=True;
+    }
+}
+
+static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
+			    list_t *args)
+{
+    struct syslog *st;
+    dict_t *d;
+    item_t *item;
+    string_t facstr;
+
+    st=safe_malloc(sizeof(*st),"syslog_apply");
+    st->cl.description="syslog";
+    st->cl.type=CL_LOG;
+    st->cl.apply=NULL;
+    st->cl.interface=&st->ops;
+    st->ops.st=st;
+    st->ops.log=syslog_log;
+    st->ops.vlog=syslog_vlog;
+
+    item=list_elem(args,0);
+    if (!item || item->type!=t_dict)
+	cfgfatal(loc,"syslog","parameter must be a dictionary\n");
+    d=item->data.dict;
+
+    st->ident=dict_read_string(d, "ident", False, "syslog", loc);
+    facstr=dict_read_string(d, "facility", True, "syslog", loc);
+    st->facility=string_to_word(facstr,loc,
+				syslog_facility_table,"syslog");
+    st->open=False;
+    add_hook(PHASE_GETRESOURCES,syslog_phase_hook,st);
+
+    return new_closure(&st->cl);
+}    
 
 char *safe_strdup(char *s, char *message)
 {
@@ -344,105 +665,6 @@ int sys_cmd(const char *path, char *arg, ...)
     return rv;
 }
 
-/* Take a list of log closures and merge them */
-struct loglist {
-    struct log_if *l;
-    struct loglist *next;
-};
-
-static void log_vmulti(void *state, int priority, char *message, va_list args)
-{
-    struct loglist *st=state, *i;
-
-    for (i=st; i; i=i->next) {
-	i->l->vlog(i->l->st,priority,message,args);
-    }
-}
-
-static void log_multi(void *st, int priority, char *message, ...)
-{
-    va_list ap;
-
-    va_start(ap,message);
-
-    log_vmulti(st,priority,message,ap);
-
-    va_end(ap);
-}
-
-struct log_if *init_log(list_t *ll)
-{
-    int i=0;
-    item_t *item;
-    closure_t *cl;
-    struct loglist *l=NULL, *n;
-    struct log_if *r;
-
-    while ((item=list_elem(ll,i++))) {
-	if (item->type!=t_closure) {
-	    cfgfatal(item->loc,"init_log","item is not a closure");
-	}
-	cl=item->data.closure;
-	if (cl->type!=CL_LOG) {
-	    cfgfatal(item->loc,"init_log","closure is not a logger");
-	}
-	n=safe_malloc(sizeof(*n),"init_log");
-	n->l=cl->interface;
-	n->next=l;
-	l=n;
-    }
-    if (!l) {
-	fatal("init_log: none of the items in the list are loggers");
-    }
-    r=safe_malloc(sizeof(*r), "init_log");
-    r->st=l;
-    r->log=log_multi;
-    r->vlog=log_vmulti;
-    return r;
-}
-
-struct logfile {
-    closure_t cl;
-    struct log_if ops;
-    FILE *f;
-};
-
-static void logfile_vlog(void *state, int priority, char *message,
-			 va_list args)
-{
-    struct logfile *st=state;
-
-    vfprintf(st->f,message,args);
-    fprintf(st->f,"\n");
-}
-
-static void logfile_log(void *state, int priority, char *message, ...)
-{
-    va_list ap;
-
-    va_start(ap,message);
-    logfile_vlog(state,priority,message,ap);
-    va_end(ap);
-}
-
-static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
-			     list_t *data)
-{
-    struct logfile *st;
-    
-    st=safe_malloc(sizeof(*st),"logfile_apply");
-    st->cl.description="logfile";
-    st->cl.type=CL_LOG;
-    st->cl.apply=NULL;
-    st->cl.interface=&st->ops;
-    st->ops.st=st;
-    st->ops.log=logfile_log;
-    st->ops.vlog=logfile_vlog;
-    st->f=stderr; /* XXX ignore args */
-
-    return new_closure(&st->cl);
-}
-	
 static char *phases[NR_PHASES]={
     "PHASE_INIT",
     "PHASE_GETOPTS",
@@ -625,5 +847,6 @@ init_module util_module;
 void util_module(dict_t *dict)
 {
     add_closure(dict,"logfile",logfile_apply);
+    add_closure(dict,"syslog",syslog_apply);
     add_closure(dict,"sysbuffer",buffer_apply);
 }

@@ -39,7 +39,6 @@ struct netlink {
     uint32_t max_end_pad;
     struct subnet_list networks;
     struct subnet_list exclude_remote_networks;
-    uint32_t local_address; /* host interface address */
     uint32_t secnet_address; /* our own address */
     uint32_t mtu;
     struct netlink_client *clients;

@@ -45,17 +45,27 @@ for it to run as once it's ready to drop its privileges.  Example (on
 Debian):
 # adduser --system --no-create-home secnet
 
+If you're using the 'soft routes' feature (for some classes of mobile
+device) you'll have to run as root all the time, to enable secnet to
+add and remove routes from your kernel's routing table.  (This
+restriction may be relaxed later if someone writes a userv service to
+modify the routing table.)
+
+If you are joining an existing VPN, read that VPN's documentation now.
+It may supersede the next paragraph.
+
 You will need to allocate two IP addresses for use by secnet.  One
 will be for the tunnel interface on your tunnel endpoint machine (i.e.
 the address you see in 'ifconfig' when you look at the tunnel
 interface).  The other will be for secnet itself.  These addresses
-could possibly be allocated from the range used by your internal
-network: if you do this, you should think about providing appropriate
-proxy-ARP on the internal network interface of the machine running
-secnet (eg. add an entry net/ipv4/conf/eth_whatever/proxy_arp = 1 to
-/etc/sysctl.conf on Debian systems and run sysctl -p).  Alternatively
-the addresses could be from some other range - this works well if the
-machine running secnet is the default route out of your network.
+should probably be allocated from the range used by your internal
+network: if you do this, you should provide appropriate proxy-ARP on
+the internal network interface of the machine running secnet (eg. add
+an entry net/ipv4/conf/eth_whatever/proxy_arp = 1 to /etc/sysctl.conf
+on Debian systems and run sysctl -p).  Alternatively the addresses
+could be from some other range - this works well if the machine
+running secnet is the default route out of your network - but this
+requires more thought.
 
 http://www.ucam.org/cam-grin/ may be useful.
 
@@ -96,7 +106,12 @@ XXX this should eventually be worked out automatically by 'configure'.]
 Generate a site file fragment for your site (see below), and submit it
 for inclusion in your VPN's 'sites' file.  Download the vpn-sites file
 to /etc/secnet/sites - MAKE SURE YOU GET AN AUTHENTIC COPY because the
-sites file contains public keys for all the sites in the VPN.
+sites file contains public keys for all the sites in the VPN.  Use the
+make-secnet-sites.py program provided with the secnet distribution to
+convert the distributed sites file into one that can be included in a
+secnet configuration file:
+
+# make-secnet-sites.py sites sites.conf
 
 * Configuration
 
@@ -109,13 +124,15 @@ is described in the README file at the moment.
 
 You need the following information:
 
-1. a short name for your site, eg. "greenend".  This is used to
-identify your site in the vpn-sites file.
+1. the name of your VPN.
 
-2. the name your site will use in the key setup protocol,
-eg. "greenend" (these two will usually be similar or the same).
+2. the name of your location(s).
 
-3. the DNS name of the machine that will be the "front-end" for your
+3. a short name for your site, eg. "sinister".  This is used to
+identify your site in the vpn-sites file, and should probably be the
+same as its hostname.
+
+4. the DNS name of the machine that will be the "front-end" for your
 secnet installation.  This will typically be the name of the gateway
 machine for your network, eg. sinister.dynamic.greenend.org.uk
 
@@ -123,18 +140,19 @@ secnet does not actually have to run on this machine, as long as the
 machine can be configured to forward UDP packets to the machine that
 is running secnet.
 
-4. the port number used to contact secnet at your site.  This is the
+5. the port number used to contact secnet at your site.  This is the
 port number on the front-end machine, and does not necessarily have to
-match the port number on the machine running secnet.
+match the port number on the machine running secnet.  If you want to
+use a privileged port number we suggest 410.  An appropriate
+unprivileged port number is 51396.  (These numbers were picked at
+random.)
 
-5. the list of networks accessible at your site over the VPN.
+6. the list of networks accessible at your site over the VPN.
 
-6. the public part of the RSA key you generated during installation
+7. the public part of the RSA key you generated during installation
 (in /etc/secnet/key.pub if you followed the installation
 instructions).  This file contains three numbers and a comment on one
-line.  The first number is the key length in bits, and should be
-ignored.  The second number (typically small) is the encryption key
-'e', and the third number (large) is the modulus 'n'.
+line.
 
 If you are running secnet on a particularly slow machine, you may like
 to specify a larger value for the key setup retry timeout than the
@@ -143,12 +161,10 @@ See the notes in the example configuration file for more on this.
 
 The site file fragment should look something like this:
 
-shortname {
-		name "sitename";
-		address "your.public.address.org.uk";
-		port 5678;
-		networks "172.18.45.0/24";
-		key rsa-public("35","153279875126380522437827076871354104097683702803616313419670959273217685015951590424876274370401136371563604396779864283483623325238228723798087715987495590765759771552692972297669972616769731553560605291312242789575053620182470998166393580503400960149506261455420521811814445675652857085993458063584337404329");
-	};
-
-See 'example-sites-file' for more examples.
+vpn sgo
+location greenend
+contact steve@greenend.org.uk
+site sinister
+  networks 192.168.73.0/24 192.168.1.0/24 172.19.71.0/24
+  address sinister.dynamic.greenend.org.uk 51396
+  pubkey 1024 35 142982503......[lots more].....0611 steve@sinister

@@ -6,7 +6,8 @@ endianness problems)
 netlink.c: investigate why 'default' routes don't appear to work
 (reported by JDA).
 
-slip.c: detect failure of userv-ipif to start.
+slip.c: detect failure of userv-ipif to start. Restart userv-ipif to
+cope with soft routes? Restart it if it fails in use?
 
 tun.c: jdamery reports tun-old code works on Linux-2.2.
 Unresolved problem with ioctl(TUNSETIFF) sometimes returning EINVAL, seems
@@ -23,9 +24,7 @@ cleanly using a table. There's still quite a lot of redundancy in this
 file. Abandon key exchanges when a bad packet is received. Modify
 protocol to include version fields, as described in the NOTES file.
 
-transform.c: make generic
-
-util.c: sort out logging
+transform.c: see below
 
 sha1.c: test
 
@@ -35,7 +34,4 @@ user to plug in different block ciphers, invent an authenticity-only
 mode, etc.
 
 Signal handling! Really just cope with SIGCHLD and SIGTERM. Possibly
-use SIGUSR1/2 for prodding things.
-
-Write scripts to generate the 'real' sites file from a less-expressive
-version that's more easily checked by external tools.
+use SIGUSR1/2 for prodding things. Manage child processes properly.

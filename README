@@ -165,12 +165,58 @@ Defines:
 udp: dict argument
   port (integer): UDP port to listen and send on
   buffer (buffer closure): buffer for incoming packets
+  authbind (string): optional, path to authbind-helper program
 
 ** util
 
 Defines:
   logfile (closure => log closure)
+  syslog (closure => log closure)
   sysbuffer (closure => buffer closure)
+
+logfile: dict argument
+  filename (string): where to log to
+  class (string list): what type of messages to log
+    { "debug-config", M_DEBUG_CONFIG },
+    { "debug-phase", M_DEBUG_PHASE },
+    { "debug", M_DEBUG },
+    { "all-debug", M_DEBUG|M_DEBUG_PHASE|M_DEBUG_CONFIG },
+    { "info", M_INFO },
+    { "notice", M_NOTICE },
+    { "warning", M_WARNING },
+    { "error", M_ERROR },
+    { "security", M_SECURITY },
+    { "fatal", M_FATAL },
+    { "default", M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
+    { "verbose", M_INFO|M_NOTICE|M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
+    { "quiet", M_FATAL }
+
+syslog: dict argument
+  ident (string): include this string in every log message
+  facility (string): facility to log as
+    { "authpriv", LOG_AUTHPRIV },
+    { "cron", LOG_CRON },
+    { "daemon", LOG_DAEMON },
+    { "kern", LOG_KERN },
+    { "local0", LOG_LOCAL0 },
+    { "local1", LOG_LOCAL1 },
+    { "local2", LOG_LOCAL2 },
+    { "local3", LOG_LOCAL3 },
+    { "local4", LOG_LOCAL4 },
+    { "local5", LOG_LOCAL5 },
+    { "local6", LOG_LOCAL6 },
+    { "local7", LOG_LOCAL7 },
+    { "lpr", LOG_LPR },
+    { "mail", LOG_MAIL },
+    { "news", LOG_NEWS },
+    { "syslog", LOG_SYSLOG },
+    { "user", LOG_USER },
+    { "uucp", LOG_UUCP }
+
+sysbuffer: integer[,dict]
+  arg1: buffer length
+  arg2: options:
+    lockdown (boolean): if True, mlock() the buffer
 
 ** site
 

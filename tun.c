@@ -28,6 +28,7 @@ struct tun {
     struct buffer_if *buff; /* We receive packets into here
 			       and send them to the netlink code. */
     netlink_deliver_fn *netlink_to_tunnel;
+    uint32_t local_address; /* host interface address */
 };
 
 static int tun_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
@@ -156,7 +157,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 						no extra headers */
 	if (st->interface_name)
 	    strncpy(ifr.ifr_name,st->interface_name,IFNAMSIZ);
-	Message(M_INFO,"%s: about to ioctl(TUNSETIFF)...\n",st->nl.name);
+	Message(M_DEBUG,"%s: about to ioctl(TUNSETIFF)...\n",st->nl.name);
 	if (ioctl(st->fd,TUNSETIFF,&ifr)<0) {
 	    fatal_perror("%s: ioctl(TUNSETIFF)",st->nl.name);
 	}
@@ -174,7 +175,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
        to set the TUN device's address, and route to add routes to all
        our networks. */
 
-    hostaddr=ipaddr_to_string(st->nl.local_address);
+    hostaddr=ipaddr_to_string(st->local_address);
     secnetaddr=ipaddr_to_string(st->nl.secnet_address);
     snprintf(mtu,6,"%d",st->nl.mtu);
     mtu[5]=0;
@@ -232,6 +233,8 @@ static list_t *tun_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (!st->ifconfig_path) st->ifconfig_path="ifconfig";
     if (!st->route_path) st->route_path="route";
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"tun-netlink",loc);
+    st->local_address=string_to_ipaddr(
+	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
 
     add_hook(PHASE_GETRESOURCES,tun_phase_hook,st);
 
@@ -276,6 +279,8 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (!st->ifconfig_path) st->ifconfig_path="ifconfig";
     if (!st->route_path) st->route_path="route";
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"tun-netlink",loc);
+    st->local_address=string_to_ipaddr(
+	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
 
     /* Old TUN interface: the network interface name depends on which
        /dev/tunX file we open. If 'interface-search' is set to true, treat

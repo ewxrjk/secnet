@@ -19,12 +19,12 @@ extern char version[];
 #include "util.h"
 #include "conffile.h"
 
-/* Command-line options (possibly config-file options too) */
+/* XXX should be from autoconf */
 static char *configfile="/etc/secnet/secnet.conf";
 bool_t just_check_config=False;
 static char *userid=NULL;
 static uid_t uid=0;
-static bool_t background=True;
+bool_t background=True;
 static char *pidfile=NULL;
 bool_t require_root_privileges=False;
 string_t require_root_privileges_explanation=NULL;
@@ -95,19 +95,24 @@ static void parse_options(int argc, char **argv)
 	    break;
 
 	case 'v':
-	    message_level|=M_INFO|M_WARNING|M_ERROR|M_FATAL;
+	    message_level|=M_INFO|M_NOTICE|M_WARNING|M_ERROR|M_SECURITY|
+		M_FATAL;
 	    break;
 
-	case 'n':
-	    background=False;
+	case 'w':
+	    message_level&=(~M_WARNING);
 	    break;
 
 	case 'd':
-	    message_level|=M_DEBUG_CONFIG|M_DEBUG_PHASE;
+	    message_level|=M_DEBUG_CONFIG|M_DEBUG_PHASE|M_DEBUG;
 	    break;
 
 	case 'f':
 	    message_level=M_FATAL;
+	    break;
+
+	case 'n':
+	    background=False;
 	    break;
 
 	case 'c':
@@ -125,12 +130,12 @@ static void parse_options(int argc, char **argv)
 	    break;
 
 	default:
-	    Message(M_WARNING,"secnet: Unknown getopt code %c\n",c);
+	    Message(M_ERROR,"secnet: Unknown getopt code %c\n",c);
 	}
     }
 
     if (argc-optind != 0) {
-	Message(M_WARNING,"secnet: You gave extra command line parameters, "
+	Message(M_ERROR,"secnet: You gave extra command line parameters, "
 		"which were ignored.\n");
     }
 }
@@ -140,7 +145,6 @@ static void setup(dict_t *config)
     list_t *l;
     item_t *site;
     dict_t *system;
-    struct log_if *log;
     struct passwd *pw;
     struct cloc loc;
     int i;
@@ -158,8 +162,7 @@ static void setup(dict_t *config)
     if (!l) {
 	fatal("configuration does not include a system/log facility\n");
     }
-    log=init_log(l);
-    log->log(log->st,LOG_DEBUG,"%s: logging started",version);
+    system_log=init_log(l);
 
     /* Who are we supposed to run as? */
     userid=dict_read_string(system,"userid",False,"system",loc);
@@ -248,6 +251,8 @@ static void run(void)
 	fatal("run: couldn't alloca\n");
     }
 
+    Message(M_NOTICE,"%s: starting\n",version);
+
     while (!finished) {
 	if (gettimeofday(&tv_now, NULL)!=0) {
 	    fatal_perror("main loop: gettimeofday");
@@ -294,20 +299,26 @@ static void droppriv(void)
 
     add_hook(PHASE_SHUTDOWN,system_phase_hook,NULL);
 
-    /* Background now, if we're supposed to: we may be unable to write the
-       pidfile if we don't. */
-    if (background) {
-	/* Open the pidfile before forking - that way the parent can tell
-	   whether it succeeds */
-	if (pidfile) {
-	    pf=fopen(pidfile,"w");
-	    if (!pf) {
-		fatal_perror("cannot open pidfile \"%s\"",pidfile);
-	    }
-	} else {
-	    Message(M_WARNING,"secnet: no pidfile configured, but "
-		    "backgrounding anyway\n");
+    /* Open the pidfile for writing now: we may be unable to do so
+       once we drop privileges. */
+    if (pidfile) {
+	pf=fopen(pidfile,"w");
+	if (!pf) {
+	    fatal_perror("cannot open pidfile \"%s\"",pidfile);
 	}
+    }
+    if (!background && pf) {
+	fprintf(pf,"%d\n",getpid());
+	fclose(pf);
+    }
+
+    /* Now drop privileges */
+    if (uid!=0) {
+	if (setuid(uid)!=0) {
+	    fatal_perror("can't set uid to \"%s\"",userid);
+	}
+    }
+    if (background) {
 	p=fork();
 	if (p>0) {
 	    if (pf) {
@@ -319,28 +330,14 @@ static void droppriv(void)
 	} else if (p==0) {
 	    /* Child process - all done, just carry on */
 	    if (pf) fclose(pf);
+	    secnet_is_daemon=True;
 	} else {
 	    /* Error */
 	    fatal_perror("cannot fork");
 	    exit(1);
 	}
-    } else {
-	if (pidfile) {
-	    pf=fopen(pidfile,"w");
-	    if (!pf) {
-		fatal_perror("cannot open pidfile \"%s\"",pidfile);
-	    }
-	    fprintf(pf,"%d\n",getpid());
-	    fclose(pf);
-	}
     }
 
-    /* Drop privilege now, if configured to do so */
-    if (uid!=0) {
-	if (setuid(uid)!=0) {
-	    fatal_perror("can't set uid to \"%s\"",userid);
-	}
-    }
 }
 
 int main(int argc, char **argv)

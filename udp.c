@@ -19,6 +19,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include "util.h"
 
 static beforepoll_fn udp_beforepoll;
@@ -43,6 +44,7 @@ struct udp {
     struct cloc loc;
     uint16_t port;
     int fd;
+    string_t authbind;
     struct buffer_if *rbuf;
     struct notify_list *notify;
 };
@@ -167,8 +169,37 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
     memset(&addr, 0, sizeof(addr));
     addr.sin_family=AF_INET;
     addr.sin_port=htons(st->port);
-    if (bind(st->fd, (struct sockaddr *)&addr, sizeof(addr))!=0) {
-	fatal_perror("udp (%s:%d): bind",st->loc.file,st->loc.line);
+    if (st->authbind) {
+	pid_t c;
+	int status;
+
+	/* XXX this fork() and waitpid() business needs to be hidden
+	   in some system-specific library functions. */
+	c=fork();
+	if (c==-1) {
+	    fatal_perror("udp_phase_hook: fork() for authbind");
+	}
+	if (c==0) {
+	    char *argv[4];
+	    argv[0]=st->authbind;
+	    argv[1]="00000000";
+	    argv[2]=alloca(8);
+	    if (!argv[2]) exit(ENOMEM);
+	    sprintf(argv[2],"%04X",htons(st->port));
+	    argv[3]=NULL;
+	    dup2(st->fd,0);
+	    execvp(st->authbind,argv);
+	    exit(ENOEXEC);
+	}
+	waitpid(c,&status,0);
+	if (WEXITSTATUS(status)!=0) {
+	    errno=WEXITSTATUS(status);
+	    fatal_perror("udp (%s:%d): authbind",st->loc.file,st->loc.line);
+	}
+    } else {
+	if (bind(st->fd, (struct sockaddr *)&addr, sizeof(addr))!=0) {
+	    fatal_perror("udp (%s:%d): bind",st->loc.file,st->loc.line);
+	}
     }
 
     register_for_poll(st,udp_beforepoll,udp_afterpoll,1,"udp");
@@ -201,6 +232,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->port=dict_read_number(d,"port",True,"udp",st->loc,0);
     st->rbuf=find_cl_if(d,"buffer",CL_BUFFER,True,"udp",st->loc);
+    st->authbind=dict_read_string(d,"authbind",False,"udp",st->loc);
 
     add_hook(PHASE_GETRESOURCES,udp_phase_hook,st);
 

@@ -6,7 +6,6 @@
 #include "config.h"
 #include <stdlib.h>
 #include <stdarg.h>
-#include <syslog.h>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -48,6 +47,7 @@ extern bool_t subnet_lists_intersect(struct subnet_list *a,
 
 extern bool_t just_check_config; /* If True then we're going to exit after
 				    reading the configuration file */
+extern bool_t background; /* If True then we'll eventually run as a daemon */
 
 typedef struct dict dict_t;        /* Configuration dictionary */
 typedef struct closure closure_t;
@@ -102,6 +102,7 @@ extern string_t *dict_keys(dict_t *dict);
 
 /* List-manipulation functions */
 extern list_t *list_new(void);
+extern uint32_t list_length(list_t *a);
 extern list_t *list_append(list_t *a, item_t *i);
 extern list_t *list_append_list(list_t *a, list_t *b);
 /* Returns an item from the list (index starts at 0), or NULL */
@@ -129,6 +130,8 @@ struct flagstr {
     string_t name;
     uint32_t value;
 };
+extern uint32_t string_to_word(string_t s, struct cloc loc,
+			       struct flagstr *f, string_t desc);
 extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
 				    string_t desc);
 
@@ -136,12 +139,15 @@ extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
 
 /***** UTILITY functions *****/
 
-#define M_WARNING	1
-#define M_ERROR		2
-#define M_FATAL		4
-#define M_INFO		8
-#define M_DEBUG_CONFIG 16
-#define M_DEBUG_PHASE  32
+#define M_DEBUG_CONFIG 0x001
+#define M_DEBUG_PHASE  0x002
+#define M_DEBUG        0x004
+#define M_INFO	       0x008
+#define M_NOTICE       0x010
+#define M_WARNING      0x020
+#define M_ERROR	       0x040
+#define M_SECURITY     0x080
+#define M_FATAL	       0x100
 
 extern void fatal(char *message, ...);
 extern void fatal_perror(char *message, ...);
@@ -308,15 +314,15 @@ struct comm_if {
 
 /* LOG interface */
 
-typedef void log_msg_fn(void *st, int priority, char *message, ...);
-typedef void log_vmsg_fn(void *st, int priority, char *message, va_list args);
+typedef void log_msg_fn(void *st, int class, char *message, ...);
+typedef void log_vmsg_fn(void *st, int class, char *message, va_list args);
 struct log_if {
     void *st;
     log_msg_fn *log;
     log_vmsg_fn *vlog;
 };
 /* (convenience function, defined in util.c) */
-extern void log(struct log_if *lf, int priority, char *message, ...);
+extern void log(struct log_if *lf, int class, char *message, ...);
 
 /* SITE interface */
 

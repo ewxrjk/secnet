@@ -551,6 +551,14 @@ list_t *list_new(void)
     return NULL;
 }
 
+uint32_t list_length(list_t *a)
+{
+    uint32_t l=0;
+    list_t *i;
+    for (i=a; i; i=i->next) l++;
+    return l;
+}
+
 list_t *list_copy(list_t *a)
 {
     list_t *r, *i, *b, *l;
@@ -791,6 +799,17 @@ void dict_read_subnet_list(dict_t *dict, string_t key, bool_t required,
     }
 }
 
+uint32_t string_to_word(string_t s, struct cloc loc,
+			struct flagstr *f, string_t desc)
+{
+    struct flagstr *j;
+    for (j=f; j->name; j++)
+	if (strcmp(s,j->name)==0)
+	    return j->value;
+    cfgfatal(loc,desc,"option \"%s\" not known\n",s);
+    return 0;
+}
+
 uint32_t string_list_to_word(list_t *l, struct flagstr *f, string_t desc)
 {
     list_t *i;
@@ -803,8 +822,7 @@ uint32_t string_list_to_word(list_t *l, struct flagstr *f, string_t desc)
 		     "strings\n");
 	}
 	for (j=f; j->name; j++)
-	    if (strcmp(i->item->data.string,j->name)==0)
-		r|=j->value;
+	    r|=string_to_word(i->item->data.string,i->item->loc,f,desc);
     }
     return r;
 }
