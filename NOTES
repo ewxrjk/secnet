@@ -231,9 +231,7 @@ retransmit or confirm reception. It is suggested that this message be
 sent when a key times out, or the tunnel is forcibly terminated for
 some reason.
 
-XXX not yet implemented.
-
-8) i?,i?,NAK/msg8
+8) i?,i?,NAK (encoded as zero)
 
 If the link-layer can't work out what to do with a packet (session has
 gone away, etc.) it can transmit a NAK back to the sender.  The sender

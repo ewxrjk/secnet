@@ -13,7 +13,8 @@ struct netlink_client {
     closure_t cl;
     struct netlink_if ops;
     struct netlink *nst;
-    struct subnet_list networks;
+    struct ipset *networks;
+    struct subnet_list *subnets; /* Same information as 'networks' */
     netlink_deliver_fn *deliver;
     void *dst;
     string_t name;
@@ -45,8 +46,9 @@ struct netlink {
     string_t name;
     uint32_t max_start_pad;
     uint32_t max_end_pad;
-    struct subnet_list networks;
-    struct subnet_list exclude_remote_networks;
+    struct ipset *networks; /* Local networks */
+    struct subnet_list *subnets; /* Same information as networks */
+    struct ipset *remote_networks; /* Allowable remote networks */
     uint32_t secnet_address; /* our own address, or the address of the
 				other end of a point-to-point link */
     bool_t ptp;

@@ -233,7 +233,7 @@ static list_t *tun_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (!st->ifconfig_path) st->ifconfig_path="ifconfig";
     if (!st->route_path) st->route_path="route";
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"tun-netlink",loc);
-    st->local_address=string_to_ipaddr(
+    st->local_address=string_item_to_ipaddr(
 	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
 
     add_hook(PHASE_GETRESOURCES,tun_phase_hook,st);
@@ -276,7 +276,7 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (!st->ifconfig_path) st->ifconfig_path="ifconfig";
     if (!st->route_path) st->route_path="route";
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"tun-netlink",loc);
-    st->local_address=string_to_ipaddr(
+    st->local_address=string_item_to_ipaddr(
 	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
 
     /* Old TUN interface: the network interface name depends on which

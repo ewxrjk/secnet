@@ -22,6 +22,7 @@ extern char version[];
 
 /* XXX should be from autoconf */
 static char *configfile="/etc/secnet/secnet.conf";
+static char *sites_key="sites";
 bool_t just_check_config=False;
 static char *userid=NULL;
 static uid_t uid=0;
@@ -73,10 +74,11 @@ static void parse_options(int argc, char **argv)
 	    {"debug", 1, 0, 'd'},
 	    {"config", 1, 0, 'c'},
 	    {"just-check-config", 0, 0, 'j'},
+	    {"sites-key", 1, 0, 's'},
 	    {0,0,0,0}
 	};
 
-	c=getopt_long(argc, argv, "vwdnjc:ft:",
+	c=getopt_long(argc, argv, "vwdnjc:ft:s:",
 		      long_options, &option_index);
 	if (c==-1)
 	    break;
@@ -90,11 +92,15 @@ static void parse_options(int argc, char **argv)
 		    "  -w, --nowarnings        suppress warnings\n"
 		    "  -v, --verbose           output extra diagnostics\n"
 		    "  -c, --config=filename   specify a configuration file\n"
-		    "  -j, --just-check-config stop after reading configfile\n"
+		    "  -j, --just-check-config stop after reading "
+		    "configuration file\n"
+		    "  -s, --sites-key=name    configuration key that "
+		    "specifies active sites\n"
 		    "  -n, --nodetach          do not run in background\n"
 		    "  -d, --debug=item,...    set debug options\n"
 		    "      --help              display this help and exit\n"
-		    "      --version           output version information and exit\n"
+		    "      --version           output version information "
+		    "and exit\n"
 		);
 	    exit(0);
 	    break;
@@ -135,6 +141,13 @@ static void parse_options(int argc, char **argv)
 
 	case 'j':
 	    just_check_config=True;
+	    break;
+
+	case 's':
+	    if (optarg)
+		sites_key=safe_strdup(optarg,"sites-key");
+	    else
+		fatal("secnet: no sites key specified");
 	    break;
 
 	case '?':
@@ -202,10 +215,10 @@ static void setup(dict_t *config)
     }
 
     /* Go along site list, starting sites */
-    l=dict_lookup(config,"sites");
+    l=dict_lookup(config,sites_key);
     if (!l) {
-	Message(M_WARNING,"secnet: configuration did not define any "
-		"remote sites\n");
+	Message(M_WARNING,"secnet: configuration key \"%s\" is missing; no "
+		"remote sites are defined\n",sites_key);
     } else {
 	i=0;
 	while ((site=list_elem(l, i++))) {

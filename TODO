@@ -1,15 +1,17 @@
 Makefile.in: autodep stuff
+Make it work using the distributed install.sh (which doesn't support -D)
 
 dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
-ipaddr.c: implement the useful functionality from ipaddr.py
+netlink.c: test the 'allow_route' option properly.
 
-netlink.c: investigate why 'default' routes don't appear to work
-(reported by JDA).
-Test the 'allow_route' option properly.
+process.c: capture output from children in sys_cmd() and log it
 
 random.c: test
+
+resolver.c: ought to return a list of addresses for each address; the
+site code ought to remember them and try contacting them in turn.
 
 rsa.c: check padding type, change format to binary from decimal string
 (without introducing endianness problems)
@@ -24,14 +26,8 @@ does it take to prompt a key exchange?)
 
 slip.c: restart userv-ipif to cope with soft routes? Restart it if it
 fails in use?
-userv-ipif doesn't like the same bit of network to be specified
-twice. Use the new functionality in ipaddr.c once it's done to prevent
-this.
-Work out why slip.c doesn't compile on Solaris-2.5.1
 
 transform.c: separate the transforms into multiple parts, which can
 then be combined in the configuration file.  Will allow the user to
 plug in different block ciphers, invent an authenticity-only mode,
 etc.
-
-udp.c: actually send NAKs rather than just complaining.

@@ -114,7 +114,7 @@ static void slip_init(struct slip *st, struct cloc loc, dict_t *dict,
 	netlink_init(&st->nl,st,loc,dict,
 		     "netlink-userv-ipif",NULL,to_host);
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"name",loc);
-    st->local_address=string_to_ipaddr(
+    st->local_address=string_item_to_ipaddr(
 	dict_find_item(dict,"local-address", True, name, loc),"netlink");
     BUF_ALLOC(st->buff,"slip_init");
     st->pending_esc=False;
@@ -240,6 +240,8 @@ static void userv_invoke_userv(struct userv *st)
     string_t nets;
     string_t s;
     struct netlink_route *r;
+    struct ipset *isnets;
+    struct subnet_list *snets;
     int i;
     uint8_t confirm;
 
@@ -255,19 +257,31 @@ static void userv_invoke_userv(struct userv *st)
 	     ipaddr_to_string(st->slip.local_address),
 	     ipaddr_to_string(st->slip.nl.secnet_address),st->slip.nl.mtu);
 
-    nets=safe_malloc(1024,"userv_invoke_userv:nets");
-    *nets=0;
     r=st->slip.nl.routes;
+    isnets=ipset_new();
     for (i=0; i<st->slip.nl.n_routes; i++) {
 	if (r[i].up) {
+	    struct ipset *sn,*nis;
 	    r[i].kup=True;
-	    s=subnet_to_string(&r[i].net);
-	    strcat(nets,s);
-	    strcat(nets,",");
-	    free(s);
+	    sn=ipset_from_subnet(r[i].net);
+	    nis=ipset_union(isnets,sn);
+	    ipset_free(sn);
+	    ipset_free(isnets);
+	    isnets=nis;
 	}
     }
+    snets=ipset_to_subnet_list(isnets);
+    ipset_free(isnets);
+    nets=safe_malloc(20*snets->entries,"userv_invoke_userv:nets");
+    *nets=0;
+    for (i=0; i<snets->entries; i++) {
+	s=subnet_to_string(snets->list[i]);
+	strcat(nets,s);
+	strcat(nets,",");
+	free(s);
+    }
     nets[strlen(nets)-1]=0;
+    subnet_list_free(snets);
 
     Message(M_INFO,"%s: about to invoke: %s %s %s %s %s\n",st->slip.nl.name,
 	    st->userv_path,st->service_user,st->service_name,addrs,nets);

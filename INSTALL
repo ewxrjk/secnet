@@ -32,11 +32,11 @@ linux/Documentation/networking/tuntap.txt
 If you're using TUN/TAP on a platform other than Linux-2.4, see
 http://vtun.sourceforge.net/tun/
 
-Note than TUN comes in two flavours, one (called 'tun' in the secnet
-config file) which has only one device file (usually /dev/net/tun) and
-the other (called 'tun-old') which has many device files (/dev/tun*).
-Linux-2.4 has new-style TUN, Linux-2.2, BSD and Solaris have old-style
-TUN.
+Note than TUN comes in several flavours.  Their names in the
+configuration file are:
+ tun:  Linux-2.4; only one device file (usually /dev/net/tun)
+ tun-old:  Linux-2.2, BSD; device files /dev/tun*
+ tun-solaris:  Solaris (not yet implemented)
 
 ** System and network configuration
 
@@ -54,18 +54,18 @@ modify the routing table.)
 If you are joining an existing VPN, read that VPN's documentation now.
 It may supersede the next paragraph.
 
-You will need to allocate two IP addresses for use by secnet.  One
-will be for the tunnel interface on your tunnel endpoint machine (i.e.
-the address you see in 'ifconfig' when you look at the tunnel
-interface).  The other will be for secnet itself.  These addresses
-should probably be allocated from the range used by your internal
-network: if you do this, you should provide appropriate proxy-ARP on
-the internal network interface of the machine running secnet (eg. add
-an entry net/ipv4/conf/eth_whatever/proxy_arp = 1 to /etc/sysctl.conf
-on Debian systems and run sysctl -p).  Alternatively the addresses
-could be from some other range - this works well if the machine
-running secnet is the default route out of your network - but this
-requires more thought.
+In most configurations, you will need to allocate two IP addresses for
+use by secnet.  One will be for the tunnel interface on your tunnel
+endpoint machine (i.e. the address you see in 'ifconfig' when you look
+at the tunnel interface).  The other will be for secnet itself.  These
+addresses should probably be allocated from the range used by your
+internal network: if you do this, you should provide appropriate
+proxy-ARP on the internal network interface of the machine running
+secnet (eg. add an entry net/ipv4/conf/eth_whatever/proxy_arp = 1 to
+/etc/sysctl.conf on Debian systems and run sysctl -p).  Alternatively
+the addresses could be from some other range - this works well if the
+machine running secnet is the default route out of your network - but
+this requires more thought.
 
 http://www.ucam.org/cam-grin/ may be useful.
 
@@ -83,10 +83,32 @@ $ make
 # mkdir /etc/secnet
 
 (Note: you may see the following warning while compiling
-conffile.tab.c; I believe this is a bison bug:
+conffile.tab.c; this is a bug in bison-1.28:
 /usr/share/bison/bison.simple: In function `yyparse':
 /usr/share/bison/bison.simple:285: warning: `yyval' might be used
  uninitialized in this function
+
+You may if you wish apply the following patch to bison.simple:
+diff -pu -r1.28.0.1 -r1.28.0.3
+--- bison.s1    1999/08/30 19:23:24     1.28.0.1
++++ bison.s1    1999/08/30 21:15:18     1.28.0.3
+@@ -523,8 +523,14 @@ yydefault:
+ /* Do a reduction.  yyn is the number of a rule to reduce with.  */
+ yyreduce:
+   yylen = yyr2[yyn];
+-  if (yylen > 0)
+-    yyval = yyvsp[1-yylen]; /* implement default value of the action */
++
++  /* If yylen is nonzero, implement the default value of the action.
++     Otherwise, the following line sets yyval to the semantic value of
++     the lookahead token.  This behavior is undocumented and bison
++     users should not rely upon it.  Assigning to yyval
++     unconditionally makes the parser a bit smaller, and it avoids a
++     GCC warning that yyval may be used uninitialized.  */
++  yyval = yyvsp[1-yylen];
+ 
+ #if YYDEBUG != 0
+   if (yydebug)
 )
 
 Any other warnings or errors should be reported to
@@ -103,22 +125,23 @@ $ LDFLAGS="-L/usr/local/lib" ./configure
 $ gmake CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib"
 XXX this should eventually be worked out automatically by 'configure'.]
 
-Generate a site file fragment for your site (see below), and submit it
-for inclusion in your VPN's 'sites' file.  Download the vpn-sites file
-to /etc/secnet/sites - MAKE SURE YOU GET AN AUTHENTIC COPY because the
-sites file contains public keys for all the sites in the VPN.  Use the
-make-secnet-sites program provided with the secnet distribution to
-convert the distributed sites file into one that can be included in a
-secnet configuration file:
+Generate a site file fragment for your site (see your VPN's
+documentation, or see below), and submit it for inclusion in your
+VPN's 'sites' file.  Download the vpn-sites file to /etc/secnet/sites
+- MAKE SURE YOU GET AN AUTHENTIC COPY because the sites file contains
+public keys for all the sites in the VPN.  Use the make-secnet-sites
+program provided with the secnet distribution to convert the
+distributed sites file into one that can be included in a secnet
+configuration file:
 
-# make-secnet-sites sites sites.conf
+# make-secnet-sites /etc/secnet/sites /etc/secnet/sites.conf
 
 * Configuration
 
 Should be reasonably obvious - edit /etc/secnet/secnet.conf as
-prompted by the comments.  XXX Fuller documentation of the
-configuration file format should be forthcoming in time.  Its syntax
-is described in the README file at the moment.
+prompted by the comments in example.conf.  XXX Fuller documentation of
+the configuration file format should be forthcoming in time.  Its
+syntax is described in the README file at the moment.
 
 * Constructing your site file fragment
 

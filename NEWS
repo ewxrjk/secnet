@@ -5,7 +5,41 @@ Netlink device that implements an Ethernet bridge.
 Modular transform code: choice of block ciphers, modes, sequence
 numbers / timestamps, etc. similar to IWJ's udptunnel
 
-* New in versino 0.1.11
+* New in version 0.1.11
+
+Lists of IP addresses in the configuration file can now include
+exclusions as well as inclusions.  For example, you can specify all
+the hosts on a subnet except one as follows:
+
+networks "192.168.73.0/24","!192.168.73.70";
+
+(If you were only allowed inclusions, you'd have to specify that like
+this:
+networks "192.168.73.71/32","192.168.73.68/31","192.168.73.64/30",
+	"192.168.73.72/29","192.168.73.80/28","192.168.73.96/27",
+	"192.168.73.0/26","192.168.73.128/25";
+)
+
+secnet now ensures that it invokes userv-ipif with a non-overlapping
+list of subnets.
+
+There is a new command-line option, --sites-key or -s, that enables
+the configuration file key that's checked to determine the list of
+active sites (default "sites") to be changed.  This enables a single
+configuration file to contain multiple cofigurations conveniently.
+
+NAKs are now sent when packets arrive that are not understood.  The
+tunnel code initiates a key setup if it sees a NAK.  Future
+developments should include configuration options that control this.
+
+The tunnel code notifies its peer when secnet is terminating, so the
+peer can close the session.
+
+The netlink "exclude-remote-networks" option has now been replaced by
+a "remote-networks" option; instead of specifying networks that no
+site may access, you specify the set of networks that remote sites are
+allowed to access. A sensible example: "192.168.0.0/16",
+"172.16.0.0/12", "10.0.0.0/8", "!your-local-network"
 
 * New in version 0.1.10
 

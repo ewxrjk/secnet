@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include "util.h"
+#include "unaligned.h"
 
 static beforepoll_fn udp_beforepoll;
 static afterpoll_fn udp_afterpoll;
@@ -91,8 +92,17 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds,
 		    }
 		}
 		if (!done) {
+		    uint32_t source,dest;
 		    /* XXX manufacture and send NAK packet */
-		    Message(M_WARNING,"Need to send NAK\n");
+		    source=get_uint32(st->rbuf->start); /* Us */
+		    dest=get_uint32(st->rbuf->start+4); /* Them */
+		    Message(M_INFO,"udp (port %d): sending NAK\n",st->port);
+		    buffer_init(st->rbuf,0);
+		    buf_append_uint32(st->rbuf,dest);
+		    buf_append_uint32(st->rbuf,source);
+		    buf_append_uint32(st->rbuf,0); /* NAK is msg type 0 */
+		    sendto(st->fd, st->rbuf->start, st->rbuf->size, 0,
+			   (struct sockaddr *)&from, sizeof(from));
 		    BUF_FREE(st->rbuf);
 		}
 		BUF_ASSERT_FREE(st->rbuf);

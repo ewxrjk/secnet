@@ -14,24 +14,8 @@
 typedef char *string_t;
 typedef enum {False,True} bool_t;
 
-#define ASSERT(x) do { if (!(x)) { fatal("assertion failed line " __LINE__ \
-					 " file " __FILE__ "\n"); } while(0)
-
-/***** SHARED types *****/
-
-/* These are stored in HOST byte order */
-struct subnet {
-    uint32_t prefix;
-    uint32_t mask;
-    uint32_t len;
-};
-
-struct subnet_list {
-    uint32_t entries;
-    struct subnet *list;
-};
-
-/***** END of shared types *****/
+#define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
+					 __FILE__ "\n",__LINE__); } } while(0)
 
 /***** CONFIGURATION support *****/
 
@@ -112,10 +96,6 @@ extern uint32_t dict_read_number(dict_t *dict, string_t key, bool_t required,
 				 string_t desc, struct cloc loc, uint32_t def);
 extern bool_t dict_read_bool(dict_t *dict, string_t key, bool_t required,
 			     string_t desc, struct cloc loc, bool_t def);
-extern void dict_read_subnet_list(dict_t *dict, string_t key, bool_t required,
-				  string_t desc, struct cloc loc,
-				  struct subnet_list *sl);
-extern uint32_t string_to_ipaddr(item_t *i, string_t desc);
 struct flagstr {
     string_t name;
     uint32_t value;
@@ -386,12 +366,15 @@ typedef void netlink_link_quality_fn(void *st, uint32_t quality);
 typedef void netlink_register_fn(void *st, netlink_deliver_fn *deliver,
 				 void *dst, uint32_t max_start_pad,
 				 uint32_t max_end_pad);
-
+typedef void netlink_output_config_fn(void *st, struct buffer_if *buf);
+typedef bool_t netlink_check_config_fn(void *st, struct buffer_if *buf);
 struct netlink_if {
     void *st;
     netlink_register_fn *reg;
     netlink_deliver_fn *deliver;
     netlink_link_quality_fn *set_quality;
+    netlink_output_config_fn *output_config;
+    netlink_check_config_fn *check_config;
 };
 
 /* DH interface */

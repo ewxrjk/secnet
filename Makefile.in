@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean dist install distclean
 
 PACKAGE:=secnet
-VERSION:=0.1.10
+VERSION:=0.1.11
 
 @SET_MAKE@
 
@@ -48,7 +48,7 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	serpent.o md5.o version.o tun.o slip.o sha1.o ipaddr.o log.o \
 	process.o @LIBOBJS@
 
-DISTFILES:=COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
+DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	NEWS NOTES README TODO \
 	alloca.c \
 	conffile.c conffile.fl conffile.h conffile.y \

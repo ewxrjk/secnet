@@ -5,6 +5,23 @@
 #include <sys/wait.h>
 #include "process.h"
 
+/* Advice about children from Peter:
+Better way: before the fork, make a pipe. In the child close the
++reading end. Make the writing end close-on-exec. If the dup2 or exec fails,
++write the errno value. In the parent, close the writing end. Now you can read
++from it. If you get an errno value from the pipe, the process failed and you
++know why. If you get EOF, the exec succeeded.
+
+<Senji> So, close on exec only closes if exec isn't going to return then?
+<Diziet> qu: I wouldn't bother with all that with pipes.  Remember that the
++runtime system can still make exec fail when it's `too late'.
+<Senji> Diz - I would rather have a coherant error message than 'child failed'
+<Diziet> The child, if it fails to exec, should print a message to stderr
++(giving errno and what it was trying to execute, most likely), and exit
++nonzero.
+<Diziet> It should exit calling _exit.
+*/
+
 /* Process handling - subprocesses, signals, etc. */
 
 static bool_t signal_handling=False;

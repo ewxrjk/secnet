@@ -302,7 +302,7 @@ static void netlink_packet_deliver(struct netlink *st,
     best_quality=0;
     best_match=-1;
     for (i=0; i<st->n_routes; i++) {
-	if (st->routes[i].up && subnet_match(&st->routes[i].net,dest)) {
+	if (st->routes[i].up && subnet_match(st->routes[i].net,dest)) {
 	    /* It's an available route to the correct destination. But is
 	       it better than the one we already have? */
 
@@ -334,7 +334,7 @@ static void netlink_packet_deliver(struct netlink *st,
     if (best_match==-1) {
 	/* The packet's not going down a tunnel.  It might (ought to)
 	   be for the host.   */
-	if (subnet_matches_list(&st->networks,dest)) {
+	if (ipset_contains_addr(st->networks,dest)) {
 	    st->deliver_to_host(st->dst,buf);
 	    st->outcount++;
 	    BUF_ASSERT_FREE(buf);
@@ -466,10 +466,12 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
     dest=ntohl(iph->daddr);
 
     /* Check source */
+    /* XXX consider generating ICMP if we're not point-to-point and we
+       don't like the packet */
     if (client) {
 	/* Check that the packet source is appropriate for the tunnel
 	   it came down */
-	if (!subnet_matches_list(&client->networks,source)) {
+	if (!ipset_contains_addr(client->networks,source)) {
 	    string_t s,d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
@@ -483,7 +485,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	/* Check that the packet originates in our configured local
 	   network, and hasn't been forwarded from elsewhere or
 	   generated with the wrong source address */
-	if (!subnet_matches_list(&st->networks,source)) {
+	if (!ipset_contains_addr(st->networks,source)) {
 	    string_t s,d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
@@ -495,9 +497,11 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	}
     }
 
-    /* If this is a point-to-point device we don't examine the packet at
-       all; we blindly send it down our one-and-only registered tunnel,
-       or to the host, depending on where it came from. */
+    /* If this is a point-to-point device we don't examine the
+       destination address at all; we blindly send it down our
+       one-and-only registered tunnel, or to the host, depending on
+       where it came from. */
+    /* XXX I think we should check destination addresses */
     if (st->ptp) {
 	if (client) {
 	    st->deliver_to_host(st->dst,buf);
@@ -514,20 +518,6 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	netlink_packet_local(st,client,buf);
 	BUF_ASSERT_FREE(buf);
 	return;
-    }
-    if (client) {
-	/* Check for free routing */
-	if (!subnet_matches_list(&st->networks,dest)) {
-	    string_t s,d;
-	    s=ipaddr_to_string(source);
-	    d=ipaddr_to_string(dest);
-	    Message(M_WARNING,"%s: incoming packet from tunnel %s "
-		    "with bad destination address "
-		    "(s=%s,d=%s)\n",st->name,client->name,s,d);
-	    free(s); free(d);
-	    BUF_FREE(buf);
-	    return;
-	}
     }
     netlink_packet_forward(st,client,buf);
     BUF_ASSERT_FREE(buf);
@@ -591,7 +581,7 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 		st->name, net);
 	free(net);
 	for (i=0; i<st->n_routes; i++) {
-	    net=subnet_to_string(&st->routes[i].net);
+	    net=subnet_to_string(st->routes[i].net);
 	    Message(c,"%s ",net);
 	    free(net);
 	}
@@ -599,7 +589,7 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
     } else {
 	Message(c,"%s: routing table:\n",st->name);
 	for (i=0; i<st->n_routes; i++) {
-	    net=subnet_to_string(&st->routes[i].net);
+	    net=subnet_to_string(st->routes[i].net);
 	    Message(c,"%s -> tunnel %s (%s,%s route,%s,quality %d,use %d)\n",net,
 		    st->routes[i].c->name,
 		    st->routes[i].hard?"hard":"soft",
@@ -613,11 +603,13 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 	Message(c,"%s/32 -> netlink \"%s\" (use %d)\n",
 		net,st->name,st->localcount);
 	free(net);
-	for (i=0; i<st->networks.entries; i++) {
-	    net=subnet_to_string(&st->networks.list[i]);
-	    Message(c,"%s -> host (use %d)\n",net,st->outcount);
+	for (i=0; i<st->subnets->entries; i++) {
+	    net=subnet_to_string(st->subnets->list[i]);
+	    Message(c,"%s ",net);
 	    free(net);
 	}
+	if (i>0)
+	    Message(c,"-> host (use %d)\n",st->outcount);
     }
 }
 
@@ -645,8 +637,8 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
     /* Fill the table */
     i=0;
     for (c=st->clients; c; c=c->next) {
-	for (j=0; j<c->networks.entries; j++) {
-	    st->routes[i].net=c->networks.list[j];
+	for (j=0; j<c->subnets->entries; j++) {
+	    st->routes[i].net=c->subnets->list[j];
 	    st->routes[i].c=c;
 	    /* Hard routes are always up;
 	       soft routes default to down; routes with no 'deliver' function
@@ -682,6 +674,27 @@ static void netlink_signal_handler(void *sst, int signum)
     netlink_dump_routes(st,True);
 }
 
+static void netlink_inst_output_config(void *sst, struct buffer_if *buf)
+{
+/*    struct netlink_client *c=sst; */
+/*    struct netlink *st=c->nst; */
+
+    /* For now we don't output anything */
+    BUF_ASSERT_USED(buf);
+}
+
+static bool_t netlink_inst_check_config(void *sst, struct buffer_if *buf)
+{
+/*    struct netlink_client *c=sst; */
+/*    struct netlink *st=c->nst; */
+
+    BUF_ASSERT_USED(buf);
+    /* We need to eat all of the configuration information from the buffer
+       for backward compatibility. */
+    buf->size=0;
+    return True;
+}
+
 static void netlink_inst_reg(void *sst, netlink_deliver_fn *deliver, 
 			     void *dst, uint32_t max_start_pad,
 			     uint32_t max_end_pad)
@@ -710,13 +723,16 @@ static closure_t *netlink_inst_create(struct netlink *st,
 {
     struct netlink_client *c;
     string_t name;
-    struct subnet_list networks;
+    struct ipset *networks;
     uint32_t options;
+    list_t *l;
 
     name=dict_read_string(dict, "name", True, st->name, loc);
 
-    dict_read_subnet_list(dict, "routes", True, st->name, loc,
-			  &networks);
+    l=dict_lookup(dict,"routes");
+    if (!l)
+	cfgfatal(loc,st->name,"required parameter \"routes\" not found\n");
+    networks=string_list_to_ipset(l,loc,st->name,"routes");
     options=string_list_to_word(dict_lookup(dict,"options"),
 				netlink_option_table,st->name);
 
@@ -738,11 +754,10 @@ static closure_t *netlink_inst_create(struct netlink *st,
 	}
     }
 
-    /* Check that nets do not intersect st->exclude_remote_networks;
-       refuse to register if they do. */
-    if (subnet_lists_intersect(&st->exclude_remote_networks,&networks)) {
-	cfgfatal(loc,st->name,"networks intersect with the explicitly "
-		 "excluded remote networks\n");
+    /* Check that nets are a subset of st->remote_networks;
+       refuse to register if they are not. */
+    if (!ipset_is_subset(st->remote_networks,networks)) {
+	cfgfatal(loc,st->name,"routes are not allowed\n");
 	return NULL;
     }
 
@@ -755,9 +770,12 @@ static closure_t *netlink_inst_create(struct netlink *st,
     c->ops.reg=netlink_inst_reg;
     c->ops.deliver=netlink_inst_incoming;
     c->ops.set_quality=netlink_set_quality;
+    c->ops.output_config=netlink_inst_output_config;
+    c->ops.check_config=netlink_inst_check_config;
     c->nst=st;
 
     c->networks=networks;
+    c->subnets=ipset_to_subnet_list(networks);
     c->deliver=NULL;
     c->dst=NULL;
     c->name=name;
@@ -765,7 +783,7 @@ static closure_t *netlink_inst_create(struct netlink *st,
     c->link_quality=LINK_QUALITY_DOWN;
     c->next=st->clients;
     st->clients=c;
-    st->n_routes+=networks.entries;
+    st->n_routes+=c->subnets->entries;
 
     return &c->cl;
 }
@@ -778,8 +796,6 @@ static list_t *netlink_inst_apply(closure_t *self, struct cloc loc,
     dict_t *dict;
     item_t *item;
     closure_t *cl;
-
-    Message(M_DEBUG_CONFIG,"netlink_inst_apply\n");
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict) {
@@ -799,6 +815,7 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
 				 netlink_deliver_fn *to_host)
 {
     item_t *sa, *ptpa;
+    list_t *l;
 
     st->dst=dst;
     st->cl.description=description;
@@ -811,12 +828,27 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
     st->set_route=set_route;
     st->deliver_to_host=to_host;
 
-    st->name=dict_read_string(dict,"name",False,"netlink",loc);
+    st->name=dict_read_string(dict,"name",False,description,loc);
     if (!st->name) st->name=description;
-    dict_read_subnet_list(dict, "networks", True, "netlink", loc,
-			  &st->networks);
-    dict_read_subnet_list(dict, "exclude-remote-networks", False, "netlink",
-			  loc, &st->exclude_remote_networks);
+    l=dict_lookup(dict,"networks");
+    if (l) 
+	st->networks=string_list_to_ipset(l,loc,st->name,"networks");
+    else {
+	Message(M_WARNING,"%s: no local networks (parameter \"networks\") "
+		"defined\n",st->name);
+	st->networks=ipset_new();
+    }
+    l=dict_lookup(dict,"remote-networks");
+    if (l) {
+	st->remote_networks=string_list_to_ipset(l,loc,st->name,
+						 "remote-networks");
+    } else {
+	struct ipset *empty;
+	empty=ipset_new();
+	st->remote_networks=ipset_complement(empty);
+	ipset_free(empty);
+    }
+
     sa=dict_find_item(dict,"secnet-address",False,"netlink",loc);
     ptpa=dict_find_item(dict,"ptp-address",False,"netlink",loc);
     if (sa && ptpa) {
@@ -828,12 +860,16 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
 		 "ptp-address for this netlink device\n");
     }
     if (sa) {
-	st->secnet_address=string_to_ipaddr(sa,"netlink");
+	st->secnet_address=string_item_to_ipaddr(sa,"netlink");
 	st->ptp=False;
     } else {
-	st->secnet_address=string_to_ipaddr(ptpa,"netlink");
+	st->secnet_address=string_item_to_ipaddr(ptpa,"netlink");
 	st->ptp=True;
     }
+    /* XXX we may want to subtract secnet_address from networks here, to
+       be strictly correct.  It shouldn't make any practical difference,
+       though, and will make the route dump look complicated... */
+    st->subnets=ipset_to_subnet_list(st->networks);
     st->mtu=dict_read_number(dict, "mtu", False, "netlink", loc, DEFAULT_MTU);
     buffer_new(&st->icmp,ICMP_BUFSIZE);
     st->n_routes=0;
@@ -868,7 +904,7 @@ static bool_t null_set_route(void *sst, struct netlink_route *route)
     string_t t;
 
     if (route->up!=route->kup) {
-	t=subnet_to_string(&route->net);
+	t=subnet_to_string(route->net);
 	Message(M_INFO,"%s: setting route %s to state %s\n",st->nl.name,
 		t, route->up?"up":"down");
 	free(t);

@@ -221,7 +221,8 @@ static void slog(struct site *st, uint32_t event, string_t msg, ...)
 }
 
 static void set_link_quality(struct site *st);
-static bool_t initiate_key_setup(struct site *st);
+static void delete_key(struct site *st, string_t reason, uint32_t loglevel);
+static bool_t initiate_key_setup(struct site *st, string_t reason);
 static void enter_state_run(struct site *st);
 static bool_t enter_state_resolve(struct site *st);
 static bool_t enter_state_sentmsg1(struct site *st);
@@ -516,6 +517,9 @@ static bool_t generate_msg5(struct site *st)
     /* We are going to add three words to the transformed message */
     buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
     buf_append_uint32(&st->buffer,LABEL_MSG5);
+    /* Give the netlink code an opportunity to put its own stuff in the
+       message (configuration information, etc.) */
+    st->netlink->output_config(st->netlink->st,&st->buffer);
     st->new_transform->forwards(st->new_transform->st,&st->buffer,
 				&transform_err);
     buf_prepend_uint32(&st->buffer,LABEL_MSG5);
@@ -565,6 +569,10 @@ static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
 	slog(st,LOG_SEC,"MSG5/PING packet contained invalid data");
 	return False;
     }
+    if (!st->netlink->check_config(st->netlink->st,msg5)) {
+	slog(st,LOG_SEC,"MSG5/PING packet contained bad netlink config");
+	return False;
+    }
     CHECK_EMPTY(msg5);
     return True;
 }
@@ -577,6 +585,9 @@ static bool_t generate_msg6(struct site *st)
     /* We are going to add three words to the transformed message */
     buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
     buf_append_uint32(&st->buffer,LABEL_MSG6);
+    /* Give the netlink code an opportunity to put its own stuff in the
+       message (configuration information, etc.) */
+    st->netlink->output_config(st->netlink->st,&st->buffer);
     st->new_transform->forwards(st->new_transform->st,&st->buffer,
 				&transform_err);
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
@@ -607,6 +618,10 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
 	slog(st,LOG_SEC,"MSG6/PONG packet contained invalid data");
 	return False;
     }
+    if (!st->netlink->check_config(st->netlink->st,msg6)) {
+	slog(st,LOG_SEC,"MSG6/PONG packet contained bad netlink config");
+	return False;
+    }
     CHECK_EMPTY(msg6);
     return True;
 }
@@ -620,7 +635,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 
     if (!st->current_valid) {
 	slog(st,LOG_DROP,"incoming message but no current key -> dropping");
-	return initiate_key_setup(st);
+	return initiate_key_setup(st,"incoming message but no current key");
     }
 
     if (!unpick_msg0(st,msg0,&m)) return False;
@@ -629,11 +644,16 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 				       msg0,&transform_err)) {
 	/* There's a problem */
 	slog(st,LOG_SEC,"transform: %s",transform_err);
-	return initiate_key_setup(st);
+	return initiate_key_setup(st,"incoming message would not decrypt");
     }
     CHECK_AVAIL(msg0,4);
     type=buf_unprepend_uint32(msg0);
     switch(type) {
+    case LABEL_MSG7:
+	/* We must forget about the current session. */
+	delete_key(st,"request from peer",LOG_SEC);
+	return True;
+	break;
     case LABEL_MSG9:
 	/* Deliver to netlink layer */
 	st->netlink->deliver(st->netlink->st,msg0);
@@ -701,15 +721,15 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
     }
 }
 
-static bool_t initiate_key_setup(struct site *st)
+static bool_t initiate_key_setup(struct site *st,string_t reason)
 {
     if (st->state!=SITE_RUN) return False;
+    slog(st,LOG_SETUP_INIT,"initiating key exchange (%s)",reason);
     if (st->address) {
-	slog(st,LOG_SETUP_INIT,"initiating key exchange; resolving address");
+	slog(st,LOG_SETUP_INIT,"resolving peer address");
 	return enter_state_resolve(st);
     } else if (st->peer_valid) {
-	slog(st,LOG_SETUP_INIT,"initiating key exchange using old "
-	     "peer address");
+	slog(st,LOG_SETUP_INIT,"using old peer address");
 	st->setup_peer=st->peer;
 	return enter_state_sentmsg1(st);
     }
@@ -736,6 +756,18 @@ static void activate_new_key(struct site *st)
     enter_state_run(st);
 }
 
+static void delete_key(struct site *st, string_t reason, uint32_t loglevel)
+{
+    if (st->current_valid) {
+	slog(st,loglevel,"session closed (%s)",reason);
+
+	st->current_valid=False;
+	st->current_transform->delkey(st->current_transform->st);
+	st->current_key_timeout=0;
+	set_link_quality(st);
+    }
+}
+
 static void state_assert(struct site *st, bool_t ok)
 {
     if (!ok) fatal("state_assert\n");
@@ -745,14 +777,7 @@ static void enter_state_stop(struct site *st)
 {
     st->state=SITE_STOP;
     st->timeout=0;
-    st->current_transform->delkey(st->current_transform->st);
-    st->current_valid=False;
-    st->current_key_timeout=0;
-    
-    st->peer_valid=False;
-
-    set_link_quality(st);
-    
+    delete_key(st,"entering state STOP",LOG_TIMEOUT_KEY);
     st->new_transform->delkey(st->new_transform->st);
 }
 
@@ -887,6 +912,27 @@ static bool_t send_msg6(struct site *st)
     return False;
 }
 
+static bool_t send_msg7(struct site *st,string_t reason)
+{
+    string_t transform_err;
+
+    if (st->current_valid && st->peer_valid && st->buffer.free) {
+	BUF_ALLOC(&st->buffer,"site:MSG7");
+	buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
+	buf_append_uint32(&st->buffer,LABEL_MSG7);
+	buf_append_string(&st->buffer,reason);
+	st->current_transform->forwards(st->current_transform->st,
+					&st->buffer, &transform_err);
+	buf_prepend_uint32(&st->buffer,LABEL_MSG0);
+	buf_prepend_uint32(&st->buffer,(uint32_t)st);
+	buf_prepend_uint32(&st->buffer,st->remote_session_id);
+	st->comm->sendmsg(st->comm->st,&st->buffer,&st->peer);
+	BUF_FREE(&st->buffer);
+	return True;
+    }
+    return False;
+}
+
 /* We go into this state if our peer becomes uncommunicative. Similar to
    the "stop" state, we forget all session keys for a while, before
    re-entering the "run" state. */
@@ -943,11 +989,7 @@ static void site_afterpoll(void *sst, struct pollfd *fds, int nfds,
 	}
     }
     if (st->current_key_timeout && *now>st->current_key_timeout) {
-	slog(st,LOG_TIMEOUT_KEY,"maximum key life exceeded; session closed");
-	st->current_valid=False;
-	st->current_transform->delkey(st->current_transform->st);
-	st->current_key_timeout=0;
-	set_link_quality(st);
+	delete_key(st,"maximum key life exceeded",LOG_TIMEOUT_KEY);
     }
 }
 
@@ -983,7 +1025,7 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 
     slog(st,LOG_DROP,"discarding outgoing packet of size %d",buf->size);
     BUF_FREE(buf);
-    initiate_key_setup(st);
+    initiate_key_setup(st,"outgoing packet");
 }
 
 /* This function is called by the communication device to deliver
@@ -1045,10 +1087,19 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	return False; /* Not for us. */
     }
     if (dest==(uint32_t)st) {
-	uint32_t msgtype=ntohl(*(uint32_t *)(buf->start+8));
+	uint32_t msgtype=ntohl(get_uint32(buf->start+8));
 	/* Explicitly addressed to us */
 	if (msgtype!=LABEL_MSG0) dump_packet(st,buf,source,True);
 	switch (msgtype) {
+	case 0: /* NAK */
+	    /* If the source is our current peer then initiate a key setup,
+	       because our peer's forgotten the key */
+	    if (get_uint32(buf->start+4)==st->remote_session_id) {
+		initiate_key_setup(st,"received a NAK");
+	    } else {
+		slog(st,LOG_SEC,"bad incoming NAK");
+	    }
+	    break;
 	case LABEL_MSG0:
 	    process_msg0(st,buf,source);
 	    break;
@@ -1113,10 +1164,6 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		slog(st,LOG_SEC,"invalid MSG6");
 	    }
 	    break;
-	case LABEL_MSG8:
-	    /* NAK packet: enter state where we ping and check for response */
-	    slog(st,LOG_ERROR,"received a NAK");
-	    break;
 	default:
 	    slog(st,LOG_SEC,"received message of unknown type 0x%08x",
 		 msgtype);
@@ -1134,6 +1181,14 @@ static void site_control(void *vst, bool_t run)
     struct site *st=vst;
     if (run) enter_state_run(st);
     else enter_state_stop(st);
+}
+
+static void site_phase_hook(void *sst, uint32_t newphase)
+{
+    struct site *st=sst;
+
+    /* The program is shutting down; tell our peer */
+    send_msg7(st,"shutting down");
 }
 
 static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
@@ -1253,6 +1308,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->new_transform=st->transform->create(st->transform->st);
 
     enter_state_stop(st);
+
+    add_hook(PHASE_SHUTDOWN,site_phase_hook,st);
 
     return new_closure(&st->cl);
 }
