@@ -39,11 +39,10 @@ static void set_default_signals(void);
    signal processing so that we can catch SIGCHLD for them and report
    their exit status using the callback function.  We block SIGCHLD
    until signal processing has begun. */
-extern void makesubproc(process_entry_fn *entry, process_callback_fn *cb,
-			void *est, void *cst, string_t desc)
+pid_t makesubproc(process_entry_fn *entry, process_callback_fn *cb,
+		 void *est, void *cst, string_t desc)
 {
     struct child *c;
-    sigset_t sigchld;
     pid_t p;
 
     c=safe_malloc(sizeof(*c),"makesubproc");
@@ -52,9 +51,7 @@ extern void makesubproc(process_entry_fn *entry, process_callback_fn *cb,
     c->cst=cst;
 
     if (!signal_handling) {
-	sigemptyset(&sigchld);
-	sigaddset(&sigchld,SIGCHLD);
-	sigprocmask(SIG_BLOCK,&sigchld,NULL);
+	fatal("makesubproc called before signal handling started\n");
     }
     p=fork();
     if (p==0) {
@@ -70,6 +67,7 @@ extern void makesubproc(process_entry_fn *entry, process_callback_fn *cb,
     c->finished=False;
     c->next=children;
     children=c;
+    return p;
 }
 
 static signal_notify_fn sigchld_handler;

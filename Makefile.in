@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.6
+VERSION:=0.1.7
 
 @SET_MAKE@
 
@@ -96,7 +96,9 @@ config.status: configure
 # Manual dependencies section - XXX use autodep eventually
 $(OBJECTS): config.h secnet.h util.h
 conffile.o conffile.tab.o conffile.yy.o: conffile.h conffile_internal.h
-secnet.c: conffile.h
+secnet.o: conffile.h process.h
+process.o: process.h
+log.o: process.h
 md5.o: md5.h
 serpent.o transform.o: serpent.h
 serpent.o: serpentsboxes.h

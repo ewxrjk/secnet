@@ -23,6 +23,7 @@ struct netlink_route {
     bool_t allow_route;
     bool_t up;
     bool_t kup;
+    uint32_t quality; /* provided by client */
     struct netlink_client *c;
 };
 

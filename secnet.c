@@ -388,11 +388,11 @@ int main(int argc, char **argv)
     enter_phase(PHASE_DROPPRIV);
     droppriv();
 
-    enter_phase(PHASE_RUN);
     start_signal_handling();
     request_signal_notification(SIGTERM,finish,"SIGTERM");
     if (!background) request_signal_notification(SIGINT,finish,"SIGINT");
     request_signal_notification(SIGHUP,ignore_hup,NULL);
+    enter_phase(PHASE_RUN);
     run();
 
     enter_phase(PHASE_SHUTDOWN);

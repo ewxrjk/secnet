@@ -8,10 +8,18 @@
    packet to the kernel we check that the tunnel it came over could
    reasonably have produced it. */
 
+/* XXX new feature: "point-to-point" mode.  Instead of specifying a
+   secnet-address in the configuration dictionary, the user specifies
+   the address of the machine at the other end of the (one and only)
+   tunnel.  We bypass all IP packet processing code.  This mode is
+   useful for leafnodes like laptops, which don't require a secnet
+   router address. */
+
 #include "secnet.h"
 #include "util.h"
 #include "ipaddr.h"
 #include "netlink.h"
+#include "process.h"
 
 /* Generic IP checksum routine */
 static inline uint16_t ip_csum(uint8_t *iph,uint32_t count)
@@ -484,15 +492,18 @@ static void netlink_incoming(void *sst, void *cid, struct buffer_if *buf)
 }
 
 static void netlink_set_softlinks(struct netlink *st, struct netlink_client *c,
-				  bool_t up)
+				  bool_t up, uint32_t quality)
 {
     uint32_t i;
 
     if (!st->routes) return; /* Table has not yet been created */
     for (i=0; i<st->n_routes; i++) {
-	if (!st->routes[i].hard && st->routes[i].c==c) {
-	    st->routes[i].up=up;
-	    st->set_route(st->dst,&st->routes[i]);
+	if (st->routes[i].c==c) {
+	    st->routes[i].quality=quality;
+	    if (!st->routes[i].hard) {
+		st->routes[i].up=up;
+		st->set_route(st->dst,&st->routes[i]);
+	    }
 	}
     }
 }
@@ -504,9 +515,9 @@ static void netlink_set_quality(void *sst, void *cid, uint32_t quality)
 
     c->link_quality=quality;
     if (c->link_quality==LINK_QUALITY_DOWN) {
-	netlink_set_softlinks(st,c,False);
+	netlink_set_softlinks(st,c,False,c->link_quality);
     } else {
-	netlink_set_softlinks(st,c,True);
+	netlink_set_softlinks(st,c,True,c->link_quality);
     }
 }
 
@@ -560,26 +571,29 @@ static void *netlink_regnets(void *sst, struct subnet_list *nets,
     return c;
 }
 
-static void netlink_dump_routes(struct netlink *st)
+static void netlink_dump_routes(struct netlink *st, bool_t requested)
 {
     int i;
     string_t net;
+    uint32_t c=M_INFO;
 
-    Message(M_INFO,"%s: routing table:\n",st->name);
+    if (requested) c=M_WARNING;
+    Message(c,"%s: routing table:\n",st->name);
     for (i=0; i<st->n_routes; i++) {
 	net=subnet_to_string(&st->routes[i].net);
-	Message(M_INFO,"%s -> tunnel %s (%s,%s route,%s)\n",net,
+	Message(c,"%s -> tunnel %s (%s,%s route,%s,quality %d)\n",net,
 		st->routes[i].c->name,
 		st->routes[i].hard?"hard":"soft",
 		st->routes[i].allow_route?"free":"restricted",
-		st->routes[i].up?"up":"down");
+		st->routes[i].up?"up":"down",
+		st->routes[i].quality);
 	free(net);
     }
-    Message(M_INFO,"%s/32 -> netlink \"%s\"\n",
+    Message(c,"%s/32 -> netlink \"%s\"\n",
 	    ipaddr_to_string(st->secnet_address),st->name);
     for (i=0; i<st->networks.entries; i++) {
 	net=subnet_to_string(&st->networks.list[i]);
-	Message(M_INFO,"%s -> host\n",net);
+	Message(c,"%s -> host\n",net);
 	free(net);
     }
 }
@@ -618,6 +632,7 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
 	    st->routes[i].hard=c->options&NETLINK_OPTION_SOFTROUTE?False:True;
 	    st->routes[i].allow_route=c->options&NETLINK_OPTION_ALLOW_ROUTE?
 		True:False;
+	    st->routes[i].quality=c->link_quality;
 	    i++;
 	}
     }
@@ -630,7 +645,14 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
     qsort(st->routes,st->n_routes,sizeof(*st->routes),
 	  netlink_compare_route_specificity);
 
-    netlink_dump_routes(st);
+    netlink_dump_routes(st,False);
+}
+
+static void netlink_signal_handler(void *sst, int signum)
+{
+    struct netlink *st=sst;
+    Message(M_INFO,"%s: route dump requested by SIGUSR1\n",st->name);
+    netlink_dump_routes(st,True);
 }
 
 netlink_deliver_fn *netlink_init(struct netlink *st,
@@ -671,6 +693,7 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
     st->routes=NULL;
 
     add_hook(PHASE_SETUP,netlink_phase_hook,st);
+    request_signal_notification(SIGUSR1, netlink_signal_handler, st);
 
     return netlink_incoming;
 }

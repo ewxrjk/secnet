@@ -6,8 +6,8 @@ endianness problems)
 netlink.c: investigate why 'default' routes don't appear to work
 (reported by JDA).
 
-slip.c: detect failure of userv-ipif to start. Restart userv-ipif to
-cope with soft routes? Restart it if it fails in use?
+slip.c: restart userv-ipif to cope with soft routes? Restart it if it
+fails in use?
 
 tun.c: jdamery reports tun-old code works on Linux-2.2.
 Unresolved problem with ioctl(TUNSETIFF) sometimes returning EINVAL, seems
@@ -24,14 +24,10 @@ cleanly using a table. There's still quite a lot of redundancy in this
 file. Abandon key exchanges when a bad packet is received. Modify
 protocol to include version fields, as described in the NOTES file.
 
-transform.c: see below
+transform.c: separate the transforms into multiple parts, which can
+then be combined in the configuration file.  Will allow the user to
+plug in different block ciphers, invent an authenticity-only mode,
+etc.
 
 sha1.c: test
 
-General: separate the transforms in transform.c into multiple parts,
-which can then be combined in the configuration file.  Will allow the
-user to plug in different block ciphers, invent an authenticity-only
-mode, etc.
-
-Signal handling! Really just cope with SIGCHLD and SIGTERM. Possibly
-use SIGUSR1/2 for prodding things. Manage child processes properly.

@@ -167,12 +167,11 @@ udp: dict argument
   buffer (buffer closure): buffer for incoming packets
   authbind (string): optional, path to authbind-helper program
 
-** util
+** log
 
 Defines:
   logfile (closure => log closure)
   syslog (closure => log closure)
-  sysbuffer (closure => buffer closure)
 
 logfile: dict argument
   filename (string): where to log to
@@ -190,6 +189,8 @@ logfile: dict argument
     { "default", M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
     { "verbose", M_INFO|M_NOTICE|M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
     { "quiet", M_FATAL }
+
+logfile will close and reopen its file upon receipt of SIGHUP.
 
 syslog: dict argument
   ident (string): include this string in every log message
@@ -212,6 +213,11 @@ syslog: dict argument
     { "syslog", LOG_SYSLOG },
     { "user", LOG_USER },
     { "uucp", LOG_UUCP }
+
+** util
+
+Defines:
+  sysbuffer (closure => buffer closure)
 
 sysbuffer: integer[,dict]
   arg1: buffer length
@@ -286,6 +292,9 @@ null-netlink: dict argument
   local-address (string): IP address of host's tunnel interface
   secnet-address (string): IP address of this netlink device
   mtu (integer): MTU of host's tunnel interface
+
+Netlink will dump its current routing table to the system/log on
+receipt of SIGUSR1.
 
 ** slip
 
