@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.1
+VERSION:=0.1.2
 
 @SET_MAKE@
 
@@ -45,15 +45,20 @@ TARGETS:=secnet
 
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	resolver.o random.o udp.o site.o transform.o netlink.o rsa.o dh.o \
-	serpent.o md5.o version.o
+	serpent.o md5.o version.o tun.o slip.o
 
-DISTFILES:=COPYING CREDITS INSTALL Makefile.in NOTES README TODO conffile.c \
-	conffile.fl conffile.h conffile.y conffile_internal.h config.h.bot \
-	config.h.in config.h.top configure configure.in dh.c \
-	example-sites-file example.conf install.sh linux md5.c md5.h \
-	modules.c modules.h netlink.c random.c resolver.c rsa.c \
+DISTFILES:=COPYING CREDITS INSTALL Makefile.in NOTES README TODO \
+	conffile.c conffile.fl conffile.h conffile.y \
+	conffile_internal.h config.h.bot \
+	config.h.in config.h.top configure \
+	configure.in debian dh.c \
+	example-sites-file example.conf \
+	install.sh linux md5.c md5.h \
+	modules.c modules.h netlink.c netlink.h \
+	random.c resolver.c rsa.c \
 	secnet.c secnet.h serpent.c serpent.h serpentsboxes.h \
-	site.c stamp-h.in transform.c udp.c unaligned.h util.c util.h
+	site.c slip.c stamp-h.in transform.c tun.c udp.c \
+	unaligned.h util.c util.h
 
 %.c:	%.y
 
@@ -98,6 +103,7 @@ conffile.o: modules.h
 site.c util.c: unaligned.h
 conffile.yy.c:	conffile.fl conffile.tab.c
 conffile.tab.c:	conffile.y
+netlink.o tun.o slip.o: netlink.h
 # End of manual dependencies section
 
 secnet:	$(OBJECTS)
@@ -106,7 +112,7 @@ version.c: Makefile
 	echo "char version[]=\"secnet-$(VERSION)\";" >version.c
 
 install: all
-	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
+	$(INSTALL_PROGRAM) -D secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 
 clean:
 	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c

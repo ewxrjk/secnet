@@ -10,6 +10,8 @@ extern init_module netlink_module;
 extern init_module rsa_module;
 extern init_module dh_module;
 extern init_module md5_module;
+extern init_module slip_module;
+extern init_module tun_module;
 
 void init_builtin_modules(dict_t *dict)
 {
@@ -23,4 +25,6 @@ void init_builtin_modules(dict_t *dict)
     rsa_module(dict);
     dh_module(dict);
     md5_module(dict);
+    slip_module(dict);
+    tun_module(dict);
 }

@@ -379,6 +379,36 @@ static list_t *makelist(closure_t *self, struct cloc loc,
     return r;
 }
 
+/* Take a list consisting of a closure and some other things. Apply the
+   closure to the other things, and return the resulting list */
+static list_t *map(closure_t *self, struct cloc loc, dict_t *context,
+		   list_t *args)
+{
+    list_t *r=NULL, *al;
+    item_t *ci;
+    closure_t *cl;
+    list_t se;
+    
+    ci=list_elem(args,0);
+    if (ci && ci->type==t_closure) {
+	cl=ci->data.closure;
+	if (!cl->apply) {
+	    cfgfatal(loc,"map","closure cannot be applied\n");
+	}
+	for (al=args->next; al; al=al->next) {
+	    /* Construct a single-element list */
+	    se.next=NULL;
+	    se.item=al->item;
+	    /* Invoke the closure, append its result to the output */
+	    r=list_append_list(r,cl->apply(cl,loc,context,&se));
+	}
+    } else {
+	cfgfatal(loc,"map","you must supply a closure as the "
+		 "first argument\n");
+    }
+    return r;
+}
+
 /* Read a file and turn it into a string */
 static list_t *readfile(closure_t *self, struct cloc loc,
 			dict_t *context, list_t *args)
@@ -457,6 +487,7 @@ static dict_t *process_config(struct p_node *c)
 
     add_closure(root,"makelist",makelist);
     add_closure(root,"readfile",readfile);
+    add_closure(root,"map",map);
 
     init_builtin_modules(root);
 
@@ -740,6 +771,24 @@ void dict_read_subnet_list(dict_t *dict, string_t key, bool_t required,
 	}
 	sl->list[e++]=string_to_subnet(i,desc);
     }
+}
+
+uint32_t string_list_to_word(list_t *l, struct flagstr *f, string_t desc)
+{
+    list_t *i;
+    uint32_t r=0;
+    struct flagstr *j;
+
+    for (i=l; i; i=i->next) {
+	if (i->item->type!=t_string) {
+	    cfgfatal(i->item->loc,desc,"all elements of list must be "
+		     "strings\n");
+	}
+	for (j=f; j->name; j++)
+	    if (strcmp(i->item->data.string,j->name)==0)
+		r|=j->value;
+    }
+    return r;
 }
 
 dict_t *read_conffile(char *name)

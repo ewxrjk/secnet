@@ -11,7 +11,8 @@
 
 #define SETUP_BUFFER_LEN 2048
 
-#define DEFAULT_KEY_LIFETIME 3600000
+#define DEFAULT_KEY_LIFETIME 3600000 /* One hour */
+#define DEFAULT_KEY_RENEGOTIATE_GAP 300000 /* Five minutes */
 #define DEFAULT_SETUP_RETRIES 5
 #define DEFAULT_SETUP_TIMEOUT 1000
 #define DEFAULT_WAIT_TIME 10000
@@ -99,11 +100,26 @@ static string_t state_name(uint32_t state)
 #define LOG_SETUP_TIMEOUT 0x00000004
 #define LOG_ACTIVATE_KEY  0x00000008
 #define LOG_TIMEOUT_KEY   0x00000010
-#define LOG_SEC      0x00000020
+#define LOG_SEC           0x00000020
 #define LOG_STATE         0x00000040
 #define LOG_DROP          0x00000080
 #define LOG_DUMP          0x00000100
 #define LOG_ERROR         0x00000400
+
+static struct flagstr log_event_table[]={
+    { "unexpected", LOG_UNEXPECTED },
+    { "setup-init", LOG_SETUP_INIT },
+    { "setup-timeout", LOG_SETUP_TIMEOUT },
+    { "activate-key", LOG_ACTIVATE_KEY },
+    { "timeout-key", LOG_TIMEOUT_KEY },
+    { "security", LOG_SEC },
+    { "state-change", LOG_STATE },
+    { "packet-drop", LOG_DROP },
+    { "dump-packets", LOG_DUMP },
+    { "errors", LOG_ERROR },
+    { "all", 0xffffffff },
+    { NULL, 0 }
+};
 
 struct site {
     closure_t cl;
@@ -125,12 +141,16 @@ struct site {
     struct transform_if *transform;
     struct dh_if *dh;
     struct hash_if *hash;
-    void *netlink_cid;
 
     uint32_t setup_retries; /* How many times to send setup packets */
     uint32_t setup_timeout; /* Initial timeout for setup packets */
     uint32_t wait_timeout; /* How long to wait if setup unsuccessful */
     uint32_t key_lifetime; /* How long a key lasts once set up */
+    uint32_t key_renegotiate_time; /* If we see traffic (or a keepalive)
+				      after this time, initiate a new
+				      key exchange */
+
+    bool_t keepalive; /* Always keep the tunnel up */
 
     uint8_t *setupsig; /* Expected signature of incoming MSG1 packets */
     uint32_t setupsiglen; /* Allows us to discard packets quickly if
@@ -142,6 +162,8 @@ struct site {
 /* runtime information */
     uint32_t state;
     uint64_t now; /* Most recently seen time */
+
+    void *netlink_cid;
 
     uint32_t remote_session_id;
     struct transform_inst_if *current_transform;
@@ -178,6 +200,8 @@ static void slog(struct site *st, uint32_t event, string_t msg, ...)
     va_end(ap);
 }
 
+static void set_link_quality(struct site *st);
+static bool_t initiate_key_setup(struct site *st);
 static void enter_state_run(struct site *st);
 static bool_t enter_state_resolve(struct site *st);
 static bool_t enter_state_sentmsg1(struct site *st);
@@ -576,12 +600,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 
     if (!st->current_valid) {
 	slog(st,LOG_DROP,"incoming message but no current key -> dropping");
-	if (st->state==SITE_RUN) {
-	    slog(st,LOG_SETUP_INIT|LOG_STATE,
-		 "now initiating setup of new key");
-	    return enter_state_resolve(st);
-	}
-	return False;
+	return initiate_key_setup(st);
     }
 
     if (!unpick_msg0(st,msg0,&m)) return False;
@@ -615,8 +634,8 @@ static void dump_packet(struct site *st, struct buffer_if *buf,
     uint32_t msgtype=ntohl(*(uint32_t *)(buf->start+8));
 
     if (st->log_events & LOG_DUMP)
-	log(st->log,0,"(%s,%s): %s: %08x<-%08x: %08x:",
-	    st->localname,st->remotename,incoming?"incoming":"outgoing",
+	log(st->log,0,"%s: %s: %08x<-%08x: %08x:",
+	    st->tunname,incoming?"incoming":"outgoing",
 	    dest,source,msgtype);
 }
 
@@ -661,6 +680,21 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
     }
 }
 
+static bool_t initiate_key_setup(struct site *st)
+{
+    if (st->state!=SITE_RUN) return False;
+    if (st->address) {
+	slog(st,LOG_SETUP_INIT,"initiating key exchange; resolving address");
+	return enter_state_resolve(st);
+    } else if (st->peer_valid) {
+	slog(st,LOG_SETUP_INIT,"initiating key exchange using old "
+	     "peer address");
+	st->setup_peer=st->peer;
+	return enter_state_sentmsg1(st);
+    }
+    return False;
+}
+
 static void activate_new_key(struct site *st)
 {
     struct transform_inst_if *t;
@@ -670,7 +704,6 @@ static void activate_new_key(struct site *st)
     st->new_transform=t;
 
     t->delkey(t->st);
-    st->state=SITE_RUN;
     st->timeout=0;
     st->current_valid=True;
     st->current_key_timeout=st->now+st->key_lifetime;
@@ -679,6 +712,7 @@ static void activate_new_key(struct site *st)
     st->remote_session_id=st->setup_session_id;
 
     slog(st,LOG_ACTIVATE_KEY,"new key activated");
+    enter_state_run(st);
 }
 
 static void state_assert(struct site *st, bool_t ok)
@@ -695,8 +729,27 @@ static void enter_state_stop(struct site *st)
     st->current_key_timeout=0;
     
     st->peer_valid=False;
+
+    set_link_quality(st);
     
     st->new_transform->delkey(st->new_transform->st);
+}
+
+static void set_link_quality(struct site *st)
+{
+    uint32_t quality;
+    if (st->current_valid)
+	quality=LINK_QUALITY_UP;
+    else if (st->state==SITE_WAIT || st->state==SITE_STOP)
+	quality=LINK_QUALITY_DOWN;
+    else if (st->address)
+	quality=LINK_QUALITY_DOWN_CURRENT_ADDRESS;
+    else if (st->peer_valid)
+	quality=LINK_QUALITY_DOWN_STALE_ADDRESS;
+    else
+	quality=LINK_QUALITY_DOWN;
+
+    st->netlink->set_quality(st->netlink->st,st->netlink_cid,quality);
 }
 
 static void enter_state_run(struct site *st)
@@ -704,7 +757,8 @@ static void enter_state_run(struct site *st)
     slog(st,LOG_STATE,"entering state RUN");
     st->state=SITE_RUN;
     st->timeout=0;
-    st->netlink->set_quality(st->netlink->st,st->netlink_cid,LINK_QUALITY_UP);
+
+    set_link_quality(st);
     /* XXX get rid of key setup data */
 }
 
@@ -821,8 +875,7 @@ static void enter_state_wait(struct site *st)
     st->timeout=st->now+st->wait_timeout;
     st->state=SITE_WAIT;
     st->peer_valid=False;
-    st->netlink->set_quality(st->netlink->st,st->netlink_cid,
-			     LINK_QUALITY_DOWN);
+    set_link_quality(st);
     BUF_FREE(&st->buffer); /* will have had an outgoing packet in it */
     /* XXX Erase keys etc. */
 }
@@ -873,6 +926,7 @@ static void site_afterpoll(void *sst, struct pollfd *fds, int nfds,
 	st->current_valid=False;
 	st->current_transform->delkey(st->current_transform->st);
 	st->current_key_timeout=0;
+	set_link_quality(st);
     }
 }
 
@@ -906,18 +960,9 @@ static void site_outgoing(void *sst, void *cid, struct buffer_if *buf)
 	return;
     }
 
-    if (st->state==SITE_RUN) {
-	BUF_FREE(buf); /* We throw the outgoing packet away */
-	slog(st,LOG_SETUP_INIT,"initiating key exchange");
-	enter_state_resolve(st);
-	return;
-    }
-
-    /* Otherwise we're in the middle of key setup or a wait - just
-       throw the outgoing packet away */
     slog(st,LOG_DROP,"discarding outgoing packet of size %d",buf->size);
     BUF_FREE(buf);
-    return;
+    initiate_key_setup(st);
 }
 
 /* This function is called by the communication device to deliver
@@ -1124,17 +1169,29 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
     st->hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
 
-    st->key_lifetime=dict_read_number(dict,"key-lifetime",
-				      False,"site",loc,DEFAULT_KEY_LIFETIME);
-    st->setup_retries=dict_read_number(dict,"setup-retries",
-				       False,"site",loc,DEFAULT_SETUP_RETRIES);
-    st->setup_timeout=dict_read_number(dict,"setup-timeout",
-				       False,"site",loc,DEFAULT_SETUP_TIMEOUT);
-    st->wait_timeout=dict_read_number(dict,"wait-time",
-				      False,"site",loc,DEFAULT_WAIT_TIME);
-    /* XXX should be configurable */
-    st->log_events=LOG_SEC|LOG_ERROR|
-	LOG_ACTIVATE_KEY|LOG_TIMEOUT_KEY|LOG_SETUP_INIT|LOG_SETUP_TIMEOUT;
+    st->key_lifetime=dict_read_number(
+	dict,"key-lifetime",False,"site",loc,DEFAULT_KEY_LIFETIME);
+    if (st->key_lifetime < DEFAULT_KEY_RENEGOTIATE_GAP)
+	st->key_renegotiate_time=st->key_lifetime/2;
+    else
+	st->key_renegotiate_time=st->key_lifetime-DEFAULT_KEY_RENEGOTIATE_GAP;
+    st->setup_retries=dict_read_number(
+	dict,"setup-retries",False,"site",loc,DEFAULT_SETUP_RETRIES);
+    st->setup_timeout=dict_read_number(
+	dict,"setup-timeout",False,"site",loc,DEFAULT_SETUP_TIMEOUT);
+    st->wait_timeout=dict_read_number(
+	dict,"wait-time",False,"site",loc,DEFAULT_WAIT_TIME);
+    st->key_renegotiate_time=dict_read_number(
+	dict,"renegotiate-time",False,"site",loc,st->key_lifetime);
+    if (st->key_renegotiate_time > st->key_lifetime) {
+	cfgfatal(loc,"site",
+		 "renegotiate-time must be less than key-lifetime\n");
+    }
+    /* XXX keepalive will eventually default to True */
+    st->keepalive=dict_read_bool(dict,"keepalive",False,"site",loc,False);
+
+    st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
+				       log_event_table,"site");
 
     st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
 			    "site_apply");
@@ -1171,11 +1228,12 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 					 site_outgoing, st,
 					 st->transform->max_start_pad+(4*4),
 					 st->transform->max_end_pad,
-					 st->tunname);
+					 (st->address!=NULL), st->tunname);
     if (!st->netlink_cid) {
-	fatal("%s: netlink device did not let us register our remote "
-	      "networks. Check that they are not local or excluded.\n",
-	      st->tunname);
+	Message(M_WARNING,"%s: netlink device did not let us register "
+		"our remote networks. This site will not start.\n",
+		st->tunname);
+	return NULL; /* XXX should free site first */
     }
 
     st->comm->request_notify(st->comm->st, st, site_incoming);

@@ -125,6 +125,12 @@ extern void dict_read_subnet_list(dict_t *dict, string_t key, bool_t required,
 				  string_t desc, struct cloc loc,
 				  struct subnet_list *sl);
 extern uint32_t string_to_ipaddr(item_t *i, string_t desc);
+struct flagstr {
+    string_t name;
+    uint32_t value;
+};
+extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
+				    string_t desc);
 
 /***** END of configuration support *****/
 
@@ -198,6 +204,14 @@ extern void register_for_poll(void *st, beforepoll_fn *before,
 typedef void hook_fn(void *self, uint32_t newphase);
 bool_t add_hook(uint32_t phase, hook_fn *f, void *state);
 bool_t remove_hook(uint32_t phase, hook_fn *f, void *state);
+
+extern bool_t require_root_privileges; /* Some features (like netlink
+					  'soft' routes) require that
+					  secnet retain root
+					  privileges.  They should
+					  indicate that here when
+					  appropriate. */
+extern string_t require_root_privileges_explanation;
 
 /***** END of program lifetime support *****/
 
@@ -369,12 +383,14 @@ typedef void netlink_deliver_fn(void *st, void *cid, struct buffer_if *buf);
 #define LINK_QUALITY_UP 3     /* Link active */
 #define MAXIMUM_LINK_QUALITY 3
 typedef void netlink_link_quality_fn(void *st, void *cid, uint32_t quality);
-/* Register for packets from specified networks. Return value is client
-   identifier. */
+/* Register for packets from specified networks. Return value is
+   client identifier.  'hard_route' indicates whether the routes being
+   registered are permanent (hard) or temporary (soft); some types of
+   netlink device can only cope with hard routes. */
 typedef void *netlink_regnets_fn(void *st, struct subnet_list *networks,
 				 netlink_deliver_fn *deliver, void *dst,
 				 uint32_t max_start_pad, uint32_t max_end_pad,
-				 string_t client_name);
+				 bool_t hard_routes, string_t client_name);
 
 struct netlink_if {
     void *st;

@@ -61,11 +61,16 @@ http://www.ucam.org/cam-grin/ may be useful.
 
 * Installation
 
+If you installed the Debian package of secnet, skip to "If installing
+for the first time", below, and note that example.conf can be found in
+/usr/share/doc/secnet/examples.
+
 To install secnet do
 
 $ ./configure
 $ make
 # make install
+# mkdir /etc/secnet
 
 (Note: you may see the following warning while compiling
 conffile.tab.c; I believe this is a bison bug:
@@ -79,7 +84,6 @@ steve@greenend.org.uk.
 
 If installing for the first time, do
 
-# mkdir /etc/secnet
 # cp example.conf /etc/secnet/secnet.conf
 # cd /etc/secnet
 # ssh-keygen -f key -N ""
@@ -105,7 +109,7 @@ is described in the README file at the moment.
 
 You need the following information:
 
-1. a short name for your site, eg.  "greenend".  This is used to
+1. a short name for your site, eg. "greenend".  This is used to
 identify your site in the vpn-sites file.
 
 2. the name your site will use in the key setup protocol,
@@ -113,7 +117,7 @@ eg. "greenend" (these two will usually be similar or the same).
 
 3. the DNS name of the machine that will be the "front-end" for your
 secnet installation.  This will typically be the name of the gateway
-machine for your network, eg.  sinister.dynamic.greenend.org.uk
+machine for your network, eg. sinister.dynamic.greenend.org.uk
 
 secnet does not actually have to run on this machine, as long as the
 machine can be configured to forward UDP packets to the machine that

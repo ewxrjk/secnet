@@ -26,6 +26,8 @@ static char *userid=NULL;
 static uid_t uid=0;
 static bool_t background=True;
 static char *pidfile=NULL;
+bool_t require_root_privileges=False;
+string_t require_root_privileges_explanation=NULL;
 
 /* Structures dealing with poll() call */
 struct poll_interest {
@@ -178,22 +180,31 @@ static void setup(dict_t *config)
     /* Pidfile name */
     pidfile=dict_read_string(system,"pidfile",False,"system",loc);
 
+    /* Check whether we need root privileges */
+    if (require_root_privileges && uid!=0) {
+	fatal("the following configured feature (\"%s\") requires "
+	      "that secnet retain root privileges while running.\n",
+	      require_root_privileges_explanation);
+    }
+
     /* Go along site list, starting sites */
     l=dict_lookup(config,"sites");
     if (!l) {
-	fatal("configuration did not define any remote sites\n");
-    }
-    i=0;
-    while ((site=list_elem(l, i++))) {
-	struct site_if *s;
-	if (site->type!=t_closure) {
-	    cfgfatal(site->loc,"system","non-closure in site list");
+	Message(M_WARNING,"secnet: configuration did not define any "
+		"remote sites\n");
+    } else {
+	i=0;
+	while ((site=list_elem(l, i++))) {
+	    struct site_if *s;
+	    if (site->type!=t_closure) {
+		cfgfatal(site->loc,"system","non-closure in site list");
+	    }
+	    if (site->data.closure->type!=CL_SITE) {
+		cfgfatal(site->loc,"system","non-site closure in site list");
+	    }
+	    s=site->data.closure->interface;
+	    s->control(s->st,True);
 	}
-	if (site->data.closure->type!=CL_SITE) {
-	    cfgfatal(site->loc,"system","non-site closure in site list");
-	}
-	s=site->data.closure->interface;
-	s->control(s->st,True);
     }
 }
 
@@ -286,7 +297,6 @@ static void droppriv(void)
     /* Background now, if we're supposed to: we may be unable to write the
        pidfile if we don't. */
     if (background) {
-	printf("goto background\n");
 	/* Open the pidfile before forking - that way the parent can tell
 	   whether it succeeds */
 	if (pidfile) {
@@ -309,7 +319,6 @@ static void droppriv(void)
 	} else if (p==0) {
 	    /* Child process - all done, just carry on */
 	    if (pf) fclose(pf);
-	    printf("child\n");
 	} else {
 	    /* Error */
 	    fatal_perror("cannot fork");

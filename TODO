@@ -7,7 +7,11 @@ conffile.c: done
 dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
-netlink.c: done. jdamery reports tun-old code works on Linux-2.2
+netlink.c: done
+
+slip.c: done. Detect failure of userv-ipif to start.
+
+tun.c: jdamery reports tun-old code works on Linux-2.2.
 Unresolved problem with ioctl(TUNSETIFF) sometimes return EINVAL.
 
 random.c: test
@@ -30,4 +34,10 @@ udp.c: done
 
 util.c: sort out logging
 
-General: check over MBM's patches for BSD.
+General: separate the transforms in transform.c into multiple parts,
+which can then be combined in the configuration file.  Will allow the
+user to plug in different block ciphers, invent an authenticity-only
+mode, etc.
+
+Write scripts to generate the 'real' sites file from a less-expressive
+version that's more easily checked by external tools.
