@@ -8,8 +8,9 @@
 #include <stdarg.h>
 #include <syslog.h>
 #include <sys/poll.h>
+#include <sys/types.h>
+#include <sys/time.h>
 #include <netinet/in.h>
-
 
 typedef char *string_t;
 typedef enum {False,True} bool_t;

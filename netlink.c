@@ -18,14 +18,12 @@
    packet to the kernel we check that the tunnel it came over could
    reasonably have produced it. */
 
+#include "secnet.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-
-#include "config.h"
-#include "secnet.h"
 #include "util.h"
 
 #ifdef HAVE_LINUX_IF_H

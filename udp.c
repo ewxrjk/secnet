@@ -12,16 +12,13 @@
  * Packets are offered to registered receivers in turn. Once one
  * accepts it, it isn't offered to any more. */
 
+#include "secnet.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-
-#include "secnet.h"
 #include "util.h"
 
 static beforepoll_fn udp_beforepoll;

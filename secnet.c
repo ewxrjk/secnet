@@ -6,21 +6,16 @@
 
 extern char version[];
 
+#include "secnet.h"
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
-#include <stdarg.h>
 #include <errno.h>
-#include <sys/types.h>
+#include <unistd.h>
 #include <sys/socket.h>
-#include <sys/poll.h>
-#include <sys/time.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <adns.h>
 #include <pwd.h>
 
-#include "secnet.h"
 #include "util.h"
 #include "conffile.h"
 

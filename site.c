@@ -1,9 +1,11 @@
 /* site.c - manage communication with a remote network site */
 
-#include <stdio.h>
-#include <sys/mman.h>
-
 #include "secnet.h"
+#include <stdio.h>
+/* MBM asserts the next one is needed for compilation under BSD. */
+#include <sys/socket.h>
+
+#include <sys/mman.h>
 #include "util.h"
 #include "unaligned.h"
 
@@ -61,6 +63,7 @@
 #define SITE_SENTMSG5 7
 #define SITE_WAIT     8
 
+#if 0
 static string_t state_name(uint32_t state)
 {
     switch (state) {
@@ -76,6 +79,7 @@ static string_t state_name(uint32_t state)
     default: return "*bad state*";
     }
 }
+#endif /* 0 */
 
 #define LABEL_MSG0 0x00020200
 #define LABEL_MSG1 0x01010101
@@ -1128,11 +1132,10 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     /* XXX fix this bit for unaligned access */
     st->setupsiglen=strlen(st->remotename)+strlen(st->localname)+8;
     st->setupsig=safe_malloc(st->setupsiglen,"site_apply");
-    *(uint32_t *)&(st->setupsig[0])=LABEL_MSG1;
-    *(uint16_t *)&(st->setupsig[4])=htons(strlen(st->remotename));
+    put_uint32(st->setupsig+0,LABEL_MSG1);
+    put_uint16(st->setupsig+4,strlen(st->remotename));
     memcpy(&st->setupsig[6],st->remotename,strlen(st->remotename));
-    *(uint16_t *)&(st->setupsig[6+strlen(st->remotename)])=
-	htons(strlen(st->localname));
+    put_uint16(st->setupsig+(6+strlen(st->remotename)),strlen(st->localname));
     memcpy(&st->setupsig[8+strlen(st->remotename)],st->localname,
 	   strlen(st->localname));
     st->setup_priority=(strcmp(st->localname,st->remotename)>0);

@@ -20,12 +20,8 @@
  * Still in the public domain.
  */
 
-#include <string.h>		/* for memcpy() */
-#include <sys/types.h>		/* for stupid systems */
-#include <netinet/in.h>		/* for ntohl() */
-
 #include "secnet.h"
-#include "config.h"
+#include <string.h>		/* for memcpy() */
 #include "md5.h"
 
 #ifdef WORDS_BIGENDIAN

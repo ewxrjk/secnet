@@ -25,8 +25,17 @@
 /* Define if you have the fl library (-lfl).  */
 #undef HAVE_LIBFL
 
+/* Define if you have the getopt library (-lgetopt).  */
+#undef HAVE_LIBGETOPT
+
+/* Define if you have the gmp library (-lgmp).  */
+#undef HAVE_LIBGMP
+
 /* Define if you have the gmp2 library (-lgmp2).  */
 #undef HAVE_LIBGMP2
+
+/* Define if you have the gnugetopt library (-lgnugetopt).  */
+#undef HAVE_LIBGNUGETOPT
 /* -*- c -*- */
 
 /* These are from config.h.bot, pasted onto the end of config.h.in. */

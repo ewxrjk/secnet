@@ -1,4 +1,3 @@
-#include "config.h"
 #include "secnet.h"
 
 extern init_module resolver_module;

@@ -4,24 +4,30 @@ Makefile.in: autodep stuff
 
 conffile.c: done
 
-dh.c: change format to binary from decimal string
+dh.c: change format to binary from decimal string (without introducing
+endianness problems)
 
-netlink.c: done. Test tun-old code.
+netlink.c: done. jdamery reports tun-old code works on Linux-2.2
 
 random.c: test
 
 resolver.c: done
 
 rsa.c: check padding type, change format to binary from decimal string
+(without introducing endianness problems)
 
 secnet.c: done
 
 site.c: the site_incoming() routing could be implemented much more
 cleanly using a table. There's still quite a lot of redundancy in this
-file.
+file. Abandon key exchanges when a bad packet is received. Tell
+netlink link is down if it's down and we don't have address for other
+end.
 
-transform.c: done
+transform.c: done. Needs checking for endianness problems.
 
 udp.c: done
 
 util.c: sort out logging
+
+General: check over MBM's patches for BSD.

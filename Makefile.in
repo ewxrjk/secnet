@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.07
+VERSION:=0.08
 
 @SET_MAKE@
 
@@ -31,7 +31,7 @@ CC:=@CC@
 INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 
-CFLAGS:=@CFLAGS@ @DEFS@ -Wall -I.
+CFLAGS:=@CFLAGS@ @DEFS@ -Wall -I$(srcdir) -I.
 LDFLAGS:=@LDFLAGS@
 LDLIBS:=@LIBS@
 
@@ -53,7 +53,7 @@ DISTFILES:=COPYING INSTALL Makefile.in NOTES README TODO conffile.c \
 	example-sites-file example.conf install.sh linux md5.c md5.h \
 	modules.c modules.h netlink.c random.c resolver.c rsa.c \
 	secnet.c secnet.h serpent.c serpent.h serpentsboxes.h \
-	site.c transform.c udp.c unaligned.h util.c util.h
+	site.c stamp-h.in transform.c udp.c unaligned.h util.c util.h
 
 %.c:	%.y
 
@@ -61,20 +61,33 @@ DISTFILES:=COPYING INSTALL Makefile.in NOTES README TODO conffile.c \
 	flex -o$@ $<
 
 %.tab.c:	%.y
-	bison -d $<
+	bison -d -o $@ $<
 
 
 all:	$(TARGETS)
 
+# Automatic remaking of configuration files, from autoconf documentation
+${srcdir}/configure: configure.in
+	cd ${srcdir} && autoconf
+
+# autoheader might not change config.h.in, so touch a stamp file.
+${srcdir}/config.h.in: stamp-h.in
+${srcdir}/stamp-h.in: configure.in config.h.top config.h.bot
+	cd ${srcdir} && autoheader
+	echo timestamp > ${srcdir}/stamp-h.in
+
+config.h: stamp-h
+stamp-h: config.h.in config.status
+	./config.status
+
 Makefile: Makefile.in config.status
-	$(SHELL) config.status
+	./config.status
 
 config.status: configure
-	$(srcdir)/configure --no-create
+	./config.status --recheck
+# End of config file remaking rules
 
-config.h: config.h.in config.status
-	$(SHELL) config.status
-
+# Manual dependencies section - XXX use autodep eventually
 $(OBJECTS): config.h secnet.h util.h
 conffile.o conffile.tab.o conffile.yy.o: conffile.h conffile_internal.h
 secnet.c: conffile.h
@@ -83,6 +96,9 @@ serpent.o transform.o: serpent.h
 serpent.o: serpentsboxes.h
 conffile.o: modules.h
 site.c util.c: unaligned.h
+conffile.yy.c:	conffile.fl conffile.tab.c
+conffile.tab.c:	conffile.y
+# End of manual dependencies section
 
 secnet:	$(OBJECTS)
 
@@ -93,22 +109,18 @@ install: all
 	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 
 clean:
-	$(RM) -f $(srcdir)/*.o $(srcdir)/*~ $(srcdir)/*.yy.c \
-		$(srcdir)/*.tab.[ch]
+	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c
 
 realclean:	clean
-	$(RM) -f $(TARGETS) $(srcdir)/Makefile $(srcdir)/config.h \
-	$(srcdir)/config.log $(srcdir)/config.status $(srcdir)/config.cache \
-	$(srcdir)/Makefile.bak core
+	$(RM) -f *~ Makefile config.h \
+	config.log config.status config.cache \
+	stamp-h Makefile.bak
 
 pfname:=$(PACKAGE)-$(VERSION)
 dist:
 	$(RM) -rf $(pfname)
 	mkdir $(pfname)
-	for i in $(DISTFILES) ; do ln -s ../$$i $(pfname)/ ; done
+	for i in $(DISTFILES) ; do ln -s ../$(srcdir)/$$i $(pfname)/ ; done
 	tar hcf ../$(pfname).tar $(pfname)
 	gzip -9f ../$(pfname).tar
 	$(RM) -rf $(pfname)
-
-conffile.yy.c:	conffile.fl conffile.tab.c
-conffile.tab.c:	conffile.y

@@ -162,9 +162,18 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     /* CBC: each block is XORed with the previous encrypted block (or the IV)
        before being encrypted. */
     p=iv;
+#ifdef WORDS_BIGENDIAN
+    /* This counters the byteswap() in the first half of the loop, which in
+       turn counters the byteswap() in the second half of the loop. Ick. */
+    iv[0]=byteswap(iv[0]);
+    iv[1]=byteswap(iv[1]);
+    iv[2]=byteswap(iv[2]);
+    iv[3]=byteswap(iv[3]);
+#endif
     for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
     {
 #ifdef WORDS_BIGENDIAN
+	/* Think of this as byteswap(p[x])^byteswap(n[x]) */
 	n[0]=byteswap(p[0]^n[0]);
 	n[1]=byteswap(p[1]^n[1]);
 	n[2]=byteswap(p[2]^n[2]);
@@ -176,12 +185,17 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
 	n[3]=p[3]^n[3];
 #endif
 	serpent_encrypt(&ti->cryptkey,n,n);
+#ifdef WORDS_BIGENDIAN
+	n[0]=byteswap(n[0]);
+	n[1]=byteswap(n[1]);
+	n[2]=byteswap(n[2]);
+	n[3]=byteswap(n[3]);
+#endif
 	p=n;
     }
 
     buf_prepend_uint32(buf,ti->cryptiv);
     ti->cryptiv++;
-
     return 0;
 }
 
@@ -205,13 +219,23 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 	return 1;
     }
 
+
     /* CBC */
     memset(iv,0,16);
     iv[0]=buf_unprepend_uint32(buf);
+    /* Assert bufsize is multiple of blocksize */
+    if (buf->size&0xf) {
+	*errmsg="msg not multiple of cipher blocksize";
+    }
     serpent_encrypt(&ti->cryptkey,iv,iv);
-    /* XXX assert bufsize is multiple of blocksize */
     for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
     {
+#ifdef WORDS_BIGENDIAN
+	n[0]=byteswap(n[0]);
+	n[1]=byteswap(n[1]);
+	n[2]=byteswap(n[2]);
+	n[3]=byteswap(n[3]);
+#endif
 	pct[0]=n[0]; pct[1]=n[1]; pct[2]=n[2]; pct[3]=n[3];
 	serpent_decrypt(&ti->cryptkey,n,n);
 #ifdef WORDS_BIGENDIAN

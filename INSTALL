@@ -4,7 +4,8 @@ USE AT YOUR OWN RISK.  THIS IS ALPHA TEST SOFTWARE.  I DO NOT
 GUARANTEE THAT THERE WILL BE PROTOCOL COMPATIBILITY BETWEEN DIFFERENT
 VERSIONS.
 
-PROTOCOL COMPATIBILITY WAS BROKEN BETWEEN secnet-0.06 AND secnet-0.07
+PROTOCOL COMPATIBILITY WAS BROKEN BETWEEN secnet-0.06, secnet-0.07 AND
+secnet-0.08 FOR ENDIANNESS FIXES.
 
 * Preparation
 
@@ -33,7 +34,7 @@ Note than TUN comes in two flavours, one (called 'tun' in the secnet
 config file) which has only one device file (usually /dev/net/tun) and
 the other (called 'tun-old') which has many device files (/dev/tun*).
 Linux-2.4 has new-style TUN, Linux-2.2, BSD and Solaris have old-style
-TUN.  Currently only new-style TUN has been tested with secnet.
+TUN.
 
 ** System and network configuration
 
@@ -48,17 +49,13 @@ the address you see in 'ifconfig' when you look at the tunnel
 interface).  The other will be for secnet itself.  These addresses
 could possibly be allocated from the range used by your internal
 network: if you do this, you should think about providing appropriate
-proxy-ARP on the machine running secnet for the two addresses.
-Alternatively the addresses could be from some other range - this
-works well if the machine running secnet is the default route out of
-your network.
+proxy-ARP on the internal network interface of the machine running
+secnet (eg. add an entry net/ipv4/conf/eth_whatever/proxy_arp = 1 to
+/etc/sysctl.conf on Debian systems and run sysctl -p).  Alternatively
+the addresses could be from some other range - this works well if the
+machine running secnet is the default route out of your network.
 
 http://www.ucam.org/cam-grin/ may be useful.
-
-Advanced users: secnet's IP address does not _have_ to be in the range
-of networks claimed by your end of the tunnel; it could be in the
-range of networks claimed by the other end.  Doing this is confusing,
-but works.
 
 * Installation
 
@@ -67,13 +64,18 @@ To install secnet do
 $ ./configure
 $ make
 # make install
+
+If installing for the first time, do
+
 # mkdir /etc/secnet
 # cp example.conf /etc/secnet/secnet.conf
 # cd /etc/secnet
 # ssh-keygen -f key -N ""
 
-(When upgrading, just install the new /usr/local/sbin/secnet; keep
-your current configuration file.)
+[On BSD use
+$ LDFLAGS="-L/usr/local/lib" ./configure
+$ gmake CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib"
+XXX this should eventually be worked out automatically by 'configure'.]
 
 Generate a site file fragment for your site (see below), and submit it
 for inclusion in the vpn-sites file.  Download the vpn-sites file to

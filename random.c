@@ -1,14 +1,12 @@
 /* $Log$
  */
 
+#include "secnet.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#include "secnet.h"
 
 struct rgen_data {
     closure_t cl;

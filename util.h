@@ -7,10 +7,7 @@
 #ifndef util_h
 #define util_h
 
-#include <stdlib.h>
-#include <stdint.h>
 #include "secnet.h"
-#include "config.h"
 #include <gmp.h>
 
 extern uint32_t message_level;

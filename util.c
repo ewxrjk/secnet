@@ -8,19 +8,15 @@
  *
  */
 
-#include "config.h"
+#include "secnet.h"
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
-#include <syslog.h>
 #include <unistd.h>
 #include <limits.h>
 #include <assert.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include "util.h"
-#include "secnet.h"
 #include "unaligned.h"
 
 #define MIN_BUFFER_SIZE 64

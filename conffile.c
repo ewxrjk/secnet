@@ -6,11 +6,9 @@
 
 /* #define DUMP_PARSE_TREE */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "secnet.h"
+#include <stdio.h>
+#include <string.h>
 #include "conffile.h"
 #include "conffile_internal.h"
 #include "util.h"
