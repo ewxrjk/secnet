@@ -198,7 +198,7 @@ bool_t remove_hook(uint32_t phase, hook_fn *fn, void *state)
     return False;
 }
 
-void log(struct log_if *lf, int priority, const char *message, ...)
+void slilog(struct log_if *lf, int priority, const char *message, ...)
 {
     va_list ap;
     
