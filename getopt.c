@@ -20,27 +20,9 @@
    along with this program; if not, write to the Free Software
    Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-/* NOTE!!!  AIX requires this to be the first thing in the file.
-   Do not put ANYTHING before it!  */
-#if !defined (__GNUC__) && defined (_AIX)
- #pragma alloca
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
-#ifdef __GNUC__
-#define alloca __builtin_alloca
-#else /* not __GNUC__ */
-#if defined (HAVE_ALLOCA_H) || (defined(sparc) && (defined(sun) || (!defined(USG) && !defined(SVR4) && !defined(__svr4__))))
-#include <alloca.h>
-#else
-#ifndef _AIX
-char *alloca ();
-#endif
-#endif /* alloca.h */
-#endif /* not __GNUC__ */
 
 #if !__STDC__ && !defined(const) && IN_GCC
 #define const
@@ -67,12 +49,9 @@ char *alloca ();
 /* This needs to come after some library #include
    to get __GNU_LIBRARY__ defined.  */
 #ifdef	__GNU_LIBRARY__
-#undef	alloca
 /* Don't include stdlib.h for non-GNU C libraries because some of them
    contain conflicting prototypes for getopt.  */
 #include <stdlib.h>
-#else	/* Not GNU C library.  */
-#define	__alloca	alloca
 #endif	/* GNU C library.  */
 
 /* If GETOPT_COMPAT is defined, `+' as well as `--' can introduce a
@@ -237,7 +216,7 @@ exchange (argv)
      char **argv;
 {
   int nonopts_size = (last_nonopt - first_nonopt) * sizeof (char *);
-  char **temp = (char **) __alloca (nonopts_size);
+  char **temp = (char **) safe_malloc (nonopts_size, "getopt");
 
   /* Interchange the two blocks of data in ARGV.  */
 
@@ -252,6 +231,7 @@ exchange (argv)
 
   first_nonopt += (optind - last_nonopt);
   last_nonopt = optind;
+  free(temp);
 }
 
 /* Scan elements of ARGV (whose length is ARGC) for option characters

@@ -17,17 +17,6 @@
 /* Required key length in bytes */
 #define REQUIRED_KEYLEN ((512+64+32)/8)
 
-#ifdef WORDS_BIGENDIAN
-static inline uint32_t byteswap(uint32_t a)
-{
-    return
-	((a&0x000000ff)<<24) |
-	((a&0x0000ff00)<<8) |
-	((a&0x00ff0000)>>8) |
-	((a&0xff000000)>>24);
-}
-#endif
-
 struct transform {
     closure_t cl;
     uint32_t line;
@@ -71,9 +60,9 @@ static bool_t transform_setkey(void *sst, uint8_t *key, uint32_t keylen)
 
     serpent_makekey(&ti->cryptkey,256,key);
     serpent_makekey(&ti->mackey,256,key+32);
-    ti->cryptiv=ntohl(*(uint32_t *)(key+64));
-    ti->maciv=ntohl(*(uint32_t *)(key+68));
-    ti->sendseq=ntohl(*(uint32_t *)(key+72));
+    ti->cryptiv=GET_32BIT_MSB_FIRST(key+64);
+    ti->maciv=GET_32BIT_MSB_FIRST(key+68);
+    ti->sendseq=GET_32BIT_MSB_FIRST(key+72);
     ti->lastrecvseq=ti->sendseq;
     ti->keyed=True;
 
@@ -95,10 +84,11 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     struct transform_inst *ti=sst;
     uint8_t *padp;
     int padlen;
-    uint32_t iv[4];
-    uint32_t macplain[4];
-    uint32_t macacc[4];
-    uint32_t *n, *p;
+    uint8_t iv[16];
+    uint8_t macplain[16];
+    uint8_t macacc[16];
+    uint8_t *p, *n;
+    int i;
 
     if (!ti->keyed) {
 	*errmsg="transform unkeyed";
@@ -125,73 +115,35 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
        it we've have to add 16 bytes to each message, not 4, so that the
        message stays a multiple of 16 bytes long.) */
     memset(iv,0,16);
-    iv[0]=ti->maciv;
+    PUT_32BIT_MSB_FIRST(iv, ti->maciv);
     serpent_encrypt(&ti->mackey,iv,macacc);
 
     /* CBCMAC: encrypt in CBC mode. The MAC is the last encrypted
        block encrypted once again. */
-    for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
+    for (n=buf->start; n<buf->start+buf->size; n+=16)
     {
-#ifdef WORDS_BIGENDIAN
-	macplain[0]=macacc[0]^byteswap(n[0]);
-	macplain[1]=macacc[1]^byteswap(n[1]);
-	macplain[2]=macacc[2]^byteswap(n[2]);
-	macplain[3]=macacc[3]^byteswap(n[3]);
-#else
-	macplain[0]=macacc[0]^n[0];
-	macplain[1]=macacc[1]^n[1];
-	macplain[2]=macacc[2]^n[2];
-	macplain[3]=macacc[3]^n[3];
-#endif
+	for (i = 0; i < 16; i++)
+	    macplain[i] = macacc[i] ^ n[i];
 	serpent_encrypt(&ti->mackey,macplain,macacc);
     }
     serpent_encrypt(&ti->mackey,macacc,macacc);
-#ifdef WORDS_BIGENDIAN
-    macacc[0]=byteswap(macacc[0]);
-    macacc[1]=byteswap(macacc[1]);
-    macacc[2]=byteswap(macacc[2]);
-    macacc[3]=byteswap(macacc[3]);
-#endif
     memcpy(buf_append(buf,16),macacc,16);
 
     /* Serpent-CBC. We expand the ID as for CBCMAC, do the encryption,
        and prepend the IV before increasing it. */
     memset(iv,0,16);
-    iv[0]=ti->cryptiv;
+    PUT_32BIT_MSB_FIRST(iv, ti->cryptiv);
     serpent_encrypt(&ti->cryptkey,iv,iv);
 
     /* CBC: each block is XORed with the previous encrypted block (or the IV)
        before being encrypted. */
     p=iv;
-#ifdef WORDS_BIGENDIAN
-    /* This counters the byteswap() in the first half of the loop, which in
-       turn counters the byteswap() in the second half of the loop. Ick. */
-    iv[0]=byteswap(iv[0]);
-    iv[1]=byteswap(iv[1]);
-    iv[2]=byteswap(iv[2]);
-    iv[3]=byteswap(iv[3]);
-#endif
-    for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
+
+    for (n=buf->start; n<buf->start+buf->size; n+=16)
     {
-#ifdef WORDS_BIGENDIAN
-	/* Think of this as byteswap(p[x])^byteswap(n[x]) */
-	n[0]=byteswap(p[0]^n[0]);
-	n[1]=byteswap(p[1]^n[1]);
-	n[2]=byteswap(p[2]^n[2]);
-	n[3]=byteswap(p[3]^n[3]);
-#else
-	n[0]=p[0]^n[0];
-	n[1]=p[1]^n[1];
-	n[2]=p[2]^n[2];
-	n[3]=p[3]^n[3];
-#endif
+	for (i = 0; i < 16; i++)
+	    n[i] ^= p[i];
 	serpent_encrypt(&ti->cryptkey,n,n);
-#ifdef WORDS_BIGENDIAN
-	n[0]=byteswap(n[0]);
-	n[1]=byteswap(n[1]);
-	n[2]=byteswap(n[2]);
-	n[3]=byteswap(n[3]);
-#endif
 	p=n;
     }
 
@@ -208,12 +160,12 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     unsigned padlen;
     int i;
     uint32_t seqnum, skew;
-    uint32_t iv[4];
-    uint32_t pct[4];
-    uint32_t macplain[4];
-    uint32_t macacc[4];
-    uint32_t *n;
-    uint32_t *macexpected;
+    uint8_t iv[16];
+    uint8_t pct[16];
+    uint8_t macplain[16];
+    uint8_t macacc[16];
+    uint8_t *n;
+    uint8_t *macexpected;
 
     if (!ti->keyed) {
 	*errmsg="transform unkeyed";
@@ -223,66 +175,40 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 
     /* CBC */
     memset(iv,0,16);
-    iv[0]=buf_unprepend_uint32(buf);
+    {
+	uint32_t ivword = buf_unprepend_uint32(buf);
+	PUT_32BIT_MSB_FIRST(iv, ivword);
+    }
     /* Assert bufsize is multiple of blocksize */
     if (buf->size&0xf) {
 	*errmsg="msg not multiple of cipher blocksize";
     }
     serpent_encrypt(&ti->cryptkey,iv,iv);
-    for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
+    for (n=buf->start; n<buf->start+buf->size; n+=16)
     {
-#ifdef WORDS_BIGENDIAN
-	n[0]=byteswap(n[0]);
-	n[1]=byteswap(n[1]);
-	n[2]=byteswap(n[2]);
-	n[3]=byteswap(n[3]);
-#endif
-	pct[0]=n[0]; pct[1]=n[1]; pct[2]=n[2]; pct[3]=n[3];
+	for (i = 0; i < 16; i++)
+	    pct[i] = n[i];
 	serpent_decrypt(&ti->cryptkey,n,n);
-#ifdef WORDS_BIGENDIAN
-	n[0]=byteswap(iv[0]^n[0]);
-	n[1]=byteswap(iv[1]^n[1]);
-	n[2]=byteswap(iv[2]^n[2]);
-	n[3]=byteswap(iv[3]^n[3]);
-#else
-	n[0]=iv[0]^n[0];
-	n[1]=iv[1]^n[1];
-	n[2]=iv[2]^n[2];
-	n[3]=iv[3]^n[3];
-#endif
-	iv[0]=pct[0]; iv[1]=pct[1]; iv[2]=pct[2]; iv[3]=pct[3];
+	for (i = 0; i < 16; i++)
+	    n[i] ^= iv[i];
+	memcpy(iv, pct, 16);
     }
 
     /* CBCMAC */
     macexpected=buf_unappend(buf,16);
     memset(iv,0,16);
-    iv[0]=ti->maciv;
+    PUT_32BIT_MSB_FIRST(iv, ti->maciv);
     serpent_encrypt(&ti->mackey,iv,macacc);
 
     /* CBCMAC: encrypt in CBC mode. The MAC is the last encrypted
        block encrypted once again. */
-    for (n=(uint32_t *)buf->start; n<(uint32_t *)(buf->start+buf->size); n+=4)
+    for (n=buf->start; n<buf->start+buf->size; n+=16)
     {
-#ifdef WORDS_BIGENDIAN
-	macplain[0]=macacc[0]^byteswap(n[0]);
-	macplain[1]=macacc[1]^byteswap(n[1]);
-	macplain[2]=macacc[2]^byteswap(n[2]);
-	macplain[3]=macacc[3]^byteswap(n[3]);
-#else
-	macplain[0]=macacc[0]^n[0];
-	macplain[1]=macacc[1]^n[1];
-	macplain[2]=macacc[2]^n[2];
-	macplain[3]=macacc[3]^n[3];
-#endif
+	for (i = 0; i < 16; i++)
+	    macplain[i] = macacc[i] ^ n[i];
 	serpent_encrypt(&ti->mackey,macplain,macacc);
     }
     serpent_encrypt(&ti->mackey,macacc,macacc);
-#ifdef WORDS_BIGENDIAN
-    macacc[0]=byteswap(macacc[0]);
-    macacc[1]=byteswap(macacc[1]);
-    macacc[2]=byteswap(macacc[2]);
-    macacc[3]=byteswap(macacc[3]);
-#endif
     if (memcmp(macexpected,macacc,16)!=0) {
 	*errmsg="invalid MAC";
 	return 1;
@@ -390,30 +316,74 @@ void transform_module(dict_t *dict)
 {
     struct keyInstance k;
     uint8_t data[32];
-    uint32_t plaintext[4];
-    uint32_t ciphertext[4];
+    uint8_t plaintext[16];
+    uint8_t ciphertext[16];
+
+    /*
+     * Serpent self-test.
+     * 
+     * This test pattern is taken directly from the Serpent test
+     * vectors, to ensure we have all endianness issues correct. -sgt
+     */
 
     /* Serpent self-test */
-    memset(data,0,32);
+    memcpy(data,
+           "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff"
+           "\xff\xee\xdd\xcc\xbb\xaa\x99\x88\x77\x66\x55\x44\x33\x22\x11\x00",
+           32);
     serpent_makekey(&k,256,data);
-    plaintext[0]=0x00000000;
-    plaintext[1]=0x00000001;
-    plaintext[2]=0x00000002;
-    plaintext[3]=0x00000003;
+
+    memcpy(plaintext,
+           "\x01\x23\x45\x67\x89\xab\xcd\xef\xfe\xdc\xba\x98\x76\x54\x32\x10",
+           16);
     serpent_encrypt(&k,plaintext,ciphertext);
-    if (ciphertext[3]!=0x7ca73bb0 ||
-	ciphertext[2]!=0x83C31E69 ||
-	ciphertext[1]!=0xec52bd82 ||
-	ciphertext[0]!=0x27a46120) {
+
+    if (memcmp(ciphertext, "\xca\x7f\xa1\x93\xe3\xeb\x9e\x99"
+               "\xbd\x87\xe3\xaf\x3c\x9a\xdf\x93", 16)) {
 	fatal("transform_module: serpent failed self-test (encrypt)");
     }
     serpent_decrypt(&k,ciphertext,plaintext);
-    if (plaintext[0]!=0 ||
-	plaintext[1]!=1 ||
-	plaintext[2]!=2 ||
-	plaintext[3]!=3) {
+    if (memcmp(plaintext, "\x01\x23\x45\x67\x89\xab\xcd\xef"
+               "\xfe\xdc\xba\x98\x76\x54\x32\x10", 16)) {
 	fatal("transform_module: serpent failed self-test (decrypt)");
     }
 
     add_closure(dict,"serpent256-cbc",transform_apply);
+
+#ifdef TEST_WHOLE_TRANSFORM
+    {
+	struct transform *tr;
+	void *ti;
+	struct buffer_if buf;
+	const char text[] = "This is a piece of test text.";
+	char keymaterial[76] =
+	    "Seventy-six bytes i"
+	    "n four rows of 19; "
+	    "this looks almost l"
+	    "ike a poem but not.";
+	const char *errmsg;
+	int i;
+
+	tr = malloc(sizeof(struct transform));
+	tr->max_seq_skew = 20;
+	ti = transform_create(tr);
+
+	transform_setkey(ti, keymaterial, 76);
+
+        buf.base = malloc(4096);
+	buffer_init(&buf, 2048);
+	memcpy(buf_append(&buf, sizeof(text)), text, sizeof(text));
+	if (transform_forward(ti, &buf, &errmsg)) {
+	    fatal("transform_forward test: %s", errmsg);
+	}
+	printf("transformed text is:\n");
+	for (i = 0; i < buf.size; i++)
+	    printf("%02x%c", buf.start[i],
+		   (i%16==15 || i==buf.size-1 ? '\n' : ' '));
+	if (transform_reverse(ti, &buf, &errmsg)) {
+	    fatal("transform_reverse test: %s", errmsg);
+	}
+	printf("transform reversal worked OK\n");
+    }
+#endif
 }

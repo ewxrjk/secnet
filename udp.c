@@ -36,6 +36,7 @@ struct udp {
     closure_t cl;
     struct comm_if ops;
     struct cloc loc;
+    uint32_t addr;
     uint16_t port;
     int fd;
     string_t authbind;
@@ -182,7 +183,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
     struct udp *st=sst;
     struct sockaddr_in addr;
 
-    st->fd=socket(AF_INET, SOCK_DGRAM, 0);
+    st->fd=socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (st->fd<0) {
 	fatal_perror("udp (%s:%d): socket",st->loc.file,st->loc.line);
     }
@@ -197,6 +198,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family=AF_INET;
+    addr.sin_addr.s_addr=htonl(st->addr);
     addr.sin_port=htons(st->port);
     if (st->authbind) {
 	pid_t c;
@@ -209,22 +211,28 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 	    fatal_perror("udp_phase_hook: fork() for authbind");
 	}
 	if (c==0) {
-	    char *argv[4];
+	    char *argv[4], addrstr[9], portstr[5];
+	    sprintf(addrstr,"%08lX",(long)st->addr);
+	    sprintf(portstr,"%04X",st->port);
 	    argv[0]=st->authbind;
-	    argv[1]=strdup("00000000");
-	    if (!argv[1]) exit(ENOMEM);
-	    argv[2]=alloca(8);
-	    if (!argv[2]) exit(ENOMEM);
-	    sprintf(argv[2],"%04X",htons(st->port));
+	    argv[1]=addrstr;
+	    argv[2]=portstr;
 	    argv[3]=NULL;
 	    dup2(st->fd,0);
 	    execvp(st->authbind,argv);
-	    exit(ENOEXEC);
+	    _exit(255);
 	}
-	waitpid(c,&status,0);
-	if (WEXITSTATUS(status)!=0) {
-	    errno=WEXITSTATUS(status);
+	while (waitpid(c,&status,0)==-1) {
+	    if (errno==EINTR) continue;
 	    fatal_perror("udp (%s:%d): authbind",st->loc.file,st->loc.line);
+	}
+	if (WIFSIGNALED(status)) {
+	    fatal("udp (%s:%d): authbind died on signal %d",st->loc.file,
+		  st->loc.line, WTERMSIG(status));
+	}
+	if (WIFEXITED(status) && WEXITSTATUS(status)!=0) {
+	    fatal("udp (%s:%d): authbind died with status %d",st->loc.file,
+		  st->loc.line, WEXITSTATUS(status));
 	}
     } else {
 	if (bind(st->fd, (struct sockaddr *)&addr, sizeof(addr))!=0) {
@@ -239,7 +247,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 			 list_t *args)
 {
     struct udp *st;
-    item_t *i;
+    item_t *i,*j;
     dict_t *d;
     list_t *l;
     uint32_t a;
@@ -265,6 +273,8 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
     d=i->data.dict;
 
+    j=dict_find_item(d,"address",False,"udp",st->loc);
+    st->addr=j?st->addr=string_item_to_ipaddr(j, "udp"):INADDR_ANY;
     st->port=dict_read_number(d,"port",True,"udp",st->loc,0);
     st->rbuf=find_cl_if(d,"buffer",CL_BUFFER,True,"udp",st->loc);
     st->authbind=dict_read_string(d,"authbind",False,"udp",st->loc);

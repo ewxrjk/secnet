@@ -106,7 +106,7 @@ static int tun_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
 }
 
 static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds,
-			    const struct timeval *tv_now, uint64_t *now)
+			  const struct timeval *tv_now, uint64_t *now)
 {
     struct tun *st=sst;
     int l;

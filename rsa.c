@@ -1,6 +1,13 @@
-/* CRT work by Simon Tatham */
+/* This file is part of secnet, and is distributed under the terms of
+   the GNU General Public License version 2 or later.
+
+   Copyright (C) 1995-2002 Stephen Early
+   Copyright (C) 2001 Simon Tatham
+   Copyright (C) 2002 Ian Jackson
+   */
 
 #include <stdio.h>
+#include <string.h>
 #include <gmp.h>
 #include "secnet.h"
 #include "util.h"
@@ -40,22 +47,42 @@ static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
     mpz_init(&a);
     mpz_init(&b);
 
+    /* RSA PKCS#1 v1.5 signature padding:
+     *
+     * <------------ msize hex digits ---------->
+     *
+     * 00 01 ff ff .... ff ff 00 vv vv vv .... vv
+     *
+     *                           <--- datalen -->
+     *                                 bytes
+     *                         = datalen*2 hex digits
+     *
+     * NB that according to PKCS#1 v1.5 we're supposed to include a
+     * hash function OID in the data.  We don't do that (because we
+     * don't have the hash function OID to hand here), thus violating
+     * the spec in a way that affects interop but not security.
+     *
+     * -iwj 17.9.2002
+     */
+
     msize=mpz_sizeinbase(&st->n, 16);
 
-    if (datalen*2+4>=msize) {
+    if (datalen*2+6>=msize) {
 	fatal("rsa_sign: message too big");
     }
 
     strcpy(buff,"0001");
 
     for (i=0; i<datalen; i++) {
-	buff[4+i*2]=hexchars[(data[i]&0xf0)>>4];
-	buff[5+i*2]=hexchars[data[i]&0xf];
+	buff[msize+(-datalen+i)*2]=hexchars[(data[i]&0xf0)>>4];
+	buff[msize+(-datalen+i)*2+1]=hexchars[data[i]&0xf];
     }
-    buff[4+datalen*2]=0;
     
-    for (i=datalen*2+4; i<msize; i++)
-	buff[i]='f';
+    buff[msize-datalen*2-2]= '0';
+    buff[msize-datalen*2-1]= '0';
+ 
+    for (i=4; i<msize-datalen*2-2; i++)
+       buff[i]='f';
 
     buff[msize]=0;
 
@@ -121,12 +148,14 @@ static bool_t rsa_sig_check(void *sst, uint8_t *data, uint32_t datalen,
     strcpy(buff,"0001");
 
     for (i=0; i<datalen; i++) {
-	buff[4+i*2]=hexchars[(data[i]&0xf0)>>4];
-	buff[5+i*2]=hexchars[data[i]&0xf];
+	buff[msize+(-datalen+i)*2]=hexchars[(data[i]&0xf0)>>4];
+	buff[msize+(-datalen+i)*2+1]=hexchars[data[i]&0xf];
     }
-    buff[4+datalen*2]=0;
 
-    for (i=datalen*2+4; i<msize; i++)
+    buff[msize-datalen*2-2]= '0';
+    buff[msize-datalen*2-1]= '0';
+
+    for (i=4; i<msize-datalen*2-2; i++)
 	buff[i]='f';
 
     buff[msize]=0;
@@ -223,6 +252,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     uint8_t *b, *c;
     int cipher_type;
     MP_INT e,d,iqmp,tmp,tmp2,tmp3;
+    bool_t valid;
 
     st=safe_malloc(sizeof(*st),"rsapriv_apply");
     st->cl.description="rsapriv";
@@ -383,16 +413,15 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
      * Now verify the validity of the key, and set up the auxiliary
      * values for fast CRT signing.
      */
+    valid=False;
     i=list_elem(args,1);
+    mpz_init(&tmp);
+    mpz_init(&tmp2);
+    mpz_init(&tmp3);
     if (i && i->type==t_bool && i->data.bool==False) {
 	Message(M_INFO,"rsa-private (%s:%d): skipping RSA key validity "
 		"check\n",loc.file,loc.line);
     } else {
-	int valid = 0;
-	mpz_init(&tmp);
-	mpz_init(&tmp2);
-	mpz_init(&tmp3);
-
 	/* Verify that p*q is equal to n. */
 	mpz_mul(&tmp, &st->p, &st->q);
 	if (mpz_cmp(&tmp, &st->n) != 0)
@@ -419,33 +448,35 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	mpz_mod(&tmp2, &tmp, &st->p);
 	if (mpz_cmp_si(&tmp2, 1) != 0)
 	    goto done_checks;
-
-	/* Now we know the key is valid. */
-	valid = 1;
-
-	/*
-	 * Now we compute auxiliary values dp, dq and w to allow us
-	 * to use the CRT optimisation when signing.
-	 * 
-	 *   dp == d mod (p-1)      so that a^dp == a^d mod p, for all a
-	 *   dq == d mod (q-1)      similarly mod q
-	 *   w == iqmp * q          so that w == 0 mod q, and w == 1 mod p
-	 */
-	mpz_sub_ui(&tmp, &st->p, 1);
-	mpz_mod(&st->dp, &d, &tmp);
-	mpz_sub_ui(&tmp, &st->q, 1);
-	mpz_mod(&st->dq, &d, &tmp);
-	mpz_mul(&st->w, &iqmp, &st->q);
-
-	done_checks:
-	if (!valid) {
-	    cfgfatal(loc,"rsa-private","file \"%s\" does not contain a "
-		     "valid RSA key!\n",filename);
-	}
-	mpz_clear(&tmp);
-	mpz_clear(&tmp2);
-	mpz_clear(&tmp3);
     }
+    /* Now we know the key is valid (or we don't care). */
+    valid = True;
+    
+    /*
+     * Now we compute auxiliary values dp, dq and w to allow us
+     * to use the CRT optimisation when signing.
+     * 
+     *   dp == d mod (p-1)      so that a^dp == a^d mod p, for all a
+     *   dq == d mod (q-1)      similarly mod q
+     *   w == iqmp * q          so that w == 0 mod q, and w == 1 mod p
+     */
+    mpz_init(&st->dp);
+    mpz_init(&st->dq);
+    mpz_init(&st->w);
+    mpz_sub_ui(&tmp, &st->p, 1);
+    mpz_mod(&st->dp, &d, &tmp);
+    mpz_sub_ui(&tmp, &st->q, 1);
+    mpz_mod(&st->dq, &d, &tmp);
+    mpz_mul(&st->w, &iqmp, &st->q);
+    
+done_checks:
+    if (!valid) {
+	cfgfatal(loc,"rsa-private","file \"%s\" does not contain a "
+		 "valid RSA key!\n",filename);
+    }
+    mpz_clear(&tmp);
+    mpz_clear(&tmp2);
+    mpz_clear(&tmp3);
 
     free(c);
     mpz_clear(&e);

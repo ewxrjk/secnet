@@ -4,6 +4,8 @@
 #include "secnet.h"
 #include <gmp.h>
 
+#include "hackypar.h"
+
 #define BUF_ASSERT_FREE(buf) do { buffer_assert_free((buf), \
 						     __FILE__,__LINE__); } \
 while(0)

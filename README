@@ -2,7 +2,7 @@ secnet - flexible VPN software
 
 * Copying
 
-secnet is Copyright (C) 1995--2001 Stephen Early <steve@greenend.org.uk>
+secnet is Copyright (C) 1995--2003 Stephen Early <steve@greenend.org.uk>
 It is distributed under the terms of the GNU General Public License,
 version 2 or later.  See the file COPYING for more information.
 
@@ -139,6 +139,9 @@ some keys in the root dictionary.  The main ones are:
   makelist:   turns a dictionary (arg1) into a list of definitions
               (ignoring the keys)
   readfile:   reads a file (arg1) and returns it as a string
+  map:        applies the closure specified as arg1 to each of the
+              remaining elements in the list in turn.  Returns a list
+              made up of the outputs of the closure.
 
 Keys defined by modules are described below, in the module
 documentation.
@@ -196,6 +199,7 @@ Defines:
   udp (closure => comm closure)
 
 udp: dict argument
+  address (string): IP address to listen and send on
   port (integer): UDP port to listen and send on
   buffer (buffer closure): buffer for incoming packets
   authbind (string): optional, path to authbind-helper program

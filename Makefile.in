@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.15
+VERSION:=0.1.16
 
 @SET_MAKE@
 
@@ -31,6 +31,9 @@ CC:=@CC@
 INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 
+# Use -DHACKY_PARALLEL if you are compiling secnet for an extremely
+# slow machine
+#CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -DHACKY_PARALLEL
 CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@
 ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS)
 LDFLAGS:=@LDFLAGS@
@@ -47,15 +50,17 @@ TARGETS:=secnet
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	resolver.o random.o udp.o site.o transform.o netlink.o rsa.o dh.o \
 	serpent.o md5.o version.o tun.o slip.o sha1.o ipaddr.o log.o \
-	process.o @LIBOBJS@
+	process.o @LIBOBJS@ \
+	hackypar.o
 
+DISTDIRS:=debian
 DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	NEWS NOTES README TODO \
-	alloca.c \
+	ac_prog_cc_no_writeable_strings.m4 \
 	conffile.c conffile.fl conffile.h conffile.y \
 	conffile_internal.h config.h.bot \
 	config.h.in config.h.top configure \
-	configure.in debian depend.sh dh.c \
+	configure.in depend.sh dh.c \
 	example.conf \
 	getopt.c getopt1.c getopt.h \
 	install-sh ipaddr.c ipaddr.h ipaddr.py linux log.c \
@@ -66,7 +71,10 @@ DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	secnet.c secnet.h serpent.c serpent.h serpentsboxes.h \
 	snprintf.c snprintf.h \
 	sha1.c site.c slip.c stamp-h.in transform.c tun.c udp.c \
-	unaligned.h util.c util.h
+	unaligned.h util.c util.h \
+	hackypar.c hackypar.h
+DISTSUBDIRS:=debian/conffiles debian/copyright debian/changelog \
+	debian/control debian/init debian/rules
 
 %.c:	%.y
 
@@ -144,7 +152,9 @@ pfname:=$(PACKAGE)-$(VERSION)
 dist:
 	$(RM) -rf $(pfname)
 	mkdir $(pfname)
+	for i in $(DISTDIRS) ; do mkdir $(pfname)/$$i ; done
 	for i in $(DISTFILES) ; do ln -s ../$(srcdir)/$$i $(pfname)/ ; done
+	for i in $(DISTSUBDIRS) ; do ln -s ../../$(srcdir)/$$i $(pfname)/$$i ; done
 	tar hcf ../$(pfname).tar --exclude=CVS --exclude=.cvsignore $(pfname)
 	gzip -9f ../$(pfname).tar
 	$(RM) -rf $(pfname)

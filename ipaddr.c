@@ -3,6 +3,7 @@
 
 #include "secnet.h"
 #include <stdio.h>
+#include <string.h>
 #include "ipaddr.h"
 
 #define DEFAULT_ALLOC 2

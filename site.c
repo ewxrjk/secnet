@@ -260,7 +260,7 @@ struct msg {
 static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
 {
     void *hst;
-    uint8_t *hash=alloca(st->hash->len);
+    uint8_t *hash;
     string_t dhpub, sig;
 
     st->retries=st->setup_retries;
@@ -276,15 +276,20 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     if (type==LABEL_MSG1) return True;
     memcpy(buf_append(&st->buffer,NONCELEN),st->remoteN,NONCELEN);
     if (type==LABEL_MSG2) return True;
+
+    if (hacky_par_mid_failnow()) return False;
+
     dhpub=st->dh->makepublic(st->dh->st,st->dhsecret,st->dh->len);
     buf_append_string(&st->buffer,dhpub);
     free(dhpub);
+    hash=safe_malloc(st->hash->len, "generate_msg");
     hst=st->hash->init();
     st->hash->update(hst,st->buffer.start,st->buffer.size);
     st->hash->final(hst,hash);
     sig=st->privkey->sign(st->privkey->st,hash,st->hash->len);
     buf_append_string(&st->buffer,sig);
     free(sig);
+    free(hash);
     return True;
 }
 
@@ -417,7 +422,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 			   struct sockaddr_in *src)
 {
     struct msg m;
-    uint8_t *hash=alloca(st->hash->len);
+    uint8_t *hash;
     void *hst;
     cstring_t err;
 
@@ -428,6 +433,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     }
 
     /* Check signature and store g^x mod m */
+    hash=safe_malloc(st->hash->len, "process_msg3");
     hst=st->hash->init();
     st->hash->update(hst,m.hashstart,m.hashlen);
     st->hash->final(hst,hash);
@@ -435,8 +441,10 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     m.sig[m.siglen]=0;
     if (!st->pubkey->check(st->pubkey->st,hash,st->hash->len,m.sig)) {
 	slog(st,LOG_SEC,"msg3 signature failed check!");
+	free(hash);
 	return False;
     }
+    free(hash);
 
     /* Terminate their DH public key with a '0' */
     m.pk[m.pklen]=0;
@@ -465,7 +473,7 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
 			   struct sockaddr_in *src)
 {
     struct msg m;
-    uint8_t *hash=alloca(st->hash->len);
+    uint8_t *hash;
     void *hst;
     cstring_t err;
 
@@ -476,6 +484,7 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
     }
     
     /* Check signature and store g^x mod m */
+    hash=safe_malloc(st->hash->len, "process_msg4");
     hst=st->hash->init();
     st->hash->update(hst,m.hashstart,m.hashlen);
     st->hash->final(hst,hash);
@@ -483,8 +492,10 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
     m.sig[m.siglen]=0;
     if (!st->pubkey->check(st->pubkey->st,hash,st->hash->len,m.sig)) {
 	slog(st,LOG_SEC,"msg4 signature failed check!");
+	free(hash);
 	return False;
     }
+    free(hash);
 
     /* Terminate their DH public key with a '0' */
     m.pk[m.pklen]=0;
@@ -821,6 +832,8 @@ static bool_t enter_state_resolve(struct site *st)
 static bool_t enter_new_state(struct site *st, uint32_t next)
 {
     bool_t (*gen)(struct site *st);
+    int r;
+
     slog(st,LOG_STATE,"entering state %s",state_name(next));
     switch(next) {
     case SITE_SENTMSG1:
@@ -858,7 +871,15 @@ static bool_t enter_new_state(struct site *st, uint32_t next)
 	break;
     }
 
-    if (gen(st) && send_msg(st)) {
+    if (hacky_par_start_failnow()) return False;
+
+    r= gen(st) && send_msg(st);
+
+    hacky_par_end(&r,
+		  st->setup_retries, st->setup_timeout,
+		  send_msg, st);
+    
+    if (r) {
 	st->state=next;
 	if (next==SITE_RUN) {
 	    BUF_FREE(&st->buffer); /* Never reused */
@@ -949,9 +970,10 @@ static void site_afterpoll(void *sst, struct pollfd *fds, int nfds,
     st->now=*now;
     if (st->timeout && *now>st->timeout) {
 	st->timeout=0;
-	if (st->state>=SITE_SENTMSG1 && st->state<=SITE_SENTMSG5)
-	    send_msg(st);
-	else if (st->state==SITE_WAIT) {
+	if (st->state>=SITE_SENTMSG1 && st->state<=SITE_SENTMSG5) {
+	    if (!hacky_par_start_failnow())
+	        send_msg(st);
+	} else if (st->state==SITE_WAIT) {
 	    enter_state_run(st);
 	} else {
 	    slog(st,LOG_ERROR,"site_afterpoll: unexpected timeout, state=%d",

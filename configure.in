@@ -5,7 +5,7 @@ sinclude(ac_prog_cc_no_writeable_strings.m4)
 AC_INIT(secnet.c)
 AC_CONFIG_HEADER(config.h)
 
-AC_REVISION($Id: configure.in,v 1.3 2002/02/20 16:18:18 steve Exp $)
+AC_REVISION($Id: configure.in,v 1.4 2002/09/09 22:05:02 steve Exp $)
 
 AC_LANG_C
 
@@ -42,8 +42,6 @@ AC_CHECK_LIB(adns,adns_init)
 dnl check for getopt in standard library
 AC_SUBST(LIBOBJS)
 AC_CHECK_FUNCS(getopt_long , , [LIBOBJS="$LIBOBJS getopt.o getopt1.o"] ) 
-dnl check for alloca
 AC_CHECK_FUNCS(snprintf , , [LIBOBJS="$LIBOBJS snprintf.o"] )
-AC_FUNC_ALLOCA()
 
 AC_OUTPUT(Makefile,echo timestamp >stamp-h)
