@@ -1,89 +1,129 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
+/* config.h.in.  Generated from configure.in by autoheader.  */
+
+
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
 
-/* Define if you have the ANSI C header files.  */
-#undef STDC_HEADERS
-
-/* Define if your processor stores words with the most significant
-   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
-#undef WORDS_BIGENDIAN
-
-/* The number of bytes in a unsigned char.  */
-#undef SIZEOF_UNSIGNED_CHAR
-
-/* The number of bytes in a unsigned int.  */
-#undef SIZEOF_UNSIGNED_INT
-
-/* The number of bytes in a unsigned long.  */
-#undef SIZEOF_UNSIGNED_LONG
-
-/* The number of bytes in a unsigned long long.  */
-#undef SIZEOF_UNSIGNED_LONG_LONG
-
-/* The number of bytes in a unsigned short.  */
-#undef SIZEOF_UNSIGNED_SHORT
-
-/* Define if you have the getopt_long function.  */
-#undef HAVE_GETOPT_LONG
-
-/* Define if you have the snprintf function.  */
-#undef HAVE_SNPRINTF
-
-/* Define if you have the <inttypes.h> header file.  */
+/* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define if you have the <linux/if.h> header file.  */
-#undef HAVE_LINUX_IF_H
-
-/* Define if you have the <net/if.h> header file.  */
-#undef HAVE_NET_IF_H
-
-/* Define if you have the <net/if_tun.h> header file.  */
-#undef HAVE_NET_IF_TUN_H
-
-/* Define if you have the <net/route.h> header file.  */
-#undef HAVE_NET_ROUTE_H
-
-/* Define if you have the <stdint.h> header file.  */
-#undef HAVE_STDINT_H
-
-/* Define if you have the <stropts.h> header file.  */
-#undef HAVE_STROPTS_H
-
-/* Define if you have the <sys/sockio.h> header file.  */
-#undef HAVE_SYS_SOCKIO_H
-
-/* Define if you have the adns library (-ladns).  */
+/* Define to 1 if you have the `adns' library (-ladns). */
 #undef HAVE_LIBADNS
 
-/* Define if you have the fl library (-lfl).  */
+/* Define to 1 if you have the `fl' library (-lfl). */
 #undef HAVE_LIBFL
 
-/* Define if you have the getopt library (-lgetopt).  */
+/* Define to 1 if you have the `getopt' library (-lgetopt). */
 #undef HAVE_LIBGETOPT
 
-/* Define if you have the gmp library (-lgmp).  */
+/* Define to 1 if you have the `gmp' library (-lgmp). */
 #undef HAVE_LIBGMP
 
-/* Define if you have the gmp2 library (-lgmp2).  */
+/* Define to 1 if you have the `gmp2' library (-lgmp2). */
 #undef HAVE_LIBGMP2
 
-/* Define if you have the gnugetopt library (-lgnugetopt).  */
+/* Define to 1 if you have the `gnugetopt' library (-lgnugetopt). */
 #undef HAVE_LIBGNUGETOPT
 
-/* Define if you have the nsl library (-lnsl).  */
+/* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
-/* Define if you have the resolv library (-lresolv).  */
+/* Define to 1 if you have the `resolv' library (-lresolv). */
 #undef HAVE_LIBRESOLV
 
-/* Define if you have the socket library (-lsocket).  */
+/* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the <linux/if.h> header file. */
+#undef HAVE_LINUX_IF_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <net/if.h> header file. */
+#undef HAVE_NET_IF_H
+
+/* Define to 1 if you have the <net/if_tun.h> header file. */
+#undef HAVE_NET_IF_TUN_H
+
+/* Define to 1 if you have the <net/route.h> header file. */
+#undef HAVE_NET_ROUTE_H
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <stropts.h> header file. */
+#undef HAVE_STROPTS_H
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/sockio.h> header file. */
+#undef HAVE_SYS_SOCKIO_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* The size of a `unsigned char', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* The size of a `unsigned int', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_INT
+
+/* The size of a `unsigned long', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_LONG
+
+/* The size of a `unsigned long long', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_LONG_LONG
+
+/* The size of a `unsigned short', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_SHORT
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
+
+
 /* -*- c -*- */
 
-/* These are from config.h.bot, pasted onto the end of config.h.in. */
+/* These used to be in config.h.bot, but are now in configure.in. */
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
@@ -147,3 +187,4 @@ typedef unsigned char uint8_t;
 #endif
 
 #endif /* _CONFIG_H */
+
