@@ -190,7 +190,8 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 	    break;
 	case TUN_CONFIG_IOCTL:
 	{
-#ifdef HAVE_NET_ROUTE_H
+	  /* darwin rtentry has a different format, use /sbin/route instead */
+#if HAVE_NET_ROUTE_H && ! __APPLE__
 	    struct rtentry rt;
 	    struct sockaddr_in *sa;
 	    int action;
@@ -353,7 +354,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 		hostaddr,secnetaddr,"mtu",mtu,"up",(char *)0);
 	break;
     case TUN_CONFIG_IOCTL:
-#ifdef HAVE_NET_IF_H
+#if HAVE_NET_IF_H && ! __APPLE__
     {
 	int fd;
 	struct ifreq ifr;
@@ -486,7 +487,8 @@ static list_t *tun_create(closure_t *self, struct cloc loc, dict_t *context,
 	    }
 	} else if (strcmp(u.sysname,"SunOS")==0) {
 	    st->tun_flavour=TUN_FLAVOUR_STREAMS;
-	} else if (strcmp(u.sysname,"FreeBSD")==0) {
+	} else if (strcmp(u.sysname,"FreeBSD")==0
+		   || strcmp(u.sysname,"Darwin")==0) {
 	    st->tun_flavour=TUN_FLAVOUR_BSD;
 	}
     }
@@ -501,9 +503,13 @@ static list_t *tun_create(closure_t *self, struct cloc loc, dict_t *context,
 	    st->ifconfig_type=TUN_CONFIG_IOCTL;
 	    break;
 	case TUN_FLAVOUR_BSD:
+#if __linux__
 	    /* XXX on Linux we still want TUN_CONFIG_IOCTL.  Perhaps we can
 	       use this on BSD too. */
 	    st->ifconfig_type=TUN_CONFIG_IOCTL;
+#else	  
+	    st->ifconfig_type=TUN_CONFIG_BSD;
+#endif
 	    break;
 	case TUN_FLAVOUR_STREAMS:
 	    st->ifconfig_type=TUN_CONFIG_BSD;

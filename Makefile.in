@@ -36,6 +36,7 @@ INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 #CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -DHACKY_PARALLEL
 CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@
 ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS)
+CPPFLAGS:=@CPPFLAGS@
 LDFLAGS:=@LDFLAGS@
 LDLIBS:=@LIBS@
 
@@ -117,7 +118,7 @@ DEPENDS:=$(OBJECTS:.o=.d)
 $(DEPENDS): ${srcdir}/depend.sh
 
 %.d: %.c
-	${srcdir}/depend.sh $(srcdir) $(ALL_CFLAGS) $< > $@
+	${srcdir}/depend.sh $(srcdir) $(CPPFLAGS) $(ALL_CFLAGS) $< > $@
 
 -include $(DEPENDS)
 

@@ -498,18 +498,19 @@ static void netlink_packet_deliver(struct netlink *st,
 	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
 				ICMP_CODE_NET_PROHIBITED);
 	    BUF_FREE(buf);
-	}
-	if (best_quality>0) {
-	    /* XXX Fragment if required */
-	    st->routes[best_match]->deliver(
-		st->routes[best_match]->dst, buf);
-	    st->routes[best_match]->outcount++;
-	    BUF_ASSERT_FREE(buf);
 	} else {
-	    /* Generate ICMP destination unreachable */
-	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
-				ICMP_CODE_NET_UNREACHABLE); /* client==NULL */
-	    BUF_FREE(buf);
+	    if (best_quality>0) {
+		/* XXX Fragment if required */
+		st->routes[best_match]->deliver(
+		    st->routes[best_match]->dst, buf);
+		st->routes[best_match]->outcount++;
+		BUF_ASSERT_FREE(buf);
+	    } else {
+		/* Generate ICMP destination unreachable */
+		netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+				    ICMP_CODE_NET_UNREACHABLE); /* client==NULL */
+		BUF_FREE(buf);
+	    }
 	}
     }
     BUF_ASSERT_FREE(buf);
@@ -721,14 +722,15 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 	for (i=0; i<st->n_clients; i++) {
 	    netlink_output_subnets(st,c,st->routes[i]->subnets);
 	    Message(c,"-> tunnel %s (%s,mtu %d,%s routes,%s,"
-		    "quality %d,use %d)\n",
+		    "quality %d,use %d,pri %lu)\n",
 		    st->routes[i]->name,
 		    st->routes[i]->up?"up":"down",
 		    st->routes[i]->mtu,
 		    st->routes[i]->options&OPT_SOFTROUTE?"soft":"hard",
 		    st->routes[i]->options&OPT_ALLOWROUTE?"free":"restricted",
 		    st->routes[i]->link_quality,
-		    st->routes[i]->outcount);
+		    st->routes[i]->outcount,
+		    (unsigned long)st->routes[i]->priority);
 	}
 	net=ipaddr_to_string(st->secnet_address);
 	Message(c,"%s/32 -> netlink \"%s\" (use %d)\n",
