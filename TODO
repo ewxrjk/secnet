@@ -1,43 +1,41 @@
-configure.in: done
-
 Makefile.in: autodep stuff
-
-conffile.c: done
 
 dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
-netlink.c: done
+netlink.c: investigate why 'default' routes don't appear to work
+(reported by JDA).
 
-slip.c: done. Detect failure of userv-ipif to start.
+slip.c: detect failure of userv-ipif to start.
 
 tun.c: jdamery reports tun-old code works on Linux-2.2.
-Unresolved problem with ioctl(TUNSETIFF) sometimes return EINVAL.
+Unresolved problem with ioctl(TUNSETIFF) sometimes returning EINVAL, seems
+to be related to early 2.4.x (x<=5) series kernels. 2.4.9 and above seem ok;
+2.4.[678] untested.
 
 random.c: test
 
-resolver.c: done
-
 rsa.c: check padding type, change format to binary from decimal string
 (without introducing endianness problems)
-
-secnet.c: done
 
 site.c: the site_incoming() routing could be implemented much more
 cleanly using a table. There's still quite a lot of redundancy in this
 file. Abandon key exchanges when a bad packet is received. Modify
 protocol to include version fields, as described in the NOTES file.
 
-transform.c: done. JDA reports endianness problems are fixed.
-
-udp.c: done
+transform.c: make generic
 
 util.c: sort out logging
+
+sha1.c: test
 
 General: separate the transforms in transform.c into multiple parts,
 which can then be combined in the configuration file.  Will allow the
 user to plug in different block ciphers, invent an authenticity-only
 mode, etc.
+
+Signal handling! Really just cope with SIGCHLD and SIGTERM. Possibly
+use SIGUSR1/2 for prodding things.
 
 Write scripts to generate the 'real' sites file from a less-expressive
 version that's more easily checked by external tools.

@@ -4,13 +4,15 @@ Like the first (1995/6) version, we're tunnelling IP packets inside
 UDP packets. To defeat various restrictions which may be imposed on us
 by network providers (like the prohibition of incoming TCP
 connections) we're sticking with UDP for everything this time,
-including key setup.
+including key setup. This means we have to handle retries, etc.
 
 Other new features include being able to deal with subnets hidden
 behind changing 'real' IP addresses, and the ability to choose
 algorithms and keys per pair of communicating sites.
 
 ** Configuration and structure
+
+[The original plan]
 
 The network is made up from a number of 'sites'. These are collections
 of machines with private IP addresses. The new secnet code runs on
@@ -21,6 +23,95 @@ Each end of a tunnel is identified by a name. Often it will be
 convenient for every gateway machine to use the same name for each
 tunnel endpoint, but this is not vital. Individual tunnels are
 identified by their two endpoint names.
+
+[The new plan]
+
+It appears that people want to be able to use secnet on mobile
+machines like laptops as well as to interconnect sites. In particular,
+they want to be able to use their laptop in three situations:
+
+1) connected to their internal LAN by a cable; no tunnel involved
+2) connected via wireless, using a tunnel to protect traffic
+3) connected to some other network, using a tunnel to access the
+internal LAN.
+
+They want the laptop to keep the same IP address all the time.
+
+Case (1) is simple.
+
+Case (2) requires that the laptop run a copy of secnet, and have a
+tunnel configured between it and the main internal LAN default
+gateway. secnet must support the concept of a 'soft' tunnel where it
+adds a route and causes the gateway to do proxy-ARP when the tunnel is
+up, and removes the route again when the tunnel is down.
+
+The usual prohibition of packets coming in from one tunnel and going
+out another must be relaxed in this case (in particular, the
+destination address of packets from these 'mobile station' tunnels may
+be another tunnel as well as the host).
+
+(Quick sanity check: if chiark's secnet address was in
+192.168.73.0/24, would this work properly? Yes, because there will be
+an explicit route to it, and proxy ARP will be done for it. Do we want
+packets from the chiark tunnel to be able to go out along other
+routes? No. So, spotting a 'local' address in a remote site's list of
+networks isn't sufficient to switch on routing for a site. We need an
+explicit option. NB packets may be routed if the source OR the
+destination is marked as allowing routing [otherwise packets couldn't
+get back from eg. chiark to a laptop at greenend]).
+
+** VPN-level configuration
+
+At a high level we just want to be able to indicate which groups of
+users can claim ownership of which ranges of IP addresses. Assuming
+these users (or their representatives) all have accounts on a single
+machine, we can automate the submission of keys and other information
+to make up a 'sites' file for the entire VPN.
+
+The distributed 'sites' file should be in a more restricted format
+than the secnet configuration file, to prevent attackers who manage to
+distribute bogus sites files from taking over their victim's machines.
+
+The distributed 'sites' file is read one line at a time. Each line
+consists of a keyword followed by other information. It defines a
+number of VPNs; within each VPN it defines a number of locations;
+within each location it defines a number of sites. These VPNs,
+locations and sites are turned into a secnet.conf file fragment using
+a script.
+
+Some keywords are valid at any 'level' of the distributed 'sites'
+file, indicating defaults.
+
+The keywords are:
+
+vpn n: we are now declaring information to do with VPN 'n'. Must come first.
+
+location n: we are now declaring information for location 'n'.
+
+site n: we are now declaring information for site 'n'.
+endsite: we're finished declaring information for the current site
+
+restrict-nets a b c ...: restrict the allowable 'networks' for the current
+  level to those in this list.
+end-definitions: prevent definition of further vpns and locations, and
+  modification of defaults at VPN level
+
+dh x y: the current VPN uses the specified group; x=modulus, y=generator
+
+hash x: which hash function to use. Valid options are 'md5' and 'sha1'.
+
+admin n: administrator email address for current level
+
+key-lifetime n
+setup-retries n
+setup-timeout n
+wait-time n
+renegotiate-time n
+
+address a b: a=dnsname, b=port
+networks a b c ...
+pubkey x y z: x=keylen, y=encryption key, z=modulus
+mobile: declare this to be a 'mobile' site
 
 ** Protocols
 

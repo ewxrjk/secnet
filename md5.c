@@ -279,7 +279,7 @@ void md5_module(dict_t *dict)
     uint8_t digest[16];
     int i;
 
-    st=safe_malloc(sizeof(*st),"netlink_module");
+    st=safe_malloc(sizeof(*st),"md5_module");
     st->cl.description="md5";
     st->cl.type=CL_HASH;
     st->cl.apply=NULL;

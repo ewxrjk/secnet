@@ -62,6 +62,10 @@ static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
 
     msize=mpz_sizeinbase(&st->n, 16);
 
+    if (datalen*2+4>=msize) {
+	fatal("rsa_sign: message too big\n");
+    }
+
     strcpy(buff,"0001");
 
     for (i=0; i<datalen; i++) {
@@ -69,7 +73,7 @@ static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
 	buff[5+i*2]=hexchars[data[i]&0xf];
     }
     buff[4+datalen*2]=0;
-
+    
     for (i=datalen*2+4; i<msize; i++)
 	buff[i]='f';
 

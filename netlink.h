@@ -11,13 +11,14 @@ struct netlink_client {
     void *dst;
     string_t name;
     uint32_t link_quality;
-    bool_t hard_routes;
+    uint32_t options;
     struct netlink_client *next;
 };
 
 struct netlink_route {
     struct subnet net;
     bool_t hard;
+    bool_t allow_route;
     bool_t up;
     bool_t kup;
     struct netlink_client *c;

@@ -145,15 +145,26 @@ XXX TODO
 Defines:
   adns (closure => resolver closure)
 
+adns: dict argument
+  config (string): optional, a resolv.conf for ADNS to use
+
 ** random
 
 Defines:
   randomsrc (closure => randomsrc closure)
 
+randomsrc: string[,bool]
+  arg1: filename of random source
+  arg2: if True then source is blocking
+
 ** udp
 
 Defines:
   udp (closure => comm closure)
+
+udp: dict argument
+  port (integer): UDP port to listen and send on
+  buffer (buffer closure): buffer for incoming packets
 
 ** util
 
@@ -166,6 +177,51 @@ Defines:
 Defines:
   site (closure => site closure)
 
+site: dict argument
+  local-name (string): this site's name for itself
+  name (string): the name of the site's peer
+  netlink (netlink closure)
+  comm (comm closure)
+  resolver (resolver closure)
+  random (randomsrc closure)
+  local-key (rsaprivkey closure)
+  address (string): optional, DNS name used to find our peer
+  port (integer): mandatory if 'address' is specified: the port used
+    to contact our peer
+  networks (string list): networks that our peer may claim traffic for
+  key (rsapubkey closure): our peer's public key
+  transform (transform closure): how to mangle packets sent between sites
+  dh (dh closure)
+  hash (hash closure)
+  key-lifetime (integer): max lifetime of a session key, in ms [one hour]
+  setup-retries (integer): max number of times to transmit a key negotiation
+    packet [5]
+  setup-timeout (integer): time between retransmissions of key negotiation
+    packets, in ms [1000]
+  wait-time (integer): after failed key setup, wait this long (in ms) before
+    allowing another attempt [20000]
+  renegotiate-time (integer): if we see traffic on the link after this time
+    then renegotiate another session key immediately [depends on key-lifetime]
+  keepalive (bool): if True then attempt always to keep a valid session key
+  log-events (string list): types of events to log for this site
+    unexpected: unexpected key setup packets (may be late retransmissions)
+    setup-init: start of attempt to setup a session key
+    setup-timeout: failure of attempt to setup a session key, through timeout
+    activate-key: activation of a new session key
+    timeout-key: deletion of current session key through age
+    security: anything potentially suspicious
+    state-change: steps in the key setup protocol
+    packet-drop: whenever we throw away an outgoing packet
+    dump-packets: every key setup packet we see
+    errors: failure of name resolution, internal errors
+    all: everything (too much!)
+  netlink-options (string list): options to pass to netlink device when
+    registering remote networks
+    soft: create 'soft' routes that go away when there's no key established
+      with the peer
+    allow-route: allow packets from our peer to be sent down other tunnels,
+      as well as to the host
+
 ** transform
 
 Defines:
@@ -174,10 +230,51 @@ Defines:
 ** netlink
 
 Defines:
+  null-netlink (closure => netlink closure)
+
+null-netlink: dict argument
+  name (string): name for netlink device, used in log messages
+  networks (string list): networks on the host side of the netlink device
+  exclude-remote-networks (string list): networks that may never be claimed
+    by any remote site using this netlink device
+  local-address (string): IP address of host's tunnel interface
+  secnet-address (string): IP address of this netlink device
+  mtu (integer): MTU of host's tunnel interface
+
+** slip
+
+Defines:
   userv-ipif (closure => netlink closure)
+
+userv-ipif: dict argument
+  userv-path (string): optional, where to find userv ["userv"]
+  service-user (string): optional, username for userv-ipif service ["root"]
+  service-name (string): optional, name of userv-ipif service ["ipif"]
+  buffer (buffer closure): buffer for assembly of host->secnet packets
+ plus generic netlink options, as for 'null-netlink'
+
+** tun
+
+Defines:
   tun (closure => netlink closure) [only on linux-2.4]
   tun-old (closure => netlink closure)
-  null-netlink (closure => netlink closure)
+
+tun: dict argument
+  device (string): optional, path of TUN/TAP device file ["/dev/net/tun"]
+  interface (string): optional, name of tunnel network interface
+  ifconfig-path (string): optional, path to ifconfig command
+  route-path (string): optional, path to route command
+  buffer (buffer closure): buffer for host->secnet packets
+ plus generic netlink options, as for 'null-netlink'
+
+tun-old: dict argument
+  device (string): optional, path of TUN/TAP device file ["/dev/tun*"]
+  interface (string): optional, name of tunnel network interface
+  interface-search (bool): optional, whether to search for a free tunnel
+    interface (True if 'device' not specified, otherwise False)
+  ifconfig-path (string): optional, path to ifconfig command
+  route-path (string): optional, path to route command
+ plus generic netlink options, as for 'null-netlink'
 
 ** rsa
 
@@ -185,12 +282,30 @@ Defines:
   rsa-private (closure => rsaprivkey closure)
   rsa-public (closure => rsapubkey closure)
 
+rsa-private: string[,bool]
+  arg1: filename of SSH private key file (version 1, no password)
+  arg2: whether to check that the key is usable [default True]
+
+rsa-public: string,string
+  arg1: encryption key (decimal)
+  arg2: modulus (decimal)
+
 ** dh
 
 Defines:
   diffie-hellman (closure => dh closure)
 
+diffie-hellman: string,string[,bool]
+  arg1: modulus (hex)
+  arg2: generator (hex)
+  arg3: whether to check that the modulus is prime [default True]
+
 ** md5
 
 Defines:
   md5 (hash closure)
+
+** sha1
+
+Defines:
+  sha1 (hash closure)

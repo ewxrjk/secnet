@@ -1,3 +1,6 @@
 Stephen Early <steve@greenend.org.uk> - original author
 Ross Anderson, Eli Biham, Lars Knudsen - serpent
 Colin Plumb, Ian Jackson - MD5 implementation
+Steve Reid <sreid@sea-to-sky.net>, James H. Brown <jbrown@burgoyne.com> - 
+  SHA1 implementation
+Cendio Systems AB - ipaddr.py

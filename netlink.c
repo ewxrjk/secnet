@@ -274,6 +274,12 @@ static void netlink_packet_deliver(struct netlink *st,
 	return;
     }
     
+    /* XXX we're going to need an extra value 'allow_route' for the
+       source of the packet. It's always True for packets from the
+       host. For packets from tunnels, we consult the client
+       options. If !allow_route and the destination is a tunnel that
+       also doesn't allow routing, we must reject the packet with an
+       'administratively prohibited' or something similar ICMP. */
     if (!client) {
 	/* Origin of packet is host or secnet. Might be for a tunnel. */
 	best_quality=0;
@@ -323,6 +329,9 @@ static void netlink_packet_deliver(struct netlink *st,
 	}
     } else { /* client is set */
 	/* We know the origin is a tunnel - packet must be for the host */
+	/* XXX THIS IS NOT NECESSARILY TRUE, AND NEEDS FIXING */
+	/* THIS FUNCTION MUST JUST DELIVER THE PACKET: IT MUST ASSUME
+	   THE PACKET HAS ALREADY BEEN CHECKED */
 	if (subnet_matches_list(&st->networks,dest)) {
 	    st->deliver_to_host(st->dst,NULL,buf);
 	    BUF_ASSERT_FREE(buf);
@@ -456,6 +465,7 @@ static void netlink_incoming(void *sst, void *cid, struct buffer_if *buf)
 	return;
     }
     if (client) {
+	/* Check for free routing */
 	if (!subnet_matches_list(&st->networks,dest)) {
 	    string_t s,d;
 	    s=ipaddr_to_string(source);
@@ -502,7 +512,7 @@ static void netlink_set_quality(void *sst, void *cid, uint32_t quality)
 static void *netlink_regnets(void *sst, struct subnet_list *nets,
 			     netlink_deliver_fn *deliver, void *dst,
 			     uint32_t max_start_pad, uint32_t max_end_pad,
-			     bool_t hard_routes, string_t client_name)
+			     uint32_t options, string_t client_name)
 {
     struct netlink *st=sst;
     struct netlink_client *c;
@@ -511,31 +521,19 @@ static void *netlink_regnets(void *sst, struct subnet_list *nets,
 	    "max_start_pad=%d, max_end_pad=%d\n",
 	    nets->entries,max_start_pad,max_end_pad);
 
-    if (!hard_routes && !st->set_route) {
+    if ((options&NETLINK_OPTION_SOFTROUTE) && !st->set_route) {
 	Message(M_ERROR,"%s: this netlink device does not support "
 		"soft routes.\n");
 	return NULL;
     }
 
-    if (!hard_routes) {
+    if (options&NETLINK_OPTION_SOFTROUTE) {
 	/* XXX for now we assume that soft routes require root privilege;
-	   this may not always be true. */
+	   this may not always be true. The device driver can tell us. */
 	require_root_privileges=True;
 	require_root_privileges_explanation="netlink: soft routes";
     }
 
-#if 0
-    /* XXX POLICY: do we check nets against local networks?  If we do,
-       that prevents things like laptop tunnels working.  Perhaps we
-       can have a configuration option for this.  Or, if the admin
-       really doesn't want remote sites to be able to claim local
-       addresses, he can list them in exclude-remote-networks. */
-    if (subnet_lists_intersect(&st->networks,nets)) {
-	Message(M_ERROR,"%s: site %s specifies networks that "
-		"intersect with our local networks\n",st->name,client_name);
-	return False;
-    }
-#endif /* 0 */
     /* Check that nets do not intersect st->exclude_remote_networks;
        refuse to register if they do. */
     if (subnet_lists_intersect(&st->exclude_remote_networks,nets)) {
@@ -550,7 +548,7 @@ static void *netlink_regnets(void *sst, struct subnet_list *nets,
     c->deliver=deliver;
     c->dst=dst;
     c->name=client_name; /* XXX copy it? */
-    c->hard_routes=hard_routes;
+    c->options=options;
     c->link_quality=LINK_QUALITY_DOWN;
     c->next=st->clients;
     st->clients=c;
@@ -569,8 +567,10 @@ static void netlink_dump_routes(struct netlink *st)
     Message(M_INFO,"%s: routing table:\n",st->name);
     for (i=0; i<st->n_routes; i++) {
 	net=subnet_to_string(&st->routes[i].net);
-	Message(M_INFO,"%s -> tunnel %s (%s,%s)\n",net,st->routes[i].c->name,
+	Message(M_INFO,"%s -> tunnel %s (%s,%s route,%s)\n",net,
+		st->routes[i].c->name,
 		st->routes[i].hard?"hard":"soft",
+		st->routes[i].allow_route?"free":"restricted",
 		st->routes[i].up?"up":"down");
 	free(net);
     }
@@ -610,10 +610,13 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
 	for (j=0; j<c->networks->entries; j++) {
 	    st->routes[i].net=c->networks->list[j];
 	    st->routes[i].c=c;
-	    st->routes[i].up=c->hard_routes; /* Hard routes are always up;
-						soft routes default to down */
+	    /* Hard routes are always up;
+	       soft routes default to down */
+	    st->routes[i].up=c->options&NETLINK_OPTION_SOFTROUTE?False:True;
 	    st->routes[i].kup=False;
-	    st->routes[i].hard=c->hard_routes;
+	    st->routes[i].hard=c->options&NETLINK_OPTION_SOFTROUTE?False:True;
+	    st->routes[i].allow_route=c->options&NETLINK_OPTION_ALLOW_ROUTE?
+		True:False;
 	    i++;
 	}
     }

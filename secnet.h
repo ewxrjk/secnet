@@ -387,10 +387,12 @@ typedef void netlink_link_quality_fn(void *st, void *cid, uint32_t quality);
    client identifier.  'hard_route' indicates whether the routes being
    registered are permanent (hard) or temporary (soft); some types of
    netlink device can only cope with hard routes. */
+#define NETLINK_OPTION_SOFTROUTE    1
+#define NETLINK_OPTION_ALLOW_ROUTE  2
 typedef void *netlink_regnets_fn(void *st, struct subnet_list *networks,
 				 netlink_deliver_fn *deliver, void *dst,
 				 uint32_t max_start_pad, uint32_t max_end_pad,
-				 bool_t hard_routes, string_t client_name);
+				 uint32_t options, string_t client_name);
 
 struct netlink_if {
     void *st;

@@ -15,7 +15,7 @@
 #define DEFAULT_KEY_RENEGOTIATE_GAP 300000 /* Five minutes */
 #define DEFAULT_SETUP_RETRIES 5
 #define DEFAULT_SETUP_TIMEOUT 1000
-#define DEFAULT_WAIT_TIME 10000
+#define DEFAULT_WAIT_TIME 20000
 
 /* Each site can be in one of several possible states. */
 
@@ -64,23 +64,21 @@
 #define SITE_SENTMSG5 7
 #define SITE_WAIT     8
 
-#if 0
 static string_t state_name(uint32_t state)
 {
     switch (state) {
-    case 0: return "SITE_STOP";
-    case 1: return "SITE_RUN";
-    case 2: return "SITE_RESOLVE";
-    case 3: return "SITE_SENTMSG1";
-    case 4: return "SITE_SENTMSG2";
-    case 5: return "SITE_SENTMSG3";
-    case 6: return "SITE_SENTMSG4";
-    case 7: return "SITE_SENTMSG5";
-    case 8: return "SITE_WAIT";
+    case 0: return "STOP";
+    case 1: return "RUN";
+    case 2: return "RESOLVE";
+    case 3: return "SENTMSG1";
+    case 4: return "SENTMSG2";
+    case 5: return "SENTMSG3";
+    case 6: return "SENTMSG4";
+    case 7: return "SENTMSG5";
+    case 8: return "WAIT";
     default: return "*bad state*";
     }
 }
-#endif /* 0 */
 
 #define LABEL_MSG0 0x00020200
 #define LABEL_MSG1 0x01010101
@@ -119,6 +117,12 @@ static struct flagstr log_event_table[]={
     { "errors", LOG_ERROR },
     { "all", 0xffffffff },
     { NULL, 0 }
+};
+
+static struct flagstr netlink_option_table[]={
+    { "soft", NETLINK_OPTION_SOFTROUTE },
+    { "allow-route", NETLINK_OPTION_ALLOW_ROUTE },
+    { NULL, 0}
 };
 
 struct site {
@@ -653,7 +657,8 @@ static bool_t send_msg(struct site *st)
 	st->retries--;
 	return True;
     } else {
-	slog(st,LOG_SETUP_TIMEOUT,"timed out sending key setup packet");
+	slog(st,LOG_SETUP_TIMEOUT,"timed out sending key setup packet "
+	    "(in state %s)",state_name(st->state));
 	enter_state_wait(st);
 	return False;
     }
@@ -1121,6 +1126,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct site *st;
     item_t *item;
     dict_t *dict;
+    uint32_t netlink_options;
 
     st=safe_malloc(sizeof(*st),"site_apply");
 
@@ -1156,9 +1162,10 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
     st->privkey=find_cl_if(dict,"local-key",CL_RSAPRIVKEY,True,"site",loc);
-    st->remoteport=dict_read_number(dict,"port",True,"site",loc,0);
-
     st->address=dict_read_string(dict, "address", False, "site", loc);
+    if (st->address)
+	st->remoteport=dict_read_number(dict,"port",True,"site",loc,0);
+    else st->remoteport=0;
     dict_read_subnet_list(dict, "networks", True, "site", loc,
 			  &st->remotenets);
     st->pubkey=find_cl_if(dict,"key",CL_RSAPUBKEY,True,"site",loc);
@@ -1193,12 +1200,14 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
 				       log_event_table,"site");
 
+    netlink_options=string_list_to_word(dict_lookup(dict,"netlink-options"),
+					netlink_option_table,"site");
+
     st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
 			    "site_apply");
     sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
 
     /* The information we expect to see in incoming messages of type 1 */
-    /* XXX fix this bit for unaligned access */
     st->setupsiglen=strlen(st->remotename)+strlen(st->localname)+8;
     st->setupsig=safe_malloc(st->setupsiglen,"site_apply");
     put_uint32(st->setupsig+0,LABEL_MSG1);
@@ -1228,7 +1237,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 					 site_outgoing, st,
 					 st->transform->max_start_pad+(4*4),
 					 st->transform->max_end_pad,
-					 (st->address!=NULL), st->tunname);
+					 netlink_options, st->tunname);
     if (!st->netlink_cid) {
 	Message(M_WARNING,"%s: netlink device did not let us register "
 		"our remote networks. This site will not start.\n",

@@ -551,10 +551,28 @@ list_t *list_new(void)
     return NULL;
 }
 
+list_t *list_copy(list_t *a)
+{
+    list_t *r, *i, *b, *l;
+
+    if (!a) return NULL;
+    l=NULL;
+    r=NULL;
+    for (i=a; i; i=i->next) {
+	b=safe_malloc(sizeof(*b),"list_copy");
+	if (l) l->next=b; else r=b;
+	l=b;
+	b->item=i->item;
+	b->next=NULL;
+    }
+    return r;
+}
+
 list_t *list_append_list(list_t *a, list_t *b)
 {
     list_t *i;
 
+    b=list_copy(b);
     if (!a) return b;
     for (i=a; i->next; i=i->next);
     i->next=b;
