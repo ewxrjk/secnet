@@ -1,8 +1,8 @@
-configure.in: cut down to just the required tests. Support for installation.
+configure.in: done
 
-Makefile.in: support for installation.
+Makefile.in: autodep stuff
 
-conffile.c: deal with line numbers from included conffiles correctly
+conffile.c: done
 
 dh.c: change format to binary from decimal string
 

@@ -11,7 +11,12 @@
 #include "util.h"
 
 #define MAX_INCLUDE_DEPTH 10
-YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+struct include_stack_item {
+	YY_BUFFER_STATE bst;
+	uint32_t lineno;
+	string_t file;
+};
+struct include_stack_item include_stack[MAX_INCLUDE_DEPTH];
 int include_stack_ptr=0;
 
 uint32_t config_lineno=0;
@@ -64,12 +69,16 @@ include			BEGIN(incl);
 	if (include_stack_ptr >= MAX_INCLUDE_DEPTH) {
 		fatal("Configuration file includes nested too deeply");
 	}
-	include_stack[include_stack_ptr++]=
-		YY_CURRENT_BUFFER;
+	include_stack[include_stack_ptr].bst=YY_CURRENT_BUFFER;
+	include_stack[include_stack_ptr].lineno=config_lineno;
+	include_stack[include_stack_ptr].file=config_file;
+	include_stack_ptr++;
 	yyin=fopen(yytext,"r");
 	if (!yyin) {
 		fatal("Can't open included file %s",yytext);
 	}
+	config_lineno=1;
+	config_file=safe_strdup(yytext,"conffile.fl/include");
 	yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 	BEGIN(INITIAL);
 	}
@@ -80,7 +89,9 @@ include			BEGIN(incl);
 	else {
 		fclose(yyin);
 		yy_delete_buffer(YY_CURRENT_BUFFER);
-		yy_switch_to_buffer(include_stack[include_stack_ptr]);
+		yy_switch_to_buffer(include_stack[include_stack_ptr].bst);
+		config_lineno=include_stack[include_stack_ptr].lineno;
+		config_file=include_stack[include_stack_ptr].file;
 	}
 	}
 \"[^\"]*\"		yylval=stringnode(yytext); return TOK_STRING;

@@ -1,9 +1,10 @@
-#* Design of new, multi-subnet secnet protocol
+* Design of new, multi-subnet secnet protocol
 
-Like the first version, we're tunnelling IP packets inside UDP
-packets. To defeat various restrictions which may be imposed on us by
-network providers (like the prohibition of incoming TCP connections)
-we're sticking with UDP for everything this time, including key setup.
+Like the first (1995/6) version, we're tunnelling IP packets inside
+UDP packets. To defeat various restrictions which may be imposed on us
+by network providers (like the prohibition of incoming TCP
+connections) we're sticking with UDP for everything this time,
+including key setup.
 
 Other new features include being able to deal with subnets hidden
 behind changing 'real' IP addresses, and the ability to choose
@@ -20,62 +21,6 @@ Each end of a tunnel is identified by a name. Often it will be
 convenient for every gateway machine to use the same name for each
 tunnel endpoint, but this is not vital. Individual tunnels are
 identified by their two endpoint names.
-
-
-The configuration is held in memory as a data structure as follows:
-
-The root is a Dictionary. Dictionaries hold (key,value) pairs. Keys
-are atoms. Values are lists, dictionaries or closures. Lists can hold
-the following types: string, number.
-
-Closures cannot be constructed directly; they are added to the
-'default' dictionary before the configuration file is read. Invocation
-of a closure can return any type of value.
-
-
-Configuration file format: the file describes a dictionary.
-
-key value;
-
-value is item[,item...]
-
-item can be "string", number, path (looks up in dictionary),
-{dictionary}, value(value), value{dictionary}.  If item is a list it
-is copied into the list - we can't have lists of lists.
-
-A path is [/]key[\[index\]][/key[\[index\]]...], defining a lookup
-from the current dictionary (or parents) or the root. If a key refers
-to a list of more than one item then an index number (base 0) in
-square brackets can be used to specify the list item number.
-
-Items of the form value1(value2) invoke executable value1 with an
-argument of value2. The return value can be a string or dictionary,
-but not a list. (Invocation happens after the entire configuration
-file has been read.)
-
-Items of the form value{dict} invoke executable value with an argument
-of a single-element list, containing dict. It's just syntactic sugar
-for value({dict}).
-
-
-When a key is used (rather than defined) it is looked up in the
-current dictionary, and if it isn't found it is looked up in the
-(lexical) parent, until the root is reached. 
-
-
-
-
-What sorts of crypto-related things do we need to define?
-
-sources of randomness
-block algorithms
-block cipher modes?
-hash functions
-padding functions
-public key signature algorithms
-public key crypto key stores
-key setup algorithms
-
 
 ** Protocols
 
@@ -172,6 +117,8 @@ retransmit or confirm reception. It is suggested that this message be
 sent when a key times out, or the tunnel is forcibly terminated for
 some reason.
 
+XXX not yet implemented.
+
 8) i?,i?,NAK/msg8
 
 If the link-layer can't work out what to do with a packet (session has
@@ -186,8 +133,11 @@ The attacker can of course forge NAKs since they aren't protected. But
 if they can only forge packets then they won't be able to stop the
 ping/pong working. Trust in NAKs can be rate-limited...
 
-Alternative idea: if you receive a packet you can't decode, because
-there's no key established, then initiate key setup...
+Alternative idea (which is actually implemented): if you receive a
+packet you can't decode, because there's no key established, then
+initiate key setup...
+
+Keepalives are probably a good idea.
 
 **** Protocol sub-goal 3: send a packet
 

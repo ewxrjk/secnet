@@ -1,6 +1,6 @@
 INSTALLATION INSTRUCTIONS for SECNET
 
-USE AT YOUR OWN RISK. THIS IS ALPHA QUALITY SOFTWARE. I DO NOT
+USE AT YOUR OWN RISK.  THIS IS ALPHA TEST SOFTWARE.  I DO NOT
 GUARANTEE THAT THERE WILL BE PROTOCOL COMPATIBILITY BETWEEN DIFFERENT
 VERSIONS.
 
@@ -12,14 +12,14 @@ Ensure that you have libgmp2-dev and adns installed (and bison and
 flex, and for that matter gcc...).
 
 If you intend to configure secnet to obtain packets from the kernel
-through userv-ipif, install and configure userv-ipif. It is part of
+through userv-ipif, install and configure userv-ipif.  It is part of
 userv-utils, available from ftp.chiark.greenend.org.uk in
 /users/ian/userv
 
 If you intend to configure secnet to obtain packets from the kernel
 using the universal TUN/TAP driver, make sure it's configured in your
-kernel (it's under "network device support" in Linux) and that you've
-created the appropriate device files; see
+kernel (it's under "network device support" in Linux-2.4) and that
+you've created the appropriate device files; see
 linux/Documentation/networking/tuntap.txt
 
 If you're using TUN/TAP on a platform other than Linux-2.4, see
@@ -27,36 +27,34 @@ http://vtun.sourceforge.net/tun/
 
 Note than TUN comes in two flavours, one (called 'tun' in the secnet
 config file) which has only one device file (usually /dev/net/tun) and
-the other (called 'tun-old') which has many device files
-(/dev/tun*). Linux-2.4 has new-style TUN, Linux-2.2, BSD and Solaris
-have old-style TUN. Currently only new-style TUN has been tested with
-secnet.
+the other (called 'tun-old') which has many device files (/dev/tun*).
+Linux-2.4 has new-style TUN, Linux-2.2, BSD and Solaris have old-style
+TUN.  Currently only new-style TUN has been tested with secnet.
 
 ** System and network configuration
 
-If you intend to start secnet as root, I suggest you create an userid
-for it to run as once it's ready to drop its privileges. Example (on
+If you intend to start secnet as root, I suggest you create a userid
+for it to run as once it's ready to drop its privileges.  Example (on
 Debian):
 # adduser --system --no-create-home secnet
 
-You will need to allocate two IP addresses for use by secnet. One will
-be for the tunnel interface on your tunnel endpoint machine (i.e. the
-address you see in 'ifconfig' when you look at the tunnel
-interface). The other will be for secnet itself. These addresses could
-possibly be allocated from the range used by your internal network: if
-you do this, you should think about providing appropriate proxy-ARP on
-the machine running secnet for the two addresses. Alternatively the
-addresses could be from some other range - this works well if the
-machine running secnet is the default route out of your network.
+You will need to allocate two IP addresses for use by secnet.  One
+will be for the tunnel interface on your tunnel endpoint machine (i.e.
+the address you see in 'ifconfig' when you look at the tunnel
+interface).  The other will be for secnet itself.  These addresses
+could possibly be allocated from the range used by your internal
+network: if you do this, you should think about providing appropriate
+proxy-ARP on the machine running secnet for the two addresses.
+Alternatively the addresses could be from some other range - this
+works well if the machine running secnet is the default route out of
+your network.
 
 http://www.ucam.org/cam-grin/ may be useful.
 
 Advanced users: secnet's IP address does not _have_ to be in the range
 of networks claimed by your end of the tunnel; it could be in the
-range of networks claimed by the other end. Doing this is confusing,
-but works (in the case where you can't get the administrator of the
-other end to allocate an IP address for his copy of secnet [hint hint
-Ian]).
+range of networks claimed by the other end.  Doing this is confusing,
+but works.
 
 * Installation
 
@@ -64,7 +62,7 @@ To install secnet do
 
 $ ./configure
 $ make
-# cp secnet /usr/local/sbin/secnet
+# make install
 # mkdir /etc/secnet
 # cp example.conf /etc/secnet/secnet.conf
 # cd /etc/secnet
@@ -74,53 +72,52 @@ $ make
 your current configuration file.)
 
 Generate a site file fragment for your site (see below), and submit it
-for inclusion in the vpn-sites file. Download the vpn-sites file to
+for inclusion in the vpn-sites file.  Download the vpn-sites file to
 /etc/secnet/sites - MAKE SURE YOU GET AN AUTHENTIC COPY because the
 sites file contains public keys for all the sites in the VPN.
 
 * Configuration
 
 Should be reasonably obvious - edit /etc/secnet/secnet.conf as
-prompted by the comments. XXX Fuller documentation of the
-configuration file format should be forthcoming in time. Its syntax is
-described in the README file at the moment.
+prompted by the comments.  XXX Fuller documentation of the
+configuration file format should be forthcoming in time.  Its syntax
+is described in the README file at the moment.
 
 * Constructing your site file fragment
 
 You need the following information:
 
-1.  a short name for your site, eg. "greenend". This is used to
+1. a short name for your site, eg.  "greenend".  This is used to
 identify your site in the vpn-sites file.
 
-2.  the name your site will use in the key setup protocol,
+2. the name your site will use in the key setup protocol,
 eg. "greenend" (these two will usually be similar or the same).
 
-3.  the DNS name of the machine that will be the "front-end" for your
-secnet installation. This will typically be the name of the gateway
-machine for your network, eg. sinister.dynamic.greenend.org.uk
+3. the DNS name of the machine that will be the "front-end" for your
+secnet installation.  This will typically be the name of the gateway
+machine for your network, eg.  sinister.dynamic.greenend.org.uk
 
 secnet does not actually have to run on this machine, as long as the
 machine can be configured to forward UDP packets to the machine that
 is running secnet.
 
-4.  the port number used to contact secnet at your site. This is the
+4. the port number used to contact secnet at your site.  This is the
 port number on the front-end machine, and does not necessarily have to
 match the port number on the machine running secnet.
 
-5.  the list of networks accessible at your site over the VPN.
+5. the list of networks accessible at your site over the VPN.
 
-6.  the public part of the RSA key you generated during installation
+6. the public part of the RSA key you generated during installation
 (in /etc/secnet/key.pub if you followed the installation
-instructions). This file contains three numbers and a comment on one
-line. The first number is the key length in bits, and can be
-ignored. The second number (typically small) is the encryption key
-'e', and the third number (large) is the modulus 'n'.
+instructions).  This file contains three numbers and a comment on one
+line.  The first number is the key length in bits, and can be ignored.
+The second number (typically small) is the encryption key 'e', and the
+third number (large) is the modulus 'n'.
 
 If you are running secnet on a particularly slow machine, you may like
 to specify a larger value for the key setup retry timeout than the
-default, to prevent unnecessary retransmissions of key setup
-packets. See the notes in the example configuration file for more on
-this.
+default, to prevent unnecessary retransmissions of key setup packets.
+See the notes in the example configuration file for more on this.
 
 The site file fragment should look something like this:
 

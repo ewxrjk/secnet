@@ -1,24 +1,59 @@
-.DUMMY:	all clean realclean dist install
+# Makefile for secnet
+# Copyright (C) 1995-2001 Stephen Early <steve@greenend.org.uk>
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+.PHONY:	all clean realclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.05
+VERSION:=0.06
 
 @SET_MAKE@
 
 srcdir:=@srcdir@
 VPATH:=@srcdir@
 
-CFLAGS:=@CFLAGS@ @DEFS@ -DVERSION=\"$(VERSION)\" -Wall -I.
+SHELL:=/bin/sh
+RM:=@RM@
+CC:=@CC@
+INSTALL:=@INSTALL@
+INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 
+CFLAGS:=@CFLAGS@ @DEFS@ -Wall -I.
 LDFLAGS:=@LDFLAGS@
-
 LDLIBS:=@LIBS@
+
+prefix:=@prefix@
+exec_prefix:=@exec_prefix@
+sbindir:=@sbindir@
+sysconfdir:=@sysconfdir@
+transform:=@program_transform_name@
 
 TARGETS:=secnet
 
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	resolver.o random.o udp.o site.o transform.o netlink.o rsa.o dh.o \
-	serpent.o md5.o
+	serpent.o md5.o version.o
+
+DISTFILES:=COPYING INSTALL Makefile.in NOTES README TODO conffile.c \
+	conffile.fl conffile.h conffile.y conffile_internal.h config.h.bot \
+	config.h.in config.h.top configure configure.in dh.c \
+	example-sites-file example.conf install.sh linux md5.c md5.h \
+	modules.c modules.h netlink.c random.c resolver.c rsa.c \
+	secnet.c secnet.h serpent.c serpent.h serpentsboxes.h \
+	site.c transform.c udp.c util.c util.h
 
 %.c:	%.y
 
@@ -28,11 +63,30 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 %.tab.c:	%.y
 	bison -d $<
 
-RM:=@RM@
 
 all:	$(TARGETS)
 
+Makefile: Makefile.in config.status
+	$(SHELL) config.status
+
+config.status: configure
+	$(srcdir)/configure --no-create
+
+$(OBJECTS): config.h secnet.h util.h
+conffile.o conffile.tab.o conffile.yy.o: conffile.h conffile_internal.h
+secnet.c: conffile.h
+md5.o: md5.h
+serpent.o transform.o: serpent.h
+serpent.o: serpentsboxes.h
+conffile.o: modules.h
+
 secnet:	$(OBJECTS)
+
+version.c: Makefile
+	echo "char version[]=\"secnet-$(VERSION)\";" >version.c
+
+install: all
+	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 
 clean:
 	$(RM) -f $(srcdir)/*.o $(srcdir)/*~ $(srcdir)/*.yy.c \
@@ -43,10 +97,14 @@ realclean:	clean
 	$(srcdir)/config.log $(srcdir)/config.status $(srcdir)/config.cache \
 	$(srcdir)/Makefile.bak core
 
-dist:	realclean
-	(cd .. ; ln -s $(PACKAGE) $(PACKAGE)-$(VERSION) ; tar hcf - \
-	$(PACKAGE)-$(VERSION) | \
-	gzip -9 > $(PACKAGE)-$(VERSION).tar.gz ; rm $(PACKAGE)-$(VERSION) )
+pfname:=$(PACKAGE)-$(VERSION)
+dist:
+	$(RM) -rf $(pfname)
+	mkdir $(pfname)
+	for i in $(DISTFILES) ; do ln -s ../$$i $(pfname)/ ; done
+	tar hcf ../$(pfname).tar $(pfname)
+	gzip -9f ../$(pfname).tar
+	$(RM) -rf $(pfname)
 
 conffile.yy.c:	conffile.fl conffile.tab.c
 conffile.tab.c:	conffile.y

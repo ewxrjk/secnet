@@ -4,7 +4,7 @@
  *
  */
 
-static char *version="secnet version " VERSION " $Date: 1996/03/13 22:27:41 $";
+extern char version[];
 
 #include <stdio.h>
 #include <string.h>
@@ -23,7 +23,6 @@ static char *version="secnet version " VERSION " $Date: 1996/03/13 22:27:41 $";
 #include "secnet.h"
 #include "util.h"
 #include "conffile.h"
-#include "modules.h"
 
 /* Command-line options (possibly config-file options too) */
 static char *configfile="/etc/secnet/secnet.conf";
@@ -156,7 +155,7 @@ static void setup(dict_t *config)
 	fatal("configuration does not include a system/log facility\n");
     }
     log=init_log(l);
-    log->log(log->st,LOG_DEBUG,"secnet " VERSION ": logging started");
+    log->log(log->st,LOG_DEBUG,"%s: logging started",version);
 
     /* Who are we supposed to run as? */
     userid=dict_read_string(system,"userid",False,"system",loc);
