@@ -182,6 +182,11 @@ i? is appropriate index for receiver
 Note that 'i' may be re-used from one session to the next, whereas 'n'
 is always fresh.
 
+The protocol version selection stuff is not yet implemented: I'm not
+yet convinced it's a good idea.  Instead, the initiator could try
+using its preferred protocol (which starts with a different magic
+number) and fall back if there's no reply.
+
 Messages:
 
 1) A->B: *,iA,msg1,A,B,protorange-A,nA

@@ -1,29 +1,3 @@
-/***************************************************************************
- *
- *              Part II Project, "A secure, private IP network"
- *              Stephen Early <sde1000@cam.ac.uk>
- *   
- *
- *     $RCSfile: rsa.c,v $
- *
- *  Description: RSA signature making and checking functions
- *
- *    Copyright: (C) Stephen Early 1995
- *
- *    $Revision: 1.1 $
- *
- *        $Date: 1996/05/16 18:40:14 $
- *
- *       $State: Exp $
- *
- ***************************************************************************/
-
-/* $Log: rsa.c,v $
- * Revision 1.1  1996/05/16 18:40:14  sde1000
- * Initial revision
- *
- */
-
 #include <stdio.h>
 #include <gmp.h>
 #include "secnet.h"

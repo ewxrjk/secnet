@@ -8,6 +8,80 @@ numbers / timestamps, etc. similar to IWJ's udptunnel
 Path-MTU discovery for each tunnel, and fragmentation/DF support in
 netlink code.
 
+Separation of device drivers from IP router code - driver produces a
+stream of packets (which has a tag indicating type and parameters).
+Router module can be connected to stream to multiplex it between
+different tunnels.
+
+Support for dynamic creation of streams/tunnels to cope with laptops,
+etc.
+
+See also file "TODO".
+
+* Planned for version 0.1.14
+
+RFC1812-compliance in netlink.c
+
+* New in version 0.1.13
+
+site.c code cleaned up; no externally visible changes
+
+secnet now calls setsid() after becoming a daemon.
+
+secnet now supports TUN on Solaris 2.5 and above (and possibly other
+STREAMS-based systems as well).
+
+The TUN code now tries to auto-detect the type of "TUN" in use
+(BSD-style, Linux-style or STREAMS-style).  If your configuration file
+specifies "tun-old" then it defaults to BSD-style; however, since
+"tun-old" will be removed in a future release, you should change your
+configuration file to specify "tun" and if there's a problem also
+specify the flavour in use.
+
+Example:
+netlink tun-old {
+	...
+};
+should be rewritten as
+netlink tun {
+	flavour "bsd";
+	...
+};
+
+The flavours currently defined are "bsd", "linux" and "streams".
+
+The TUN code can now be configured to configure interfaces and
+add/delete routes using one of several methods: invoking a
+"linux"-style ifconfig/route command, a "bsd"-style ifconfig/route
+command, "solaris-2.5"-style ifconfig/route command or calling ioctl()
+directly.  These methods can be selected using the "ifconfig-type" and
+"route-type" options.
+
+Example:
+netlink tun {
+	ifconfig-type "ioctl";
+	route-type "ioctl";
+	...
+};
+
+The ioctl-based method is now the default for Linux systems.
+
+Magic numbers used within secnet are now collected in the header file
+"magic.h".
+
+netlink now uses ICMP type=0 code=13 for 'administratively prohibited'
+instead of code 9. See RFC1812 section 5.2.7.1.
+
+The UDP comm module now supports a proxy server, "udpforward".  This
+runs on a machine which is directly accessible by secnet and which can
+send packets to appropriate destinations.  It's useful when the proxy
+machine doesn't support source- and destination-NAT.  The proxy server
+is specified using the "proxy" key in the UDP module configuration;
+parameters are IP address (string) and port number.
+
+Bugfix: ipset_to_subnet_list() in ipaddr.c now believed to work in all
+cases, including 0.0.0.0/0
+
 * New in version 0.1.12
 
 IMPORTANT: fix calculation of 'now' in secnet.c; necessary for correct

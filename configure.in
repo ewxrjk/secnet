@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(secnet.c)
 AC_CONFIG_HEADER(config.h)
 
-AC_REVISION($Id$)
+AC_REVISION($Id: configure.in,v 1.2 2001/12/06 17:36:27 steve Exp $)
 
 AC_LANG_C
 
@@ -13,7 +13,9 @@ AC_PROG_INSTALL
 AC_PATH_PROG(RM,rm)
 AC_STDC_HEADERS
 AC_CHECK_HEADERS(stdint.h inttypes.h)
+AC_CHECK_HEADERS(net/if.h net/route.h)
 AC_CHECK_HEADERS(linux/if.h)
+AC_CHECK_HEADERS(stropts.h sys/sockio.h net/if_tun.h)
 AC_C_BIGENDIAN
 AC_CHECK_SIZEOF(unsigned long long)
 AC_CHECK_SIZEOF(unsigned long)

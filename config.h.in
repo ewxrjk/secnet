@@ -1,4 +1,4 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+/* config.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
@@ -59,8 +59,23 @@
 /* Define if you have the <linux/if.h> header file.  */
 #undef HAVE_LINUX_IF_H
 
+/* Define if you have the <net/if.h> header file.  */
+#undef HAVE_NET_IF_H
+
+/* Define if you have the <net/if_tun.h> header file.  */
+#undef HAVE_NET_IF_TUN_H
+
+/* Define if you have the <net/route.h> header file.  */
+#undef HAVE_NET_ROUTE_H
+
 /* Define if you have the <stdint.h> header file.  */
 #undef HAVE_STDINT_H
+
+/* Define if you have the <stropts.h> header file.  */
+#undef HAVE_STROPTS_H
+
+/* Define if you have the <sys/sockio.h> header file.  */
+#undef HAVE_SYS_SOCKIO_H
 
 /* Define if you have the adns library (-ladns).  */
 #undef HAVE_LIBADNS

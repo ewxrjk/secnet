@@ -1,12 +1,101 @@
 /* User-kernel network link */
 
-/* Each netlink device is actually a router, with its own IP address.
-   We do things like decreasing the TTL and recalculating the header
-   checksum, generating ICMP, responding to pings, etc. */
+/* See RFCs 791, 792, 1123 and 1812 */
 
-/* This is where we have the anti-spoofing paranoia - before sending a
-   packet to the kernel we check that the tunnel it came over could
-   reasonably have produced it. */
+/* The netlink device is actually a router.  Tunnels are unnumbered
+   point-to-point lines (RFC1812 section 2.2.7); the router has a
+   single address (the 'router-id'). */
+
+/* This is where we currently have the anti-spoofing paranoia - before
+   sending a packet to the kernel we check that the tunnel it came
+   over could reasonably have produced it. */
+
+
+/* Points to note from RFC1812 (which may require changes in this
+   file):
+
+3.3.4 Maximum Transmission Unit - MTU
+
+   The MTU of each logical interface MUST be configurable within the
+   range of legal MTUs for the interface.
+
+   Many Link Layer protocols define a maximum frame size that may be
+   sent.  In such cases, a router MUST NOT allow an MTU to be set which
+   would allow sending of frames larger than those allowed by the Link
+   Layer protocol.  However, a router SHOULD be willing to receive a
+   packet as large as the maximum frame size even if that is larger than
+   the MTU.
+
+4.2.1  A router SHOULD count datagrams discarded.
+
+4.2.2.1 Source route options - we probably should implement processing
+of source routes, even though mostly the security policy will prevent
+their use.
+
+5.3.13.4 Source Route Options
+
+   A router MUST implement support for source route options in forwarded
+   packets.  A router MAY implement a configuration option that, when
+   enabled, causes all source-routed packets to be discarded.  However,
+   such an option MUST NOT be enabled by default.
+
+5.3.13.5 Record Route Option
+
+   Routers MUST support the Record Route option in forwarded packets.
+
+   A router MAY provide a configuration option that, if enabled, will
+   cause the router to ignore (i.e., pass through unchanged) Record
+   Route options in forwarded packets.  If provided, such an option MUST
+   default to enabling the record-route.  This option should not affect
+   the processing of Record Route options in datagrams received by the
+   router itself (in particular, Record Route options in ICMP echo
+   requests will still be processed according to Section [4.3.3.6]).
+
+5.3.13.6 Timestamp Option
+
+   Routers MUST support the timestamp option in forwarded packets.  A
+   timestamp value MUST follow the rules given [INTRO:2].
+
+   If the flags field = 3 (timestamp and prespecified address), the
+   router MUST add its timestamp if the next prespecified address
+   matches any of the router's IP addresses.  It is not necessary that
+   the prespecified address be either the address of the interface on
+   which the packet arrived or the address of the interface over which
+   it will be sent.
+
+
+4.2.2.7 Fragmentation: RFC 791 Section 3.2
+
+   Fragmentation, as described in [INTERNET:1], MUST be supported by a
+   router.
+
+4.2.2.8 Reassembly: RFC 791 Section 3.2
+
+   As specified in the corresponding section of [INTRO:2], a router MUST
+   support reassembly of datagrams that it delivers to itself.
+
+4.2.2.9 Time to Live: RFC 791 Section 3.2
+
+   Note in particular that a router MUST NOT check the TTL of a packet
+   except when forwarding it.
+
+   A router MUST NOT discard a datagram just because it was received
+   with TTL equal to zero or one; if it is to the router and otherwise
+   valid, the router MUST attempt to receive it.
+
+   On messages the router originates, the IP layer MUST provide a means
+   for the transport layer to set the TTL field of every datagram that
+   is sent.  When a fixed TTL value is used, it MUST be configurable.
+
+
+8.1 The Simple Network Management Protocol - SNMP
+8.1.1 SNMP Protocol Elements
+
+   Routers MUST be manageable by SNMP [MGT:3].  The SNMP MUST operate
+   using UDP/IP as its transport and network protocols.
+
+
+*/
 
 #include "secnet.h"
 #include "util.h"
@@ -16,6 +105,19 @@
 
 #define OPT_SOFTROUTE   1
 #define OPT_ALLOWROUTE  2
+
+#define ICMP_TYPE_ECHO_REPLY             0
+
+#define ICMP_TYPE_UNREACHABLE            3
+#define ICMP_CODE_NET_UNREACHABLE        0
+#define ICMP_CODE_PROTOCOL_UNREACHABLE   2
+#define ICMP_CODE_FRAGMENTATION_REQUIRED 4
+#define ICMP_CODE_NET_PROHIBITED        13
+
+#define ICMP_TYPE_ECHO_REQUEST           8
+
+#define ICMP_TYPE_TIME_EXCEEDED         11
+#define ICMP_CODE_TTL_EXCEEDED           0
 
 /* Generic IP checksum routine */
 static inline uint16_t ip_csum(uint8_t *iph,uint32_t count)
@@ -122,6 +224,13 @@ static void netlink_packet_deliver(struct netlink *st,
 				   struct netlink_client *client,
 				   struct buffer_if *buf);
 
+/* XXX RFC1812 4.3.2.5:
+   All other ICMP error messages (Destination Unreachable,
+   Redirect, Time Exceeded, and Parameter Problem) SHOULD have their
+   precedence value set to 6 (INTERNETWORK CONTROL) or 7 (NETWORK
+   CONTROL).  The IP Precedence value for these error messages MAY be
+   settable.
+   */
 static struct icmphdr *netlink_icmp_tmpl(struct netlink *st,
 					 uint32_t dest,uint16_t len)
 {
@@ -137,7 +246,7 @@ static struct icmphdr *netlink_icmp_tmpl(struct netlink *st,
     h->iph.tot_len=htons(len+(h->iph.ihl*4)+8);
     h->iph.id=0;
     h->iph.frag_off=0;
-    h->iph.ttl=255;
+    h->iph.ttl=255; /* XXX should be configurable */
     h->iph.protocol=1;
     h->iph.saddr=htonl(st->secnet_address);
     h->iph.daddr=htonl(dest);
@@ -206,6 +315,26 @@ static bool_t netlink_icmp_may_reply(struct buffer_if *buf)
 
 /* How much of the original IP packet do we include in its ICMP
    response? The header plus up to 64 bits. */
+
+/* XXX TODO RFC1812:
+4.3.2.3 Original Message Header
+
+   Historically, every ICMP error message has included the Internet
+   header and at least the first 8 data bytes of the datagram that
+   triggered the error.  This is no longer adequate, due to the use of
+   IP-in-IP tunneling and other technologies.  Therefore, the ICMP
+   datagram SHOULD contain as much of the original datagram as possible
+   without the length of the ICMP datagram exceeding 576 bytes.  The
+   returned IP header (and user data) MUST be identical to that which
+   was received, except that the router is not required to undo any
+   modifications to the IP header that are normally performed in
+   forwarding that were performed before the error was detected (e.g.,
+   decrementing the TTL, or updating options).  Note that the
+   requirements of Section [4.3.3.5] supersede this requirement in some
+   cases (i.e., for a Parameter Problem message, if the problem is in a
+   modified field, the router must undo the modification).  See Section
+   [4.3.3.5]).
+   */
 static uint16_t netlink_icmp_reply_len(struct buffer_if *buf)
 {
     struct iphdr *iph=(struct iphdr *)buf->start;
@@ -242,6 +371,7 @@ static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
 /*
  * RFC1122: 3.1.2.2 MUST silently discard any IP frame that fails the
  * checksum.
+ * RFC1812: 4.2.2.5 MUST discard messages containing invalid checksums.
  *
  * Is the datagram acceptable?
  *
@@ -344,10 +474,11 @@ static void netlink_packet_deliver(struct netlink *st,
 	    string_t s,d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
-	    Message(M_ERR,"%s: don't know where to deliver packet "
+	    Message(M_DEBUG,"%s: don't know where to deliver packet "
 		    "(s=%s, d=%s)\n", st->name, s, d);
 	    free(s); free(d);
-	    netlink_icmp_simple(st,buf,client,3,0);
+	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+				ICMP_CODE_NET_UNREACHABLE);
 	    BUF_FREE(buf);
 	}
     } else {
@@ -363,7 +494,8 @@ static void netlink_packet_deliver(struct netlink *st,
 		    st->name,s,d);
 	    free(s); free(d);
 		    
-	    netlink_icmp_simple(st,buf,client,3,9);
+	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+				ICMP_CODE_NET_PROHIBITED);
 	    BUF_FREE(buf);
 	}
 	if (best_quality>0) {
@@ -374,7 +506,8 @@ static void netlink_packet_deliver(struct netlink *st,
 	    BUF_ASSERT_FREE(buf);
 	} else {
 	    /* Generate ICMP destination unreachable */
-	    netlink_icmp_simple(st,buf,client,3,0); /* client==NULL */
+	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+				ICMP_CODE_NET_UNREACHABLE); /* client==NULL */
 	    BUF_FREE(buf);
 	}
     }
@@ -392,7 +525,8 @@ static void netlink_packet_forward(struct netlink *st,
     /* Packet has already been checked */
     if (iph->ttl<=1) {
 	/* Generate ICMP time exceeded */
-	netlink_icmp_simple(st,buf,client,11,0);
+	netlink_icmp_simple(st,buf,client,ICMP_TYPE_TIME_EXCEEDED,
+			    ICMP_CODE_TTL_EXCEEDED);
 	BUF_FREE(buf);
 	return;
     }
@@ -424,13 +558,13 @@ static void netlink_packet_local(struct netlink *st,
 
     if (h->iph.protocol==1) {
 	/* It's ICMP */
-	if (h->type==8 && h->code==0) {
+	if (h->type==ICMP_TYPE_ECHO_REQUEST && h->code==0) {
 	    /* ICMP echo-request. Special case: we re-use the buffer
 	       to construct the reply. */
-	    h->type=0;
+	    h->type=ICMP_TYPE_ECHO_REPLY;
 	    h->iph.daddr=h->iph.saddr;
 	    h->iph.saddr=htonl(st->secnet_address);
-	    h->iph.ttl=255; /* Be nice and bump it up again... */
+	    h->iph.ttl=255;
 	    h->iph.check=0;
 	    h->iph.check=ip_fast_csum((uint8_t *)h,h->iph.ihl);
 	    netlink_icmp_csum(h);
@@ -440,7 +574,8 @@ static void netlink_packet_local(struct netlink *st,
 	Message(M_WARNING,"%s: unknown incoming ICMP\n",st->name);
     } else {
 	/* Send ICMP protocol unreachable */
-	netlink_icmp_simple(st,buf,client,3,2);
+	netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+			    ICMP_CODE_PROTOCOL_UNREACHABLE);
 	BUF_FREE(buf);
 	return;
     }
@@ -584,11 +719,13 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 	Message(c,"%s: routing table:\n",st->name);
 	for (i=0; i<st->n_clients; i++) {
 	    netlink_output_subnets(st,c,st->routes[i]->subnets);
-	    Message(c,"-> tunnel %s (%s,%s routes,%s,quality %d,use %d)\n",
+	    Message(c,"-> tunnel %s (%s,mtu %d,%s routes,%s,"
+		    "quality %d,use %d)\n",
 		    st->routes[i]->name,
+		    st->routes[i]->up?"up":"down",
+		    st->routes[i]->mtu,
 		    st->routes[i]->options&OPT_SOFTROUTE?"soft":"hard",
 		    st->routes[i]->options&OPT_ALLOWROUTE?"free":"restricted",
-		    st->routes[i]->up?"up":"down",
 		    st->routes[i]->link_quality,
 		    st->routes[i]->outcount);
 	}

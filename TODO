@@ -2,6 +2,7 @@ dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
 netlink.c: test the 'allow_route' option properly.
+Add fragmentation code.  Check that we comply with RFC1812.
 
 process.c: capture output from children in sys_cmd() and log it
 
@@ -13,9 +14,10 @@ site code ought to remember them and try contacting them in turn.
 rsa.c: check padding type, change format to binary from decimal string
 (without introducing endianness problems)
 
-site.c: the site_incoming() routing could be implemented much more
-cleanly using a table. There's still quite a lot of redundancy in this
-file. Abandon key exchanges when a bad packet is received. Modify
+secnet.c: optionally pipe stderr to a log when we become a daemon.
+Don't just close it.
+
+site.c: Abandon key exchanges when a bad packet is received. Modify
 protocol to include version fields, as described in the NOTES
 file. Implement keepalive mode. Make policy about when to initiate key
 exchanges more configurable (how many NAKs / bad reverse-transforms
@@ -27,4 +29,14 @@ fails in use?
 transform.c: separate the transforms into multiple parts, which can
 then be combined in the configuration file.  Will allow the user to
 plug in different block ciphers, invent an authenticity-only mode,
-etc.
+etc. (similar to udptunnel)
+
+tun.c: Solaris support, and configuring the interface and
+creating/deleting routes using ioctl()
+
+udp.c: option for path-MTU discovery (once fragmentation support is
+implemented in netlink)
+
+
+global:
+consider using liboop for the event loop

@@ -1,7 +1,3 @@
-/*
- * $Log$
- */
-
 #ifndef conffile_internal_h
 #define conffile_internal_h
 

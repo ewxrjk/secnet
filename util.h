@@ -1,9 +1,3 @@
-/* $Log: util.h,v $
- * Revision 1.1  1996/03/14 17:05:12  sde1000
- * Initial revision
- *
- */
-
 #ifndef util_h
 #define util_h
 

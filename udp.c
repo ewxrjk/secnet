@@ -5,10 +5,6 @@
  * optionally bind to a particular local IP address (not implemented
  * yet).
  *
- * Sites register an interest in local port numbers for receiving
- * packets, and can also send packets. We don't care about the source
- * port number for sending packets. 
- *
  * Packets are offered to registered receivers in turn. Once one
  * accepts it, it isn't offered to any more. */
 
@@ -22,16 +18,13 @@
 #include <sys/wait.h>
 #include "util.h"
 #include "unaligned.h"
+#include "ipaddr.h"
 
 static beforepoll_fn udp_beforepoll;
 static afterpoll_fn udp_afterpoll;
 static comm_request_notify_fn request_notify;
 static comm_release_notify_fn release_notify;
 static comm_sendmsg_fn udp_sendmsg;
-
-/* The UDP module exports a pure closure which can be used to construct a
- * UDP send/receive module. Arguments:
- */
 
 struct notify_list {
     comm_notify_fn *fn;
@@ -48,6 +41,8 @@ struct udp {
     string_t authbind;
     struct buffer_if *rbuf;
     struct notify_list *notify;
+    bool_t use_proxy;
+    struct sockaddr_in proxy;
 };
 
 static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
@@ -84,6 +79,21 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds,
 			(struct sockaddr *)&from, &fromlen);
 	    if (rv>0) {
 		st->rbuf->size=rv;
+		if (st->use_proxy) {
+		    /* Check that the packet came from our poxy server;
+		       we shouldn't be contacted directly by anybody else
+		       (since they can trivially forge source addresses) */
+		    if (memcmp(&from.sin_addr,&st->proxy.sin_addr,4)!=0 ||
+			memcmp(&from.sin_port,&st->proxy.sin_port,2)!=0) {
+			Message(M_INFO,"udp: received packet that's not "
+				"from the proxy\n");
+			BUF_FREE(st->rbuf);
+			continue;
+		    }
+		    memcpy(&from.sin_addr,buf_unprepend(st->rbuf,4),4);
+		    buf_unprepend(st->rbuf,2);
+		    memcpy(&from.sin_port,buf_unprepend(st->rbuf,2),2);
+		}
 		done=False;
 		for (n=st->notify; n; n=n->next) {
 		    if (n->fn(n->state, st->rbuf, &from)) {
@@ -93,7 +103,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds,
 		}
 		if (!done) {
 		    uint32_t source,dest;
-		    /* XXX manufacture and send NAK packet */
+		    /* Manufacture and send NAK packet */
 		    source=get_uint32(st->rbuf->start); /* Us */
 		    dest=get_uint32(st->rbuf->start+4); /* Them */
 		    Message(M_INFO,"udp (port %d): sending NAK\n",st->port);
@@ -150,10 +160,19 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 			  struct sockaddr_in *dest)
 {
     struct udp *st=commst;
+    uint8_t *sa;
 
-    /* XXX fix error reporting */
-    sendto(st->fd, buf->start, buf->size, 0,
-	   (struct sockaddr *)dest, sizeof(*dest));
+    if (st->use_proxy) {
+	sa=buf->start-8;
+	memcpy(sa,&dest->sin_addr,4);
+	memset(sa+4,0,4);
+	memcpy(sa+6,&dest->sin_port,2);
+	sendto(st->fd,sa,buf->size+8,0,(struct sockaddr *)&st->proxy,
+	       sizeof(st->proxy));
+    } else {
+	sendto(st->fd, buf->start, buf->size, 0,
+	       (struct sockaddr *)dest, sizeof(*dest));
+    }
 
     return True;
 }
@@ -221,6 +240,8 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct udp *st;
     item_t *i;
     dict_t *d;
+    list_t *l;
+    uint32_t a;
 
     st=safe_malloc(sizeof(*st),"udp_apply(st)");
     st->loc=loc;
@@ -229,10 +250,13 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
+    st->ops.min_start_pad=0;
+    st->ops.min_end_pad=0;
     st->ops.request_notify=request_notify;
     st->ops.release_notify=release_notify;
     st->ops.sendmsg=udp_sendmsg;
     st->port=0;
+    st->use_proxy=False;
 
     i=list_elem(args,0);
     if (!i || i->type!=t_dict) {
@@ -243,6 +267,24 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->port=dict_read_number(d,"port",True,"udp",st->loc,0);
     st->rbuf=find_cl_if(d,"buffer",CL_BUFFER,True,"udp",st->loc);
     st->authbind=dict_read_string(d,"authbind",False,"udp",st->loc);
+    l=dict_lookup(d,"proxy");
+    if (l) {
+	st->use_proxy=True;
+	memset(&st->proxy,0,sizeof(st->proxy));
+	st->proxy.sin_family=AF_INET;
+	i=list_elem(l,0);
+	if (!i || i->type!=t_string) {
+	    cfgfatal(st->loc,"udp","proxy must supply ""addr"",port\n");
+	}
+	a=string_item_to_ipaddr(i,"proxy");
+	st->proxy.sin_addr.s_addr=htonl(a);
+	i=list_elem(l,1);
+	if (!i || i->type!=t_number) {
+	    cfgfatal(st->loc,"udp","proxy must supply ""addr"",port\n");
+	}
+	st->proxy.sin_port=htons(i->data.number);
+	st->ops.min_start_pad=8;
+    }
 
     add_hook(PHASE_GETRESOURCES,udp_phase_hook,st);
 

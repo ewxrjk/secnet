@@ -1,6 +1,3 @@
-/* $Log$
- */
-
 #include "secnet.h"
 #include <stdio.h>
 #include <fcntl.h>

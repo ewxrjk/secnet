@@ -167,8 +167,7 @@ is running secnet.
 port number on the front-end machine, and does not necessarily have to
 match the port number on the machine running secnet.  If you want to
 use a privileged port number we suggest 410.  An appropriate
-unprivileged port number is 51396.  (These numbers were picked at
-random.)
+unprivileged port number is 51396.
 
 6. the list of networks accessible at your site over the VPN.
 

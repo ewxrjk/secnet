@@ -1,36 +1,3 @@
-/***************************************************************************
- *
- *              Part II Project, "A secure, private IP network"
- *              Stephen Early <sde1000@cam.ac.uk>
- *   
- *
- *     $RCSfile: dh.c,v $
- *
- *  Description: Diffie-Hellman implementation
- *
- *    Copyright: (C) Stephen Early 1995
- *
- *    $Revision: 1.3 $
- *
- *        $Date: 1996/05/16 18:38:54 $
- *
- *       $State: Exp $
- *
- ***************************************************************************/
-
-/*
- * $Log: dh.c,v $
- * Revision 1.3  1996/05/16 18:38:54  sde1000
- * Removed unused hexdigits variable.
- *
- * Revision 1.2  1996/04/14 16:33:52  sde1000
- * Moved mpbin/mpstring functions into util.c
- *
- * Revision 1.1  1996/04/14 16:21:47  sde1000
- * Initial revision
- *
- */
-
 #include <stdio.h>
 #include <gmp.h>
 

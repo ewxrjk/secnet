@@ -340,6 +340,7 @@ a netlink closure:
       other tunnels as well as the host (used for mobile devices like laptops)
     soft-route: remove these routes from the host's routing table when
       the tunnel link quality is zero
+  mtu (integer): default MTU over this link; may be updated by tunnel code
 
 Netlink will dump its current routing table to the system/log on
 receipt of SIGUSR1.
@@ -363,24 +364,20 @@ Defines:
   tun-old (closure => netlink closure)
 
 tun: dict argument
+  flavour (string): optional, type of TUN interface to use
+    ("guess","linux","bsd","streams")
   device (string): optional, path of TUN/TAP device file ["/dev/net/tun"]
   interface (string): optional, name of tunnel network interface
   ifconfig-path (string): optional, path to ifconfig command
   route-path (string): optional, path to route command
+  ifconfig-type (string): optional, how to perform ifconfig
+  route-type (string): optional, how to add and remove routes
+   types are: "guess", "ioctl", "bsd", "linux", "solaris-2.5"
   buffer (buffer closure): buffer for host->secnet packets
  plus generic netlink options, as for 'null-netlink'
 
-tun-old: dict argument
-  device (string): optional, path of TUN/TAP device file ["/dev/tun*"]
-  interface (string): optional, name of tunnel network interface
-  interface-search (bool): optional, whether to search for a free tunnel
-    interface (True if 'device' not specified, otherwise False)
-  ifconfig-path (string): optional, path to ifconfig command
-  route-path (string): optional, path to route command
- plus generic netlink options, as for 'null-netlink'
-
- I recommend you don't specify the 'interface' option unless you're
- doing something that requires the interface name to be constant.
+I recommend you don't specify the 'interface' option unless you're
+doing something that requires the interface name to be constant.
 
 ** rsa
 

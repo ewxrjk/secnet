@@ -1,9 +1,3 @@
-/* $Log: secnet.c,v $
- * Revision 1.1  1996/03/13 22:27:41  sde1000
- * Initial revision
- *
- */
-
 extern char version[];
 
 #include "secnet.h"
@@ -357,10 +351,14 @@ static void droppriv(void)
 	    /* Child process - all done, just carry on */
 	    if (pf) fclose(pf);
 	    /* Close stdin, stdout and stderr; we don't need them any more */
+	    /* XXX we must leave stderr pointing to something useful -
+               a pipe to a log destination, for example, or just leave
+               it alone. */
 	    close(0);
 	    close(1);
-	    close(2);
+	    /* XXX close(2); */
 	    secnet_is_daemon=True;
+	    setsid();
 	} else {
 	    /* Error */
 	    fatal_perror("cannot fork");

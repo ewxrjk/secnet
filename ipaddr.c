@@ -283,9 +283,9 @@ bool_t ipset_is_subset(struct ipset *super, struct ipset *sub)
 struct subnet_list *ipset_to_subnet_list(struct ipset *is)
 {
     struct subnet_list *r;
-    int64_t a,b;
+    int64_t a,b,lobit,himask,lomask;
+    int32_t bits;
     uint32_t i;
-    uint32_t lomask,lobit,himask,bits;
 
     r=subnet_list_new();
     for (i=0; i<is->l; i++) {

@@ -59,6 +59,8 @@ struct item {
     struct cloc loc;
 };
 
+/* Note that it is unwise to use this structure directly; use the list
+   manipulation functions instead. */
 struct list {
     item_t *item;
     struct list *next;
@@ -185,12 +187,10 @@ bool_t remove_hook(uint32_t phase, hook_fn *f, void *state);
 extern uint32_t current_phase;
 extern void enter_phase(uint32_t new_phase);
 
-extern bool_t require_root_privileges; /* Some features (like netlink
-					  'soft' routes) require that
-					  secnet retain root
-					  privileges.  They should
-					  indicate that here when
-					  appropriate. */
+/* Some features (like netlink 'soft' routes) require that secnet
+   retain root privileges.  They should indicate that here when
+   appropriate. */
+extern bool_t require_root_privileges;
 extern string_t require_root_privileges_explanation;
 
 /***** END of program lifetime support *****/
@@ -231,6 +231,7 @@ struct buffer_if;
    type. 'address' will be NULL if there was a problem with the query. It
    will be freed once resolve_answer_fn returns. It is in network byte
    order. */
+/* XXX extend to be able to provide multiple answers */
 typedef void resolve_answer_fn(void *st, struct in_addr *addr);
 typedef bool_t resolve_request_fn(void *st, string_t name,
 				  resolve_answer_fn *cb, void *cst);
@@ -281,6 +282,8 @@ typedef bool_t comm_sendmsg_fn(void *commst, struct buffer_if *buf,
 			       struct sockaddr_in *dest);
 struct comm_if {
     void *st;
+    uint32_t min_start_pad;
+    uint32_t min_end_pad;
     comm_request_notify_fn *request_notify;
     comm_release_notify_fn *release_notify;
     comm_sendmsg_fn *sendmsg;

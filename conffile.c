@@ -1,7 +1,3 @@
-/*
- * $Log$
- */
-
 /* conffile.c - process the configuration file */
 
 /* #define DUMP_PARSE_TREE */

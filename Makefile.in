@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.12
+VERSION:=0.1.13
 
 @SET_MAKE@
 
@@ -57,7 +57,8 @@ DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	configure.in debian depend.sh dh.c \
 	example.conf \
 	getopt.c getopt1.c getopt.h \
-	install-sh ipaddr.c ipaddr.h ipaddr.py linux log.c md5.c md5.h \
+	install-sh ipaddr.c ipaddr.h ipaddr.py linux log.c \
+	magic.h md5.c md5.h \
 	make-secnet-sites \
 	modules.c netlink.c netlink.h process.c process.h \
 	random.c resolver.c rsa.c \

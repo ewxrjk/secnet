@@ -234,11 +234,21 @@ static void set_default_signals(void)
 
 static void signal_handler(int signum)
 {
+    int saved_errno;
     uint8_t thing=0;
     sigaddset(&pending,signum);
+    /* XXX the write() may set errno, which can make the main program fail.
+       However, signal handlers aren't allowed to modify anything which
+       is not of type sig_atomic_t.  The world is broken. */
+    /* I have decided to save and restore errno anyway; on most
+       architectures on which secnet can run modifications to errno
+       will be atomic, and it seems to be the lesser of the two
+       evils. */
+    saved_errno=errno;
     write(spw,&thing,1); /* We don't care if this fails (i.e. the pipe
 			    is full) because the service routine will
 			    spot the pending signal anyway */
+    errno=saved_errno;
 }
 
 static void register_signal_handler(struct signotify *s)
