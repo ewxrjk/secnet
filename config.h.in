@@ -3,12 +3,55 @@
 #define _CONFIG_H
 
 
+/* Define if using alloca.c.  */
+#undef C_ALLOCA
+
+/* Define to one of _getb67, GETB67, getb67 for Cray-2 and Cray-YMP systems.
+   This function is required for alloca.c support on those systems.  */
+#undef CRAY_STACKSEG_END
+
+/* Define if you have alloca, as a function or macro.  */
+#undef HAVE_ALLOCA
+
+/* Define if you have <alloca.h> and it should be used (not on Ultrix).  */
+#undef HAVE_ALLOCA_H
+
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at run-time.
+ STACK_DIRECTION > 0 => grows toward higher addresses
+ STACK_DIRECTION < 0 => grows toward lower addresses
+ STACK_DIRECTION = 0 => direction of growth unknown
+ */
+#undef STACK_DIRECTION
+
 /* Define if you have the ANSI C header files.  */
 #undef STDC_HEADERS
 
 /* Define if your processor stores words with the most significant
    byte first (like Motorola and SPARC, unlike Intel and VAX).  */
 #undef WORDS_BIGENDIAN
+
+/* The number of bytes in a unsigned char.  */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* The number of bytes in a unsigned int.  */
+#undef SIZEOF_UNSIGNED_INT
+
+/* The number of bytes in a unsigned long.  */
+#undef SIZEOF_UNSIGNED_LONG
+
+/* The number of bytes in a unsigned long long.  */
+#undef SIZEOF_UNSIGNED_LONG_LONG
+
+/* The number of bytes in a unsigned short.  */
+#undef SIZEOF_UNSIGNED_SHORT
+
+/* Define if you have the getopt_long function.  */
+#undef HAVE_GETOPT_LONG
+
+/* Define if you have the snprintf function.  */
+#undef HAVE_SNPRINTF
 
 /* Define if you have the <inttypes.h> header file.  */
 #undef HAVE_INTTYPES_H
@@ -46,8 +89,43 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #else
-#error you must define uint32_t, uint16_t etc.
+#if SIZEOF_UNSIGNED_LONG_LONG==8
+typedef unsigned long long uint64_t;
+#elif SIZEOF_UNSIGNED_LONG==8
+typedef unsigned long uint64_t;
+#else
+#error I do not know what to use for a uint64_t.
 #endif
+
+/* Give us an unsigned 32-bit data type. */
+#if SIZEOF_UNSIGNED_LONG==4
+typedef unsigned long uint32_t;
+#elif SIZEOF_UNSIGNED_INT==4
+typedef unsigned int uint32_t;
+#else
+#error I do not know what to use for a uint32_t.
+#endif
+
+/* An unsigned 16-bit data type. */
+#if SIZEOF_UNSIGNED_INT==2
+typedef unsigned int uint16_t;
+#elif SIZEOF_UNSIGNED_SHORT==2
+typedef unsigned short uint16_t;
+#else
+#error I do not know what to use for a uint16_t.
+#endif
+
+/* An unsigned 8-bit data type */
+#if SIZEOF_UNSIGNED_CHAR==1
+typedef unsigned char uint8_t;
+#else
+#error I do not know what to use for a uint8_t.
+#endif
+#endif
+#endif
+
+#ifndef HAVE_SNPRINTF
+#include "snprintf.h"
 #endif
 
 #endif /* _CONFIG_H */

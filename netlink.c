@@ -177,11 +177,19 @@ static void netlink_icmp_csum(struct icmphdr *h)
 static bool_t netlink_icmp_may_reply(struct buffer_if *buf)
 {
     struct iphdr *iph;
+    struct icmphdr *icmph;
     uint32_t source;
 
     iph=(struct iphdr *)buf->start;
-    if (iph->protocol==1) return False; /* Overly-broad; we may reply to
-					   eg. icmp echo-request */
+    icmph=(struct icmphdr *)buf->start;
+    if (iph->protocol==1) {
+	switch(icmph->type) {
+	case 3: /* Destination unreachable */
+	case 11: /* Time Exceeded */
+	case 12: /* Parameter Problem */
+	    return False;
+	}
+    }
     /* How do we spot broadcast destination addresses? */
     if (ntohs(iph->frag_off)&0x1fff) return False; /* Non-initial fragment */
     source=ntohl(iph->saddr);

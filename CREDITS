@@ -4,3 +4,4 @@ Colin Plumb, Ian Jackson - MD5 implementation
 Steve Reid <sreid@sea-to-sky.net>, James H. Brown <jbrown@burgoyne.com> - 
   SHA1 implementation
 Cendio Systems AB - ipaddr.py
+Mark Martinec <mark.martinec@ijs.si> - portable snprintf

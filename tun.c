@@ -252,9 +252,6 @@ static list_t *tun_old_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st=safe_malloc(sizeof(*st),"tun_old_apply");
 
-    Message(M_WARNING,"the tun-old code has never been tested. Please report "
-	    "success or failure to steve@greenend.org.uk\n");
-
     /* First parameter must be a dict */
     item=list_elem(args,0);
     if (!item || item->type!=t_dict)

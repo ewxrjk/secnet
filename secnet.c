@@ -342,6 +342,10 @@ static void droppriv(void)
 	} else if (p==0) {
 	    /* Child process - all done, just carry on */
 	    if (pf) fclose(pf);
+	    /* Close stdin, stdout and stderr; we don't need them any more */
+	    close(0);
+	    close(1);
+	    close(2);
 	    secnet_is_daemon=True;
 	} else {
 	    /* Error */

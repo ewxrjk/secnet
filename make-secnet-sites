@@ -53,9 +53,12 @@ import string
 import time
 import sys
 import os
+
+sys.path.append("/usr/local/share/secnet")
+sys.path.append("/usr/share/secnet")
 import ipaddr
 
-VERSION="0.1.5"
+VERSION="0.1.9"
 
 class vpn:
 	def __init__(self,name):

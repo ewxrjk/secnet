@@ -16,7 +16,7 @@ THERE WILL BE ANOTHER CHANGE IN PROTOCOL IN THE secnet-0.1.x SERIES
 Ensure that you have libgmp2-dev and adns installed (and bison and
 flex, and for that matter gcc...).
 
-[On BSD install /usr/ports/devel/bison and /usr/ports/devel/libgnugetopt]
+[On BSD install /usr/ports/devel/bison]
 
 If you intend to configure secnet to obtain packets from the kernel
 through userv-ipif, install and configure userv-ipif.  It is part of
@@ -107,11 +107,11 @@ Generate a site file fragment for your site (see below), and submit it
 for inclusion in your VPN's 'sites' file.  Download the vpn-sites file
 to /etc/secnet/sites - MAKE SURE YOU GET AN AUTHENTIC COPY because the
 sites file contains public keys for all the sites in the VPN.  Use the
-make-secnet-sites.py program provided with the secnet distribution to
+make-secnet-sites program provided with the secnet distribution to
 convert the distributed sites file into one that can be included in a
 secnet configuration file:
 
-# make-secnet-sites.py sites sites.conf
+# make-secnet-sites sites sites.conf
 
 * Configuration
 

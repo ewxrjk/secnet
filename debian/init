@@ -14,9 +14,9 @@
 set -e
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DAEMON=/usr/sbin/bnetd
+DAEMON=/usr/sbin/secnet
 NAME=secnet
-DESC=VPN server
+DESC="VPN server"
 
 test -f $DAEMON || exit 0
 test -f /etc/secnet/secnet.conf || exit 0

@@ -15,6 +15,11 @@ AC_STDC_HEADERS
 AC_CHECK_HEADERS(stdint.h inttypes.h)
 AC_CHECK_HEADERS(linux/if.h)
 AC_C_BIGENDIAN
+AC_CHECK_SIZEOF(unsigned long long)
+AC_CHECK_SIZEOF(unsigned long)
+AC_CHECK_SIZEOF(unsigned int)
+AC_CHECK_SIZEOF(unsigned short)
+AC_CHECK_SIZEOF(unsigned char)
 
 AC_CHECK_LIB(gmp,mpz_init_set_str)
 AC_CHECK_LIB(gmp2,mpz_init_set_str)
@@ -22,5 +27,12 @@ AC_CHECK_LIB(fl,yywrap)
 AC_CHECK_LIB(adns,adns_init)
 AC_CHECK_LIB(getopt,getopt_long)
 AC_CHECK_LIB(gnugetopt,getopt_long)
+
+dnl check for getopt in standard library
+AC_SUBST(LIBOBJS)
+AC_CHECK_FUNCS(getopt_long , , [LIBOBJS="$LIBOBJS getopt.o getopt1.o"] ) 
+dnl check for alloca
+AC_CHECK_FUNCS(snprintf , , [LIBOBJS="$LIBOBJS snprintf.o"] )
+AC_FUNC_ALLOCA()
 
 AC_OUTPUT(Makefile,echo timestamp >stamp-h)

@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.8
+VERSION:=0.1.9
 
 @SET_MAKE@
 
@@ -46,18 +46,23 @@ TARGETS:=secnet
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	resolver.o random.o udp.o site.o transform.o netlink.o rsa.o dh.o \
 	serpent.o md5.o version.o tun.o slip.o sha1.o ipaddr.o log.o \
-	process.o
+	process.o @LIBOBJS@
 
-DISTFILES:=COPYING CREDITS INSTALL Makefile.in NEWS NOTES README TODO \
+DISTFILES:=COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
+	NEWS NOTES README TODO \
+	alloca.c \
 	conffile.c conffile.fl conffile.h conffile.y \
 	conffile_internal.h config.h.bot \
 	config.h.in config.h.top configure \
 	configure.in debian dh.c \
-	example.conf make-secnet-sites.py \
+	example.conf \
+	getopt.c getopt1.c getopt.h \
 	install.sh ipaddr.c ipaddr.h ipaddr.py linux log.c md5.c md5.h \
+	make-secnet-sites \
 	modules.c netlink.c netlink.h process.c process.h \
 	random.c resolver.c rsa.c \
 	secnet.c secnet.h serpent.c serpent.h serpentsboxes.h \
+	snprintf.c snprintf.h \
 	sha1.c site.c slip.c stamp-h.in transform.c tun.c udp.c \
 	unaligned.h util.c util.h
 
@@ -116,6 +121,8 @@ version.c: Makefile
 
 install: all
 	$(INSTALL_PROGRAM) -D secnet $(sbindir)/`echo secnet|sed '$(transform)'`
+	$(INSTALL_PROGRAM) -D make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
+	$(INSTALL) -D ipaddr.py $(prefix)/share/secnet/ipaddr.py
 
 clean:
 	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c

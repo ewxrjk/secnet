@@ -364,7 +364,12 @@ static void syslog_log(void *sst, int priority, char *message, ...)
 }
 
 static struct flagstr syslog_facility_table[]={
+#ifdef LOG_AUTH
+    { "auth", LOG_AUTH },
+#endif
+#ifdef LOG_AUTHPRIV
     { "authpriv", LOG_AUTHPRIV },
+#endif
     { "cron", LOG_CRON },
     { "daemon", LOG_DAEMON },
     { "kern", LOG_KERN },

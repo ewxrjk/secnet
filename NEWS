@@ -1,10 +1,44 @@
+* Planned for the future
+
+New configuration syntax for netlinks: basic 'netlink' closure yields
+a pure closure that can be applied in each site() to generate a
+netlink for that site (with routes, options, etc.).  Works well for
+point-to-point: that netlink can be used directly by just one site.
+Much cleaner separation between site() and netlink code this way.
+
+(Backward compatibility will be kept for a while.)
+
+* New in version 0.1.9
+
+The netlink code may now generate ICMP responses to ICMP messages that
+are not errors, eg. ICMP echo-request.  This makes Windows NT
+traceroute output look a little less strange.
+
+configure.in and config.h.bot now define uint32_t etc. even on systems
+without stdint.h and inttypes.h (needed for Solaris 2.5.1)
+
+GNU getopt is included for systems that lack it.
+
+We check for LOG_AUTHPRIV before trying to use it in log.c (Solaris
+2.5.1 doesn't have it.)
+
+Portable snprintf.c from http://www.ijs.si/software/snprintf/ is
+included for systems that lack snprintf/vsnprintf.
+
+make-secnet-sites.py renamed to make-secnet-sites and now installed in
+$prefix/sbin/make-secnet-sites; ipaddr.py library installed in
+$prefix/share/secnet/ipaddr.py.  make-secnet-sites searches
+/usr/local/share/secnet and /usr/share/secnet for ipaddr.py
+
 * New in version 0.1.8
 
 Netlink devices now support a 'point-to-point' mode.  In this mode the
 netlink device does not require an IP address; instead, the IP address
 of the other end of the tunnel is specified using the 'ptp-address'
 option.  Precisely one site must be configured to use the netlink
-device.
+device. (I haven't had a chance to test this because 0.1.8 turned into
+a 'quick' release to enable secnet to cope with the network problems
+affecting connections going via LINX on 2001-10-16.)
 
 The tunnel code in site.c now initiates a key setup if the
 reverse-transform function fails (wrong key, bad MAC, too much skew,
@@ -12,7 +46,7 @@ etc.) - this should make secnet more reliable on dodgy links, which
 are much more common than links with active attackers...  (an attacker
 can now force a new key setup by replaying an old packet, but apart
 from minor denial of service on slow links or machines this won't
-achieve them much).
+achieve them much).  This should eventually be made configurable.
 
 The sequence number skew detection code in transform.c now only
 complains about 'reverse skew' - replays of packets that are too
