@@ -1,5 +1,5 @@
-secnet (0.1.16-1) unstable; urgency=high
+secnet (0.1.17-1) unstable; urgency=low
 
   * New upstream version.
 
- -- Stephen Early <steve@greenend.org.uk>  Sat,  19 Jul 2003 17:00:00 +0100
+ -- Stephen Early <steve@greenend.org.uk>  Sun,  13 Jul 2005 01:00:00 +0100
