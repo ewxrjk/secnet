@@ -20,8 +20,9 @@ DESC="VPN server"
 
 test -f $DAEMON || exit 0
 test -f /etc/secnet/secnet.conf || exit 0
+test -f /etc/default/secnet && . /etc/default/secnet
 
-set -e
+[ "X$RUN_SECNET" = "Xyes" ] || exit 0
 
 case "$1" in
   start)

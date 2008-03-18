@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.17
+VERSION:=0.1.18
 
 @SET_MAKE@
 
@@ -74,8 +74,8 @@ DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	sha1.c site.c slip.c stamp-h.in transform.c tun.c udp.c \
 	unaligned.h util.c util.h \
 	hackypar.c hackypar.h
-DISTSUBDIRS:=debian/conffiles debian/copyright debian/changelog \
-	debian/control debian/init debian/rules
+DISTSUBDIRS:=debian/copyright debian/changelog debian/control \
+	debian/init debian/rules debian/compat debian/default
 
 %.c:	%.y
 

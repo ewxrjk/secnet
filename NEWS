@@ -9,6 +9,11 @@ upgrade to version 0.2.0 should just involve installing the package;
 an appropriate 0.2-style configuration file will be generated
 automatically.
 
+* New in version 0.1.18
+
+ipaddr.py now declares its character encoding; required by recent
+versions of Python
+
 * New in version 0.1.17
 
 autoconf updates for cross-compilation / more modern autoconf from
