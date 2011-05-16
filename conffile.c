@@ -10,9 +10,6 @@
 #include "util.h"
 #include "ipaddr.h"
 
-/* from modules.c */
-extern void init_builtin_modules(dict_t *dict);
-
 static struct cloc no_loc={"none",0};
 
 struct atomlist {
@@ -568,7 +565,7 @@ uint32_t list_length(list_t *a)
     return l;
 }
 
-list_t *list_copy(list_t *a)
+static list_t *list_copy(list_t *a)
 {
     list_t *r, *i, *b, *l;
 

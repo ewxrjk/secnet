@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include "process.h"
+#include "util.h"
 
 bool_t secnet_is_daemon=False;
 uint32_t message_level=M_WARNING|M_ERR|M_SECURITY|M_FATAL;

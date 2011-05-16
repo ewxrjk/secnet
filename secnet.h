@@ -34,6 +34,14 @@ typedef enum {False,True} bool_t;
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
 					 __FILE__,__LINE__); } } while(0)
 
+/* from logmsg.c */
+extern uint32_t message_level;
+extern bool_t secnet_is_daemon;
+extern struct log_if *system_log;
+
+/* from process.c */
+extern void start_signal_handling(void);
+
 /***** CONFIGURATION support *****/
 
 extern bool_t just_check_config; /* If True then we're going to exit after
@@ -197,6 +205,23 @@ extern cstring_t require_root_privileges_explanation;
    this type which is called to initialise them. For dynamically loaded
    modules it's called "secnet_module". */
 typedef void init_module(dict_t *dict);
+
+extern void init_builtin_modules(dict_t *dict);
+
+extern init_module resolver_module;
+extern init_module random_module;
+extern init_module udp_module;
+extern init_module util_module;
+extern init_module site_module;
+extern init_module transform_module;
+extern init_module netlink_module;
+extern init_module rsa_module;
+extern init_module dh_module;
+extern init_module md5_module;
+extern init_module slip_module;
+extern init_module tun_module;
+extern init_module sha1_module;
+extern init_module log_module;
 
 /***** END of module support *****/
 
