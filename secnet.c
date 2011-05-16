@@ -247,10 +247,11 @@ static void system_phase_hook(void *sst, uint32_t newphase)
     }
 }
 
+struct timeval tv_now_global;
+uint64_t now_global;
+
 static void run(void)
 {
-    struct timeval tv_now;
-    uint64_t now;
     struct poll_interest *i;
     int rv, nfds, remain, idx;
     int timeout;
@@ -261,14 +262,14 @@ static void run(void)
     Message(M_NOTICE,"%s [%d]: starting\n",version,secnet_pid);
 
     do {
-	if (gettimeofday(&tv_now, NULL)!=0) {
+	if (gettimeofday(&tv_now_global, NULL)!=0) {
 	    fatal_perror("main loop: gettimeofday");
 	}
-	now=((uint64_t)tv_now.tv_sec*(uint64_t)1000)+
-	    ((uint64_t)tv_now.tv_usec/(uint64_t)1000);
+	now_global=((uint64_t)tv_now_global.tv_sec*(uint64_t)1000)+
+	           ((uint64_t)tv_now_global.tv_usec/(uint64_t)1000);
 	idx=0;
 	for (i=reg; i; i=i->next) {
-	    i->after(i->state, fds+idx, i->nfds, &tv_now, &now);
+	    i->after(i->state, fds+idx, i->nfds, &tv_now_global, &now_global);
 	    idx+=i->nfds;
 	}
 	remain=total_nfds;
@@ -276,7 +277,7 @@ static void run(void)
 	timeout=-1;
 	for (i=reg; i; i=i->next) {
 	    nfds=remain;
-	    rv=i->before(i->state, fds+idx, &nfds, &timeout, &tv_now, &now);
+	    rv=i->before(i->state, fds+idx, &nfds, &timeout, &tv_now_global, &now_global);
 	    if (rv!=0) {
 		/* XXX we need to handle this properly: increase the
 		   nfds available */

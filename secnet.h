@@ -148,6 +148,15 @@ extern void *safe_malloc_ary(size_t size, size_t count, const char *message);
 
 extern int sys_cmd(const char *file, const char *argc, ...);
 
+extern uint64_t now_global;
+extern struct timeval tv_now_global;
+
+static const uint64_t       *const now    = &now_global;
+static const struct timeval *const tv_now = &tv_now_global;
+
+/* "now" is current program time, in milliseconds. It is derived
+   from tv_now. Both are provided by the event loop. */
+
 /***** END of utility functions *****/
 
 /***** SCHEDULING support */
