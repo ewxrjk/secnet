@@ -34,7 +34,12 @@ INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 # Use -DHACKY_PARALLEL if you are compiling secnet for an extremely
 # slow machine
 #CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -DHACKY_PARALLEL
-CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@
+CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ \
+	-W -Wno-unused \
+	-Wno-pointer-sign -Wstrict-prototypes -Wmissing-prototypes \
+	-Wmissing-declarations -Wnested-externs -Wredundant-decls \
+	-Wpointer-arith -Wformat=2 -Winit-self \
+	-Wswitch-enum -Wunused-variable -Wbad-function-cast
 ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS)
 CPPFLAGS:=@CPPFLAGS@
 LDFLAGS:=@LDFLAGS@
