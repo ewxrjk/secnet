@@ -1,6 +1,9 @@
 /* the "incl" state is used for picking up the name of an include file */
 %x incl
 
+%option nounput
+%option noinput
+
 %{
 #include <stdio.h>
 #include <stdlib.h>
