@@ -197,7 +197,7 @@ struct site {
 static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 {
     va_list ap;
-    uint8_t buf[240];
+    char buf[240];
     uint32_t class;
 
     va_start(ap,msg);

@@ -234,7 +234,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 {
     struct tun *st=sst;
     string_t hostaddr,secnetaddr;
-    uint8_t mtu[6];
+    char mtu[6];
     struct netlink_client *r;
 
     if (st->tun_flavour==TUN_FLAVOUR_BSD) {
