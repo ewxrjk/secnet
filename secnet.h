@@ -34,6 +34,10 @@ typedef enum {False,True} bool_t;
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
 					 __FILE__,__LINE__); } } while(0)
 
+/* from version.c */
+
+extern char version[];
+
 /* from logmsg.c */
 extern uint32_t message_level;
 extern bool_t secnet_is_daemon;

@@ -1,5 +1,3 @@
-extern char version[];
-
 #include "secnet.h"
 #include <stdio.h>
 #include <string.h>

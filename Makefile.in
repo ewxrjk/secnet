@@ -136,7 +136,9 @@ secnet:	$(OBJECTS)
 	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
 
 version.c: Makefile
-	echo "char version[]=\"secnet $(VERSION)\";" >version.c
+	echo "#include \"secnet.h\"" >$@.new
+	echo "char version[]=\"secnet $(VERSION)\";" >>$@.new
+	mv -f $@.new $@
 
 install: all
 	$(INSTALL) -d $(prefix)/share/secnet $(sbindir)
