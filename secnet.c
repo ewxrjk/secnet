@@ -27,14 +27,6 @@ cstring_t require_root_privileges_explanation=NULL;
 
 static pid_t secnet_pid;
 
-/* from log.c */
-extern uint32_t message_level;
-extern bool_t secnet_is_daemon;
-extern struct log_if *system_log;
-
-/* from process.c */
-extern void start_signal_handling(void);
-
 /* Structures dealing with poll() call */
 struct poll_interest {
     beforepoll_fn *before;
