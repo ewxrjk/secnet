@@ -141,6 +141,7 @@ install: all
 
 clean:
 	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c
+	$(RM) -f *.d *~
 
 realclean:	clean
 	$(RM) -f *~ Makefile config.h  *.d \
