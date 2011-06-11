@@ -1238,7 +1238,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->key_lifetime=dict_read_number(
 	dict,"key-lifetime",False,"site",loc,DEFAULT_KEY_LIFETIME);
-    if (st->key_lifetime < DEFAULT_KEY_RENEGOTIATE_GAP)
+    if (st->key_lifetime < DEFAULT_KEY_RENEGOTIATE_GAP*2)
 	st->key_renegotiate_time=st->key_lifetime/2;
     else
 	st->key_renegotiate_time=st->key_lifetime-DEFAULT_KEY_RENEGOTIATE_GAP;
