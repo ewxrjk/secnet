@@ -314,7 +314,6 @@ struct sha1 {
     struct hash_if ops;
 };
 
-init_module sha1_module;
 void sha1_module(dict_t *dict)
 {
     struct sha1 *st;

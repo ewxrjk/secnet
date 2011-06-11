@@ -1067,7 +1067,6 @@ static list_t *null_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->nl.cl);
 }
 
-init_module netlink_module;
 void netlink_module(dict_t *dict)
 {
     add_closure(dict,"null-netlink",null_apply);

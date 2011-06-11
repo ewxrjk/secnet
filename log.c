@@ -555,7 +555,6 @@ void log_from_fd(int fd, cstring_t prefix, struct log_if *log)
 		      prefix);
 }
 
-init_module log_module;
 void log_module(dict_t *dict)
 {
     add_closure(dict,"logfile",logfile_apply);

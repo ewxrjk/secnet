@@ -407,7 +407,6 @@ static list_t *userv_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->slip.nl.cl);
 }
 
-init_module slip_module;
 void slip_module(dict_t *dict)
 {
     add_closure(dict,"userv-ipif",userv_apply);

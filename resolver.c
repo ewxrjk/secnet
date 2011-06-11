@@ -123,7 +123,6 @@ static list_t *adnsresolver_apply(closure_t *self, struct cloc loc,
     return new_closure(&st->cl);
 }
 
-init_module resolver_module;
 void resolver_module(dict_t *dict)
 {
     add_closure(dict,"adns",adnsresolver_apply);

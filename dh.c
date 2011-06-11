@@ -118,7 +118,6 @@ static list_t *dh_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
-init_module dh_module;
 void dh_module(dict_t *dict)
 {
     add_closure(dict,"diffie-hellman",dh_apply);

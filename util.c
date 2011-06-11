@@ -335,7 +335,6 @@ static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
-init_module util_module;
 void util_module(dict_t *dict)
 {
     add_closure(dict,"sysbuffer",buffer_apply);

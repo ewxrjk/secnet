@@ -603,7 +603,6 @@ static list_t *tun_bsd_apply(closure_t *self, struct cloc loc, dict_t *context,
     return tun_create(self,loc,context,args,TUN_FLAVOUR_BSD);
 }
 
-init_module tun_module;
 void tun_module(dict_t *dict)
 {
     add_closure(dict,"tun",tun_apply);

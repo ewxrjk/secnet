@@ -1308,7 +1308,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
-init_module site_module;
 void site_module(dict_t *dict)
 {
     add_closure(dict,"site",site_apply);

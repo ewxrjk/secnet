@@ -267,7 +267,6 @@ struct md5 {
     struct hash_if ops;
 };
 
-init_module md5_module;
 void md5_module(dict_t *dict)
 {
     struct md5 *st;

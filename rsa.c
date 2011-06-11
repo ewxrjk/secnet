@@ -487,7 +487,6 @@ assume_valid:
     return new_closure(&st->cl);
 }
 
-init_module rsa_module;
 void rsa_module(dict_t *dict)
 {
     add_closure(dict,"rsa-private",rsapriv_apply);

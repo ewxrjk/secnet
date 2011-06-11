@@ -311,7 +311,6 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
     return new_closure(&st->cl);
 }
 
-init_module transform_module;
 void transform_module(dict_t *dict)
 {
     struct keyInstance k;
