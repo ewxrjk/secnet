@@ -132,8 +132,7 @@ struct userv {
 };
 
 static int userv_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
-			    int *timeout_io, const struct timeval *tv_now,
-			    uint64_t *now)
+			    int *timeout_io)
 {
     struct userv *st=sst;
 
@@ -149,8 +148,7 @@ static int userv_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     return 0;
 }
 
-static void userv_afterpoll(void *sst, struct pollfd *fds, int nfds,
-			    const struct timeval *tv_now, uint64_t *now)
+static void userv_afterpoll(void *sst, struct pollfd *fds, int nfds)
 {
     struct userv *st=sst;
     uint8_t rxbuf[DEFAULT_BUFSIZE];

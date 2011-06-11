@@ -39,15 +39,13 @@ static bool_t resolve_request(void *sst, cstring_t name,
 }
 
 static int resolver_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
-			       int *timeout_io, const struct timeval *tv_now,
-			       uint64_t *now)
+			       int *timeout_io)
 {
     struct adns *st=sst;
     return adns_beforepoll(st->ast, fds, nfds_io, timeout_io, tv_now);
 }
 
-static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds,
-			       const struct timeval *tv_now, uint64_t *now)
+static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 {
     struct adns *st=sst;
     adns_query aq;

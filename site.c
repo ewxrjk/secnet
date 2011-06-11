@@ -945,8 +945,7 @@ static inline void site_settimeout(uint64_t timeout, uint64_t *now,
 }
 
 static int site_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
-			   int *timeout_io, const struct timeval *tv_now,
-			   uint64_t *now)
+			   int *timeout_io)
 {
     struct site *st=sst;
 
@@ -963,8 +962,7 @@ static int site_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
 }
 
 /* NB site_afterpoll will be called before site_beforepoll is ever called */
-static void site_afterpoll(void *sst, struct pollfd *fds, int nfds,
-			   const struct timeval *tv_now, uint64_t *now)
+static void site_afterpoll(void *sst, struct pollfd *fds, int nfds)
 {
     struct site *st=sst;
 

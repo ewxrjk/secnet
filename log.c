@@ -488,8 +488,7 @@ struct fdlog {
 };
 
 static int log_from_fd_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
-				  int *timeout_io,
-				  const struct timeval *tv_now, uint64_t *now)
+				  int *timeout_io)
 {
     struct fdlog *st=sst;
     if (!st->finished) {
@@ -500,8 +499,7 @@ static int log_from_fd_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     return 0;
 }
 
-static void log_from_fd_afterpoll(void *sst, struct pollfd *fds, int nfds,
-				  const struct timeval *tv_now, uint64_t *now)
+static void log_from_fd_afterpoll(void *sst, struct pollfd *fds, int nfds)
 {
     struct fdlog *st=sst;
     int r,remain,i;

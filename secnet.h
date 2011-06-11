@@ -161,15 +161,12 @@ static const struct timeval *const tv_now = &tv_now_global;
 
 /***** SCHEDULING support */
 
-/* "now" is current program time, in milliseconds. It is derived
-   (once) from tv_now. If nfds_io is insufficient for your needs, set
-   it to the required number and return ERANGE. timeout is in milliseconds;
-   if it is too high then lower it. It starts at -1 (==infinite) */
+/* If nfds_io is insufficient for your needs, set it to the required
+   number and return ERANGE. timeout is in milliseconds; if it is too
+   high then lower it. It starts at -1 (==infinite) */
 typedef int beforepoll_fn(void *st, struct pollfd *fds, int *nfds_io,
-			  int *timeout_io, const struct timeval *tv_now,
-			  uint64_t *now);
-typedef void afterpoll_fn(void *st, struct pollfd *fds, int nfds,
-			  const struct timeval *tv_now, uint64_t *now);
+			  int *timeout_io);
+typedef void afterpoll_fn(void *st, struct pollfd *fds, int nfds);
 
 /* Register interest in the main loop of the program. Before a call
    to poll() your supplied beforepoll function will be called. After

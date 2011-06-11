@@ -95,8 +95,7 @@ static cstring_t tun_flavour_str(uint32_t flavour)
 }
 
 static int tun_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
-			  int *timeout_io, const struct timeval *tv_now,
-			  uint64_t *now)
+			  int *timeout_io)
 {
     struct tun *st=sst;
     *nfds_io=1;
@@ -105,8 +104,7 @@ static int tun_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     return 0;
 }
 
-static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds,
-			  const struct timeval *tv_now, uint64_t *now)
+static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds)
 {
     struct tun *st=sst;
     int l;

@@ -176,8 +176,7 @@ int sys_cmd(const char *path, const char *arg, ...)
 
 static beforepoll_fn signal_beforepoll;
 static int signal_beforepoll(void *st, struct pollfd *fds, int *nfds_io,
-			     int *timeout_io, const struct timeval *tv_now,
-			     uint64_t *now)
+			     int *timeout_io)
 {
     if (*nfds_io<1) {
 	*nfds_io=1;
@@ -190,8 +189,7 @@ static int signal_beforepoll(void *st, struct pollfd *fds, int *nfds_io,
 }
 
 static afterpoll_fn signal_afterpoll;
-static void signal_afterpoll(void *st, struct pollfd *fds, int nfds,
-			     const struct timeval *tv, uint64_t *now)
+static void signal_afterpoll(void *st, struct pollfd *fds, int nfds)
 {
     uint8_t buf[16];
     struct signotify *n;

@@ -47,8 +47,7 @@ struct udp {
 };
 
 static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
-			  int *timeout_io, const struct timeval *tv,
-			  uint64_t *now)
+			  int *timeout_io)
 {
     struct udp *st=state;
     if (*nfds_io<1) {
@@ -61,8 +60,7 @@ static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
     return 0;
 }
 
-static void udp_afterpoll(void *state, struct pollfd *fds, int nfds,
-			  const struct timeval *tv, uint64_t *now)
+static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 {
     struct udp *st=state;
     struct sockaddr_in from;

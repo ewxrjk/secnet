@@ -269,7 +269,7 @@ static void run(void)
 	           ((uint64_t)tv_now_global.tv_usec/(uint64_t)1000);
 	idx=0;
 	for (i=reg; i; i=i->next) {
-	    i->after(i->state, fds+idx, i->nfds, &tv_now_global, &now_global);
+	    i->after(i->state, fds+idx, i->nfds);
 	    idx+=i->nfds;
 	}
 	remain=total_nfds;
@@ -277,7 +277,7 @@ static void run(void)
 	timeout=-1;
 	for (i=reg; i; i=i->next) {
 	    nfds=remain;
-	    rv=i->before(i->state, fds+idx, &nfds, &timeout, &tv_now_global, &now_global);
+	    rv=i->before(i->state, fds+idx, &nfds, &timeout);
 	    if (rv!=0) {
 		/* XXX we need to handle this properly: increase the
 		   nfds available */
