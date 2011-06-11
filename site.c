@@ -932,8 +932,7 @@ static void enter_state_wait(struct site *st)
     /* XXX Erase keys etc. */
 }
 
-static inline void site_settimeout(uint64_t timeout, uint64_t *now,
-				   int *timeout_io)
+static inline void site_settimeout(uint64_t timeout, int *timeout_io)
 {
     if (timeout) {
 	int64_t offset=timeout-*now;
@@ -955,8 +954,8 @@ static int site_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     /* Work out when our next timeout is. The earlier of 'timeout' or
        'current_key_timeout'. A stored value of '0' indicates no timeout
        active. */
-    site_settimeout(st->timeout, now, timeout_io);
-    site_settimeout(st->current_key_timeout, now, timeout_io);
+    site_settimeout(st->timeout, timeout_io);
+    site_settimeout(st->current_key_timeout, timeout_io);
 
     return 0; /* success */
 }
