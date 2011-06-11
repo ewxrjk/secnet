@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include "secnet.h"
 
-extern FILE *yyin;
-
 typedef cstring_t atom_t;
 
 /* Parse tree for configuration file */
@@ -37,7 +35,6 @@ struct p_node {
     struct p_node *r;
 };
 
-extern int yylex(void);
 extern cstring_t config_file;
 extern uint32_t config_lineno;
 extern int yynerrs;

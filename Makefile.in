@@ -85,7 +85,7 @@ DISTSUBDIRS:=debian/copyright debian/changelog debian/control \
 %.c:	%.y
 
 %.yy.c:	%.fl
-	flex -o$@ $<
+	flex --header=$*.yy.h -o$@ $<
 
 %.tab.c %.tab.h:	%.y
 	bison -d -o $@ $<
@@ -129,6 +129,7 @@ $(DEPENDS): ${srcdir}/depend.sh
 
 # Manual dependencies section
 conffile.yy.c:	conffile.fl conffile.tab.c
+conffile.yy.h:	conffile.yy.c
 conffile.tab.c:	conffile.y
 # End of manual dependencies section
 

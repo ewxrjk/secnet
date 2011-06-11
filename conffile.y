@@ -10,6 +10,7 @@
 #include <string.h>
 #include "secnet.h"
 #include "conffile_internal.h"
+#include "conffile.yy.h"
 #include "util.h"
 #define YYERROR_VERBOSE
 

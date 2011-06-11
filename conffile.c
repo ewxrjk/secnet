@@ -7,6 +7,7 @@
 #include <string.h>
 #include "conffile.h"
 #include "conffile_internal.h"
+#include "conffile.yy.h"
 #include "util.h"
 #include "ipaddr.h"
 

@@ -1,7 +1,7 @@
 *.o
 *.d
 conffile.tab.[ch]
-conffile.yy.c
+conffile.yy.[ch]
 version.c
 /secnet
 
