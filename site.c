@@ -936,7 +936,8 @@ static inline void site_settimeout(uint64_t timeout, uint64_t *now,
 				   int *timeout_io)
 {
     if (timeout) {
-	uint64_t offset=timeout-*now;
+	int64_t offset=timeout-*now;
+	if (offset<0) offset=0;
 	if (offset>INT_MAX) offset=INT_MAX;
 	if (*timeout_io<0 || offset<*timeout_io)
 	    *timeout_io=offset;
