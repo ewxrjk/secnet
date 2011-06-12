@@ -74,6 +74,12 @@ void *safe_malloc(size_t size, const char *message)
     }
     return r;
 }
+void *safe_malloc_ary(size_t size, size_t count, const char *message) {
+    if (count >= INT_MAX/size) {
+	fatal("array allocation overflow: %s", message);
+    }
+    return safe_malloc(size*count, message);
+}
 
 /* Convert a buffer into its MP_INT representation */
 void read_mpbin(MP_INT *a, uint8_t *bin, int binsize)

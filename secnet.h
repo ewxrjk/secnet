@@ -144,6 +144,7 @@ extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
 
 extern char *safe_strdup(const char *string, const char *message);
 extern void *safe_malloc(size_t size, const char *message);
+extern void *safe_malloc_ary(size_t size, size_t count, const char *message);
 
 extern int sys_cmd(const char *file, const char *argc, ...);
 

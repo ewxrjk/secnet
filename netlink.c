@@ -768,8 +768,8 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
     /* All the networks serviced by the various tunnels should now
      * have been registered.  We build a routing table by sorting the
      * clients by priority.  */
-    st->routes=safe_malloc(st->n_clients*sizeof(*st->routes),
-			   "netlink_phase_hook");
+    st->routes=safe_malloc_ary(sizeof(*st->routes),st->n_clients,
+			       "netlink_phase_hook");
     /* Fill the table */
     i=0;
     for (c=st->clients; c; c=c->next) {

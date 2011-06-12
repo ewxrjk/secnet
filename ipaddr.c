@@ -17,7 +17,7 @@ struct subnet_list *subnet_list_new(void)
     r=safe_malloc(sizeof(*r),"subnet_list_new:list");
     r->entries=0;
     r->alloc=DEFAULT_ALLOC;
-    r->list=safe_malloc(sizeof(*r->list)*r->alloc,"subnet_list_new:data");
+    r->list=safe_malloc_ary(sizeof(*r->list),r->alloc,"subnet_list_new:data");
     return r;
 }
 
