@@ -1238,16 +1238,17 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->key_lifetime=dict_read_number(
 	dict,"key-lifetime",False,"site",loc,DEFAULT_KEY_LIFETIME);
-    if (st->key_lifetime < DEFAULT_KEY_RENEGOTIATE_GAP*2)
-	st->key_renegotiate_time=st->key_lifetime/2;
-    else
-	st->key_renegotiate_time=st->key_lifetime-DEFAULT_KEY_RENEGOTIATE_GAP;
     st->setup_retries=dict_read_number(
 	dict,"setup-retries",False,"site",loc,DEFAULT_SETUP_RETRIES);
     st->setup_timeout=dict_read_number(
 	dict,"setup-timeout",False,"site",loc,DEFAULT_SETUP_TIMEOUT);
     st->wait_timeout=dict_read_number(
 	dict,"wait-time",False,"site",loc,DEFAULT_WAIT_TIME);
+
+    if (st->key_lifetime < DEFAULT_KEY_RENEGOTIATE_GAP*2)
+	st->key_renegotiate_time=st->key_lifetime/2;
+    else
+	st->key_renegotiate_time=st->key_lifetime-DEFAULT_KEY_RENEGOTIATE_GAP;
     st->key_renegotiate_time=dict_read_number(
 	dict,"renegotiate-time",False,"site",loc,st->key_lifetime);
     if (st->key_renegotiate_time > st->key_lifetime) {
