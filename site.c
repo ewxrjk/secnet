@@ -1250,7 +1250,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     else
 	st->key_renegotiate_time=st->key_lifetime-DEFAULT_KEY_RENEGOTIATE_GAP;
     st->key_renegotiate_time=dict_read_number(
-	dict,"renegotiate-time",False,"site",loc,st->key_lifetime);
+	dict,"renegotiate-time",False,"site",loc,st->key_renegotiate_time);
     if (st->key_renegotiate_time > st->key_lifetime) {
 	cfgfatal(loc,"site",
 		 "renegotiate-time must be less than key-lifetime\n");
