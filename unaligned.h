@@ -1,6 +1,8 @@
 #ifndef unaligned_h
 #define unaligned_h
 
+#include <stdint.h>
+
 /* Parts of the secnet key-exchange protocol require access to
    unaligned big-endian quantities in buffers. These macros provide
    convenient access, even on architectures that don't support unaligned
@@ -11,9 +13,11 @@
 
 #define put_uint16(a,v) do {(a)[0]=((v)&0xff00)>>8; (a)[1]=(v)&0xff;} while(0)
 
-#define get_uint32(a) (((a)[0]<<24)|((a)[1]<<16)|((a)[2])<<8|(a)[3])
+#define get_uint32(a)					\
+  (((uint32_t)(a)[0]<<24) | ((uint32_t)(a)[1]<<16) |	\
+   ((uint32_t)(a)[2]<<8)  |  (uint32_t)(a)[3])
 
-#define get_uint16(a) (((a)[0]<<8)|(a)[1])
+#define get_uint16(a) (((uint16_t)(a)[0]<<8)|(uint16_t)(a)[1])
 
 #define buf_append_uint32(buf,v) do { uint8_t *c=buf_append((buf),4); \
     put_uint32(c,(v)); } while(0)
