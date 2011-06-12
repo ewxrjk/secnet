@@ -243,12 +243,14 @@ void buffer_init(struct buffer_if *buffer, uint32_t max_start_pad)
 
 void *buf_append(struct buffer_if *buf, uint32_t amount) {
     void *p;
+    assert(buf->size <= buf->len - amount);
     p=buf->start + buf->size;
     buf->size+=amount;
     return p;
 }
 
 void *buf_prepend(struct buffer_if *buf, uint32_t amount) {
+    assert(amount <= buf->start - buf->base);
     buf->size+=amount;
     return buf->start-=amount;
 }
@@ -273,6 +275,7 @@ void buf_append_string(struct buffer_if *buf, cstring_t s)
     uint16_t len;
 
     len=strlen(s);
+    /* fixme: if string is longer than 65535, result is a corrupted packet */
     buf_append_uint16(buf,len);
     memcpy(buf_append(buf,len),s,len);
 }

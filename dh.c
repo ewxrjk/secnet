@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <gmp.h>
+#include <limits.h>
 
 #include "secnet.h"
 #include "util.h"
@@ -113,7 +114,16 @@ static list_t *dh_apply(closure_t *self, struct cloc loc, dict_t *context,
 	    cfgfatal(loc,"diffie-hellman","modulus must be a prime\n");
 	}
     }
-    st->ops.len=mpz_sizeinbase(&st->p,2)/8;
+
+    size_t sz=mpz_sizeinbase(&st->p,2)/8;
+    if (sz>INT_MAX) {
+	cfgfatal(loc,"diffie-hellman","modulus far too large\n");
+    }
+    if (mpz_cmp(&st->g,&st->p) >= 0) {
+	cfgfatal(loc,"diffie-hellman","generator must be less than modulus\n");
+    }
+
+    st->ops.len=sz;
 
     return new_closure(&st->cl);
 }

@@ -25,6 +25,7 @@ static void vMessage(uint32_t class, const char *message, va_list args)
     if (secnet_is_daemon) {
 	/* Messages go to the system log interface */
 	bp=strlen(buff);
+	assert(bp < MESSAGE_BUFLEN);
 	vsnprintf(buff+bp,MESSAGE_BUFLEN-bp,message,args);
 	/* Each line is sent separately */
 	while ((nlp=strchr(buff,'\n'))) {

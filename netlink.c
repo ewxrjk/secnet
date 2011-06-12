@@ -98,6 +98,8 @@ their use.
 */
 
 #include <string.h>
+#include <assert.h>
+#include <limits.h>
 #include "secnet.h"
 #include "util.h"
 #include "ipaddr.h"
@@ -770,8 +772,10 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
 			   "netlink_phase_hook");
     /* Fill the table */
     i=0;
-    for (c=st->clients; c; c=c->next)
+    for (c=st->clients; c; c=c->next) {
+	assert(i<INT_MAX);
 	st->routes[i++]=c;
+    }
     /* Sort the table in descending order of priority */
     qsort(st->routes,st->n_clients,sizeof(*st->routes),
 	  netlink_compare_client_priority);
@@ -911,6 +915,7 @@ static closure_t *netlink_inst_create(struct netlink *st,
     c->kup=False;
     c->next=st->clients;
     st->clients=c;
+    assert(st->n_clients < INT_MAX);
     st->n_clients++;
 
     return &c->cl;

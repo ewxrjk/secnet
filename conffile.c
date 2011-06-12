@@ -3,6 +3,8 @@
 /* #define DUMP_PARSE_TREE */
 
 #include "secnet.h"
+#include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include "conffile.h"
@@ -195,6 +197,7 @@ static void ptree_dump(struct p_node *n, uint32_t d)
 	default:       printf("**unknown primitive type**\n"); break;
 	}
     } else {
+	assert(d<INT_MAX);
 	printf("%s: (%s line %d)\n",ntype(n->type),n->loc.file,n->loc.line);
 	ptree_indent(d);
 	printf("  |-");	ptree_dump(n->l, d+1);
@@ -562,7 +565,7 @@ uint32_t list_length(list_t *a)
 {
     uint32_t l=0;
     list_t *i;
-    for (i=a; i; i=i->next) l++;
+    for (i=a; i; i=i->next) { assert(l < INT_MAX); l++; }
     return l;
 }
 
@@ -685,6 +688,9 @@ string_t dict_read_string(dict_t *dict, cstring_t key, bool_t required,
     if (i->type!=t_string) {
 	cfgfatal(loc,desc,"\"%s\" must be a string\n",key);
     }
+    if (strlen(i->data.string) > INT_MAX/10) {
+	cfgfatal(loc,desc,"\"%s\" is unreasonably long\n",key);
+    }
     r=i->data.string;
     return r;
 }
@@ -699,6 +705,9 @@ uint32_t dict_read_number(dict_t *dict, cstring_t key, bool_t required,
     if (!i) return def;
     if (i->type!=t_number) {
 	cfgfatal(loc,desc,"\"%s\" must be a number\n",key);
+    }
+    if (i->data.number >= 0x80000000) {
+        cfgfatal(loc,desc,"\"%s\" must fit into a 32-bit signed integer\n",key);
     }
     r=i->data.number;
     return r;

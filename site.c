@@ -1266,6 +1266,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
 
     /* The information we expect to see in incoming messages of type 1 */
+    /* fixme: lots of unchecked overflows here, but the results are only
+       corrupted packets rather than undefined behaviour */
     st->setupsiglen=strlen(st->remotename)+strlen(st->localname)+8;
     st->setupsig=safe_malloc(st->setupsiglen,"site_apply");
     put_uint32(st->setupsig+0,LABEL_MSG1);

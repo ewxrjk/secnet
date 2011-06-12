@@ -1,5 +1,7 @@
 #include "secnet.h"
 #include <stdio.h>
+#include <assert.h>
+#include <limits.h>
 #include <string.h>
 #include <getopt.h>
 #include <errno.h>
@@ -230,6 +232,7 @@ void register_for_poll(void *st, beforepoll_fn *before,
     i->max_nfds=max_nfds;
     i->nfds=0;
     i->desc=desc;
+    assert(total_nfds < INT_MAX - max_nfds);
     total_nfds+=max_nfds;
     i->next=reg;
     reg=i;

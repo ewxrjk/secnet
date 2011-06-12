@@ -2,6 +2,8 @@
    inspired by the 'ipaddr.py' library from Cendio Systems AB. */
 
 #include "secnet.h"
+#include <limits.h>
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include "ipaddr.h"
@@ -31,6 +33,7 @@ static void subnet_list_set_len(struct subnet_list *a, uint32_t l)
     uint32_t na;
 
     if (l>a->alloc) {
+	assert(a->alloc < (int)(INT_MAX/sizeof(*nd))-EXTEND_ALLOC_BY);
 	na=a->alloc+EXTEND_ALLOC_BY;
 	nd=realloc(a->list,sizeof(*nd)*na);
 	if (!nd) {
@@ -45,6 +48,7 @@ static void subnet_list_set_len(struct subnet_list *a, uint32_t l)
 void subnet_list_append(struct subnet_list *a, uint32_t prefix, uint32_t len)
 {
     struct subnet *sn;
+    assert(a->entries < INT_MAX);
     subnet_list_set_len(a,a->entries+1);
     sn=&a->list[a->entries-1];
     sn->prefix=prefix;
@@ -114,6 +118,7 @@ static void ipset_set_len(struct ipset *a, uint32_t l)
     uint32_t na;
 
     if (l>a->a) {
+	assert(a->a < INT_MAX-EXTEND_ALLOC_BY);
 	na=a->a+EXTEND_ALLOC_BY;
 	nd=realloc(a->d,sizeof(*nd)*na);
 	if (!nd) {

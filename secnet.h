@@ -126,6 +126,7 @@ extern string_t dict_read_string(dict_t *dict, cstring_t key, bool_t required,
 extern uint32_t dict_read_number(dict_t *dict, cstring_t key, bool_t required,
 				 cstring_t desc, struct cloc loc,
 				 uint32_t def);
+  /* return value can safely be assigned to int32_t */
 extern bool_t dict_read_bool(dict_t *dict, cstring_t key, bool_t required,
 			     cstring_t desc, struct cloc loc, bool_t def);
 struct flagstr {
