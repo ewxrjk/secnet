@@ -5,8 +5,6 @@ conffile.yy.c
 version.c
 /secnet
 
-configure
-
 config.log
 config.h
 config.status
