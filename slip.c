@@ -33,7 +33,7 @@ static void slip_stuff(struct slip *st, struct buffer_if *buf, int fd)
 {
     uint8_t txbuf[DEFAULT_BUFSIZE];
     uint8_t *i;
-    uint32_t j=0;
+    int32_t j=0;
 
     BUF_ASSERT_USED(buf);
 

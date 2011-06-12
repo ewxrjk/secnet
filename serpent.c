@@ -28,7 +28,8 @@
 void serpent_makekey(struct keyInstance *key, int keyLen,
 	    uint8_t *keyMaterial)
 {
-    uint32_t i,j;
+    int i;
+    uint32_t j;
     uint32_t w[132],k[132];
 
     for(i=0; i<keyLen/32; i++)

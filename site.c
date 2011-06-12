@@ -145,7 +145,7 @@ struct site {
     struct dh_if *dh;
     struct hash_if *hash;
 
-    uint32_t setup_retries; /* How many times to send setup packets */
+    int32_t setup_retries; /* How many times to send setup packets */
     uint32_t setup_timeout; /* Initial timeout for setup packets */
     uint32_t wait_timeout; /* How long to wait if setup unsuccessful */
     uint32_t key_lifetime; /* How long a key lasts once set up */
@@ -156,8 +156,8 @@ struct site {
 			 implemented) */
 
     uint8_t *setupsig; /* Expected signature of incoming MSG1 packets */
-    uint32_t setupsiglen; /* Allows us to discard packets quickly if
-			     they are not for us */
+    int32_t setupsiglen; /* Allows us to discard packets quickly if
+			    they are not for us */
     bool_t setup_priority; /* Do we have precedence if both sites emit
 			      message 1 simultaneously? */
     uint32_t log_events;
@@ -242,16 +242,16 @@ struct msg {
     uint8_t *hashstart;
     uint32_t dest;
     uint32_t source;
-    uint32_t remlen;
+    int32_t remlen;
     uint8_t *remote;
-    uint32_t loclen;
+    int32_t loclen;
     uint8_t *local;
     uint8_t *nR;
     uint8_t *nL;
-    uint32_t pklen;
+    int32_t pklen;
     uint8_t *pk;
-    uint32_t hashlen;
-    uint32_t siglen;
+    int32_t hashlen;
+    int32_t siglen;
     uint8_t *sig;
 };
 

@@ -60,7 +60,7 @@ typedef struct list list_t;        /* A list of items */
 /* Configuration file location, for error-reporting */
 struct cloc {
     cstring_t file;
-    uint32_t line;
+    int line;
 };
 
 /* Modules export closures, which can be invoked from the configuration file.
@@ -107,11 +107,11 @@ extern cstring_t *dict_keys(dict_t *dict);
 
 /* List-manipulation functions */
 extern list_t *list_new(void);
-extern uint32_t list_length(list_t *a);
+extern int32_t list_length(list_t *a);
 extern list_t *list_append(list_t *a, item_t *i);
 extern list_t *list_append_list(list_t *a, list_t *b);
 /* Returns an item from the list (index starts at 0), or NULL */
-extern item_t *list_elem(list_t *l, uint32_t index);
+extern item_t *list_elem(list_t *l, int32_t index);
 
 /* Convenience functions */
 extern list_t *new_closure(closure_t *cl);
@@ -169,7 +169,7 @@ typedef void afterpoll_fn(void *st, struct pollfd *fds, int nfds,
    structures you may require - you can always ask for more in
    *nfds_io. */
 extern void register_for_poll(void *st, beforepoll_fn *before,
-			      afterpoll_fn *after, uint32_t max_nfds,
+			      afterpoll_fn *after, int32_t max_nfds,
 			      cstring_t desc);
 
 /***** END of scheduling support */
@@ -270,7 +270,7 @@ struct resolver_if {
 /* RANDOMSRC interface */
 
 /* Return some random data. Returns TRUE for success. */
-typedef bool_t random_fn(void *st, uint32_t bytes, uint8_t *buff);
+typedef bool_t random_fn(void *st, int32_t bytes, uint8_t *buff);
 
 struct random_if {
     void *st;
@@ -280,7 +280,7 @@ struct random_if {
 
 /* RSAPUBKEY interface */
 
-typedef bool_t rsa_checksig_fn(void *st, uint8_t *data, uint32_t datalen,
+typedef bool_t rsa_checksig_fn(void *st, uint8_t *data, int32_t datalen,
 			       cstring_t signature);
 struct rsapubkey_if {
     void *st;
@@ -289,7 +289,7 @@ struct rsapubkey_if {
 
 /* RSAPRIVKEY interface */
 
-typedef string_t rsa_makesig_fn(void *st, uint8_t *data, uint32_t datalen);
+typedef string_t rsa_makesig_fn(void *st, uint8_t *data, int32_t datalen);
 struct rsaprivkey_if {
     void *st;
     rsa_makesig_fn *sign;
@@ -309,8 +309,8 @@ typedef bool_t comm_sendmsg_fn(void *commst, struct buffer_if *buf,
 			       struct sockaddr_in *dest);
 struct comm_if {
     void *st;
-    uint32_t min_start_pad;
-    uint32_t min_end_pad;
+    int32_t min_start_pad;
+    int32_t min_end_pad;
     comm_request_notify_fn *request_notify;
     comm_release_notify_fn *release_notify;
     comm_sendmsg_fn *sendmsg;
@@ -357,7 +357,7 @@ struct site_if {
    particular key material) have a different C type. */
 
 typedef struct transform_inst_if *transform_createinstance_fn(void *st);
-typedef bool_t transform_setkey_fn(void *st, uint8_t *key, uint32_t keylen);
+typedef bool_t transform_setkey_fn(void *st, uint8_t *key, int32_t keylen);
 typedef void transform_delkey_fn(void *st);
 typedef void transform_destroyinstance_fn(void *st);
 /* Returns 0 for 'all is well', any other value for a problem */
@@ -375,9 +375,9 @@ struct transform_inst_if {
 
 struct transform_if {
     void *st;
-    uint32_t max_start_pad;
-    uint32_t max_end_pad;
-    uint32_t keylen;
+    int32_t max_start_pad; /* these three are all <<< INT_MAX */
+    int32_t max_end_pad;
+    int32_t keylen;
     transform_createinstance_fn *create;
 };
 
@@ -398,11 +398,11 @@ typedef void netlink_deliver_fn(void *st, struct buffer_if *buf);
 #define MAXIMUM_LINK_QUALITY 3
 typedef void netlink_link_quality_fn(void *st, uint32_t quality);
 typedef void netlink_register_fn(void *st, netlink_deliver_fn *deliver,
-				 void *dst, uint32_t max_start_pad,
-				 uint32_t max_end_pad);
+				 void *dst, int32_t max_start_pad,
+				 int32_t max_end_pad);
 typedef void netlink_output_config_fn(void *st, struct buffer_if *buf);
 typedef bool_t netlink_check_config_fn(void *st, struct buffer_if *buf);
-typedef void netlink_set_mtu_fn(void *st, uint32_t new_mtu);
+typedef void netlink_set_mtu_fn(void *st, int32_t new_mtu);
 struct netlink_if {
     void *st;
     netlink_register_fn *reg;
@@ -417,14 +417,14 @@ struct netlink_if {
 
 /* Returns public key as a malloced hex string */
 typedef string_t dh_makepublic_fn(void *st, uint8_t *secret,
-				  uint32_t secretlen);
+				  int32_t secretlen);
 /* Fills buffer (up to buflen) with shared secret */
 typedef void dh_makeshared_fn(void *st, uint8_t *secret,
-			      uint32_t secretlen, cstring_t rempublic,
-			      uint8_t *sharedsecret, uint32_t buflen);
+			      int32_t secretlen, cstring_t rempublic,
+			      uint8_t *sharedsecret, int32_t buflen);
 struct dh_if {
     void *st;
-    uint32_t len; /* Approximate size of modulus in bytes */
+    int32_t len; /* Approximate size of modulus in bytes */
     dh_makepublic_fn *makepublic;
     dh_makeshared_fn *makeshared;
 };
@@ -432,10 +432,10 @@ struct dh_if {
 /* HASH interface */
 
 typedef void *hash_init_fn(void);
-typedef void hash_update_fn(void *st, uint8_t const *buf, uint32_t len);
+typedef void hash_update_fn(void *st, uint8_t const *buf, int32_t len);
 typedef void hash_final_fn(void *st, uint8_t *digest);
 struct hash_if {
-    uint32_t len; /* Hash output length in bytes */
+    int32_t len; /* Hash output length in bytes */
     hash_init_fn *init;
     hash_update_fn *update;
     hash_final_fn *final;
@@ -450,8 +450,8 @@ struct buffer_if {
     struct cloc loc; /* Where we were defined */
     uint8_t *base;
     uint8_t *start;
-    uint32_t size; /* Size of buffer contents */
-    uint32_t len; /* Total length allocated at base */
+    int32_t size; /* Size of buffer contents */
+    int32_t len; /* Total length allocated at base */
 };
 
 /***** LOG functions *****/

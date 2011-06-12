@@ -19,7 +19,7 @@ static void vMessage(uint32_t class, const char *message, va_list args)
     FILE *dest=stdout;
 #define MESSAGE_BUFLEN 1023
     static char buff[MESSAGE_BUFLEN+1]={0,};
-    uint32_t bp;
+    size_t bp;
     char *nlp;
 
     if (secnet_is_daemon) {

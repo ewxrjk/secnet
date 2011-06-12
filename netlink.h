@@ -23,7 +23,7 @@ struct netlink_client {
     void *dst;
     string_t name;
     uint32_t link_quality;
-    uint32_t mtu;
+    int32_t mtu;
     uint32_t options;
     uint32_t outcount;
     bool_t up; /* Should these routes exist in the kernel? */
@@ -41,18 +41,18 @@ struct netlink {
     closure_t cl;
     void *dst; /* Pointer to host interface state */
     cstring_t name;
-    uint32_t max_start_pad;
-    uint32_t max_end_pad;
+    int32_t max_start_pad;
+    int32_t max_end_pad;
     struct ipset *networks; /* Local networks */
     struct subnet_list *subnets; /* Same as networks, for display */
     struct ipset *remote_networks; /* Allowable remote networks */
     uint32_t secnet_address; /* our own address, or the address of the
 				other end of a point-to-point link */
     bool_t ptp;
-    uint32_t mtu;
+    int32_t mtu;
     struct netlink_client *clients; /* Linked list of clients */
     struct netlink_client **routes; /* Array of clients, sorted by priority */
-    uint32_t n_clients;
+    int32_t n_clients;
     netlink_deliver_fn *deliver_to_host; /* Provided by driver */
     netlink_route_fn *set_routes; /* Provided by driver */
     struct buffer_if icmp; /* Buffer for assembly of outgoing ICMP */

@@ -36,7 +36,7 @@ struct p_node {
 };
 
 extern cstring_t config_file;
-extern uint32_t config_lineno;
+extern int config_lineno;
 extern int yynerrs;
 
 /* Keys in dictionaries are 'atoms', which are constructed from strings

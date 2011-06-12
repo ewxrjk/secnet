@@ -14,7 +14,7 @@ struct rgen_data {
 };
 
 static random_fn random_generate;
-static bool_t random_generate(void *data, uint32_t bytes, uint8_t *buff)
+static bool_t random_generate(void *data, int32_t bytes, uint8_t *buff)
 {
     struct rgen_data *st=data;
     int r;

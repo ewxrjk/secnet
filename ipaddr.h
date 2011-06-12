@@ -6,12 +6,12 @@
 struct subnet {
     uint32_t prefix;
     uint32_t mask;
-    uint32_t len;
+    int len;
 };
 
 struct subnet_list {
-    uint32_t entries;
-    uint32_t alloc;
+    int32_t entries;
+    int32_t alloc;
     struct subnet *list;
 };
 
@@ -20,15 +20,14 @@ struct iprange {
 };
 
 struct ipset {
-    uint32_t l; /* Number of entries in list */
-    uint32_t a; /* Allocated space in list */
+    int32_t l; /* Number of entries in list */
+    int32_t a; /* Allocated space in list */
     struct iprange *d;
 };
 
 extern struct subnet_list *subnet_list_new(void);
 extern void subnet_list_free(struct subnet_list *a);
-extern void subnet_list_append(struct subnet_list *a, uint32_t prefix,
-			       uint32_t len);
+extern void subnet_list_append(struct subnet_list *a, uint32_t prefix, int len);
 
 static inline bool_t subnet_match(struct subnet s, uint32_t address)
 {

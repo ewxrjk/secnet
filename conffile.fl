@@ -35,7 +35,7 @@ struct include_stack_item {
 struct include_stack_item include_stack[MAX_INCLUDE_DEPTH];
 int include_stack_ptr=0;
 
-uint32_t config_lineno=0;
+int config_lineno=0;
 cstring_t config_file="xxx";
 
 static struct p_node *leafnode(uint32_t type)

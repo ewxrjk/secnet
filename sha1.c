@@ -294,7 +294,7 @@ static void *sha1_init(void)
     return ctx;
 }
 
-static void sha1_update(void *sst, uint8_t const *buf, uint32_t len)
+static void sha1_update(void *sst, uint8_t const *buf, int32_t len)
 {
     SHA1_CTX *ctx=sst;
 

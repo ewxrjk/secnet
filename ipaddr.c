@@ -27,10 +27,10 @@ void subnet_list_free(struct subnet_list *a)
     free(a);
 }
 
-static void subnet_list_set_len(struct subnet_list *a, uint32_t l)
+static void subnet_list_set_len(struct subnet_list *a, int32_t l)
 {
     struct subnet *nd;
-    uint32_t na;
+    int32_t na;
 
     if (l>a->alloc) {
 	assert(a->alloc < (int)(INT_MAX/sizeof(*nd))-EXTEND_ALLOC_BY);
@@ -45,7 +45,7 @@ static void subnet_list_set_len(struct subnet_list *a, uint32_t l)
     a->entries=l;
 }
 
-void subnet_list_append(struct subnet_list *a, uint32_t prefix, uint32_t len)
+void subnet_list_append(struct subnet_list *a, uint32_t prefix, int len)
 {
     struct subnet *sn;
     assert(a->entries < INT_MAX);
@@ -75,7 +75,7 @@ void ipset_free(struct ipset *a)
 #ifdef DEBUG
 static void ipset_dump(struct ipset *a, string_t name)
 {
-    uint32_t i;
+    int32_t i;
 
     printf("%s: ",name);
     for (i=0; i<a->l; i++) {
@@ -99,7 +99,7 @@ struct ipset *ipset_from_subnet(struct subnet s)
 struct ipset *ipset_from_subnet_list(struct subnet_list *l)
 {
     struct ipset *r, *a, *b;
-    uint32_t i;
+    int32_t i;
 
     r=ipset_new();
     for (i=0; i<l->entries; i++) {
@@ -112,10 +112,10 @@ struct ipset *ipset_from_subnet_list(struct subnet_list *l)
     return r;
 }
 
-static void ipset_set_len(struct ipset *a, uint32_t l)
+static void ipset_set_len(struct ipset *a, int32_t l)
 {
     struct iprange *nd;
-    uint32_t na;
+    int32_t na;
 
     if (l>a->a) {
 	assert(a->a < INT_MAX-EXTEND_ALLOC_BY);
@@ -141,7 +141,7 @@ struct ipset *ipset_union(struct ipset *a, struct ipset *b)
 {
     struct ipset *c;
     struct iprange r;
-    uint32_t ia,ib;
+    int32_t ia,ib;
 
     c=ipset_new();
     ia=0; ib=0;
@@ -172,7 +172,7 @@ struct ipset *ipset_intersection(struct ipset *a, struct ipset *b)
 {
     struct ipset *r;
     struct iprange ra, rb;
-    uint32_t ia,ib;
+    int32_t ia,ib;
 
     r=ipset_new();
     ia=0; ib=0;
@@ -220,7 +220,8 @@ struct ipset *ipset_complement(struct ipset *a)
     struct ipset *r;
     struct iprange n;
     int64_t pre;
-    uint32_t i,lo,hi;
+    int32_t i;
+    uint32_t lo,hi;
 
     r=ipset_new();
     pre=-1;
@@ -259,7 +260,7 @@ bool_t ipset_is_empty(struct ipset *a)
 
 bool_t ipset_contains_addr(struct ipset *a, uint32_t addr)
 {
-    uint32_t i;
+    int32_t i;
     struct iprange r;
 
     for (i=0; i<a->l; i++) {
@@ -290,8 +291,8 @@ struct subnet_list *ipset_to_subnet_list(struct ipset *is)
 {
     struct subnet_list *r;
     int64_t a,b,lobit,himask,lomask;
-    int32_t bits;
-    uint32_t i;
+    int bits;
+    int32_t i;
 
     r=subnet_list_new();
     for (i=0; i<is->l; i++) {
@@ -357,7 +358,7 @@ static struct subnet string_item_to_subnet(item_t *i, cstring_t desc,
 {
     struct subnet s;
     uint32_t a, b, c, d, n;
-    uint32_t match;
+    int match;
     cstring_t in;
 
     *invert=False;
@@ -406,7 +407,7 @@ static struct subnet string_item_to_subnet(item_t *i, cstring_t desc,
 uint32_t string_item_to_ipaddr(item_t *i, cstring_t desc)
 {
     uint32_t a, b, c, d;
-    uint32_t match;
+    int match;
 
     /* i is not guaranteed to be a string */
     if (i->type!=t_string) {

@@ -123,7 +123,7 @@ their use.
 #define ICMP_CODE_TTL_EXCEEDED           0
 
 /* Generic IP checksum routine */
-static inline uint16_t ip_csum(uint8_t *iph,uint32_t count)
+static inline uint16_t ip_csum(uint8_t *iph,int32_t count)
 {
     register uint32_t sum=0;
 
@@ -147,7 +147,7 @@ static inline uint16_t ip_csum(uint8_t *iph,uint32_t count)
  *      By Jorge Cwik <jorge@laser.satlink.net>, adapted for linux by
  *      Arnt Gulbrandsen.
  */
-static inline uint16_t ip_fast_csum(uint8_t *iph, uint32_t ihl) {
+static inline uint16_t ip_fast_csum(uint8_t *iph, int32_t ihl) {
     uint32_t sum;
 
     __asm__ __volatile__(
@@ -177,8 +177,9 @@ static inline uint16_t ip_fast_csum(uint8_t *iph, uint32_t ihl) {
     return sum;
 }
 #else
-static inline uint16_t ip_fast_csum(uint8_t *iph, uint32_t ihl)
+static inline uint16_t ip_fast_csum(uint8_t *iph, int32_t ihl)
 {
+    assert(ihl < INT_MAX/4);
     return ip_csum(iph,ihl*4);
 }
 #endif
@@ -264,7 +265,7 @@ static struct icmphdr *netlink_icmp_tmpl(struct netlink *st,
 /* Fill in the ICMP checksum field correctly */
 static void netlink_icmp_csum(struct icmphdr *h)
 {
-    uint32_t len;
+    int32_t len;
 
     len=ntohs(h->iph.tot_len)-(4*h->iph.ihl);
     h->check=0;
@@ -386,7 +387,7 @@ static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
 static bool_t netlink_check(struct netlink *st, struct buffer_if *buf)
 {
     struct iphdr *iph=(struct iphdr *)buf->start;
-    uint32_t len;
+    int32_t len;
 
     if (iph->ihl < 5 || iph->version != 4) return False;
     if (buf->size < iph->ihl*4) return False;
@@ -695,7 +696,7 @@ static void netlink_set_quality(void *sst, uint32_t quality)
 static void netlink_output_subnets(struct netlink *st, uint32_t loglevel,
 				   struct subnet_list *snets)
 {
-    uint32_t i;
+    int32_t i;
     string_t net;
 
     for (i=0; i<snets->entries; i++) {
@@ -763,7 +764,7 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
 {
     struct netlink *st=sst;
     struct netlink_client *c;
-    uint32_t i;
+    int32_t i;
 
     /* All the networks serviced by the various tunnels should now
      * have been registered.  We build a routing table by sorting the
@@ -811,7 +812,7 @@ static bool_t netlink_inst_check_config(void *sst, struct buffer_if *buf)
     return True;
 }
 
-static void netlink_inst_set_mtu(void *sst, uint32_t new_mtu)
+static void netlink_inst_set_mtu(void *sst, int32_t new_mtu)
 {
     struct netlink_client *c=sst;
 
@@ -819,8 +820,8 @@ static void netlink_inst_set_mtu(void *sst, uint32_t new_mtu)
 }
 
 static void netlink_inst_reg(void *sst, netlink_deliver_fn *deliver, 
-			     void *dst, uint32_t max_start_pad,
-			     uint32_t max_end_pad)
+			     void *dst, int32_t max_start_pad,
+			     int32_t max_end_pad)
 {
     struct netlink_client *c=sst;
     struct netlink *st=c->nst;
@@ -847,7 +848,8 @@ static closure_t *netlink_inst_create(struct netlink *st,
     struct netlink_client *c;
     string_t name;
     struct ipset *networks;
-    uint32_t options,priority,mtu;
+    uint32_t options,priority;
+    int32_t mtu;
     list_t *l;
 
     name=dict_read_string(dict, "name", True, st->name, loc);

@@ -38,7 +38,7 @@ struct transform_inst {
 
 #define PKCS5_MASK 15
 
-static bool_t transform_setkey(void *sst, uint8_t *key, uint32_t keylen)
+static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen)
 {
     struct transform_inst *ti=sst;
 
@@ -157,7 +157,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 {
     struct transform_inst *ti=sst;
     uint8_t *padp;
-    unsigned padlen;
+    int padlen;
     int i;
     uint32_t seqnum, skew;
     uint8_t iv[16];

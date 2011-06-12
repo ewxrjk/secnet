@@ -35,7 +35,7 @@ struct dict {
     struct dict *parent;
     struct searchlist *search;
     struct entry *entries;
-    uint32_t size;
+    int32_t size;
 };
 
 static struct atomlist *atoms=NULL;
@@ -173,9 +173,9 @@ static string_t ntype(uint32_t type)
     return "**unknown**";
 }
 
-static void ptree_indent(uint32_t amount)
+static void ptree_indent(int amount)
 {
-    uint32_t i;
+    int i;
     for (i=0; i<amount; i++) printf("  . ");
 }
 
@@ -561,9 +561,9 @@ list_t *list_new(void)
     return NULL;
 }
 
-uint32_t list_length(list_t *a)
+int32_t list_length(list_t *a)
 {
-    uint32_t l=0;
+    int32_t l=0;
     list_t *i;
     for (i=a; i; i=i->next) { assert(l < INT_MAX); l++; }
     return l;
@@ -608,7 +608,7 @@ list_t *list_append(list_t *list, item_t *item)
     return list_append_list(list,l);
 }
 
-item_t *list_elem(list_t *l, uint32_t index)
+item_t *list_elem(list_t *l, int32_t index)
 {
     if (!l) return NULL;
     if (index==0) return l->item;

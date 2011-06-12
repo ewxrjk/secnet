@@ -139,7 +139,7 @@ static uint8_t hexval(uint8_t c)
 }
 
 /* Convert a MP_INT into a buffer; return length; truncate if necessary */
-uint32_t write_mpbin(MP_INT *a, uint8_t *buffer, uint32_t buflen)
+int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen)
 {
     char *hb;
     int i,j,l;
@@ -224,7 +224,7 @@ struct buffer {
 };
 
 void buffer_assert_free(struct buffer_if *buffer, cstring_t file,
-			uint32_t line)
+			int line)
 {
     if (!buffer->free) {
 	fatal("BUF_ASSERT_FREE, %s line %d, owned by %s",
@@ -233,7 +233,7 @@ void buffer_assert_free(struct buffer_if *buffer, cstring_t file,
 }
 
 void buffer_assert_used(struct buffer_if *buffer, cstring_t file,
-			uint32_t line)
+			int line)
 {
     if (buffer->free) {
 	fatal("BUF_ASSERT_USED, %s line %d, last owned by %s",
@@ -241,13 +241,13 @@ void buffer_assert_used(struct buffer_if *buffer, cstring_t file,
     }
 }
 
-void buffer_init(struct buffer_if *buffer, uint32_t max_start_pad)
+void buffer_init(struct buffer_if *buffer, int32_t max_start_pad)
 {
     buffer->start=buffer->base+max_start_pad;
     buffer->size=0;
 }
 
-void *buf_append(struct buffer_if *buf, uint32_t amount) {
+void *buf_append(struct buffer_if *buf, int32_t amount) {
     void *p;
     assert(buf->size <= buf->len - amount);
     p=buf->start + buf->size;
@@ -255,18 +255,18 @@ void *buf_append(struct buffer_if *buf, uint32_t amount) {
     return p;
 }
 
-void *buf_prepend(struct buffer_if *buf, uint32_t amount) {
+void *buf_prepend(struct buffer_if *buf, int32_t amount) {
     assert(amount <= buf->start - buf->base);
     buf->size+=amount;
     return buf->start-=amount;
 }
 
-void *buf_unappend(struct buffer_if *buf, uint32_t amount) {
+void *buf_unappend(struct buffer_if *buf, int32_t amount) {
     if (buf->size < amount) return 0;
     return buf->start+(buf->size-=amount);
 }
 
-void *buf_unprepend(struct buffer_if *buf, uint32_t amount) {
+void *buf_unprepend(struct buffer_if *buf, int32_t amount) {
     void *p;
     p=buf->start;
     buf->start+=amount;
@@ -278,7 +278,7 @@ void *buf_unprepend(struct buffer_if *buf, uint32_t amount) {
    network byte order. */
 void buf_append_string(struct buffer_if *buf, cstring_t s)
 {
-    uint16_t len;
+    size_t len;
 
     len=strlen(s);
     /* fixme: if string is longer than 65535, result is a corrupted packet */
@@ -286,7 +286,7 @@ void buf_append_string(struct buffer_if *buf, cstring_t s)
     memcpy(buf_append(buf,len),s,len);
 }
 
-void buffer_new(struct buffer_if *buf, uint32_t len)
+void buffer_new(struct buffer_if *buf, int32_t len)
 {
     buf->free=True;
     buf->owner=NULL;

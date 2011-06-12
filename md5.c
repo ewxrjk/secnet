@@ -26,7 +26,7 @@
 
 #ifdef WORDS_BIGENDIAN
 static void
-byteSwap(uint32_t *buf, unsigned words)
+byteSwap(uint32_t *buf, int words)
 {
 	md5byte *p = (md5byte *)buf;
 
@@ -247,7 +247,7 @@ static void *md5_init(void)
     return ctx;
 }
 
-static void md5_update(void *sst, uint8_t const *buf, uint32_t len)
+static void md5_update(void *sst, uint8_t const *buf, int32_t len)
 {
     struct MD5Context *ctx=sst;
 

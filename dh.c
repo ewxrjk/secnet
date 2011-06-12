@@ -12,7 +12,7 @@ struct dh {
     MP_INT p,g; /* prime modulus and generator */
 };
 
-static string_t dh_makepublic(void *sst, uint8_t *secret, uint32_t secretlen)
+static string_t dh_makepublic(void *sst, uint8_t *secret, int32_t secretlen)
 {
     struct dh *st=sst;
     string_t r;
@@ -33,9 +33,9 @@ static string_t dh_makepublic(void *sst, uint8_t *secret, uint32_t secretlen)
 }
 
 static dh_makeshared_fn dh_makeshared;
-static void dh_makeshared(void *sst, uint8_t *secret, uint32_t secretlen,
+static void dh_makeshared(void *sst, uint8_t *secret, int32_t secretlen,
 			  cstring_t rempublic, uint8_t *sharedsecret,
-			  uint32_t buflen)
+			  int32_t buflen)
 {
     struct dh *st=sst;
     MP_INT a, b, c;

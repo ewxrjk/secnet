@@ -32,13 +32,13 @@ struct poll_interest {
     beforepoll_fn *before;
     afterpoll_fn *after;
     void *state;
-    uint32_t max_nfds;
-    uint32_t nfds;
+    int32_t max_nfds;
+    int32_t nfds;
     cstring_t desc;
     struct poll_interest *next;
 };
 static struct poll_interest *reg=NULL;
-static uint32_t total_nfds=10;
+static int32_t total_nfds=10;
 
 static bool_t finished=False;
 
@@ -221,7 +221,7 @@ static void setup(dict_t *config)
 }
 
 void register_for_poll(void *st, beforepoll_fn *before,
-		       afterpoll_fn *after, uint32_t max_nfds, cstring_t desc)
+		       afterpoll_fn *after, int32_t max_nfds, cstring_t desc)
 {
     struct poll_interest *i;
 

@@ -149,7 +149,7 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
     struct tun *st=sst;
     string_t network, mask, secnetaddr;
     struct subnet_list *nets;
-    uint32_t i;
+    int32_t i;
     int fd=-1;
 
     if (routes->up == routes->kup) return False;

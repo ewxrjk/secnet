@@ -36,7 +36,7 @@ struct rsapub {
 
 static const char *hexchars="0123456789abcdef";
 
-static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
+static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
 {
     struct rsapriv *st=sst;
     MP_INT a, b, u, v, tmp, tmp2;
@@ -130,7 +130,7 @@ static string_t rsa_sign(void *sst, uint8_t *data, uint32_t datalen)
 }
 
 static rsa_checksig_fn rsa_sig_check;
-static bool_t rsa_sig_check(void *sst, uint8_t *data, uint32_t datalen,
+static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
 			    cstring_t signature)
 {
     struct rsapub *st=sst;
