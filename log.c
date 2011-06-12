@@ -29,7 +29,7 @@ static void vMessage(uint32_t class, const char *message, va_list args)
 	/* Each line is sent separately */
 	while ((nlp=strchr(buff,'\n'))) {
 	    *nlp=0;
-	    slilog(system_log,class,buff);
+	    slilog(system_log,class,"%s",buff);
 	    memmove(buff,nlp+1,strlen(nlp+1)+1);
 	}
     } else {
