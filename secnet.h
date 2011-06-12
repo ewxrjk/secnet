@@ -324,9 +324,11 @@ struct log_if {
     log_msg_fn *log;
     log_vmsg_fn *vlog;
 };
-/* (convenience function, defined in util.c) */
+/* (convenience functions, defined in util.c) */
 extern void slilog(struct log_if *lf, int class, const char *message, ...)
 FORMAT(printf,3,4);
+extern void vslilog(struct log_if *lf, int class, const char *message, va_list)
+FORMAT(printf,3,0);
 
 /* SITE interface */
 

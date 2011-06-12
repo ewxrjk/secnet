@@ -198,12 +198,17 @@ bool_t remove_hook(uint32_t phase, hook_fn *fn, void *state)
     return False;
 }
 
+void vslilog(struct log_if *lf, int priority, const char *message, va_list ap)
+{
+    lf->vlog(lf->st,priority,message,ap);
+}
+
 void slilog(struct log_if *lf, int priority, const char *message, ...)
 {
     va_list ap;
     
     va_start(ap,message);
-    lf->vlog(lf->st,priority,message,ap);
+    vslilog(lf,priority,message,ap);
     va_end(ap);
 }
 
