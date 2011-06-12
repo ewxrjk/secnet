@@ -31,9 +31,6 @@ CC:=@CC@
 INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 
-# Use -DHACKY_PARALLEL if you are compiling secnet for an extremely
-# slow machine
-#CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -DHACKY_PARALLEL
 CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
 	-W -Wno-unused \
 	-Wno-pointer-sign -Wstrict-prototypes -Wmissing-prototypes \

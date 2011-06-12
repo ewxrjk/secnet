@@ -33,6 +33,16 @@ AC_CHECK_SIZEOF(unsigned short)
 AC_CHECK_SIZEOF(unsigned char)
 AC_PROG_CC_NO_WRITEABLE_STRINGS(WRITESTRINGS)
 
+AC_ARG_ENABLE(hacky-parallel,
+  [AS_HELP_STRING([--enable-hacky-parallel],
+                  [parallelise slow cryptography (default is no)])], [
+  case "$enableval" in
+  n|0|no) ;;
+  y|1|yes) CFLAGS="$CFLAGS -DHACKY_PARALLEL" ;;
+  *) ;;
+  esac
+])
+
 AC_DEFUN([REQUIRE_HEADER],[AC_CHECK_HEADER($1,,[AC_MSG_ERROR($1 not found)])])
 
 dnl the order in which libraries is checked is important
