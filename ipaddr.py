@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-1 -*-
 # ipaddr.py -- handle IP addresses and set of IP addresses.
 # Copyright (C) 1996-2000 Cendio Systems AB
 #
