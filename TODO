@@ -1,12 +1,8 @@
 dh.c: change format to binary from decimal string (without introducing
 endianness problems)
 
-log.c: implement a file-descriptor-to-log module
-
 netlink.c: test the 'allow_route' option properly.
 Add fragmentation code.  Check that we comply with RFC1812.
-
-process.c: capture output from children in sys_cmd() and log it
 
 random.c: test properly
 
@@ -15,9 +11,6 @@ site code ought to remember them and try contacting them in turn.
 
 rsa.c: check padding type, change format to binary from decimal string
 (without introducing endianness problems)
-
-secnet.c: optionally pipe stderr to a log when we become a daemon.
-Don't just close it.
 
 site.c: Abandon key exchanges when a bad packet is received. Modify
 protocol to include version fields, as described in the NOTES

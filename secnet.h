@@ -12,6 +12,21 @@
 #include <sys/time.h>
 #include <netinet/in.h>
 
+/*
+ * Macros added by SGT for endianness-independence
+ */
+#define GET_32BIT_MSB_FIRST(cp) \
+  (((unsigned long)(unsigned char)(cp)[0] << 24) | \
+  ((unsigned long)(unsigned char)(cp)[1] << 16) | \
+  ((unsigned long)(unsigned char)(cp)[2] << 8) | \
+  ((unsigned long)(unsigned char)(cp)[3]))
+
+#define PUT_32BIT_MSB_FIRST(cp, value) ( \
+  (cp)[0] = (char)((value) >> 24), \
+  (cp)[1] = (char)((value) >> 16), \
+  (cp)[2] = (char)((value) >> 8), \
+  (cp)[3] = (char)(value) )
+
 typedef char *string_t;
 typedef const char *cstring_t;
 typedef enum {False,True} bool_t;

@@ -1,6 +1,7 @@
 Stephen Early <steve@greenend.org.uk> - original author
 Ross Anderson, Eli Biham, Lars Knudsen - serpent
 Colin Plumb, Ian Jackson - MD5 implementation
+Ian Jackson - hacky parallelism, serpent keying and endianness bugfixes
 Steve Reid <sreid@sea-to-sky.net>, James H. Brown <jbrown@burgoyne.com> - 
   SHA1 implementation
 Cendio Systems AB - ipaddr.py
@@ -8,4 +9,5 @@ Mark Martinec <mark.martinec@ijs.si> - portable snprintf
 
 Simon Tatham, Jonathan Amery, Ian Jackson - testing and debugging
 Simon Tatham - RSA signatures using Chinese Remainder Theorem
-Richard Kettlewell - assorted bugfixes
+Simon Tatham - endianness cleanups in transform.c
+Richard Kettlewell, Peter Benie - assorted bugfixes

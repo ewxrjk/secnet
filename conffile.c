@@ -466,6 +466,9 @@ static dict_t *process_config(struct p_node *c)
     context=root;
 
     /* Predefined keys for boolean values */
+    /* "nowise" and "verily" have the advantage of being the same
+       length, so they line up nicely...  thanks VKC and SGT (who also
+       point out that "mayhap" is a good "maybe" value as well) */
     i=new_item(t_bool,no_loc);
     i->data.bool=False;
     false=list_append(NULL,i);
@@ -478,12 +481,18 @@ static dict_t *process_config(struct p_node *c)
     dict_add(root,"no",false);
     dict_add(root,"No",false);
     dict_add(root,"NO",false);
+    dict_add(root,"nowise",false);
+    dict_add(root,"Nowise",false);
+    dict_add(root,"NOWISE",false);
     dict_add(root,"true",true);
     dict_add(root,"True",true);
     dict_add(root,"TRUE",true);
     dict_add(root,"yes",true);
     dict_add(root,"Yes",true);
     dict_add(root,"YES",true);
+    dict_add(root,"verily",true);
+    dict_add(root,"Verily",true);
+    dict_add(root,"VERILY",true);
 
     add_closure(root,"makelist",makelist);
     add_closure(root,"readfile",readfile);
@@ -619,6 +628,7 @@ void add_closure(dict_t *dict, cstring_t name, apply_fn apply)
     closure_t *c;
     c=safe_malloc(sizeof(*c),"add_closure");
     c->description=name;
+    c->type=CL_PURE;
     c->apply=apply;
     c->interface=NULL;
 

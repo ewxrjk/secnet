@@ -4,11 +4,6 @@ USE AT YOUR OWN RISK.  THIS IS ALPHA TEST SOFTWARE.  I DO NOT
 GUARANTEE THAT THERE WILL BE PROTOCOL COMPATIBILITY BETWEEN DIFFERENT
 VERSIONS.
 
-PROTOCOL COMPATIBILITY WAS BROKEN BETWEEN secnet-0.06, secnet-0.07 AND
-secnet-0.08 FOR ENDIANNESS FIXES.
-
-THERE WILL BE ANOTHER CHANGE IN PROTOCOL IN THE secnet-0.1.x SERIES
-
 * Preparation
 
 ** System software support
@@ -31,12 +26,6 @@ linux/Documentation/networking/tuntap.txt
 
 If you're using TUN/TAP on a platform other than Linux-2.4, see
 http://vtun.sourceforge.net/tun/
-
-Note than TUN comes in several flavours.  Their names in the
-configuration file are:
- tun:  Linux-2.4; only one device file (usually /dev/net/tun)
- tun-old:  Linux-2.2, BSD; device files /dev/tun*
- tun-solaris:  Solaris (not yet implemented)
 
 ** System and network configuration
 
@@ -118,7 +107,7 @@ If installing for the first time, do
 
 # cp example.conf /etc/secnet/secnet.conf
 # cd /etc/secnet
-# ssh-keygen -f key -N ""
+# ssh-keygen -f key -t rsa1 -N ""
 
 [On BSD use
 $ LDFLAGS="-L/usr/local/lib" ./configure

@@ -97,6 +97,7 @@ their use.
 
 */
 
+#include <string.h>
 #include "secnet.h"
 #include "util.h"
 #include "ipaddr.h"

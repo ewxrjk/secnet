@@ -263,10 +263,7 @@ static void run(void)
     int timeout;
     struct pollfd *fds;
 
-    fds=alloca(sizeof(*fds)*total_nfds);
-    if (!fds) {
-	fatal("run: couldn't alloca");
-    }
+    fds=safe_malloc(sizeof(*fds)*total_nfds, "run");
 
     Message(M_NOTICE,"%s [%d]: starting\n",version,secnet_pid);
 
@@ -309,6 +306,7 @@ static void run(void)
 	    }
 	} while (rv<0);
     } while (!finished);
+    free(fds);
 }
 
 static void droppriv(void)

@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# Copyright (C) 2001 Stephen Early <steve@greenend.org.uk>
+# Copyright (C) 2001-2002 Stephen Early <steve@greenend.org.uk>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,217 +53,319 @@ import string
 import time
 import sys
 import os
+import getopt
 
+# The ipaddr library is installed as part of secnet
 sys.path.append("/usr/local/share/secnet")
 sys.path.append("/usr/share/secnet")
 import ipaddr
 
-VERSION="0.1.13"
+VERSION="0.1.16"
 
-class vpn:
-	def __init__(self,name):
-		self.name=name
-		self.allow_defs=0
-		self.locations={}
-		self.defs={}
+# Classes describing possible datatypes in the configuration file
 
-class location:
-	def __init__(self,name,vpn):
-		self.group=None
-		self.name=name
-		self.allow_defs=1
-		self.vpn=vpn
-		self.sites={}
-		self.defs={}
-
-class site:
-	def __init__(self,name,location):
-		self.name=name
-		self.allow_defs=1
-		self.location=location
-		self.defs={}
-
-class nets:
+class single_ipaddr:
+	"An IP address"
 	def __init__(self,w):
-		self.w=w
+		self.addr=ipaddr.ipaddr(w[1])
+	def __str__(self):
+		return '"%s"'%self.addr.ip_str()
+
+class networks:
+	"A set of IP addresses specified as a list of networks"
+	def __init__(self,w):
 		self.set=ipaddr.ip_set()
 		for i in w[1:]:
 			x=string.split(i,"/")
 			self.set.append(ipaddr.network(x[0],x[1],
 				ipaddr.DEMAND_NETWORK))
-	def subsetof(self,s):
-		# I'd like to do this:
-		# return self.set.is_subset(s)
-		# but there isn't an is_subset() method
-		# Instead we see if we intersect with the complement of s
-		sc=s.set.complement()
-		i=sc.intersection(self.set)
-		return i.is_empty()
-	def out(self):
-		if (self.w[0]=='restrict-nets'): pattern="# restrict-nets %s;"
-		else:
-			pattern="link netlink { routes %s; };"
-		return pattern%string.join(map(lambda x:'"%s/%s"'%(x.ip_str(),
-				x.mask.netmask_bits_str),
-				self.set.as_list_of_networks()),",")
+	def __str__(self):
+		return string.join(map(lambda x:'"%s/%s"'%(x.ip_str(),
+			x.mask.netmask_bits_str),
+			self.set.as_list_of_networks()),",")
 
 class dhgroup:
+	"A Diffie-Hellman group"
 	def __init__(self,w):
 		self.mod=w[1]
 		self.gen=w[2]
-	def out(self):
-		return 'dh diffie-hellman("%s","%s");'%(self.mod,self.gen)
+	def __str__(self):
+		return 'diffie-hellman("%s","%s")'%(self.mod,self.gen)
 
 class hash:
+	"A choice of hash function"
 	def __init__(self,w):
 		self.ht=w[1]
 		if (self.ht!='md5' and self.ht!='sha1'):
 			complain("unknown hash type %s"%(self.ht))
-	def out(self):
-		return 'hash %s;'%(self.ht)
+	def __str__(self):
+		return '%s'%(self.ht)
 
 class email:
+	"An email address"
 	def __init__(self,w):
 		self.addr=w[1]
-	def out(self):
-		return '# Contact email address: <%s>'%(self.addr)
+	def __str__(self):
+		return '<%s>'%(self.addr)
 
 class num:
+	"A decimal number"
 	def __init__(self,w):
-		self.what=w[0]
 		self.n=string.atol(w[1])
-	def out(self):
-		return '%s %d;'%(self.what,self.n)
+	def __str__(self):
+		return '%d'%(self.n)
 
 class address:
+	"A DNS name and UDP port number"
 	def __init__(self,w):
-		self.w=w
 		self.adr=w[1]
 		self.port=string.atoi(w[2])
 		if (self.port<1 or self.port>65535):
 			complain("invalid port number")
-	def out(self):
-		return 'address "%s"; port %d;'%(self.adr,self.port)
+	def __str__(self):
+		return '"%s"; port %d'%(self.adr,self.port)
 
 class rsakey:
+	"An RSA public key"
 	def __init__(self,w):
 		self.l=string.atoi(w[1])
 		self.e=w[2]
 		self.n=w[3]
-	def out(self):
-		return 'key rsa-public("%s","%s");'%(self.e,self.n)
+	def __str__(self):
+		return 'rsa-public("%s","%s")'%(self.e,self.n)
 
-class mobileoption:
+# Possible properties of configuration nodes
+keywords={
+ 'contact':(email,"Contact address"),
+ 'dh':(dhgroup,"Diffie-Hellman group"),
+ 'hash':(hash,"Hash function"),
+ 'key-lifetime':(num,"Maximum key lifetime (ms)"),
+ 'setup-timeout':(num,"Key setup timeout (ms)"),
+ 'setup-retries':(num,"Maximum key setup packet retries"),
+ 'wait-time':(num,"Time to wait after unsuccessful key setup (ms)"),
+ 'renegotiate-time':(num,"Time after key setup to begin renegotiation (ms)"),
+ 'restrict-nets':(networks,"Allowable networks"),
+ 'networks':(networks,"Claimed networks"),
+ 'pubkey':(rsakey,"RSA public site key"),
+ 'peer':(single_ipaddr,"Tunnel peer IP address"),
+ 'address':(address,"External contact address and port")
+}
+
+def sp(name,value):
+	"Simply output a property - the default case"
+	return "%s %s;\n"%(name,value)
+
+# All levels support these properties
+global_properties={
+	'contact':(lambda name,value:"# Contact email address: %s\n"%(value)),
+	'dh':sp,
+	'hash':sp,
+	'key-lifetime':sp,
+	'setup-timeout':sp,
+	'setup-retries':sp,
+	'wait-time':sp,
+	'renegotiate-time':sp,
+	'restrict-nets':(lambda name,value:"# restrict-nets %s\n"%value)
+}
+
+class level:
+	"A level in the configuration hierarchy"
+	depth=0
+	leaf=0
+	allow_properties={}
+	require_properties={}
 	def __init__(self,w):
-		self.w=w
-	def out(self):
-		return '# netlink-options "soft";'
+		self.name=w[1]
+		self.properties={}
+		self.children={}
+	def indent(self,w,t):
+		w.write("                 "[:t])
+	def prop_out(self,n):
+		return self.allow_properties[n](n,str(self.properties[n]))
+	def output_props(self,w,ind):
+		for i in self.properties.keys():
+			if self.allow_properties[i]:
+				self.indent(w,ind)
+				w.write("%s"%self.prop_out(i))
+	def output_data(self,w,ind,np):
+		self.indent(w,ind)
+		w.write("%s {\n"%(self.name))
+		self.output_props(w,ind+2)
+		if self.depth==1: w.write("\n");
+		for c in self.children.values():
+			c.output_data(w,ind+2,np+self.name+"/")
+		self.indent(w,ind)
+		w.write("};\n")
+
+class vpnlevel(level):
+	"VPN level in the configuration hierarchy"
+	depth=1
+	leaf=0
+	type="vpn"
+	allow_properties=global_properties.copy()
+	require_properties={
+	 'contact':"VPN admin contact address"
+	}
+	def __init__(self,w):
+		level.__init__(self,w)
+	def output_vpnflat(self,w,ind,h):
+		"Output flattened list of site names for this VPN"
+		self.indent(w,ind)
+		w.write("%s {\n"%(self.name))
+		for i in self.children.keys():
+			self.children[i].output_vpnflat(w,ind+2,
+				h+"/"+self.name+"/"+i)
+		w.write("\n")
+		self.indent(w,ind+2)
+		w.write("all-sites %s;\n"%
+			string.join(self.children.keys(),','))
+		self.indent(w,ind)
+		w.write("};\n")
+
+class locationlevel(level):
+	"Location level in the configuration hierarchy"
+	depth=2
+	leaf=0
+	type="location"
+	allow_properties=global_properties.copy()
+	require_properties={
+	 'contact':"Location admin contact address",
+	}
+	def __init__(self,w):
+		level.__init__(self,w)
+		self.group=w[2]
+	def output_vpnflat(self,w,ind,h):
+		self.indent(w,ind)
+		# The "h=h,self=self" abomination below exists because
+		# Python didn't support nested_scopes until version 2.1
+		w.write("%s %s;\n"%(self.name,string.join(
+			map(lambda x,h=h,self=self:
+				h+"/"+x,self.children.keys()),',')))
+
+class sitelevel(level):
+	"Site level (i.e. a leafnode) in the configuration hierarchy"
+	depth=3
+	leaf=1
+	type="site"
+	allow_properties=global_properties.copy()
+	allow_properties.update({
+	 'address':sp,
+	 'networks':None,
+	 'peer':None,
+	 'pubkey':(lambda n,v:"key %s;\n"%v)
+	})
+	require_properties={
+	 'dh':"Diffie-Hellman group",
+	 'contact':"Site admin contact address",
+	 'address':"Site external access address",
+	 'networks':"Networks claimed by the site",
+	 'hash':"hash function",
+	 'peer':"Gateway address of the site",
+	 'pubkey':"RSA public key of the site"
+	}
+	def __init__(self,w):
+		level.__init__(self,w)
+	def output_data(self,w,ind,np):
+		self.indent(w,ind)
+		w.write("%s {\n"%(self.name))
+		self.indent(w,ind+2)
+		w.write("name \"%s\";\n"%(np+self.name))
+		self.output_props(w,ind+2)
+		self.indent(w,ind+2)
+		w.write("link netlink {\n");
+		self.indent(w,ind+4)
+		w.write("routes %s;\n"%str(self.properties["networks"]))
+		self.indent(w,ind+4)
+		w.write("ptp-address %s;\n"%str(self.properties["peer"]))
+		self.indent(w,ind+2)
+		w.write("};\n")
+		self.indent(w,ind)
+		w.write("};\n")
+
+# Levels in the configuration file
+# (depth,properties)
+levels={'vpn':vpnlevel, 'location':locationlevel, 'site':sitelevel}
+
+# Reserved vpn/location/site names
+reserved={'all-sites':None}
+reserved.update(keywords)
+reserved.update(levels)
 
 def complain(msg):
+	"Complain about a particular input line"
 	global complaints
 	print ("%s line %d: "%(file,line))+msg
 	complaints=complaints+1
 def moan(msg):
+	"Complain about something in general"
 	global complaints
 	print msg;
 	complaints=complaints+1
 
-# We don't allow redefinition of properties (because that would allow things
-# like restrict-nets to be redefined, which would be bad)
-def set(obj,defs,w):
-	if (obj.allow_defs | allow_defs):
-		if (obj.defs.has_key(w[0])):
-			complain("%s is already defined"%(w[0]))
-		else:
-			t=defs[w[0]]
-			obj.defs[w[0]]=t(w)
+root=level(['root','root'])   # All vpns are children of this node
+obstack=[root]
+allow_defs=0   # Level above which new definitions are permitted
 
-# Process a line of configuration file
+def set_property(obj,w):
+	"Set a property on a configuration node"
+	if obj.properties.has_key(w[0]):
+		complain("%s %s already has property %s defined"%
+			(obj.type,obj.name,w[0]))
+	else:
+		obj.properties[w[0]]=keywords[w[0]][0](w)
+
 def pline(i):
-	global allow_defs, group, current_vpn, current_location, current_object
+	"Process a configuration file line"
+	global allow_defs, obstack, root
 	w=string.split(i)
 	if len(w)==0: return
 	keyword=w[0]
+	current=obstack[len(obstack)-1]
 	if keyword=='end-definitions':
-		allow_defs=0
-		current_vpn=None
-		current_location=None
-		current_object=None
+		allow_defs=sitelevel.depth
+		obstack=[root]
 		return
-	if keyword=='vpn':
-		if vpns.has_key(w[1]):
-			current_vpn=vpns[w[1]]
-			current_object=current_vpn
+	if levels.has_key(keyword):
+		# We may go up any number of levels, but only down by one
+		newdepth=levels[keyword].depth
+		currentdepth=len(obstack) # actually +1...
+		if newdepth<=currentdepth:
+			obstack=obstack[:newdepth]
+		if newdepth>currentdepth:
+			complain("May not go from level %d to level %d"%
+				(currentdepth-1,newdepth))
+		# See if it's a new one (and whether that's permitted)
+		# or an existing one
+		current=obstack[len(obstack)-1]
+		if current.children.has_key(w[1]):
+			# Not new
+			current=current.children[w[1]]
+			if service and group and current.depth==2:
+				if group!=current.group:
+					complain("Incorrect group!")
 		else:
-			if allow_defs:
-				current_vpn=vpn(w[1])
-				vpns[w[1]]=current_vpn
-				current_object=current_vpn
-			else:
-				complain("no new VPN definitions allowed")
+			# New
+			# Ignore depth check for now
+			nl=levels[keyword](w)
+			if nl.depth<allow_defs:
+				complain("New definitions not allowed at "
+					"level %d"%nl.depth)
+			current.children[w[1]]=nl
+			current=nl
+		obstack.append(current)
 		return
-	if (current_vpn==None):
-		complain("no VPN defined yet")
+	if current.allow_properties.has_key(keyword):
+		set_property(current,w)
 		return
-	# Keywords that can apply at all levels
-	if mldefs.has_key(w[0]):
-		set(current_object,mldefs,w)
-		return
-	if keyword=='location':
-		if (current_vpn.locations.has_key(w[1])):
-			current_location=current_vpn.locations[w[1]]
-			current_object=current_location
-			if (group and not allow_defs and 
-				current_location.group!=group):
-				complain(("must be group %s to access "+
-					"location %s")%(current_location.group,
-					w[1]))
-		else:
-			if allow_defs:
-				if reserved.has_key(w[1]):
-					complain("reserved location name")
-					return
-				current_location=location(w[1],current_vpn)
-				current_vpn.locations[w[1]]=current_location
-				current_object=current_location
-			else:
-				complain("no new location definitions allowed")
-		return
-	if (current_location==None):
-		complain("no locations defined yet")
-		return
-	if keyword=='group':
-		current_location.group=w[1]
-		return
-	if keyword=='site':
-		if (current_location.sites.has_key(w[1])):
-			current_object=current_location.sites[w[1]]
-		else:
-			if reserved.has_key(w[1]):
-				complain("reserved site name")
-				return
-			current_object=site(w[1],current_location)
-			current_location.sites[w[1]]=current_object
-		return
-	if keyword=='endsite':
-		if isinstance(current_object,site):
-			current_object=current_object.location
-		else:
-			complain("not currently defining a site")
-		return
-	# Keywords that can only apply to sites
-	if isinstance(current_object,site):
-		if sitedefs.has_key(w[0]):
-			set(current_object,sitedefs,w)
-			return
 	else:
-		if sitedefs.has_key(w[0]):
-			complain("keyword '%s' can only be used in the "
-				"context of a site definition"%(w[0]))
-			return
-	complain("unknown keyword '%s'"%(w[0]))
+		complain("Property %s not allowed at %s level"%
+			(keyword,current.type))
+		return
+
+	complain("unknown keyword '%s'"%(keyword))
 
 def pfile(name,lines):
+	"Process a file"
 	global file,line
 	file=name
 	line=0
@@ -274,98 +376,36 @@ def pfile(name,lines):
 		pline(i)
 
 def outputsites(w):
-	w.write("# secnet sites file autogenerated by make-secnet-sites.py "
+	"Output include file for secnet configuration"
+	w.write("# secnet sites file autogenerated by make-secnet-sites "
 		+"version %s\n"%VERSION)
-	w.write("# %s\n\n"%time.asctime(time.localtime(time.time())))
+	w.write("# %s\n"%time.asctime(time.localtime(time.time())))
+	w.write("# Command line: %s\n\n"%string.join(sys.argv))
 
 	# Raw VPN data section of file
 	w.write("vpn-data {\n")
-	for i in vpns.values():
-		w.write("  %s {\n"%i.name)
-		for d in i.defs.values():
-			w.write("    %s\n"%d.out())
-		w.write("\n")
-		for l in i.locations.values():
-			w.write("    %s {\n"%l.name)
-			for d in l.defs.values():
-				w.write("      %s\n"%d.out())
-			for s in l.sites.values():
-				w.write("      %s {\n"%s.name)
-				w.write('        name "%s/%s/%s";\n'%
-					(i.name,l.name,s.name))
-				for d in s.defs.values():
-					w.write("        %s\n"%d.out())
-				w.write("      };\n")
-			w.write("    };\n")
-		w.write("  };\n")
+	for i in root.children.values():
+		i.output_data(w,2,"")
 	w.write("};\n")
 
 	# Per-VPN flattened lists
 	w.write("vpn {\n")
-	for i in vpns.values():
-		w.write("  %s {\n"%(i.name))
-		for l in i.locations.values():
-			tmpl="vpn-data/%s/%s/%%s"%(i.name,l.name)
-			slist=[]
-			for s in l.sites.values(): slist.append(tmpl%s.name)
-			w.write("    %s %s;\n"%(l.name,string.join(slist,",")))
-		w.write("\n    all-sites %s;\n"%
-			string.join(i.locations.keys(),","))
-		w.write("  };\n")
+	for i in root.children.values():
+		i.output_vpnflat(w,2,"vpn-data")
 	w.write("};\n")
 
 	# Flattened list of sites
 	w.write("all-sites %s;\n"%string.join(map(lambda x:"vpn/%s/all-sites"%
-		x,vpns.keys()),","))
+		x,root.children.keys()),","))
 
 # Are we being invoked from userv?
 service=0
 # If we are, which group does the caller want to modify?
 group=None
 
-vpns={}
-allow_defs=1
-current_vpn=None
-current_location=None
-current_object=None
-
 line=0
 file=None
 complaints=0
-
-# Things that can be defined at any level
-mldefs={
-	'dh':dhgroup,
-	'hash':hash,
-	'contact':email,
-	'key-lifetime':num,
-	'setup-retries':num,
-	'setup-timeout':num,
-	'wait-time':num,
-	'renegotiate-time':num,
-	'restrict-nets':nets
-	}
-
-# Things that can only be defined for sites
-sitedefs={
-	'address':address,
-	'networks':nets,
-	'pubkey':rsakey,
-	'mobile':mobileoption
-	}
-
-# Reserved vpn/location/site names
-reserved={'all-sites':None}
-reserved.update(mldefs)
-reserved.update(sitedefs)
-
-# Each site must have the following defined at some level:
-required={
-	'dh':"Diffie-Hellman group",
-	'networks':"network list",
-	'pubkey':"public key",
-	'hash':"hash function"
-	}
 
 if len(sys.argv)<2:
 	pfile("stdin",sys.stdin.readlines())
@@ -413,52 +453,58 @@ else:
 			of=open(sys.argv[2],'w')
 
 # Sanity check section
+# Delete nodes where leaf=0 that have no children
 
-# Delete locations that have no sites defined
-for i in vpns.values():
-	for l in i.locations.keys():
-		if (len(i.locations[l].sites.values())==0):
-			del i.locations[l]
+def live(n):
+	"Number of leafnodes below node n"
+	if n.leaf: return 1
+	for i in n.children.keys():
+		if live(n.children[i]): return 1
+	return 0
+def delempty(n):
+	"Delete nodes that have no leafnode children"
+	for i in n.children.keys():
+		delempty(n.children[i])
+		if not live(n.children[i]):
+			del n.children[i]
+delempty(root)
 
-# Delete VPNs that have no locations with sites defined
-for i in vpns.keys():
-	if (len(vpns[i].locations.values())==0):
-		del vpns[i]
+# Check that all constraints are met (as far as I can tell
+# restrict-nets/networks/peer are the only special cases)
 
-# Check all sites
-for i in vpns.values():
-	if i.defs.has_key('restrict-nets'):
-		vr=i.defs['restrict-nets']
+def checkconstraints(n,p,ra):
+	new_p=p.copy()
+	new_p.update(n.properties)
+	for i in n.require_properties.keys():
+		if not new_p.has_key(i):
+			moan("%s %s is missing property %s"%
+				(n.type,n.name,i))
+	for i in new_p.keys():
+		if not n.allow_properties.has_key(i):
+			moan("%s %s has forbidden property %s"%
+				(n.type,n.name,i))
+	# Check address range restrictions
+	if n.properties.has_key("restrict-nets"):
+		new_ra=ra.intersection(n.properties["restrict-nets"].set)
 	else:
-		vr=None
-	for l in i.locations.values():
-		if l.defs.has_key('restrict-nets'):
-			lr=l.defs['restrict-nets']
-			if (not lr.subsetof(vr)):
-				moan("location %s/%s restrict-nets is invalid"%
-					(i.name,l.name))
-		else:
-			lr=vr
-		for s in l.sites.values():
-			sn="%s/%s/%s"%(i.name,l.name,s.name)
-			for r in required.keys():
-				if (not (s.defs.has_key(r) or
-					l.defs.has_key(r) or
-					i.defs.has_key(r))):
-					moan("site %s missing parameter %s"%
-						(sn,r))
-			if s.defs.has_key('restrict-nets'):
-				sr=s.defs['restrict-nets']
-				if (not sr.subsetof(lr)):
-					moan("site %s restrict-nets not valid"%
-						sn)
-			else:
-				sr=lr
-			if not s.defs.has_key('networks'): continue
-			nets=s.defs['networks']
-			if (not nets.subsetof(sr)):
-				moan("site %s networks exceed restriction"%sn)
+		new_ra=ra
+	if n.properties.has_key("networks"):
+		# I'd like to do this:
+		# n.properties["networks"].set.is_subset(new_ra)
+		# but there isn't an is_subset() method
+		# Instead we see if we intersect with the complement of new_ra
+		rac=new_ra.complement()
+		i=rac.intersection(n.properties["networks"].set)
+		if not i.is_empty():
+			moan("%s %s networks out of bounds"%(n.type,n.name))
+		if n.properties.has_key("peer"):
+			if not n.properties["networks"].set.contains(
+				n.properties["peer"].addr):
+				moan("%s %s peer not in networks"%(n.type,n.name))
+	for i in n.children.keys():
+		checkconstraints(n.children[i],new_p,new_ra)
 
+checkconstraints(root,{},ipaddr.complete_set)
 
 if complaints>0:
 	if complaints==1: print "There was 1 problem."
@@ -471,7 +517,7 @@ if service:
 	f=open(groupfiledir+"/T"+group,'w')
 	f.write("# Section submitted by user %s, %s\n"%
 		(user,time.asctime(time.localtime(time.time()))))
-	f.write("# Checked by make-secnet-sites.py version %s\n\n"%VERSION)
+	f.write("# Checked by make-secnet-sites version %s\n\n"%VERSION)
 	for i in userinput: f.write(i)
 	f.write("\n")
 	f.close()

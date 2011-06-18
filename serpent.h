@@ -10,10 +10,10 @@ struct keyInstance {
 void serpent_makekey(struct keyInstance *key, int keyLen,
 		     uint8_t *keyMaterial);
 
-void serpent_encrypt(struct keyInstance *key, uint32_t plaintext[4],
-		     uint32_t ciphertext[4]);
+void serpent_encrypt(struct keyInstance *key, uint8_t plaintext[16],
+		     uint8_t ciphertext[16]);
 
-void serpent_decrypt(struct keyInstance *key, uint32_t ciphertext[4],
-		     uint32_t plaintext[4]);
+void serpent_decrypt(struct keyInstance *key, uint8_t ciphertext[16],
+		     uint8_t plaintext[16]);
 
 #endif /* serpent_h */
