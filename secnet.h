@@ -296,7 +296,7 @@ struct log_if {
     log_vmsg_fn *vlog;
 };
 /* (convenience function, defined in util.c) */
-extern void log(struct log_if *lf, int class, const char *message, ...)
+extern void slilog(struct log_if *lf, int class, const char *message, ...)
 FORMAT(printf,3,4);
 
 /* SITE interface */

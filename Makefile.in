@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.1.16
+VERSION:=0.1.17
 
 @SET_MAKE@
 
@@ -36,6 +36,7 @@ INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 #CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -DHACKY_PARALLEL
 CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@
 ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS)
+CPPFLAGS:=@CPPFLAGS@
 LDFLAGS:=@LDFLAGS@
 LDLIBS:=@LIBS@
 
@@ -58,8 +59,8 @@ DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	NEWS NOTES README TODO \
 	ac_prog_cc_no_writeable_strings.m4 \
 	conffile.c conffile.fl conffile.h conffile.y \
-	conffile_internal.h config.h.bot \
-	config.h.in config.h.top configure \
+	conffile_internal.h \
+	config.h.in configure \
 	configure.in depend.sh dh.c \
 	example.conf \
 	getopt.c getopt1.c getopt.h \
@@ -81,7 +82,7 @@ DISTSUBDIRS:=debian/conffiles debian/copyright debian/changelog \
 %.yy.c:	%.fl
 	flex -o$@ $<
 
-%.tab.c:	%.y
+%.tab.c %.tab.h:	%.y
 	bison -d -o $@ $<
 
 %.o: %.c
@@ -95,7 +96,7 @@ ${srcdir}/configure: configure.in
 
 # autoheader might not change config.h.in, so touch a stamp file.
 ${srcdir}/config.h.in: stamp-h.in
-${srcdir}/stamp-h.in: configure.in config.h.top config.h.bot
+${srcdir}/stamp-h.in: configure.in
 	cd ${srcdir} && autoheader
 	echo timestamp > ${srcdir}/stamp-h.in
 
@@ -117,7 +118,7 @@ DEPENDS:=$(OBJECTS:.o=.d)
 $(DEPENDS): ${srcdir}/depend.sh
 
 %.d: %.c
-	${srcdir}/depend.sh $(srcdir) $(ALL_CFLAGS) $< > $@
+	${srcdir}/depend.sh $(srcdir) $(CPPFLAGS) $(ALL_CFLAGS) $< > $@
 
 -include $(DEPENDS)
 

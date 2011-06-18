@@ -675,9 +675,9 @@ static void dump_packet(struct site *st, struct buffer_if *buf,
     uint32_t msgtype=ntohl(*(uint32_t *)(buf->start+8));
 
     if (st->log_events & LOG_DUMP)
-	log(st->log,M_DEBUG,"%s: %s: %08x<-%08x: %08x:",
-	    st->tunname,incoming?"incoming":"outgoing",
-	    dest,source,msgtype);
+	slilog(st->log,M_DEBUG,"%s: %s: %08x<-%08x: %08x:",
+	       st->tunname,incoming?"incoming":"outgoing",
+	       dest,source,msgtype);
 }
 
 static uint32_t site_status(void *st)

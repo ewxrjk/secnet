@@ -148,30 +148,30 @@ static inline uint16_t ip_csum(uint8_t *iph,uint32_t count)
 static inline uint16_t ip_fast_csum(uint8_t *iph, uint32_t ihl) {
     uint32_t sum;
 
-    __asm__ __volatile__("
-            movl (%1), %0
-            subl $4, %2
-            jbe 2f
-            addl 4(%1), %0
-            adcl 8(%1), %0
-            adcl 12(%1), %0
-1:          adcl 16(%1), %0
-            lea 4(%1), %1
-            decl %2
-            jne 1b
-            adcl $0, %0
-            movl %0, %2
-            shrl $16, %0
-            addw %w2, %w0
-            adcl $0, %0
-            notl %0
-2:
-            "
+    __asm__ __volatile__(
+            "movl (%1), %0      ;\n"
+            "subl $4, %2        ;\n"
+            "jbe 2f             ;\n"
+            "addl 4(%1), %0     ;\n"
+            "adcl 8(%1), %0     ;\n"
+            "adcl 12(%1), %0    ;\n"
+"1:         adcl 16(%1), %0     ;\n"
+            "lea 4(%1), %1      ;\n"
+            "decl %2            ;\n"
+            "jne 1b             ;\n"
+            "adcl $0, %0        ;\n"
+            "movl %0, %2        ;\n"
+            "shrl $16, %0       ;\n"
+            "addw %w2, %w0      ;\n"
+            "adcl $0, %0        ;\n"
+            "notl %0            ;\n"
+"2:                             ;\n"
         /* Since the input registers which are loaded with iph and ipl
            are modified, we must also specify them as outputs, or gcc
            will assume they contain their original values. */
         : "=r" (sum), "=r" (iph), "=r" (ihl)
-        : "1" (iph), "2" (ihl));
+        : "1" (iph), "2" (ihl)
+	: "memory");
     return sum;
 }
 #else
@@ -498,18 +498,19 @@ static void netlink_packet_deliver(struct netlink *st,
 	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
 				ICMP_CODE_NET_PROHIBITED);
 	    BUF_FREE(buf);
-	}
-	if (best_quality>0) {
-	    /* XXX Fragment if required */
-	    st->routes[best_match]->deliver(
-		st->routes[best_match]->dst, buf);
-	    st->routes[best_match]->outcount++;
-	    BUF_ASSERT_FREE(buf);
 	} else {
-	    /* Generate ICMP destination unreachable */
-	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
-				ICMP_CODE_NET_UNREACHABLE); /* client==NULL */
-	    BUF_FREE(buf);
+	    if (best_quality>0) {
+		/* XXX Fragment if required */
+		st->routes[best_match]->deliver(
+		    st->routes[best_match]->dst, buf);
+		st->routes[best_match]->outcount++;
+		BUF_ASSERT_FREE(buf);
+	    } else {
+		/* Generate ICMP destination unreachable */
+		netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+				    ICMP_CODE_NET_UNREACHABLE); /* client==NULL */
+		BUF_FREE(buf);
+	    }
 	}
     }
     BUF_ASSERT_FREE(buf);
@@ -721,14 +722,15 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 	for (i=0; i<st->n_clients; i++) {
 	    netlink_output_subnets(st,c,st->routes[i]->subnets);
 	    Message(c,"-> tunnel %s (%s,mtu %d,%s routes,%s,"
-		    "quality %d,use %d)\n",
+		    "quality %d,use %d,pri %lu)\n",
 		    st->routes[i]->name,
 		    st->routes[i]->up?"up":"down",
 		    st->routes[i]->mtu,
 		    st->routes[i]->options&OPT_SOFTROUTE?"soft":"hard",
 		    st->routes[i]->options&OPT_ALLOWROUTE?"free":"restricted",
 		    st->routes[i]->link_quality,
-		    st->routes[i]->outcount);
+		    st->routes[i]->outcount,
+		    (unsigned long)st->routes[i]->priority);
 	}
 	net=ipaddr_to_string(st->secnet_address);
 	Message(c,"%s/32 -> netlink \"%s\" (use %d)\n",
