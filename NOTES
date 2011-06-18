@@ -1,0 +1,278 @@
+* Design of new, multi-subnet secnet protocol
+
+Like the first (1995/6) version, we're tunnelling IP packets inside
+UDP packets. To defeat various restrictions which may be imposed on us
+by network providers (like the prohibition of incoming TCP
+connections) we're sticking with UDP for everything this time,
+including key setup. This means we have to handle retries, etc.
+
+Other new features include being able to deal with subnets hidden
+behind changing 'real' IP addresses, and the ability to choose
+algorithms and keys per pair of communicating sites.
+
+** Configuration and structure
+
+[The original plan]
+
+The network is made up from a number of 'sites'. These are collections
+of machines with private IP addresses. The new secnet code runs on
+machines which have interfaces on the private site network and some
+way of accessing the 'real' internet.
+
+Each end of a tunnel is identified by a name. Often it will be
+convenient for every gateway machine to use the same name for each
+tunnel endpoint, but this is not vital. Individual tunnels are
+identified by their two endpoint names.
+
+[The new plan]
+
+It appears that people want to be able to use secnet on mobile
+machines like laptops as well as to interconnect sites. In particular,
+they want to be able to use their laptop in three situations:
+
+1) connected to their internal LAN by a cable; no tunnel involved
+2) connected via wireless, using a tunnel to protect traffic
+3) connected to some other network, using a tunnel to access the
+internal LAN.
+
+They want the laptop to keep the same IP address all the time.
+
+Case (1) is simple.
+
+Case (2) requires that the laptop run a copy of secnet, and have a
+tunnel configured between it and the main internal LAN default
+gateway. secnet must support the concept of a 'soft' tunnel where it
+adds a route and causes the gateway to do proxy-ARP when the tunnel is
+up, and removes the route again when the tunnel is down.
+
+The usual prohibition of packets coming in from one tunnel and going
+out another must be relaxed in this case (in particular, the
+destination address of packets from these 'mobile station' tunnels may
+be another tunnel as well as the host).
+
+(Quick sanity check: if chiark's secnet address was in
+192.168.73.0/24, would this work properly? Yes, because there will be
+an explicit route to it, and proxy ARP will be done for it. Do we want
+packets from the chiark tunnel to be able to go out along other
+routes? No. So, spotting a 'local' address in a remote site's list of
+networks isn't sufficient to switch on routing for a site. We need an
+explicit option. NB packets may be routed if the source OR the
+destination is marked as allowing routing [otherwise packets couldn't
+get back from eg. chiark to a laptop at greenend]).
+
+[the even newer plan]
+
+secnet sites are configured to grant access to particular IP address
+ranges to the holder of a particular public key.  The key can certify
+other keys, which will then be permitted to use a subrange of the IP
+address range of the certifying key.
+
+This means that secnet won't know in advance (i.e. at configuration
+time) how many tunnels it might be required to support, so we have to
+be able to create them (and routes, and so on) on the fly.
+
+** VPN-level configuration
+
+At a high level we just want to be able to indicate which groups of
+users can claim ownership of which ranges of IP addresses. Assuming
+these users (or their representatives) all have accounts on a single
+machine, we can automate the submission of keys and other information
+to make up a 'sites' file for the entire VPN.
+
+The distributed 'sites' file should be in a more restricted format
+than the secnet configuration file, to prevent attackers who manage to
+distribute bogus sites files from taking over their victim's machines.
+
+The distributed 'sites' file is read one line at a time. Each line
+consists of a keyword followed by other information. It defines a
+number of VPNs; within each VPN it defines a number of locations;
+within each location it defines a number of sites. These VPNs,
+locations and sites are turned into a secnet.conf file fragment using
+a script.
+
+Some keywords are valid at any 'level' of the distributed 'sites'
+file, indicating defaults.
+
+The keywords are:
+
+vpn n: we are now declaring information to do with VPN 'n'. Must come first.
+
+location n: we are now declaring information for location 'n'.
+
+site n: we are now declaring information for site 'n'.
+endsite: we're finished declaring information for the current site
+
+restrict-nets a b c ...: restrict the allowable 'networks' for the current
+  level to those in this list.
+end-definitions: prevent definition of further vpns and locations, and
+  modification of defaults at VPN level
+
+dh x y: the current VPN uses the specified group; x=modulus, y=generator
+
+hash x: which hash function to use. Valid options are 'md5' and 'sha1'.
+
+admin n: administrator email address for current level
+
+key-lifetime n
+setup-retries n
+setup-timeout n
+wait-time n
+renegotiate-time n
+
+address a b: a=dnsname, b=port
+networks a b c ...
+pubkey x y z: x=keylen, y=encryption key, z=modulus
+mobile: declare this to be a 'mobile' site
+
+** Logging etc.
+
+There are several possible ways of running secnet:
+
+'reporting' only: --version, --help, etc. command line options and the
+--just-check-config mode.
+
+'normal' run: perform setup in the foreground, and then background.
+
+'failed' run: setup in the foreground, and terminate with an error
+before going to background.
+
+'reporting' modes should never output anything except to stdout/stderr.
+'normal' and 'failed' runs output to stdout/stderr before
+backgrounding, then thereafter output only to log destinations.
+
+** Protocols
+
+*** Protocol environment:
+
+Each gateway machine serves a particular, well-known set of private IP
+addresses (i.e. the agreement over which addresses it serves is
+outside the scope of this discussion). Each gateway machine has an IP
+address on the interconnecting network (usually the Internet), which
+may be dynamically allocated and may change at any point.
+
+Each gateway knows the RSA public keys of the other gateways with
+which it wishes to communicate. The mechanism by which this happens is
+outside the scope of this discussion. There exists a means by which
+each gateway can look up the probable IP address of any other.
+
+*** Protocol goals:
+
+The ultimate goal of the protocol is for the originating gateway
+machine to be able to forward packets from its section of the private
+network to the appropriate gateway machine for the destination
+machine, in such a way that it can be sure that the packets are being
+sent to the correct destination machine, the destination machine can
+be sure that the source of the packets is the originating gateway
+machine, and the contents of the packets cannot be understood other
+than by the two communicating gateways.
+
+XXX not sure about the address-change stuff; leave it out of the first
+version of the protocol. From experience, IP addresses seem to be
+quite stable so the feature doesn't gain us much.
+
+**** Protocol sub-goal 1: establish a shared key
+
+Definitions:
+
+A is the originating gateway machine
+B is the destination gateway machine
+PK_A is the public RSA key of A
+PK_B is the public RSA key of B
+PK_A^-1 is the private RSA key of A
+PK_B^-1 is the private RSA key of B
+x is the fresh private DH key of A
+y is the fresh private DH key of B
+k is g^xy mod m
+g and m are generator and modulus for Diffie-Hellman
+nA is a nonce generated by A
+nB is a nonce generated by B
+iA is an index generated by A, to be used in packets sent from B to A
+iB is an index generated by B, to be used in packets sent from A to B
+i? is appropriate index for receiver
+
+Note that 'i' may be re-used from one session to the next, whereas 'n'
+is always fresh.
+
+The protocol version selection stuff is not yet implemented: I'm not
+yet convinced it's a good idea.  Instead, the initiator could try
+using its preferred protocol (which starts with a different magic
+number) and fall back if there's no reply.
+
+Messages:
+
+1) A->B: *,iA,msg1,A,B,protorange-A,nA
+
+2) B->A: iA,iB,msg2,B,A,chosen-protocol,nB,nA
+
+(The order of B and A reverses in alternate messages so that the same
+code can be used to construct them...)
+
+3) A->B: {iB,iA,msg3,A,B,protorange-A,chosen-protocol,nA,nB,g^x mod m}_PK_A^-1
+
+If message 1 was a replay then A will not generate message 3, because
+it doesn't recognise nA.
+
+If message 2 was from an attacker then B will not generate message 4,
+because it doesn't recognise nB.
+
+If an attacker is trying to manipulate the chosen protocol, B can spot
+this when it sees A's message 3.
+
+4) B->A: {iA,iB,msg4,B,A,protorange-B,chosen-protocol,nB,nA,g^y mod m}_PK_B^-1
+
+At this point, A and B share a key, k. B must keep retransmitting
+message 4 until it receives a packet encrypted using key k.
+
+A can abandon the exchange if the chosen protocol is not the one that
+it would have chosen knowing the acceptable protocol ranges of A and
+B.
+
+5) A: iB,iA,msg5,(ping/msg5)_k
+
+6) B: iA,iB,msg6,(pong/msg6)_k
+
+(Note that these are encrypted using the same transform that's used
+for normal traffic, so they include sequence number, MAC, etc.)
+
+The ping and pong messages can be used by either end of the tunnel at
+any time, but using msg0 as the unencrypted message type indicator.
+
+**** Protocol sub-goal 2: end the use of a shared key
+
+7) i?,i?,msg0,(end-session/msg7,A,B)_k
+
+This message can be sent by either party. Once sent, k can be
+forgotten. Once received and checked, k can be forgotten. No need to
+retransmit or confirm reception. It is suggested that this message be
+sent when a key times out, or the tunnel is forcibly terminated for
+some reason.
+
+8) i?,i?,NAK (encoded as zero)
+
+If the link-layer can't work out what to do with a packet (session has
+gone away, etc.) it can transmit a NAK back to the sender.  The sender
+can then try to verify whether the session is alive by sending ping
+packets, and forget the key if it isn't. Potential denial-of-service
+if the attacker can stop the ping/pong packets getting through (the
+key will be forgotten and another key setup must take place), but if
+they can delete packets then we've lost anyway...
+
+The attacker can of course forge NAKs since they aren't protected. But
+if they can only forge packets then they won't be able to stop the
+ping/pong working. Trust in NAKs can be rate-limited...
+
+Alternative idea (which is actually implemented): if you receive a
+packet you can't decode, because there's no key established, then
+initiate key setup...
+
+Keepalives are probably a good idea.
+
+**** Protocol sub-goal 3: send a packet
+
+9) i?,i?,msg0,(send-packet/msg9,packet)_k
+
+Some messages may take a long time to prepare (software modexp on slow
+machines); this is a "please wait" message to indicate that a message
+is in preparation.
+
+10) i?,i?,msg8,A,B,nA,nB,msg?

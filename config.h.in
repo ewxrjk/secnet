@@ -1,0 +1,171 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
+#ifndef _CONFIG_H
+#define _CONFIG_H
+
+
+/* Define if using alloca.c.  */
+#undef C_ALLOCA
+
+/* Define to one of _getb67, GETB67, getb67 for Cray-2 and Cray-YMP systems.
+   This function is required for alloca.c support on those systems.  */
+#undef CRAY_STACKSEG_END
+
+/* Define if you have alloca, as a function or macro.  */
+#undef HAVE_ALLOCA
+
+/* Define if you have <alloca.h> and it should be used (not on Ultrix).  */
+#undef HAVE_ALLOCA_H
+
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at run-time.
+ STACK_DIRECTION > 0 => grows toward higher addresses
+ STACK_DIRECTION < 0 => grows toward lower addresses
+ STACK_DIRECTION = 0 => direction of growth unknown
+ */
+#undef STACK_DIRECTION
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if your processor stores words with the most significant
+   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
+#undef WORDS_BIGENDIAN
+
+/* The number of bytes in a unsigned char.  */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* The number of bytes in a unsigned int.  */
+#undef SIZEOF_UNSIGNED_INT
+
+/* The number of bytes in a unsigned long.  */
+#undef SIZEOF_UNSIGNED_LONG
+
+/* The number of bytes in a unsigned long long.  */
+#undef SIZEOF_UNSIGNED_LONG_LONG
+
+/* The number of bytes in a unsigned short.  */
+#undef SIZEOF_UNSIGNED_SHORT
+
+/* Define if you have the getopt_long function.  */
+#undef HAVE_GETOPT_LONG
+
+/* Define if you have the snprintf function.  */
+#undef HAVE_SNPRINTF
+
+/* Define if you have the <inttypes.h> header file.  */
+#undef HAVE_INTTYPES_H
+
+/* Define if you have the <linux/if.h> header file.  */
+#undef HAVE_LINUX_IF_H
+
+/* Define if you have the <net/if.h> header file.  */
+#undef HAVE_NET_IF_H
+
+/* Define if you have the <net/if_tun.h> header file.  */
+#undef HAVE_NET_IF_TUN_H
+
+/* Define if you have the <net/route.h> header file.  */
+#undef HAVE_NET_ROUTE_H
+
+/* Define if you have the <stdint.h> header file.  */
+#undef HAVE_STDINT_H
+
+/* Define if you have the <stropts.h> header file.  */
+#undef HAVE_STROPTS_H
+
+/* Define if you have the <sys/sockio.h> header file.  */
+#undef HAVE_SYS_SOCKIO_H
+
+/* Define if you have the adns library (-ladns).  */
+#undef HAVE_LIBADNS
+
+/* Define if you have the fl library (-lfl).  */
+#undef HAVE_LIBFL
+
+/* Define if you have the getopt library (-lgetopt).  */
+#undef HAVE_LIBGETOPT
+
+/* Define if you have the gmp library (-lgmp).  */
+#undef HAVE_LIBGMP
+
+/* Define if you have the gmp2 library (-lgmp2).  */
+#undef HAVE_LIBGMP2
+
+/* Define if you have the gnugetopt library (-lgnugetopt).  */
+#undef HAVE_LIBGNUGETOPT
+
+/* Define if you have the nsl library (-lnsl).  */
+#undef HAVE_LIBNSL
+
+/* Define if you have the resolv library (-lresolv).  */
+#undef HAVE_LIBRESOLV
+
+/* Define if you have the socket library (-lsocket).  */
+#undef HAVE_LIBSOCKET
+/* -*- c -*- */
+
+/* These are from config.h.bot, pasted onto the end of config.h.in. */
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#else
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#else
+#if SIZEOF_UNSIGNED_LONG_LONG==8
+typedef unsigned long long uint64_t;
+typedef long long int64_t;
+#elif SIZEOF_UNSIGNED_LONG==8
+typedef unsigned long uint64_t;
+typedef long int64_t;
+#else
+#error I do not know what to use for a uint64_t.
+#endif
+
+/* Give us an unsigned 32-bit data type. */
+#if SIZEOF_UNSIGNED_LONG==4
+typedef unsigned long uint32_t;
+typedef long int32_t;
+#elif SIZEOF_UNSIGNED_INT==4
+typedef unsigned int uint32_t;
+typedef int int32_t;
+#else
+#error I do not know what to use for a uint32_t.
+#endif
+
+/* An unsigned 16-bit data type. */
+#if SIZEOF_UNSIGNED_INT==2
+typedef unsigned int uint16_t;
+typedef int int16_t;
+#elif SIZEOF_UNSIGNED_SHORT==2
+typedef unsigned short uint16_t;
+typedef short int16_t;
+#else
+#error I do not know what to use for a uint16_t.
+#endif
+
+/* An unsigned 8-bit data type */
+#if SIZEOF_UNSIGNED_CHAR==1
+typedef unsigned char uint8_t;
+#else
+#error I do not know what to use for a uint8_t.
+#endif
+#endif
+#endif
+
+#ifndef HAVE_SNPRINTF
+#include <stdio.h>
+#include <stdarg.h>
+#include "snprintf.h"
+#endif
+
+#ifdef __GNUC__
+#define NORETURN(_x) void _x __attribute__ ((noreturn))
+#define FORMAT(_a,_b,_c) __attribute__ ((format (_a,_b,_c)))
+#else
+#define NORETURN(_x) _x
+#define FORMAT(_a,_b,_c)
+#endif
+
+#endif /* _CONFIG_H */

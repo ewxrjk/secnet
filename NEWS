@@ -1,0 +1,282 @@
+* Planned for the future
+
+Netlink device that implements an Ethernet bridge.
+
+Modular transform code: choice of block ciphers, modes, sequence
+numbers / timestamps, etc. similar to IWJ's udptunnel
+
+Path-MTU discovery for each tunnel, and fragmentation/DF support in
+netlink code.
+
+Separation of device drivers from IP router code - driver produces a
+stream of packets (which has a tag indicating type and parameters).
+Router module can be connected to stream to multiplex it between
+different tunnels.
+
+Support for dynamic creation of streams/tunnels to cope with laptops,
+etc.
+
+See also file "TODO".
+
+* New in version 0.1.15
+
+Now terminates with an error when an "include" filename is not
+specified in the configuration file (thanks to RJK).
+
+RSA private key operations optimised using CRT. Thanks to SGT.
+
+Now compiles cleanly with -Wwrite-strings turned on in gcc.
+
+Anything sent to stderr once secnet has started running in the
+background is now redirected to the system/log facility.
+
+* New in version 0.1.14
+
+The --help and --version options now send their output to stdout.
+
+Bugfix: TUN flavour "BSD" no longer implies a BSD-style ifconfig and
+route command invocation.  Instead "ioctl"-style is used, which should
+work on both BSD and linux-2.2 systems.
+
+If no "networks" parameter is specified for a netlink device then it
+is assumed to be 0.0.0.0/0 rather than the empty set.  So, by default
+there is a default route from each netlink device to the host machine.
+The "networks" parameter can be used to implement a primitive
+firewall, restricting the destination addresses of packets received
+through tunnels; if a more complex firewall is required then implement
+it on the host.
+
+* New in version 0.1.13
+
+site.c code cleaned up; no externally visible changes
+
+secnet now calls setsid() after becoming a daemon.
+
+secnet now supports TUN on Solaris 2.5 and above (and possibly other
+STREAMS-based systems as well).
+
+The TUN code now tries to auto-detect the type of "TUN" in use
+(BSD-style, Linux-style or STREAMS-style).  If your configuration file
+specifies "tun-old" then it defaults to BSD-style; however, since
+"tun-old" will be removed in a future release, you should change your
+configuration file to specify "tun" and if there's a problem also
+specify the flavour in use.
+
+Example:
+netlink tun-old {
+	...
+};
+should be rewritten as
+netlink tun {
+	flavour "bsd";
+	...
+};
+
+The flavours currently defined are "bsd", "linux" and "streams".
+
+The TUN code can now be configured to configure interfaces and
+add/delete routes using one of several methods: invoking a
+"linux"-style ifconfig/route command, a "bsd"-style ifconfig/route
+command, "solaris-2.5"-style ifconfig/route command or calling ioctl()
+directly.  These methods can be selected using the "ifconfig-type" and
+"route-type" options.
+
+Example:
+netlink tun {
+	ifconfig-type "ioctl";
+	route-type "ioctl";
+	...
+};
+
+The ioctl-based method is now the default for Linux systems.
+
+Magic numbers used within secnet are now collected in the header file
+"magic.h".
+
+netlink now uses ICMP type=0 code=13 for 'administratively prohibited'
+instead of code 9. See RFC1812 section 5.2.7.1.
+
+The UDP comm module now supports a proxy server, "udpforward".  This
+runs on a machine which is directly accessible by secnet and which can
+send packets to appropriate destinations.  It's useful when the proxy
+machine doesn't support source- and destination-NAT.  The proxy server
+is specified using the "proxy" key in the UDP module configuration;
+parameters are IP address (string) and port number.
+
+Bugfix: ipset_to_subnet_list() in ipaddr.c now believed to work in all
+cases, including 0.0.0.0/0
+
+* New in version 0.1.12
+
+IMPORTANT: fix calculation of 'now' in secnet.c; necessary for correct
+operation.
+
+(Only interesting for people building and modifying secnet by hand:
+the Makefile now works out most dependencies automatically.)
+
+The netlink code no longer produces an internal routing table sorted
+by netmask length.  Instead, netlink instances have a 'priority'; the
+table of routes is sorted by priority.  Devices like laptops that have
+tunnels that must sometimes 'mask' parts of other tunnels should be
+given higher priorities.  If a priority is not specified it is assumed
+to be zero.
+
+Example usage:
+site laptop { ...
+	link netlink {
+		route "192.168.73.74/31";
+		priority 10;
+	};
+};
+
+* New in version 0.1.11
+
+Lists of IP addresses in the configuration file can now include
+exclusions as well as inclusions.  For example, you can specify all
+the hosts on a subnet except one as follows:
+
+networks "192.168.73.0/24","!192.168.73.70";
+
+(If you were only allowed inclusions, you'd have to specify that like
+this:
+networks "192.168.73.71/32","192.168.73.68/31","192.168.73.64/30",
+	"192.168.73.72/29","192.168.73.80/28","192.168.73.96/27",
+	"192.168.73.0/26","192.168.73.128/25";
+)
+
+secnet now ensures that it invokes userv-ipif with a non-overlapping
+list of subnets.
+
+There is a new command-line option, --sites-key or -s, that enables
+the configuration file key that's checked to determine the list of
+active sites (default "sites") to be changed.  This enables a single
+configuration file to contain multiple cofigurations conveniently.
+
+NAKs are now sent when packets arrive that are not understood.  The
+tunnel code initiates a key setup if it sees a NAK.  Future
+developments should include configuration options that control this.
+
+The tunnel code notifies its peer when secnet is terminating, so the
+peer can close the session.
+
+The netlink "exclude-remote-networks" option has now been replaced by
+a "remote-networks" option; instead of specifying networks that no
+site may access, you specify the set of networks that remote sites are
+allowed to access. A sensible example: "192.168.0.0/16",
+"172.16.0.0/12", "10.0.0.0/8", "!your-local-network"
+
+* New in version 0.1.10
+
+WARNING: THIS VERSION MAKES A CHANGE TO THE CONFIGURATION FILE FORMAT
+THAT IS NOT BACKWARD COMPATIBLE.  However, in most configurations the
+change only affects the sites.conf file, which is generated by the
+make-secnet-sites script; after you regenerate your sites.conf using
+version 0.1.10, everything should continue to work.
+
+Netlink devices now interact slightly differently with the 'site'
+code.  When you invoke a netlink closure like 'tun' or 'userv-ipif',
+you get another closure back.  You then invoke this closure (usually
+in the site definitions) to specify things like routes and options.
+The result of this invocation should be used as the 'link' option in
+site configurations.
+
+All this really means is that instead of site configurations looking
+like this:
+
+foo {
+	name "foo";
+	networks "a", "b", "c";
+	etc.
+};
+
+...they look like this:
+
+foo {
+	name "foo";
+	link netlink { routes "a", "b", "c"; };
+	etc.
+};
+
+This change was made to enable the 'site' code to be completely free
+of any knowledge of the contents of the packets it transmits.  It
+should now be possible in the future to tunnel other protocols like
+IPv6, IPX, raw Ethernet frames, etc. without changing the 'site' code
+at all.
+
+Point-to-point netlink devices work slightly differently; when you
+apply the 'tun', 'userv-ipif', etc. closure and specify the
+ptp-address option, you must also specify the 'routes' option.  The
+result of this invocation should be passed directly to the 'link'
+option of the site configuration.  You can do things like this:
+
+sites site {
+	name "foo";
+	link tun {
+		networks "192.168.73.76/32";
+		local-address "192.168.73.76"; # IP address of interface
+		ptp-address "192.168.73.75"; # IP address of other end of link
+		routes "192.168.73.74/32";
+		mtu 1400;
+		buffer sysbuffer();
+	};
+	etc.
+};
+
+The route dump obtained by sending SIGUSR1 to secnet now includes
+packet counts.
+
+Point-to-point mode has now been tested.
+
+tun-old has now been tested, and the annoying 'untested' message has
+been removed.  Thanks to SGT and JDA.
+
+secnet now closes its stdin, stdout and stderr just after
+backgrounding.
+
+Bugfix: specifying network "0.0.0.0/0" (or "default") now works
+correctly.
+		
+* New in version 0.1.9
+
+The netlink code may now generate ICMP responses to ICMP messages that
+are not errors, eg. ICMP echo-request.  This makes Windows NT
+traceroute output look a little less strange.
+
+configure.in and config.h.bot now define uint32_t etc. even on systems
+without stdint.h and inttypes.h (needed for Solaris 2.5.1)
+
+GNU getopt is included for systems that lack it.
+
+We check for LOG_AUTHPRIV before trying to use it in log.c (Solaris
+2.5.1 doesn't have it.)
+
+Portable snprintf.c from http://www.ijs.si/software/snprintf/ is
+included for systems that lack snprintf/vsnprintf.
+
+make-secnet-sites.py renamed to make-secnet-sites and now installed in
+$prefix/sbin/make-secnet-sites; ipaddr.py library installed in
+$prefix/share/secnet/ipaddr.py.  make-secnet-sites searches
+/usr/local/share/secnet and /usr/share/secnet for ipaddr.py
+
+* New in version 0.1.8
+
+Netlink devices now support a 'point-to-point' mode.  In this mode the
+netlink device does not require an IP address; instead, the IP address
+of the other end of the tunnel is specified using the 'ptp-address'
+option.  Precisely one site must be configured to use the netlink
+device. (I haven't had a chance to test this because 0.1.8 turned into
+a 'quick' release to enable secnet to cope with the network problems
+affecting connections going via LINX on 2001-10-16.)
+
+The tunnel code in site.c now initiates a key setup if the
+reverse-transform function fails (wrong key, bad MAC, too much skew,
+etc.) - this should make secnet more reliable on dodgy links, which
+are much more common than links with active attackers...  (an attacker
+can now force a new key setup by replaying an old packet, but apart
+from minor denial of service on slow links or machines this won't
+achieve them much).  This should eventually be made configurable.
+
+The sequence number skew detection code in transform.c now only
+complains about 'reverse skew' - replays of packets that are too
+old. 'Forward skew' (gaps in the sequence numbers of received packets)
+is now tolerated silently, to cope with large amounts of packet loss.

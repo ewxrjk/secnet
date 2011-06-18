@@ -1,0 +1,426 @@
+secnet - flexible VPN software
+
+* Copying
+
+secnet is Copyright (C) 1995--2001 Stephen Early <steve@greenend.org.uk>
+It is distributed under the terms of the GNU General Public License,
+version 2 or later.  See the file COPYING for more information.
+
+The portable snprintf implementation in snprintf.c is Copyright (C)
+1999 Mark Martinec <mark.martinec@ijs.si> and is distributed under the
+terms of the Frontier Artistic License.  You can find the standard
+version of snprintf.c at http://www.ijs.si/software/snprintf/
+
+The IP address handling library in ipaddr.py is Copyright (C)
+1996--2000 Cendio Systems AB, and is distributed under the terms of
+the GPL.
+
+* Introduction
+
+secnet allows large virtual private networks to be constructed
+spanning multiple separate sites.  It is designed for the case where a
+private network connecting many hosts is 'hidden' behind a single
+globally-routable IP address, but can also be applied in other
+circumstances.  It communicates entirely using UDP, and works well
+with gateways that implement network address translation.
+
+If you are installing secnet to join an existing VPN, you should read
+the 'INSTALL' file and your particular VPN's documentation now.  You
+may need to refer back to this file for information on the netlink and
+comm sections of the configuration file.
+
+If you are thinking about setting up a new VPN of any size (from one
+providing complete links between multiple sites to a simple
+laptop-to-host link), read the section in this file on 'Creating a
+VPN'.
+
+* Mailing lists and bug reporting
+
+There are two mailing lists associated with secnet: an 'announce' list
+and a 'discuss' list.  Their addresses are:
+http://www.chiark.greenend.org.uk/mailman/listinfo/secnet-announce
+http://www.chiark.greenend.org.uk/mailman/listinfo/secnet-discuss
+
+The -announce list receives one message per secnet release.  The
+-discuss list is for general discussion, including help with
+configuration, bug reports, feature requests, etc.
+
+Bug reports should be sent to <steve@greenend.org.uk>; they will be
+forwarded to the -discuss list by me.
+
+* Creating a VPN
+
+XXX TODO
+
+* secnet configuration file format
+
+By default secnet on linux reads /etc/secnet/secnet.conf.  The default
+may be different on other platforms.
+
+This file defines a dictionary (a mapping from keys to values) full of
+configuration information for secnet.  Two keys must be defined in
+this file for secnet to start.  One is "system", a dictionary
+containing systemwide control parameters.  The other is "sites", a
+list of all the sites that you intend to communicate with.
+
+The configuration file has a very simple syntax; keys are defined as
+follows:
+
+key definition;
+or
+key = definition;
+
+(the "=" is optional)
+
+Keys must match the following regular expression:
+[[:alpha:]_][[:alnum:]\-_]*
+
+i.e. the first character must be an alpha or an underscore, and the
+remaining characters may be alphanumeric, '-' or '_'.
+
+Keys can be defined to be a comma-separated list of any of the
+following types:
+
+  a boolean
+  a string, in quotes
+  a number, in decimal
+  a dictionary of definitions, enclosed in { }
+  a "closure", followed by arguments
+  a path to a key that already exists, to reference that definition
+
+Note that dictionaries can be nested: a key in one dictionary can
+refer to another dictionary. When secnet looks for a key in a
+particular directory and can't find it, it looks in the dictionary's
+lexical 'parents' in turn until it finds it (or fails to find it at
+all and stops with an error).
+
+Definitions can refer to previous definitions by naming them with a
+path.  Paths are key1/key2/key3... (starting from wherever we find
+key1, i.e. in the current dictionary or any of its parents), or
+alternatively /key1/key2/key3... (to start from the root).
+Definitions cannot refer to future definitions.
+
+Example:
+
+a=1;
+b=2;
+c={ d=3; e=a; };
+f={ a=4; g=c; };
+
+The following paths are valid:
+a is 1
+b is 2
+c is a dictionary:
+ c/d is 3
+ c/e is 1
+f is a dictionary:
+ f/a is 4
+ f/g is a dictionary:
+  f/g/d is 3
+  f/g/e is 1
+
+Note that f/g/e is NOT 4.
+
+Elements that are lists are inserted into lists in definitions, not
+referenced by them (i.e. you can't have lists of lists).
+
+Some closures may be followed by an argument list in ( ), and may
+return any number of whatever type they like (including other
+closures).  Some types of closure (typically those returned from
+invokations of other closures) cannot be invoked.
+
+closure { definitions } is short for closure({definitions}).
+
+The main body of secnet, and all the additional modules, predefine
+some keys in the root dictionary.  The main ones are:
+
+  yes, true, True, TRUE, on:   the boolean value True
+  no, false, False, FALSE, off: the boolean value False
+  makelist:   turns a dictionary (arg1) into a list of definitions
+              (ignoring the keys)
+  readfile:   reads a file (arg1) and returns it as a string
+
+Keys defined by modules are described below, in the module
+documentation.
+
+Other configuration files can be included inline by writing "include
+filename" at the start of a line.
+
+After the configuration file is read, secnet looks for particular keys
+in configuration space to tell it what to do:
+
+ system: a dictionary which can contain the following keys:
+   log (log closure): a destination for system messages
+   userid (string): the userid for secnet to run as once it drops privileges
+   pidfile (string): where to store its PID
+   
+ sites: a list of closures of type 'site', which define other tunnel
+        endpoints that secnet will attempt to communicate with
+
+* secnet command line options
+
+Usage: secnet [OPTION]...
+
+  -f, --silent, --quiet   suppress error messages
+  -w, --nowarnings        suppress warnings
+  -v, --verbose           output extra diagnostics
+  -c, --config=filename   specify a configuration file
+  -j, --just-check-config stop after reading configfile
+  -n, --nodetach          do not run in background
+  -d, --debug=item,...    set debug options
+      --help              display this help and exit
+      --version           output version information and exit
+
+* secnet builtin modules
+
+** resolver
+
+Defines:
+  adns (closure => resolver closure)
+
+adns: dict argument
+  config (string): optional, a resolv.conf for ADNS to use
+
+** random
+
+Defines:
+  randomsrc (closure => randomsrc closure)
+
+randomsrc: string[,bool]
+  arg1: filename of random source
+  arg2: if True then source is blocking
+
+** udp
+
+Defines:
+  udp (closure => comm closure)
+
+udp: dict argument
+  port (integer): UDP port to listen and send on
+  buffer (buffer closure): buffer for incoming packets
+  authbind (string): optional, path to authbind-helper program
+
+** log
+
+Defines:
+  logfile (closure => log closure)
+  syslog (closure => log closure)
+
+logfile: dict argument
+  filename (string): where to log to
+  class (string list): what type of messages to log
+    { "debug-config", M_DEBUG_CONFIG },
+    { "debug-phase", M_DEBUG_PHASE },
+    { "debug", M_DEBUG },
+    { "all-debug", M_DEBUG|M_DEBUG_PHASE|M_DEBUG_CONFIG },
+    { "info", M_INFO },
+    { "notice", M_NOTICE },
+    { "warning", M_WARNING },
+    { "error", M_ERROR },
+    { "security", M_SECURITY },
+    { "fatal", M_FATAL },
+    { "default", M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
+    { "verbose", M_INFO|M_NOTICE|M_WARNING|M_ERROR|M_SECURITY|M_FATAL },
+    { "quiet", M_FATAL }
+
+logfile will close and reopen its file upon receipt of SIGHUP.
+
+syslog: dict argument
+  ident (string): include this string in every log message
+  facility (string): facility to log as
+    { "authpriv", LOG_AUTHPRIV },
+    { "cron", LOG_CRON },
+    { "daemon", LOG_DAEMON },
+    { "kern", LOG_KERN },
+    { "local0", LOG_LOCAL0 },
+    { "local1", LOG_LOCAL1 },
+    { "local2", LOG_LOCAL2 },
+    { "local3", LOG_LOCAL3 },
+    { "local4", LOG_LOCAL4 },
+    { "local5", LOG_LOCAL5 },
+    { "local6", LOG_LOCAL6 },
+    { "local7", LOG_LOCAL7 },
+    { "lpr", LOG_LPR },
+    { "mail", LOG_MAIL },
+    { "news", LOG_NEWS },
+    { "syslog", LOG_SYSLOG },
+    { "user", LOG_USER },
+    { "uucp", LOG_UUCP }
+
+** util
+
+Defines:
+  sysbuffer (closure => buffer closure)
+
+sysbuffer: integer[,dict]
+  arg1: buffer length
+  arg2: options:
+    lockdown (boolean): if True, mlock() the buffer
+
+** site
+
+Defines:
+  site (closure => site closure)
+
+site: dict argument
+  local-name (string): this site's name for itself
+  name (string): the name of the site's peer
+  link (netlink closure)
+  comm (comm closure)
+  resolver (resolver closure)
+  random (randomsrc closure)
+  local-key (rsaprivkey closure)
+  address (string): optional, DNS name used to find our peer
+  port (integer): mandatory if 'address' is specified: the port used
+    to contact our peer
+  key (rsapubkey closure): our peer's public key
+  transform (transform closure): how to mangle packets sent between sites
+  dh (dh closure)
+  hash (hash closure)
+  key-lifetime (integer): max lifetime of a session key, in ms [one hour]
+  setup-retries (integer): max number of times to transmit a key negotiation
+    packet [5]
+  setup-timeout (integer): time between retransmissions of key negotiation
+    packets, in ms [1000]
+  wait-time (integer): after failed key setup, wait this long (in ms) before
+    allowing another attempt [20000]
+  renegotiate-time (integer): if we see traffic on the link after this time
+    then renegotiate another session key immediately [depends on key-lifetime]
+  keepalive (bool): if True then attempt always to keep a valid session key
+  log-events (string list): types of events to log for this site
+    unexpected: unexpected key setup packets (may be late retransmissions)
+    setup-init: start of attempt to setup a session key
+    setup-timeout: failure of attempt to setup a session key, through timeout
+    activate-key: activation of a new session key
+    timeout-key: deletion of current session key through age
+    security: anything potentially suspicious
+    state-change: steps in the key setup protocol
+    packet-drop: whenever we throw away an outgoing packet
+    dump-packets: every key setup packet we see
+    errors: failure of name resolution, internal errors
+    all: everything (too much!)
+
+** transform
+
+Defines:
+  serpent256-cbc (closure => transform closure)
+
+** netlink
+
+Defines:
+  null-netlink (closure => closure or netlink closure)
+
+null-netlink: dict argument
+  name (string): name for netlink device, used in log messages
+  networks (string list): networks on the host side of the netlink device
+  exclude-remote-networks (string list): networks that may never be claimed
+    by any remote site using this netlink device
+  local-address (string): IP address of host's tunnel interface
+  secnet-address (string): IP address of this netlink device
+  ptp-address (string): IP address of the other end of a point-to-point link
+  mtu (integer): MTU of host's tunnel interface
+
+Only one of secnet-address or ptp-address may be specified.  If
+point-to-point mode is in use then the "routes" option must also be
+specified, and netlink returns a netlink closure that should be used
+directly with the "link" option to the site closure.  If
+point-to-point mode is not in use then netlink returns a closure that
+may be invoked using a dict argument with the following keys to yield
+a netlink closure:
+  routes (string list): networks reachable down the tunnel attached to
+    this instance of netlink
+  options (string list):
+    allow-route: allow packets coming from this tunnel to be routed to
+      other tunnels as well as the host (used for mobile devices like laptops)
+    soft-route: remove these routes from the host's routing table when
+      the tunnel link quality is zero
+  mtu (integer): default MTU over this link; may be updated by tunnel code
+
+Netlink will dump its current routing table to the system/log on
+receipt of SIGUSR1.
+
+** slip
+
+Defines:
+  userv-ipif (closure => netlink closure)
+
+userv-ipif: dict argument
+  userv-path (string): optional, where to find userv ["userv"]
+  service-user (string): optional, username for userv-ipif service ["root"]
+  service-name (string): optional, name of userv-ipif service ["ipif"]
+  buffer (buffer closure): buffer for assembly of host->secnet packets
+ plus generic netlink options, as for 'null-netlink'
+
+** tun
+
+Defines:
+  tun (closure => netlink closure) [only on linux-2.4]
+  tun-old (closure => netlink closure)
+
+tun: dict argument
+  flavour (string): optional, type of TUN interface to use
+    ("guess","linux","bsd","streams")
+  device (string): optional, path of TUN/TAP device file ["/dev/net/tun"]
+  interface (string): optional, name of tunnel network interface
+  ifconfig-path (string): optional, path to ifconfig command
+  route-path (string): optional, path to route command
+  ifconfig-type (string): optional, how to perform ifconfig
+  route-type (string): optional, how to add and remove routes
+   types are: "guess", "ioctl", "bsd", "linux", "solaris-2.5"
+  buffer (buffer closure): buffer for host->secnet packets
+ plus generic netlink options, as for 'null-netlink'
+
+I recommend you don't specify the 'interface' option unless you're
+doing something that requires the interface name to be constant.
+
+** rsa
+
+Defines:
+  rsa-private (closure => rsaprivkey closure)
+  rsa-public (closure => rsapubkey closure)
+
+rsa-private: string[,bool]
+  arg1: filename of SSH private key file (version 1, no password)
+  arg2: whether to check that the key is usable [default True]
+
+rsa-public: string,string
+  arg1: encryption key (decimal)
+  arg2: modulus (decimal)
+
+** dh
+
+Defines:
+  diffie-hellman (closure => dh closure)
+
+diffie-hellman: string,string[,bool]
+  arg1: modulus (hex)
+  arg2: generator (hex)
+  arg3: whether to check that the modulus is prime [default True]
+
+** md5
+
+Defines:
+  md5 (hash closure)
+
+** sha1
+
+Defines:
+  sha1 (hash closure)
+
+** conffile
+
+Defines:
+  makelist (dictionary => list of definitions)
+  readfile (string => string)
+  map (closure,list => list)
+
+makelist: dictionary
+  returns a list consisting of the definitions in the dictionary. The keys
+  are discarded.
+
+readfile: string
+  reads the named file and returns its contents as a string
+
+map:
+  applies the closure specified as arg1 to each of the elements in the list.
+  Returns a list made up of the outputs of the closure.

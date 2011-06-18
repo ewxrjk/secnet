@@ -1,0 +1,12 @@
+Source: secnet
+Section: net
+Priority: extra
+Maintainer: Stephen Early <steve@greenend.org.uk>
+Standards-Version: 3.0.1
+
+Package: secnet
+Architecture: any
+Depends: ${shlibs:Depends}, python
+Description: VPN software for distributed networks
+ secnet allows multiple private networks, each 'hidden' behind a single
+ globally-routable IP address, to be bridged together.
