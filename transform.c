@@ -19,7 +19,6 @@
 
 struct transform {
     closure_t cl;
-    uint32_t line;
     struct transform_if ops;
     uint32_t max_seq_skew;
 };
