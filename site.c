@@ -217,7 +217,7 @@ static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 	default: class=M_ERR; break;
 	}
 
-	vsnprintf(buf,240,msg,ap);
+	vsnprintf(buf,sizeof(buf),msg,ap);
 	st->log->log(st->log->st,class,"%s: %s",st->tunname,buf);
     }
     va_end(ap);

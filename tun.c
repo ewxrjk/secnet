@@ -332,7 +332,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 
     hostaddr=ipaddr_to_string(st->local_address);
     secnetaddr=ipaddr_to_string(st->nl.secnet_address);
-    snprintf(mtu,6,"%d",st->nl.mtu);
+    snprintf(mtu,sizeof(mtu),"%d",st->nl.mtu);
     mtu[5]=0;
 
     switch (st->ifconfig_type) {
