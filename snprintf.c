@@ -279,6 +279,8 @@
  */
 
 
+#warning Platform has no snprintf?! Please check included snprintf.c for sanity!
+
 
 /* ============================================= */
 /* NO USER SERVICABLE PARTS FOLLOWING THIS POINT */
