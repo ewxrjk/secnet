@@ -79,7 +79,7 @@ int hacky_par_mid_failnow(void) {
 bool_t (*packy_par_gen)(struct site *st);
 
 void hacky_par_end(int *ok,
-		   int32_t retries, uint32_t timeout,
+		   int32_t retries, int32_t timeout,
 		   bool_t (*send_msg)(struct site *st), struct site *st) {
   int i;
   
@@ -115,7 +115,7 @@ void hacky_par_end(int *ok,
 int hacky_par_start_failnow(void) { return 0; }
 int hacky_par_mid_failnow(void) { return 0; }
 void hacky_par_end(int *ok,
-		   int32_t retries, uint32_t timeout,
+		   int32_t retries, int32_t timeout,
 		   bool_t (*send_msg)(struct site *st), struct site *st) { }
 
 #endif /*HACKY_PARALLEL...else*/

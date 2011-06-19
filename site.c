@@ -146,10 +146,10 @@ struct site {
     struct hash_if *hash;
 
     int32_t setup_retries; /* How many times to send setup packets */
-    uint32_t setup_timeout; /* Initial timeout for setup packets */
-    uint32_t wait_timeout; /* How long to wait if setup unsuccessful */
-    uint32_t key_lifetime; /* How long a key lasts once set up */
-    uint32_t key_renegotiate_time; /* If we see traffic (or a keepalive)
+    int32_t setup_timeout; /* Initial timeout for setup packets */
+    int32_t wait_timeout; /* How long to wait if setup unsuccessful */
+    int32_t key_lifetime; /* How long a key lasts once set up */
+    int32_t key_renegotiate_time; /* If we see traffic (or a keepalive)
 				      after this time, initiate a new
 				      key exchange */
     bool_t keepalive; /* Send keepalives to detect peer failure (not yet
@@ -187,7 +187,7 @@ struct site {
     uint8_t localN[NONCELEN]; /* Nonces for key exchange */
     uint8_t remoteN[NONCELEN];
     struct buffer_if buffer; /* Current outgoing key exchange packet */
-    uint32_t retries; /* Number of retries remaining */
+    int32_t retries; /* Number of retries remaining */
     uint64_t timeout; /* Timeout for current state */
     uint8_t *dhsecret;
     uint8_t *sharedsecret;
