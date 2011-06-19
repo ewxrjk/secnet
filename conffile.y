@@ -8,6 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+/* Bison stupidly redeclares malloc/free unless they are #defined
+ * (or a bunch of madder conditions) */
+#ifndef malloc
+# define malloc malloc
+# define free free
+#endif
 #include "secnet.h"
 #include "conffile_internal.h"
 #include "conffile.yy.h"
