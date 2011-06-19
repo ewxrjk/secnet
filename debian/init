@@ -11,6 +11,16 @@
 # Version:	@(#)skeleton  1.8  03-Mar-1998  miquels@cistron.nl
 #
 
+### BEGIN INIT INFO
+# Provides:          secnet
+# Required-Start:    $network $local_fs
+# Required-Stop:     $network $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start and stop secnet
+# Description:       secnet is a VPN server.
+### END INIT INFO
+
 set -e
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
