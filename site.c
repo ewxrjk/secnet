@@ -249,10 +249,10 @@ struct msg {
     uint8_t *nR;
     uint8_t *nL;
     int32_t pklen;
-    uint8_t *pk;
+    char *pk;
     int32_t hashlen;
     int32_t siglen;
-    uint8_t *sig;
+    char *sig;
 };
 
 /* Build any of msg1 to msg4. msg5 and msg6 are built from the inside
