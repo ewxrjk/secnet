@@ -226,7 +226,8 @@ struct site {
     string_t address; /* DNS name for bootstrapping, optional */
     int remoteport; /* Port for bootstrapping, optional */
     struct netlink_if *netlink;
-    struct comm_if *comm;
+    struct comm_if **comms;
+    int ncomms;
     struct resolver_if *resolver;
     struct log_if *log;
     struct random_if *random;
@@ -803,7 +804,7 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
     }
     if (address) {
 	FILLZERO(ca_buf);
-	ca_buf.comm=st->comm;
+	ca_buf.comm=st->comms[0];
 	ca_buf.sin.sin_family=AF_INET;
 	ca_buf.sin.sin_port=htons(st->remoteport);
 	ca_buf.sin.sin_addr=*address;
@@ -1288,6 +1289,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct site *st;
     item_t *item;
     dict_t *dict;
+    int i;
 
     st=safe_malloc(sizeof(*st),"site_apply");
 
@@ -1335,7 +1337,20 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     assert(index_sequence < 0xffffffffUL);
     st->index = ++index_sequence;
     st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
-    st->comm=find_cl_if(dict,"comm",CL_COMM,True,"site",loc);
+
+    list_t *comms_cfg=dict_lookup(dict,"comm");
+    if (!comms_cfg) cfgfatal(loc,"site","closure list \"comm\" not found");
+    st->ncomms=list_length(comms_cfg);
+    st->comms=safe_malloc_ary(sizeof(*st->comms),st->ncomms,"comms");
+    assert(st->ncomms);
+    for (i=0; i<st->ncomms; i++) {
+	item_t *item=list_elem(comms_cfg,i);
+	if (item->type!=t_closure) cfgfatal(loc,"site","comm is not a closure");
+	closure_t *cl=item->data.closure;
+	if (cl->type!=CL_COMM) cfgfatal(loc,"site","comm closure wrong type");
+	st->comms[i]=cl->interface;
+    }
+
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
     st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
@@ -1419,13 +1434,25 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->dhsecret=safe_malloc(st->dh->len,"site:dhsecret");
     st->sharedsecret=safe_malloc(st->transform->keylen,"site:sharedsecret");
 
+    /* We need to compute some properties of our comms */
+#define COMPUTE_WORST(pad)			\
+    int worst_##pad=0;				\
+    for (i=0; i<st->ncomms; i++) {		\
+	int thispad=st->comms[i]->pad;		\
+	if (thispad > worst_##pad)		\
+	    worst_##pad=thispad;		\
+    }
+    COMPUTE_WORST(min_start_pad)
+    COMPUTE_WORST(min_end_pad)
+
     /* We need to register the remote networks with the netlink device */
     st->netlink->reg(st->netlink->st, site_outgoing, st,
 		     st->transform->max_start_pad+(4*4)+
-		     st->comm->min_start_pad,
-		     st->transform->max_end_pad+st->comm->min_end_pad);
+		     worst_min_start_pad,
+		     st->transform->max_end_pad+worst_min_end_pad);
     
-    st->comm->request_notify(st->comm->st, st, site_incoming);
+    for (i=0; i<st->ncomms; i++)
+	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);
 
     st->current_transform=st->transform->create(st->transform->st);
     st->new_transform=st->transform->create(st->transform->st);

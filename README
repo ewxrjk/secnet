@@ -270,7 +270,10 @@ site: dict argument
   local-name (string): this site's name for itself
   name (string): the name of the site's peer
   link (netlink closure)
-  comm (comm closure)
+  comm (one or more comm closures): if there is more than one, the
+   first one will be used for any key setups initiated by us using the
+   configured address.  Others are only used if our peer talks to
+   them.
   resolver (resolver closure)
   random (randomsrc closure)
   local-key (rsaprivkey closure)
