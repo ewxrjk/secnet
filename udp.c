@@ -64,7 +64,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 {
     struct udp *st=state;
     struct sockaddr_in from;
-    int fromlen;
+    socklen_t fromlen;
     struct notify_list *n;
     bool_t done;
     int rv;
