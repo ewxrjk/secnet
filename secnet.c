@@ -14,6 +14,11 @@
 #include "conffile.h"
 #include "process.h"
 
+#if __APPLE__
+/* apple's poll() does not work on char devs */
+# define USE_SELECT 1
+#endif
+
 /* XXX should be from autoconf */
 static const char *configfile="/etc/secnet/secnet.conf";
 static const char *sites_key="sites";
@@ -247,6 +252,41 @@ static void system_phase_hook(void *sst, uint32_t newphase)
     }
 }
 
+#if USE_SELECT
+static int fakepoll(struct pollfd *fds, int nfds, int timeout) {
+    fd_set infds[1], outfds[1];
+    int maxfd = -1, i, rc;
+    struct timeval tvtimeout;
+    FD_ZERO(infds);
+    FD_ZERO(outfds);
+    for(i = 0; i < nfds; ++i) {
+	if(fds[i].events & POLLIN)
+	    FD_SET(fds[i].fd, infds);
+	if(fds[i].events & POLLOUT)
+	    FD_SET(fds[i].fd, outfds);
+	if(fds[i].fd > maxfd)
+	    maxfd = fds[i].fd;
+    }
+    if(timeout != -1) {
+	tvtimeout.tv_sec = timeout / 1000;
+	tvtimeout.tv_usec = 1000 * (timeout % 1000);
+    }
+    rc = select(maxfd + 1, infds, outfds, NULL, 
+		timeout == -1 ? NULL : &tvtimeout);
+    if(rc >= 0) {
+	for(i = 0; i < nfds; ++i) {
+	    int revents = 0;
+	    if(FD_ISSET(fds[i].fd, infds))
+		revents |= POLLIN;
+	    if(FD_ISSET(fds[i].fd, outfds))
+		revents |= POLLOUT;
+	    fds[i].revents = revents;
+	}
+    }
+    return rc;
+}
+#endif
+
 struct timeval tv_now_global;
 uint64_t now_global;
 
@@ -269,6 +309,9 @@ static void run(void)
 	           ((uint64_t)tv_now_global.tv_usec/(uint64_t)1000);
 	idx=0;
 	for (i=reg; i; i=i->next) {
+	    if(fds[idx].revents & POLLNVAL) {
+		fatal("run: poll (%s) set POLLNVAL", i->desc);
+	    }
 	    i->after(i->state, fds+idx, i->nfds);
 	    idx+=i->nfds;
 	}
@@ -292,7 +335,11 @@ static void run(void)
 	}
 	do {
 	    if (finished) break;
+#if USE_SELECT
+	    rv=fakepoll(fds, idx, timeout);
+#else
 	    rv=poll(fds, idx, timeout);
+#endif
 	    if (rv<0) {
 		if (errno!=EINTR) {
 		    fatal_perror("run: poll");
