@@ -172,7 +172,7 @@ struct site {
     bool_t current_valid;
     uint64_t current_key_timeout; /* End of life of current key */
     uint64_t renegotiate_key_time; /* When we can negotiate a new key */
-    struct sockaddr_in peer; /* Current address of peer */
+    struct comm_addr peer; /* Current address of peer */
     bool_t peer_valid; /* Peer address becomes invalid when key times out,
 			  but only if we have a DNS name for our peer */
 
@@ -183,7 +183,7 @@ struct site {
        timeout before we can listen for another setup packet); perhaps
        we should keep a list of 'bad' sources for setup packets. */
     uint32_t setup_session_id;
-    struct sockaddr_in setup_peer;
+    struct comm_addr setup_peer;
     uint8_t localN[NONCELEN]; /* Nonces for key exchange */
     uint8_t remoteN[NONCELEN];
     struct buffer_if buffer; /* Current outgoing key exchange packet */
@@ -372,7 +372,7 @@ static bool_t generate_msg1(struct site *st)
 }
 
 static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
-			   struct sockaddr_in *src)
+			   const struct comm_addr *src)
 {
     struct msg m;
 
@@ -395,7 +395,7 @@ static bool_t generate_msg2(struct site *st)
 }
 
 static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
-			   struct sockaddr_in *src)
+			   const struct comm_addr *src)
 {
     struct msg m;
     cstring_t err;
@@ -419,7 +419,7 @@ static bool_t generate_msg3(struct site *st)
 }
 
 static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
-			   struct sockaddr_in *src)
+			   const struct comm_addr *src)
 {
     struct msg m;
     uint8_t *hash;
@@ -470,7 +470,7 @@ static bool_t generate_msg4(struct site *st)
 }
 
 static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
-			   struct sockaddr_in *src)
+			   const struct comm_addr *src)
 {
     struct msg m;
     uint8_t *hash;
@@ -550,7 +550,7 @@ static bool_t generate_msg5(struct site *st)
 }
 
 static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
-			   struct sockaddr_in *src)
+			   const struct comm_addr *src)
 {
     struct msg0 m;
     cstring_t transform_err;
@@ -599,7 +599,7 @@ static bool_t generate_msg6(struct site *st)
 }
 
 static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
-			   struct sockaddr_in *src)
+			   const struct comm_addr *src)
 {
     struct msg0 m;
     cstring_t transform_err;
@@ -627,7 +627,7 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
 }
 
 static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
-			   struct sockaddr_in *src)
+			   const struct comm_addr *src)
 {
     struct msg0 m;
     cstring_t transform_err;
@@ -666,7 +666,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 }
 
 static void dump_packet(struct site *st, struct buffer_if *buf,
-			struct sockaddr_in *addr, bool_t incoming)
+			const struct comm_addr *addr, bool_t incoming)
 {
     uint32_t dest=ntohl(*(uint32_t *)buf->start);
     uint32_t source=ntohl(*(uint32_t *)(buf->start+4));
@@ -709,9 +709,10 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
     }
     if (address) {
 	memset(&st->setup_peer,0,sizeof(st->setup_peer));
-	st->setup_peer.sin_family=AF_INET;
-	st->setup_peer.sin_port=htons(st->remoteport);
-	st->setup_peer.sin_addr=*address;
+	st->setup_peer.comm=st->comm;
+	st->setup_peer.sin.sin_family=AF_INET;
+	st->setup_peer.sin.sin_port=htons(st->remoteport);
+	st->setup_peer.sin.sin_addr=*address;
 	enter_new_state(st,SITE_SENTMSG1);
     } else {
 	/* Resolution failed */
@@ -1022,7 +1023,7 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 /* This function is called by the communication device to deliver
    packets from our peers. */
 static bool_t site_incoming(void *sst, struct buffer_if *buf,
-			    struct sockaddr_in *source)
+			    const struct comm_addr *source)
 {
     struct site *st=sst;
     uint32_t dest=ntohl(*(uint32_t *)buf->start);

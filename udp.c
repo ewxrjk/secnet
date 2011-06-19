@@ -71,6 +71,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 
     if (nfds && (fds->revents & POLLIN)) {
 	do {
+	    FILLZERO(from);
 	    fromlen=sizeof(from);
 	    BUF_ASSERT_FREE(st->rbuf);
 	    BUF_ALLOC(st->rbuf,"udp_afterpoll");
@@ -95,7 +96,11 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 		}
 		done=False;
 		for (n=st->notify; n; n=n->next) {
-		    if (n->fn(n->state, st->rbuf, &from)) {
+		    struct comm_addr ca;
+		    FILLZERO(ca);
+		    ca.comm=&st->ops;
+		    ca.sin=from;
+		    if (n->fn(n->state, st->rbuf, &ca)) {
 			done=True;
 			break;
 		    }
@@ -156,21 +161,21 @@ static void release_notify(void *commst, void *nst, comm_notify_fn *fn)
 }
 
 static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
-			  struct sockaddr_in *dest)
+			  const struct comm_addr *dest)
 {
     struct udp *st=commst;
     uint8_t *sa;
 
     if (st->use_proxy) {
 	sa=buf->start-8;
-	memcpy(sa,&dest->sin_addr,4);
+	memcpy(sa,&dest->sin.sin_addr,4);
 	memset(sa+4,0,4);
-	memcpy(sa+6,&dest->sin_port,2);
+	memcpy(sa+6,&dest->sin.sin_port,2);
 	sendto(st->fd,sa,buf->size+8,0,(struct sockaddr *)&st->proxy,
 	       sizeof(st->proxy));
     } else {
 	sendto(st->fd, buf->start, buf->size, 0,
-	       (struct sockaddr *)dest, sizeof(*dest));
+	       (struct sockaddr *)&dest->sin, sizeof(dest->sin));
     }
 
     return True;

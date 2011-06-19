@@ -303,16 +303,28 @@ struct rsaprivkey_if {
 
 /* COMM interface */
 
+struct comm_addr {
+    /* This struct is pure data; in particular comm's clients may
+       freely copy it. */
+    /* Everyone is also guaranteed that all padding is set to zero, ie
+       that comm_addrs referring to semantically identical peers will
+       compare equal with memcmp.  Anyone who constructs a comm_addr
+       must start by memsetting it with FILLZERO, or some
+       equivalent. */
+    struct comm_if *comm;
+    struct sockaddr_in sin;
+};
+
 /* Return True if the packet was processed, and shouldn't be passed to
    any other potential receivers. */
 typedef bool_t comm_notify_fn(void *state, struct buffer_if *buf,
-			    struct sockaddr_in *source);
+			      const struct comm_addr *source);
 typedef void comm_request_notify_fn(void *commst, void *nst,
 				    comm_notify_fn *fn);
 typedef void comm_release_notify_fn(void *commst, void *nst,
 				    comm_notify_fn *fn);
 typedef bool_t comm_sendmsg_fn(void *commst, struct buffer_if *buf,
-			       struct sockaddr_in *dest);
+			       const struct comm_addr *dest);
 struct comm_if {
     void *st;
     int32_t min_start_pad;
