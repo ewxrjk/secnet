@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# Richard Kettlewell 2011-06-18
+#
+set -e
+
+group=${group:-secnet}
+user=${user:-secnet}
+
+# pick ID1 ID2 ... IDn
+# Echoes an ID matching none of ID1..IDn
+pick() {
+  local n
+  n=250				# better not choose 0!
+  while :; do
+    ok=true
+    for k in "$@"; do
+      if [ $n = $k ]; then
+        ok=false
+        break
+      fi
+    done
+    if $ok; then
+      echo $n
+      return
+    fi
+    n=$((1+$n))
+  done
+}
+
+if dscl . -read /Groups/$group >/dev/null 2>&1; then
+  :
+else
+  gids=$(dscl . -list /Groups PrimaryGroupID|awk '{print $2}')
+  gid=$(pick $gids)
+  dscl . -create /Groups/$group
+  dscl . -create /Groups/$group PrimaryGroupID $gid
+  dscl . -create /Groups/$group Password \*
+fi
+
+if dscl . -read /Users/$user >/dev/null 2>&1; then
+  :
+else
+  uids=$(dscl . -list /Users UniqueID|awk '{print $2}')
+  uid=$(pick $uids)
+  gid=$(dscl . -read /Groups/$group PrimaryGroupID | awk '{print $2}')
+  dscl . -create /Users/$user
+  dscl . -create /Users/$user UniqueID $uid
+  dscl . -create /Users/$user UserShell /usr/bin/false
+  dscl . -create /Users/$user RealName 'secnet'
+  dscl . -create /Users/$user NFSHomeDirectory pkgstatedir
+  dscl . -create /Users/$user PrimaryGroupID $gid
+  dscl . -create /Users/$user Password \*
+fi
+
+cp uk.org.greenend.secnet.plist /Library/LaunchDaemons/.
+launchctl load /Library/LaunchDaemons
+echo "To start secnet:"
+echo "  sudo launchctl start uk.org.greenend.secnet"
+echo
+echo "To stop secnet:"
+echo "  sudo launchctl stop uk.org.greenend.secnet"
+echo
+echo "To uninstall:"
+echo "  sudo launchctl unload uk.org.greenend.secnet"
+echo "  sudo rm -f /Library/LaunchDaemons/uk.org.greenend.secnet.plist"

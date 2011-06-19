@@ -1,0 +1,31 @@
+How to install secnet on a Fink-equipped OS X system:
+  - Install GMP:
+    fink install gmp
+  - Download and install ADNS:
+    ./configure --disable-dynamic
+    make
+    sudo make install
+  - Build secnet:
+    ./configure CPPFLAGS=-I/sw/include LDFLAGS=-L/sw/lib
+    make
+    sudo make install
+  - Install tuntap for OSX from http://tuntaposx.sourceforge.net/
+  - Create /etc/secnet/{key,secnet.conf,sites.conf} as usual
+  - If you don't want secnet 'always on', edit
+    uk.org.greenend.secnet.plist and remove *both* these two lines:
+        <key>RunAtLoad</key>
+        <true/>
+  - Create the 'secnet' user and install the job configuration:
+    ./setup.mac.
+
+To start secnet:
+  sudo launchctl start uk.org.greenend.secnet
+
+To stop secnet:
+  sudo launchctl stop uk.org.greenend.secnet
+
+To uninstall:
+  sudo launchctl unload uk.org.greenend.secnet
+  sudo rm -f /Library/LaunchDaemons/uk.org.greenend.secnet.plist
+
+Richard Kettlewell 2011-06-18
