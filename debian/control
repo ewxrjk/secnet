@@ -2,6 +2,7 @@ Source: secnet
 Section: net
 Priority: extra
 Maintainer: Stephen Early <steve@greenend.org.uk>
+Build-Depends: debhelper,libgmp3-dev,libadns1-dev
 Standards-Version: 3.0.1
 
 Package: secnet
