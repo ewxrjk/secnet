@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <assert.h>
 #include <sys/socket.h>
 
 #include <sys/mman.h>
@@ -145,6 +146,7 @@ struct site {
     struct dh_if *dh;
     struct hash_if *hash;
 
+    uint32_t index; /* Index of this site */
     int32_t setup_retries; /* How many times to send setup packets */
     int32_t setup_timeout; /* Initial timeout for setup packets */
     int32_t wait_timeout; /* How long to wait if setup unsuccessful */
@@ -268,7 +270,7 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     buffer_init(&st->buffer,0);
     buf_append_uint32(&st->buffer,
 	(type==LABEL_MSG1?0:st->setup_session_id));
-    buf_append_uint32(&st->buffer,(uint32_t)st);
+    buf_append_uint32(&st->buffer,st->index);
     buf_append_uint32(&st->buffer,type);
     buf_append_string(&st->buffer,st->localname);
     buf_append_string(&st->buffer,st->remotename);
@@ -542,7 +544,7 @@ static bool_t generate_msg5(struct site *st)
     st->new_transform->forwards(st->new_transform->st,&st->buffer,
 				&transform_err);
     buf_prepend_uint32(&st->buffer,LABEL_MSG5);
-    buf_prepend_uint32(&st->buffer,(uint32_t)st);
+    buf_prepend_uint32(&st->buffer,st->index);
     buf_prepend_uint32(&st->buffer,st->setup_session_id);
 
     st->retries=st->setup_retries;
@@ -591,7 +593,7 @@ static bool_t generate_msg6(struct site *st)
     st->new_transform->forwards(st->new_transform->st,&st->buffer,
 				&transform_err);
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
-    buf_prepend_uint32(&st->buffer,(uint32_t)st);
+    buf_prepend_uint32(&st->buffer,st->index);
     buf_prepend_uint32(&st->buffer,st->setup_session_id);
 
     st->retries=1; /* Peer will retransmit MSG5 if this packet gets lost */
@@ -909,7 +911,7 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
 	st->current_transform->forwards(st->current_transform->st,
 					&st->buffer, &transform_err);
 	buf_prepend_uint32(&st->buffer,LABEL_MSG0);
-	buf_prepend_uint32(&st->buffer,(uint32_t)st);
+	buf_prepend_uint32(&st->buffer,st->index);
 	buf_prepend_uint32(&st->buffer,st->remote_session_id);
 	st->comm->sendmsg(st->comm->st,&st->buffer,&st->peer);
 	BUF_FREE(&st->buffer);
@@ -1005,7 +1007,7 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 	    st->current_transform->forwards(st->current_transform->st,
 					    buf, &transform_err);
 	    buf_prepend_uint32(buf,LABEL_MSG0);
-	    buf_prepend_uint32(buf,(uint32_t)st);
+	    buf_prepend_uint32(buf,st->index);
 	    buf_prepend_uint32(buf,st->remote_session_id);
 	    st->comm->sendmsg(st->comm->st,buf,&st->peer);
 	}
@@ -1078,7 +1080,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	}
 	return False; /* Not for us. */
     }
-    if (dest==(uint32_t)st) {
+    if (dest==st->index) {
 	/* Explicitly addressed to us */
 	uint32_t msgtype=ntohl(get_uint32(buf->start+8));
 	if (msgtype!=LABEL_MSG0) dump_packet(st,buf,source,True);
@@ -1186,6 +1188,7 @@ static void site_phase_hook(void *sst, uint32_t newphase)
 static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 			  list_t *args)
 {
+    static uint32_t index_sequence;
     struct site *st;
     item_t *item;
     dict_t *dict;
@@ -1217,6 +1220,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	free(st);
 	return NULL;
     }
+    assert(index_sequence < 0xffffffffUL);
+    st->index = ++index_sequence;
     st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
     st->comm=find_cl_if(dict,"comm",CL_COMM,True,"site",loc);
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
