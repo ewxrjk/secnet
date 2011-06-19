@@ -17,17 +17,11 @@
 /* Define to 1 if you have the `fl' library (-lfl). */
 #undef HAVE_LIBFL
 
-/* Define to 1 if you have the `getopt' library (-lgetopt). */
-#undef HAVE_LIBGETOPT
-
 /* Define to 1 if you have the `gmp' library (-lgmp). */
 #undef HAVE_LIBGMP
 
 /* Define to 1 if you have the `gmp2' library (-lgmp2). */
 #undef HAVE_LIBGMP2
-
-/* Define to 1 if you have the `gnugetopt' library (-lgnugetopt). */
-#undef HAVE_LIBGNUGETOPT
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL

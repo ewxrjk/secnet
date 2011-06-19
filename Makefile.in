@@ -67,7 +67,6 @@ DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	config.h.in configure \
 	configure.in depend.sh dh.c \
 	example.conf \
-	getopt.c getopt1.c getopt.h \
 	install-sh ipaddr.c ipaddr.h ipaddr.py linux log.c \
 	magic.h md5.c md5.h \
 	make-secnet-sites \

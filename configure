@@ -4443,96 +4443,6 @@ _ACEOF
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for getopt_long in -lgetopt" >&5
-$as_echo_n "checking for getopt_long in -lgetopt... " >&6; }
-if test "${ac_cv_lib_getopt_getopt_long+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgetopt  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char getopt_long ();
-int
-main ()
-{
-return getopt_long ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_getopt_getopt_long=yes
-else
-  ac_cv_lib_getopt_getopt_long=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_getopt_getopt_long" >&5
-$as_echo "$ac_cv_lib_getopt_getopt_long" >&6; }
-if test "x$ac_cv_lib_getopt_getopt_long" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGETOPT 1
-_ACEOF
-
-  LIBS="-lgetopt $LIBS"
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for getopt_long in -lgnugetopt" >&5
-$as_echo_n "checking for getopt_long in -lgnugetopt... " >&6; }
-if test "${ac_cv_lib_gnugetopt_getopt_long+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lgnugetopt  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char getopt_long ();
-int
-main ()
-{
-return getopt_long ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_gnugetopt_getopt_long=yes
-else
-  ac_cv_lib_gnugetopt_getopt_long=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gnugetopt_getopt_long" >&5
-$as_echo "$ac_cv_lib_gnugetopt_getopt_long" >&6; }
-if test "x$ac_cv_lib_gnugetopt_getopt_long" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBGNUGETOPT 1
-_ACEOF
-
-  LIBS="-lgnugetopt $LIBS"
-
-fi
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for socket in -lsocket" >&5
 $as_echo_n "checking for socket in -lsocket... " >&6; }
 if test "${ac_cv_lib_socket_socket+set}" = set; then :
@@ -4690,24 +4600,6 @@ esac
 
 fi
 
-
-ac_fn_c_check_func "$LINENO" "getopt_long" "ac_cv_func_getopt_long"
-if test "x$ac_cv_func_getopt_long" = x""yes; then :
-
-else
-  case " $LIBOBJS " in
-  *" getopt.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS getopt.$ac_objext"
- ;;
-esac
-
- case " $LIBOBJS " in
-  *" getopt1.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS getopt1.$ac_objext"
- ;;
-esac
-
-fi
 
 
 ac_config_files="$ac_config_files Makefile"

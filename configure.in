@@ -57,8 +57,6 @@ if test "$ac_cv_lib_fl_yywrap" != yes; then
   AC_MSG_ERROR([A compatible libfl is required])
 fi
 AC_CHECK_LIB(nsl,inet_ntoa)
-AC_CHECK_LIB(getopt,getopt_long)
-AC_CHECK_LIB(gnugetopt,getopt_long)
 AC_CHECK_LIB(socket,socket)
 AC_CHECK_LIB(resolv,inet_aton)
 AC_CHECK_LIB(adns,adns_init)
@@ -66,8 +64,6 @@ REQUIRE_HEADER([adns.h])
 
 dnl check for getopt in standard library
 AC_REPLACE_FUNCS([snprintf])
-AC_CHECK_FUNC([getopt_long], [], [AC_LIBOBJ([getopt])
- AC_LIBOBJ([getopt1])])
 
 AC_OUTPUT(Makefile,echo timestamp >stamp-h)
 
