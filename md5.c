@@ -247,7 +247,7 @@ static void *md5_init(void)
     return ctx;
 }
 
-static void md5_update(void *sst, uint8_t const *buf, int32_t len)
+static void md5_update(void *sst, const void *buf, int32_t len)
 {
     struct MD5Context *ctx=sst;
 

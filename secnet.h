@@ -438,7 +438,7 @@ struct dh_if {
 /* HASH interface */
 
 typedef void *hash_init_fn(void);
-typedef void hash_update_fn(void *st, uint8_t const *buf, int32_t len);
+typedef void hash_update_fn(void *st, const void *buf, int32_t len);
 typedef void hash_final_fn(void *st, uint8_t *digest);
 struct hash_if {
     int32_t len; /* Hash output length in bytes */
