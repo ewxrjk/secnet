@@ -272,7 +272,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     d=i->data.dict;
 
     j=dict_find_item(d,"address",False,"udp",st->loc);
-    st->addr=j?st->addr=string_item_to_ipaddr(j, "udp"):INADDR_ANY;
+    st->addr=j?string_item_to_ipaddr(j, "udp"):INADDR_ANY;
     st->port=dict_read_number(d,"port",True,"udp",st->loc,0);
     st->rbuf=find_cl_if(d,"buffer",CL_BUFFER,True,"udp",st->loc);
     st->authbind=dict_read_string(d,"authbind",False,"udp",st->loc);
