@@ -6,6 +6,8 @@
 #error secnet requires ADNS version 1.0 or above
 #endif
 #include <adns.h>
+#include <arpa/inet.h>
+#include <string.h>
 
 
 struct adns {
@@ -28,6 +30,20 @@ static bool_t resolve_request(void *sst, cstring_t name,
     struct adns *st=sst;
     struct query *q;
     int rv;
+    const int maxlitlen=50;
+
+    ssize_t l=strlen(name);
+    if (name[0]=='[' && l<maxlitlen && l>2 && name[l-1]==']') {
+	char trimmed[maxlitlen+1];
+	memcpy(trimmed,name+1,l-2);
+	trimmed[l-2]=0;
+	struct in_addr ia;
+	if (inet_aton(trimmed,&ia))
+	    cb(cst,&ia);
+	else
+	    cb(cst,0);
+	return True;
+    }
 
     q=safe_malloc(sizeof *q,"resolve_request");
     q->cst=cst;
