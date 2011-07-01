@@ -479,10 +479,7 @@ static list_t *tun_create(closure_t *self, struct cloc loc, dict_t *context,
 	    fatal_perror("tun_create: uname");
 	}
 	if (strcmp(u.sysname,"Linux")==0) {
-	    if (u.release[0]=='2' && u.release[1]=='.' && u.release[3]=='.') {
-		if (u.release[2]=='2') st->tun_flavour=TUN_FLAVOUR_BSD;
-		else if (u.release[2]=='4') st->tun_flavour=TUN_FLAVOUR_LINUX;
-	    }
+	    st->tun_flavour=TUN_FLAVOUR_LINUX;
 	} else if (strcmp(u.sysname,"SunOS")==0) {
 	    st->tun_flavour=TUN_FLAVOUR_STREAMS;
 	} else if (strcmp(u.sysname,"FreeBSD")==0
