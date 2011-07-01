@@ -309,8 +309,11 @@ static void run(void)
 	           ((uint64_t)tv_now_global.tv_usec/(uint64_t)1000);
 	idx=0;
 	for (i=reg; i; i=i->next) {
-	    if(fds[idx].revents & POLLNVAL) {
-		fatal("run: poll (%s) set POLLNVAL", i->desc);
+	    int check;
+	    for (check=0; check<i->nfds; check++) {
+		if(fds[idx+check].revents & POLLNVAL) {
+		    fatal("run: poll (%s#%d) set POLLNVAL", i->desc, check);
+		}
 	    }
 	    i->after(i->state, fds+idx, i->nfds);
 	    idx+=i->nfds;
