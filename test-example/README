@@ -1,0 +1,21 @@
+This directory contains some files useful for ad-hoc tests.
+With these it is possible to run a test of secnet on a Linux host
+even if that Linux host does not have another working network connection.
+
+The keys here are (obviously) public.  They were generated like this:
+ ssh-keygen -C inside@example.com -f test-example/inside.key -t rsa1 -b 1024
+ ssh-keygen -C outside@example.com -f test-example/outside.key -t rsa1 -b 1024
+ # edit sites to paste {inside,outside}.key.pub into pubkey lines
+ base64 <inside.key >inside.key.b64
+ base64 <outside.key >outside.key.b64
+
+To run the test:
+ Run the makefile:
+  make -C test-example/
+ In one window, as root
+  ./secnet -dvnc test-example/inside.conf
+ And in another
+  ./secnet -dvnc test-example/outside.conf
+ Then in a third
+  ping -I secnet-test-i 172.18.232.2 
+ 

@@ -24,3 +24,6 @@ debian/secnet
 debian/secnet.substvars
 *.xcodeproj
 /build
+
+test-example/*.key
+test-example/sites.conf
