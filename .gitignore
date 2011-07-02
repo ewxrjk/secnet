@@ -1,5 +1,6 @@
 *.o
 *.d
+*.pyc
 conffile.tab.[ch]
 conffile.yy.[ch]
 /version.c
