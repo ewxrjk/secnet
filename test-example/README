@@ -19,3 +19,8 @@ To run the test:
  Then in a third
   ping -I secnet-test-i 172.18.232.2 
  
+For running under valgrind memcheck, do something like this:
+  valgrind --num-callers=40 --gen-suppressions=yes --db-attach=yes \
+    --leak-check=full --suppressions=test-example/memcheck.suppressions \
+    ./secnet -dvnc test-example/outside.conf
+NB that --num-callers is needed as secnet's stack can be deep.

@@ -1,0 +1,14 @@
+{
+   secnet_read_conffile
+   Memcheck:Leak
+   ...
+   fun:read_conffile
+   fun:main
+}
+{
+   secnet_enter_phase
+   Memcheck:Leak
+   ...
+   fun:enter_phase
+   fun:main
+}
