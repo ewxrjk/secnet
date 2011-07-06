@@ -928,7 +928,6 @@ static void enter_state_wait(struct site *st)
     slog(st,LOG_STATE,"entering state WAIT");
     st->timeout=st->now+st->wait_timeout;
     st->state=SITE_WAIT;
-    st->peer_valid=False;
     set_link_quality(st);
     BUF_FREE(&st->buffer); /* will have had an outgoing packet in it */
     /* XXX Erase keys etc. */
