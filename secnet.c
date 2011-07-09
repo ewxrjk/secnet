@@ -62,7 +62,7 @@ static void parse_options(int argc, char **argv)
 	    {"nodetach", 0, 0, 'n'},
 	    {"silent", 0, 0, 'f'},
 	    {"quiet", 0, 0, 'f'},
-	    {"debug", 1, 0, 'd'},
+	    {"debug", 0, 0, 'd'},
 	    {"config", 1, 0, 'c'},
 	    {"just-check-config", 0, 0, 'j'},
 	    {"sites-key", 1, 0, 's'},
@@ -87,7 +87,7 @@ static void parse_options(int argc, char **argv)
 		   "  -s, --sites-key=name    configuration key that "
 		   "specifies active sites\n"
 		   "  -n, --nodetach          do not run in background\n"
-		   "  -d, --debug=item,...    set debug options\n"
+		   "  -d, --debug             output debug messages\n"
 		   "      --help              display this help and exit\n"
 		   "      --version           output version information "
 		   "and exit\n"
