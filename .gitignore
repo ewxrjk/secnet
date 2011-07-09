@@ -21,3 +21,5 @@ debian/secnet.debhelper.log
 debian/*.debhelper
 debian/secnet
 debian/secnet.substvars
+*.xcodeproj
+/build
