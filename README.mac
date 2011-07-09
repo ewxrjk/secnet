@@ -25,7 +25,15 @@ To stop secnet:
   sudo launchctl stop uk.org.greenend.secnet
 
 To uninstall:
-  sudo launchctl unload uk.org.greenend.secnet
+  sudo launchctl unload /Library/LaunchDaemons/uk.org.greenend.secnet.plist
   sudo rm -f /Library/LaunchDaemons/uk.org.greenend.secnet.plist
+
+If you need to enable IP forwarding:
+  sudo sysctl -w net.inet.ip.forwarding=1
+
+(Note that on a Mac, you need to enable IP forwarding if you want to
+route to addresses on one interface via another; i.e. if you expect to
+be able to reach an address on en0 with a packet delivered through
+tun0, IP forwarding must be turned on.)
 
 Richard Kettlewell 2011-06-18
