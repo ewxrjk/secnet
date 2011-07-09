@@ -141,6 +141,7 @@ static void parse_options(int argc, char **argv)
 	    break;
 
 	case '?':
+	    exit(1);
 	    break;
 
 	default:
