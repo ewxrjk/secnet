@@ -2,14 +2,14 @@
 *.d
 conffile.tab.[ch]
 conffile.yy.[ch]
-version.c
+/version.c
 /secnet
 
-config.log
-config.h
-config.status
-stamp-h
-Makefile
+/config.log
+/config.h
+/config.status
+/stamp-h
+/Makefile
 
 autom4te.cache
 
