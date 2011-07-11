@@ -154,7 +154,7 @@ static void ptree_mangle(struct p_node *t)
 
 #ifdef DUMP_PARSE_TREE
 /* Convert a node type to a string, for parse tree dump */
-static string_t ntype(uint32_t type)
+static const char *ntype(uint32_t type)
 {
     switch(type) {
     case T_STRING:     return "T_STRING";
@@ -179,14 +179,14 @@ static void ptree_indent(int amount)
     for (i=0; i<amount; i++) printf("  . ");
 }
 
-static void ptree_dump(struct p_node *n, uint32_t d)
+static void ptree_dump(struct p_node *n, int d)
 {
     if (!n) {
 	printf("NULL\n");
 	return;
     }
     
-    if (n->type<10) {
+    if (T_IS_PRIMITIVE(n->type)) {
 	switch(n->type) {
 	case T_STRING: printf("T_STRING: \"%s\" (%s line %d)\n",
 			      n->data.string,n->loc.file,n->loc.line); break;
@@ -197,7 +197,7 @@ static void ptree_dump(struct p_node *n, uint32_t d)
 	default:       printf("**unknown primitive type**\n"); break;
 	}
     } else {
-	assert(d<INT_MAX);
+	assert(d<10000);
 	printf("%s: (%s line %d)\n",ntype(n->type),n->loc.file,n->loc.line);
 	ptree_indent(d);
 	printf("  |-");	ptree_dump(n->l, d+1);

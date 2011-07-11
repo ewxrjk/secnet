@@ -29,7 +29,7 @@ do{									\
 #define MAX_INCLUDE_DEPTH 10
 struct include_stack_item {
 	YY_BUFFER_STATE bst;
-	uint32_t lineno;
+	int lineno;
 	cstring_t file;
 };
 struct include_stack_item include_stack[MAX_INCLUDE_DEPTH];
@@ -71,8 +71,25 @@ static struct p_node *stringnode(string_t string)
 static struct p_node *numnode(string_t number)
 {
 	struct p_node *r;
+	unsigned long n;
 	r=leafnode(T_NUMBER);
-	r->data.number=atoi(number);
+	errno = 0;
+	n = strtoul(number, NULL, 10);
+	/* The caller is expected to only give us [0-9]+,
+	 * so we skip some of the usual syntax checking. */
+	r->data.number=n;
+	/* Give a consistent error message for any kind of
+	 * out-of-range condition */
+	if(errno == ERANGE || n != r->data.number) {
+	    Message(M_FATAL,"config file %s line %d: '%s' is too big\n",
+		    config_file, config_lineno, number);
+	    exit(1);
+	}
+	if(errno) {
+	    Message(M_FATAL,"config file %s line %d: '%s': %s\n",
+		    config_file, config_lineno, number, strerror(errno));
+	    exit(1);
+	}
 	return r;
 }
 

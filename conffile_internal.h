@@ -23,6 +23,8 @@ typedef cstring_t atom_t;
 #define T_ALIST      17
 #define T_ERROR      20
 
+#define T_IS_PRIMITIVE(NTYPE) ((NTYPE) < T_ASSIGNMENT)
+
 struct p_node {
     uint32_t type;
     struct cloc loc;
