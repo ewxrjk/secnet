@@ -11,6 +11,14 @@ AC_REVISION($Id: configure.in,v 1.4 2002/09/09 22:05:02 steve Exp $)
 
 AC_LANG_C
 
+# If fink is on the path then it is assumed we should use it.
+AC_PATH_PROG([FINK],[fink])
+if test "x$FINK" != x; then
+  finkdir=`echo $FINK|sed 's,/[[^/]]*/[[^/]]*$,,'`
+  CPPFLAGS="-I$finkdir/include ${CPPFLAGS}"
+  LDFLAGS="-L$finkdir/lib ${LDFLAGS}"
+fi
+
 AC_PROG_MAKE_SET
 AC_PROG_CC
 AC_PROG_INSTALL

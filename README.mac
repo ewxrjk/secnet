@@ -6,7 +6,7 @@ How to install secnet on a Fink-equipped OS X system:
     make
     sudo make install
   - Build secnet:
-    ./configure CPPFLAGS=-I/sw/include LDFLAGS=-L/sw/lib
+    ./configure
     make
     sudo make install
   - Install tuntap for OSX from http://tuntaposx.sourceforge.net/

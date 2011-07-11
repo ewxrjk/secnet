@@ -613,6 +613,7 @@ LDFLAGS
 CFLAGS
 CC
 SET_MAKE
+FINK
 target_alias
 host_alias
 build_alias
@@ -2262,6 +2263,53 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+# If fink is on the path then it is assumed we should use it.
+# Extract the first word of "fink", so it can be a program name with args.
+set dummy fink; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_path_FINK+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $FINK in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_FINK="$FINK" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_FINK="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+FINK=$ac_cv_path_FINK
+if test -n "$FINK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FINK" >&5
+$as_echo "$FINK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "x$FINK" != x; then
+  finkdir=`echo $FINK|sed 's,/[^/]*/[^/]*$,,'`
+  CPPFLAGS="-I$finkdir/include ${CPPFLAGS}"
+  LDFLAGS="-L$finkdir/lib ${LDFLAGS}"
+fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} sets \$(MAKE)" >&5
 $as_echo_n "checking whether ${MAKE-make} sets \$(MAKE)... " >&6; }
