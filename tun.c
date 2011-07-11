@@ -3,6 +3,7 @@
 #include "netlink.h"
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -134,11 +135,27 @@ static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds)
 static void tun_deliver_to_kernel(void *sst, struct buffer_if *buf)
 {
     struct tun *st=sst;
+    ssize_t rc;
 
     BUF_ASSERT_USED(buf);
-    /* No error checking, because we'd just throw the packet away
-       anyway if it didn't work. */
-    write(st->fd,buf->start,buf->size);
+    
+    /* Log errors, so we can tell what's going on, but only once a
+       minute, so we don't flood the logs.  Short writes count as
+       errors. */
+    rc = write(st->fd,buf->start,buf->size);
+    if(rc != buf->size) {
+	static struct timeval last_report;
+	if(tv_now_global.tv_sec >= last_report.tv_sec + 60) {
+	    if(rc < 0)
+		Message(M_WARNING,
+			"failed to deliver packet to tun device: %s\n",
+			strerror(errno));
+	    else
+		Message(M_WARNING,
+			"truncated packet delivered to tun device\n");
+	    last_report = tv_now_global;
+	}
+    }
     BUF_FREE(buf);
 }
 
