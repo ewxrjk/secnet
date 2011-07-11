@@ -1,26 +1,11 @@
+#define _GNU_SOURCE
 #include "secnet.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
 #include "process.h"
-
-/* Advice about children from Peter:
-Better way: before the fork, make a pipe. In the child close the
-+reading end. Make the writing end close-on-exec. If the dup2 or exec fails,
-+write the errno value. In the parent, close the writing end. Now you can read
-+from it. If you get an errno value from the pipe, the process failed and you
-+know why. If you get EOF, the exec succeeded.
-
-<Senji> So, close on exec only closes if exec isn't going to return then?
-<Diziet> qu: I wouldn't bother with all that with pipes.  Remember that the
-+runtime system can still make exec fail when it's `too late'.
-<Senji> Diz - I would rather have a coherant error message than 'child failed'
-<Diziet> The child, if it fails to exec, should print a message to stderr
-+(giving errno and what it was trying to execute, most likely), and exit
-+nonzero.
-<Diziet> It should exit calling _exit.
-*/
 
 /* Process handling - subprocesses, signals, etc. */
 
@@ -143,14 +128,33 @@ static void sigchld_handler(void *st, int signum)
 int sys_cmd(const char *path, const char *arg, ...)
 {
     va_list ap;
-    int rv;
+    int rv, rc;
     pid_t c;
 
-    va_start(ap,arg);
     c=fork();
     if (c) {
 	/* Parent -> wait for child */
-	waitpid(c,&rv,0);
+	do {
+	    rc = waitpid(c,&rv,0);
+	} while(rc < 0 && errno == EINTR);
+	if (rc < 0)
+	    fatal_perror("sys_cmd: waitpid for %s", path);
+	if (rc != c) /* OS has gone mad */
+	    fatal("sys_cmd: waitpid for %s returned wrong process ID!",
+		  path);
+	if (rv) {
+	    /* If the command failed reporting its exit status */
+	    if (WIFEXITED(rv))
+		Message(M_ERR, "sys_cmd(%s,%s,...) exited with status %d\n",
+			path, arg, WEXITSTATUS(rv));
+	    else if(WIFSIGNALED(rv))
+		Message(M_ERR, "sys_cmd(%s,%s,...) exited with signal %d (%s)%s\n",
+			path, arg, WTERMSIG(rv), strsignal(WTERMSIG(rv)),
+			WCOREDUMP(rv) ? " - core dumped" : "");
+	    else
+		Message(M_ERR, "sys_cmd(%s,%s,...) exited with wstat %#x",
+			path, arg, rv);
+	}
     } else if (c==0) {
 	char *args[100];
 	int i;
@@ -160,17 +164,18 @@ int sys_cmd(const char *path, const char *arg, ...)
 	   if the execvp() fails this seems somewhat pointless, and
 	   increases the chance of the child process failing before it
 	   gets to exec(). */
-	args[0]=(char *)arg;
+	va_start(ap,arg);
+	args[0]=(char *)arg; /* program name */
 	i=1;
 	while ((args[i++]=va_arg(ap,char *)));
 	execvp(path,args);
-	exit(1);
+	fprintf(stderr, "sys_cmd(%s,%s,...): %s\n", path, arg, strerror(errno));
+	_exit(1);
     } else {
 	/* Error */
-	fatal_perror("sys_cmd(%s,%s,...)");
+	fatal_perror("sys_cmd(%s,%s,...)", path, arg);
     }
 
-    va_end(ap);
     return rv;
 }
 
