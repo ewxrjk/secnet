@@ -495,4 +495,7 @@ extern void log_from_fd(int fd, cstring_t prefix, struct log_if *log);
 
 /***** END of log functions *****/
 
+#define STRING2(x) #x
+#define STRING(x) STRING2(x)
+
 #endif /* secnet_h */
