@@ -290,7 +290,8 @@ site: dict argument
     allowing another attempt [20000]
   renegotiate-time (integer): if we see traffic on the link after this time
     then renegotiate another session key immediately [depends on key-lifetime]
-  keepalive (bool): if True then attempt always to keep a valid session key
+  keepalive (bool): if True then attempt always to keep a valid session key.
+    Not actually currently implemented. [false]
   log-events (string list): types of events to log for this site
     unexpected: unexpected key setup packets (may be late retransmissions)
     setup-init: start of attempt to setup a session key

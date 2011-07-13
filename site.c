@@ -154,8 +154,6 @@ struct site {
     int32_t key_renegotiate_time; /* If we see traffic (or a keepalive)
 				      after this time, initiate a new
 				      key exchange */
-    bool_t keepalive; /* Send keepalives to detect peer failure (not yet
-			 implemented) */
 
     uint8_t *setupsig; /* Expected signature of incoming MSG1 packets */
     int32_t setupsiglen; /* Allows us to discard packets quickly if
@@ -1259,7 +1257,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	cfgfatal(loc,"site",
 		 "renegotiate-time must be less than key-lifetime\n");
     }
-    st->keepalive=dict_read_bool(dict,"keepalive",False,"site",loc,False);
 
     st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
 				       log_event_table,"site");
