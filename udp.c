@@ -194,7 +194,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 		     st->loc.file,st->loc.line);
     }
 
-    memset(&addr, 0, sizeof(addr));
+    FILLZERO(addr);
     addr.sin_family=AF_INET;
     addr.sin_addr.s_addr=htonl(st->addr);
     addr.sin_port=htons(st->port);
@@ -279,7 +279,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     l=dict_lookup(d,"proxy");
     if (l) {
 	st->use_proxy=True;
-	memset(&st->proxy,0,sizeof(st->proxy));
+	FILLZERO(st->proxy);
 	st->proxy.sin_family=AF_INET;
 	i=list_elem(l,0);
 	if (!i || i->type!=t_string) {

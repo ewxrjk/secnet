@@ -72,8 +72,8 @@ static void transform_delkey(void *sst)
 {
     struct transform_inst *ti=sst;
 
-    memset(&ti->cryptkey,0,sizeof(ti->cryptkey));
-    memset(&ti->mackey,0,sizeof(ti->mackey));
+    FILLZERO(ti->cryptkey);
+    FILLZERO(ti->mackey);
     ti->keyed=False;
 }
 
@@ -252,7 +252,7 @@ static void transform_destroy(void *sst)
 {
     struct transform_inst *st=sst;
 
-    memset(st,0,sizeof(*st)); /* Destroy key material */
+    FILLZERO(*st); /* Destroy key material */
     free(st);
 }
 

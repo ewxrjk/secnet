@@ -498,4 +498,6 @@ extern void log_from_fd(int fd, cstring_t prefix, struct log_if *log);
 #define STRING2(x) #x
 #define STRING(x) STRING2(x)
 
+#define FILLZERO(obj) (memset(&(obj),0,sizeof((obj))))
+
 #endif /* secnet_h */

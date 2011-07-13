@@ -211,7 +211,7 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 	    struct sockaddr_in *sa;
 	    int action;
 	    
-	    memset(&rt,0,sizeof(rt));
+	    FILLZERO(rt);
 	    sa=(struct sockaddr_in *)&rt.rt_dst;
 	    sa->sin_family=AF_INET;
 	    sa->sin_addr.s_addr=htonl(nets->list[i].prefix);
@@ -292,7 +292,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	    fatal_perror("%s: can't open device file %s",st->nl.name,
 			 st->device_path);
 	}
-	memset(&ifr,0,sizeof(ifr));
+	FILLZERO(ifr);
 	ifr.ifr_flags = IFF_TUN | IFF_NO_PI; /* Just send/receive IP packets,
 						no extra headers */
 	if (st->interface_name)
@@ -379,7 +379,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	/* Interface address */
 	strncpy(ifr.ifr_name,st->interface_name,IFNAMSIZ);
 	sa=(struct sockaddr_in *)&ifr.ifr_addr;
-	memset(sa,0,sizeof(*sa));
+	FILLZERO(*sa);
 	sa->sin_family=AF_INET;
 	sa->sin_addr.s_addr=htonl(st->local_address);
 	if (ioctl(fd,SIOCSIFADDR, &ifr)!=0) {
@@ -389,7 +389,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	/* Netmask */
 	strncpy(ifr.ifr_name,st->interface_name,IFNAMSIZ);
 	sa=(struct sockaddr_in *)&ifr.ifr_netmask;
-	memset(sa,0,sizeof(*sa));
+	FILLZERO(*sa);
 	sa->sin_family=AF_INET;
 	sa->sin_addr.s_addr=htonl(0xffffffff);
 	if (ioctl(fd,SIOCSIFNETMASK, &ifr)!=0) {
@@ -399,7 +399,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	/* Destination address (point-to-point) */
 	strncpy(ifr.ifr_name,st->interface_name,IFNAMSIZ);
 	sa=(struct sockaddr_in *)&ifr.ifr_dstaddr;
-	memset(sa,0,sizeof(*sa));
+	FILLZERO(*sa);
 	sa->sin_family=AF_INET;
 	sa->sin_addr.s_addr=htonl(st->nl.secnet_address);
 	if (ioctl(fd,SIOCSIFDSTADDR, &ifr)!=0) {
