@@ -909,6 +909,7 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
 	buf_prepend_uint32(&st->buffer,LABEL_MSG0);
 	buf_prepend_uint32(&st->buffer,st->index);
 	buf_prepend_uint32(&st->buffer,st->remote_session_id);
+	dump_packet(st,&st->buffer,&st->peer,False);
 	st->comm->sendmsg(st->comm->st,&st->buffer,&st->peer);
 	BUF_FREE(&st->buffer);
 	return True;
