@@ -304,7 +304,24 @@ site: dict argument
     packet-drop: whenever we throw away an outgoing packet
     dump-packets: every key setup packet we see
     errors: failure of name resolution, internal errors
+    peer-addrs: changes to sets of peer addresses (interesting for mobile peers)
     all: everything (too much!)
+  mobile (bool): if True then peer is "mobile" ie we assume it may
+    change its apparent IP address and port number without either it
+    or us being aware of the change; so, we remember the last several
+    port/addr pairs we've seen and send packets to all of them
+    (subject to a timeout).  We maintain one set of addresses for key
+    setup exchanges, and another for data traffic. Two communicating
+    peers must not each regard the other as mobile, or all the traffic
+    in each direction will be triplicated (strictly, transmitted
+    mobile-peers-max times) and anyway two peers whose public contact
+    address may suddenly change couldn't communicate reliably because
+    their contact addresses might both change at once. [false]
+  mobile-peers-max (integer): Maximum number of peer port/addr pairs we
+    remember and send to.  Must be at least 1 and no more than 5.  [3]
+  mobile-peer-expiry (integer): For "mobile" peers only, the length
+    of time (in seconds) for which we will keep sending to multiple
+    address/ports from which we have not seen incoming traffic. [120]
 
 ** transform
 

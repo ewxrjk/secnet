@@ -32,6 +32,8 @@
 #define DEFAULT_SETUP_RETRIES 5
 #define DEFAULT_SETUP_RETRY_INTERVAL             (2*1000) /* [ms] */
 #define DEFAULT_WAIT_TIME                       (20*1000) /* [ms] */
+#define DEFAULT_MOBILE_PEER_EXPIRY            (2*60)      /* [s] */
+#define DEFAULT_MOBILE_PEERS_MAX 3 /* send at most this many copies (default) */
 
 /* Each site can be in one of several possible states. */
 
@@ -108,6 +110,7 @@ static cstring_t state_name(uint32_t state)
 #define LOG_DROP          0x00000080
 #define LOG_DUMP          0x00000100
 #define LOG_ERROR         0x00000400
+#define LOG_PEER_ADDRS    0x00000800
 
 static struct flagstr log_event_table[]={
     { "unexpected", LOG_UNEXPECTED },
@@ -120,11 +123,89 @@ static struct flagstr log_event_table[]={
     { "packet-drop", LOG_DROP },
     { "dump-packets", LOG_DUMP },
     { "errors", LOG_ERROR },
+    { "peer-addrs", LOG_PEER_ADDRS },
     { "default", LOG_SETUP_INIT|LOG_SETUP_TIMEOUT|
       LOG_ACTIVATE_KEY|LOG_TIMEOUT_KEY|LOG_SEC|LOG_ERROR },
     { "all", 0xffffffff },
     { NULL, 0 }
 };
+
+
+/***** TRANSPORT PEERS declarations *****/
+
+/* Details of "mobile peer" semantics:
+   
+   - We record mobile_peers_max peer address/port numbers ("peers")
+     for key setup, and separately mobile_peers_max for data
+     transfer.  If these lists fill up, we retain the newest peers.
+     (For non-mobile peers we only record one of each.)
+
+   - Outgoing packets are sent to every recorded peer in the
+     applicable list.
+
+   - Data transfer peers are straightforward: whenever we successfully
+     process a data packet, we record the peer.  Also, whenever we
+     successfully complete a key setup, we merge the key setup
+     peers into the data transfer peers.
+
+     (For "non-mobile" peers we simply copy the peer used for
+     successful key setup, and don't change the peer otherwise.)
+
+   - Key setup peers are slightly more complicated.
+
+     Whenever we receive and successfully process a key exchange
+     packet, we record the peer.
+
+     Whenever we try to initiate a key setup, we copy the list of data
+     transfer peers and use it for key setup.  But we also look to see
+     if the config supplies an address and port number and if so we
+     add that as a key setup peer (possibly evicting one of the data
+     transfer peers we just copied).
+
+     (For "non-mobile" peers, if we if we have a configured peer
+     address and port, we always use that; otherwise if we have a
+     current data peer address we use that; otherwise we do not
+     attempt to initiate a key setup for lack of a peer address.)
+
+   "Record the peer" means
+    1. expire any peers last seen >120s ("mobile-peer-expiry") ago
+    2. add the peer of the just received packet to the applicable list
+       (possibly evicting older entries)
+   NB that we do not expire peers until an incoming packet arrives.
+
+   */
+
+#define MAX_MOBILE_PEERS_MAX 5 /* send at most this many copies, compiled max */
+
+typedef struct {
+    struct timeval last;
+    struct comm_addr addr;
+} transport_peer;
+
+typedef struct {
+/* configuration information */
+/* runtime information */
+    int npeers;
+    transport_peer peers[MAX_MOBILE_PEERS_MAX];
+} transport_peers;
+
+static void transport_peers_clear(struct site *st, transport_peers *peers);
+static int transport_peers_valid(transport_peers *peers);
+static void transport_peers_copy(struct site *st, transport_peers *dst,
+				 const transport_peers *src);
+
+static void transport_setup_msgok(struct site *st, const struct comm_addr *a);
+static void transport_data_msgok(struct site *st, const struct comm_addr *a);
+static bool_t transport_compute_setupinit_peers(struct site *st,
+        const struct comm_addr *configured_addr /* 0 if none or not found */);
+static void transport_record_peer(struct site *st, transport_peers *peers,
+				  const struct comm_addr *addr, const char *m);
+
+static void transport_xmit(struct site *st, transport_peers *peers,
+			   struct buffer_if *buf, bool_t candebug);
+
+ /***** END of transport peers declarations *****/
+
 
 struct site {
     closure_t cl;
@@ -132,6 +213,8 @@ struct site {
 /* configuration information */
     string_t localname;
     string_t remotename;
+    bool_t peer_mobile; /* Mobile client support */
+    int32_t transport_peers_max;
     string_t tunname; /* localname<->remotename by default, used in logs */
     string_t address; /* DNS name for bootstrapping, optional */
     int remoteport; /* Port for bootstrapping, optional */
@@ -150,6 +233,7 @@ struct site {
     int32_t setup_retries; /* How many times to send setup packets */
     int32_t setup_retry_interval; /* Initial timeout for setup packets */
     int32_t wait_timeout; /* How long to wait if setup unsuccessful */
+    int32_t mobile_peer_expiry; /* How long to remember 2ary addresses */
     int32_t key_lifetime; /* How long a key lasts once set up */
     int32_t key_renegotiate_time; /* If we see traffic (or a keepalive)
 				      after this time, initiate a new
@@ -172,9 +256,7 @@ struct site {
     bool_t current_valid;
     uint64_t current_key_timeout; /* End of life of current key */
     uint64_t renegotiate_key_time; /* When we can negotiate a new key */
-    struct comm_addr peer; /* Current address of peer */
-    bool_t peer_valid; /* Peer address becomes invalid when key times out,
-			  but only if we have a DNS name for our peer */
+    transport_peers peers; /* Current address(es) of peer for data traffic */
 
     /* The current key setup protocol exchange.  We can only be
        involved in one of these at a time.  There's a potential for
@@ -183,7 +265,7 @@ struct site {
        timeout before we can listen for another setup packet); perhaps
        we should keep a list of 'bad' sources for setup packets. */
     uint32_t setup_session_id;
-    struct comm_addr setup_peer;
+    transport_peers setup_peers;
     uint8_t localN[NONCELEN]; /* Nonces for key exchange */
     uint8_t remoteN[NONCELEN];
     struct buffer_if buffer; /* Current outgoing key exchange packet */
@@ -214,6 +296,7 @@ static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 	case LOG_DROP: class=M_DEBUG; break;
 	case LOG_DUMP: class=M_DEBUG; break;
 	case LOG_ERROR: class=M_ERR; break;
+	case LOG_PEER_ADDRS: class=M_DEBUG; break;
 	default: class=M_ERR; break;
 	}
 
@@ -382,7 +465,7 @@ static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
 
     if (!unpick_msg(st,LABEL_MSG1,msg1,&m)) return False;
 
-    st->setup_peer=*src;
+    transport_record_peer(st,&st->setup_peers,src,"msg1");
     st->setup_session_id=m.source;
     memcpy(st->remoteN,m.nR,NONCELEN);
     return True;
@@ -656,6 +739,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
     case LABEL_MSG9:
 	/* Deliver to netlink layer */
 	st->netlink->deliver(st->netlink->st,msg0);
+	transport_data_msgok(st,src);
 	/* See whether we should start negotiating a new key */
 	if (st->now > st->renegotiate_key_time)
 	    initiate_key_setup(st,"incoming packet in renegotiation window");
@@ -689,8 +773,7 @@ static uint32_t site_status(void *st)
 static bool_t send_msg(struct site *st)
 {
     if (st->retries>0) {
-	dump_packet(st,&st->buffer,&st->setup_peer,False);
-	st->comm->sendmsg(st->comm->st,&st->buffer,&st->setup_peer);
+	transport_xmit(st, &st->setup_peers, &st->buffer, True);
 	st->timeout=st->now+st->setup_retry_interval;
 	st->retries--;
 	return True;
@@ -705,21 +788,28 @@ static bool_t send_msg(struct site *st)
 static void site_resolve_callback(void *sst, struct in_addr *address)
 {
     struct site *st=sst;
+    struct comm_addr ca_buf, *ca_use;
 
     if (st->state!=SITE_RESOLVE) {
 	slog(st,LOG_UNEXPECTED,"site_resolve_callback called unexpectedly");
 	return;
     }
     if (address) {
-	memset(&st->setup_peer,0,sizeof(st->setup_peer));
-	st->setup_peer.comm=st->comm;
-	st->setup_peer.sin.sin_family=AF_INET;
-	st->setup_peer.sin.sin_port=htons(st->remoteport);
-	st->setup_peer.sin.sin_addr=*address;
+	FILLZERO(ca_buf);
+	ca_buf.comm=st->comm;
+	ca_buf.sin.sin_family=AF_INET;
+	ca_buf.sin.sin_port=htons(st->remoteport);
+	ca_buf.sin.sin_addr=*address;
+	ca_use=&ca_buf;
+    } else {
+	slog(st,LOG_ERROR,"resolution of %s failed",st->address);
+	ca_use=0;
+    }
+    if (transport_compute_setupinit_peers(st,ca_use)) {
 	enter_new_state(st,SITE_SENTMSG1);
     } else {
-	/* Resolution failed */
-	slog(st,LOG_ERROR,"resolution of %s failed",st->address);
+	/* Can't figure out who to try to to talk to */
+	slog(st,LOG_SETUP_INIT,"key exchange failed: cannot find peer address");
 	enter_state_run(st);
     }
 }
@@ -731,9 +821,7 @@ static bool_t initiate_key_setup(struct site *st, cstring_t reason)
     if (st->address) {
 	slog(st,LOG_SETUP_INIT,"resolving peer address");
 	return enter_state_resolve(st);
-    } else if (st->peer_valid) {
-	slog(st,LOG_SETUP_INIT,"using old peer address");
-	st->setup_peer=st->peer;
+    } else if (transport_compute_setupinit_peers(st,0)) {
 	return enter_new_state(st,SITE_SENTMSG1);
     }
     slog(st,LOG_SETUP_INIT,"key exchange failed: no address for peer");
@@ -755,8 +843,7 @@ static void activate_new_key(struct site *st)
     st->current_valid=True;
     st->current_key_timeout=st->now+st->key_lifetime;
     st->renegotiate_key_time=st->now+st->key_renegotiate_time;
-    st->peer=st->setup_peer;
-    st->peer_valid=True;
+    transport_peers_copy(st,&st->peers,&st->setup_peers);
     st->remote_session_id=st->setup_session_id;
 
     slog(st,LOG_ACTIVATE_KEY,"new key activated");
@@ -797,7 +884,7 @@ static void set_link_quality(struct site *st)
 	quality=LINK_QUALITY_DOWN;
     else if (st->address)
 	quality=LINK_QUALITY_DOWN_CURRENT_ADDRESS;
-    else if (st->peer_valid)
+    else if (transport_peers_valid(&st->peers))
 	quality=LINK_QUALITY_DOWN_STALE_ADDRESS;
     else
 	quality=LINK_QUALITY_DOWN;
@@ -812,7 +899,7 @@ static void enter_state_run(struct site *st)
     st->timeout=0;
 
     st->setup_session_id=0;
-    memset(&st->setup_peer,0,sizeof(st->setup_peer));
+    transport_peers_clear(st,&st->setup_peers);
     memset(st->localN,0,NONCELEN);
     memset(st->remoteN,0,NONCELEN);
     st->new_transform->delkey(st->new_transform->st);
@@ -903,7 +990,8 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
 {
     cstring_t transform_err;
 
-    if (st->current_valid && st->peer_valid && st->buffer.free) {
+    if (st->current_valid && st->buffer.free
+	&& transport_peers_valid(&st->peers)) {
 	BUF_ALLOC(&st->buffer,"site:MSG7");
 	buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
 	buf_append_uint32(&st->buffer,LABEL_MSG7);
@@ -913,8 +1001,7 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
 	buf_prepend_uint32(&st->buffer,LABEL_MSG0);
 	buf_prepend_uint32(&st->buffer,st->index);
 	buf_prepend_uint32(&st->buffer,st->remote_session_id);
-	dump_packet(st,&st->buffer,&st->peer,False);
-	st->comm->sendmsg(st->comm->st,&st->buffer,&st->peer);
+	transport_xmit(st,&st->peers,&st->buffer,True);
 	BUF_FREE(&st->buffer);
 	return True;
     }
@@ -1000,7 +1087,7 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 
     /* In all other states we consider delivering the packet if we have
        a valid key and a valid address to send it to. */
-    if (st->current_valid && st->peer_valid) {
+    if (st->current_valid && transport_peers_valid(&st->peers)) {
 	/* Transform it and send it */
 	if (buf->size>0) {
 	    buf_prepend_uint32(buf,LABEL_MSG9);
@@ -1009,7 +1096,7 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 	    buf_prepend_uint32(buf,LABEL_MSG0);
 	    buf_prepend_uint32(buf,st->index);
 	    buf_prepend_uint32(buf,st->remote_session_id);
-	    st->comm->sendmsg(st->comm->st,buf,&st->peer);
+	    transport_xmit(st,&st->peers,buf,False);
 	}
 	BUF_FREE(buf);
 	return;
@@ -1103,9 +1190,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* Setup packet: expected only in state SENTMSG1 */
 	    if (st->state!=SITE_SENTMSG1) {
 		slog(st,LOG_UNEXPECTED,"unexpected MSG2");
-	    } else if (process_msg2(st,buf,source))
+	    } else if (process_msg2(st,buf,source)) {
+		transport_setup_msgok(st,source);
 		enter_new_state(st,SITE_SENTMSG3);
-	    else {
+	    } else {
 		slog(st,LOG_SEC,"invalid MSG2");
 	    }
 	    break;
@@ -1113,9 +1201,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* Setup packet: expected only in state SENTMSG2 */
 	    if (st->state!=SITE_SENTMSG2) {
 		slog(st,LOG_UNEXPECTED,"unexpected MSG3");
-	    } else if (process_msg3(st,buf,source))
+	    } else if (process_msg3(st,buf,source)) {
+		transport_setup_msgok(st,source);
 		enter_new_state(st,SITE_SENTMSG4);
-	    else {
+	    } else {
 		slog(st,LOG_SEC,"invalid MSG3");
 	    }
 	    break;
@@ -1123,9 +1212,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* Setup packet: expected only in state SENTMSG3 */
 	    if (st->state!=SITE_SENTMSG3) {
 		slog(st,LOG_UNEXPECTED,"unexpected MSG4");
-	    } else if (process_msg4(st,buf,source))
+	    } else if (process_msg4(st,buf,source)) {
+		transport_setup_msgok(st,source);
 		enter_new_state(st,SITE_SENTMSG5);
-	    else {
+	    } else {
 		slog(st,LOG_SEC,"invalid MSG4");
 	    }
 	    break;
@@ -1139,6 +1229,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    if (st->state!=SITE_SENTMSG4) {
 		slog(st,LOG_UNEXPECTED,"unexpected MSG5");
 	    } else if (process_msg5(st,buf,source)) {
+		transport_setup_msgok(st,source);
 		enter_new_state(st,SITE_RUN);
 	    } else {
 		slog(st,LOG_SEC,"invalid MSG5");
@@ -1150,6 +1241,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		slog(st,LOG_UNEXPECTED,"unexpected MSG6");
 	    } else if (process_msg6(st,buf,source)) {
 		BUF_FREE(&st->buffer); /* Free message 5 */
+		transport_setup_msgok(st,source);
 		activate_new_key(st);
 	    } else {
 		slog(st,LOG_SEC,"invalid MSG6");
@@ -1219,6 +1311,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
     assert(index_sequence < 0xffffffffUL);
     st->index = ++index_sequence;
+    st->peer_mobile=dict_read_bool(dict,"mobile",False,"site",loc,False);
     st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
     st->comm=find_cl_if(dict,"comm",CL_COMM,True,"site",loc);
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
@@ -1245,6 +1338,17 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->setup_retries=        CFG_NUMBER("setup-retries", SETUP_RETRIES);
     st->setup_retry_interval= CFG_NUMBER("setup-timeout", SETUP_RETRY_INTERVAL);
     st->wait_timeout=         CFG_NUMBER("wait-time",     WAIT_TIME);
+
+    st->mobile_peer_expiry= dict_read_number(
+       dict,"mobile-peer-expiry",False,"site",loc,DEFAULT_MOBILE_PEER_EXPIRY);
+
+    st->transport_peers_max= !st->peer_mobile ? 1 : dict_read_number(
+	dict,"mobile-peers-max",False,"site",loc,DEFAULT_MOBILE_PEERS_MAX);
+    if (st->transport_peers_max<1 ||
+	st->transport_peers_max>=MAX_MOBILE_PEERS_MAX) {
+	cfgfatal(loc,"site","mobile-peers-max must be in range 1.."
+		 STRING(MAX_MOBILE_PEERS_MAX) "\n");
+    }
 
     if (st->key_lifetime < DEFAULT(KEY_RENEGOTIATE_GAP)*2)
 	st->key_renegotiate_time=st->key_lifetime/2;
@@ -1286,7 +1390,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->current_valid=False;
     st->current_key_timeout=0;
-    st->peer_valid=False;
+    transport_peers_clear(st,&st->peers);
+    transport_peers_clear(st,&st->setup_peers);
     /* XXX mlock these */
     st->dhsecret=safe_malloc(st->dh->len,"site:dhsecret");
     st->sharedsecret=safe_malloc(st->transform->keylen,"site:sharedsecret");
@@ -1313,3 +1418,150 @@ void site_module(dict_t *dict)
 {
     add_closure(dict,"site",site_apply);
 }
+
+
+/***** TRANSPORT PEERS definitions *****/
+
+static void transport_peers_debug(struct site *st, transport_peers *dst,
+				  const char *didwhat,
+				  int nargs, const struct comm_addr *args,
+				  size_t stride) {
+    int i;
+    char *argp;
+
+    if (!(st->log_events & LOG_PEER_ADDRS))
+	return; /* an optimisation */
+
+    slog(st, LOG_PEER_ADDRS, "peers (%s) %s nargs=%d => npeers=%d",
+	 (dst==&st->peers ? "data" :
+	  dst==&st->setup_peers ? "setup" : "UNKNOWN"),
+	 didwhat, nargs, dst->npeers);
+
+    for (i=0, argp=(void*)args;
+	 i<nargs;
+	 i++, (argp+=stride?stride:sizeof(*args))) {
+	const struct comm_addr *ca=(void*)argp;
+	slog(st, LOG_PEER_ADDRS, " args: addrs[%d]=%s",
+	     i, ca->comm->addr_to_string(ca->comm->st,ca));
+    }
+    for (i=0; i<dst->npeers; i++) {
+	struct timeval diff;
+	timersub(tv_now,&dst->peers[i].last,&diff);
+	const struct comm_addr *ca=&dst->peers[i].addr;
+	slog(st, LOG_PEER_ADDRS, " peers: addrs[%d]=%s T-%ld.%06ld",
+	     i, ca->comm->addr_to_string(ca->comm->st,ca),
+	     (unsigned long)diff.tv_sec, (unsigned long)diff.tv_usec);
+    }
+}
+
+static int transport_peer_compar(const void *av, const void *bv) {
+    const transport_peer *a=av;
+    const transport_peer *b=bv;
+    /* put most recent first in the array */
+    if (timercmp(&a->last, &b->last, <)) return +1;
+    if (timercmp(&a->last, &b->last, >)) return -11;
+    return 0;
+}
+
+static void transport_peers_expire(struct site *st, transport_peers *peers) {
+    /* peers must be sorted first */
+    int previous_peers=peers->npeers;
+    struct timeval oldest;
+    oldest.tv_sec  = tv_now->tv_sec - st->mobile_peer_expiry;
+    oldest.tv_usec = tv_now->tv_usec;
+    while (peers->npeers>1 &&
+	   timercmp(&peers->peers[peers->npeers-1].last, &oldest, <))
+	peers->npeers--;
+    if (peers->npeers != previous_peers)
+	transport_peers_debug(st,peers,"expire", 0,0,0);
+}
+
+static void transport_record_peer(struct site *st, transport_peers *peers,
+				  const struct comm_addr *addr, const char *m) {
+    int slot, changed=0;
+
+    for (slot=0; slot<peers->npeers; slot++)
+	if (!memcmp(&peers->peers[slot].addr, addr, sizeof(*addr)))
+	    goto found;
+
+    changed=1;
+    if (peers->npeers==st->transport_peers_max)
+	slot=st->transport_peers_max;
+    else
+	slot=peers->npeers++;
+
+ found:
+    peers->peers[slot].addr=*addr;
+    peers->peers[slot].last=*tv_now;
+
+    if (peers->npeers>1)
+	qsort(peers->peers, peers->npeers,
+	      sizeof(*peers->peers), transport_peer_compar);
+
+    if (changed || peers->npeers!=1)
+	transport_peers_debug(st,peers,m, 1,addr,0);
+    transport_peers_expire(st, peers);
+}
+
+static bool_t transport_compute_setupinit_peers(struct site *st,
+        const struct comm_addr *configured_addr /* 0 if none or not found */) {
+
+    if (!configured_addr && !transport_peers_valid(&st->peers))
+	return False;
+
+    slog(st,LOG_SETUP_INIT,
+	 (!configured_addr ? "using only %d old peer address(es)"
+	  : "using configured address, and/or perhaps %d old peer address(es)"),
+	 st->peers);
+
+    /* Non-mobile peers havve st->peers.npeers==0 or ==1, since they
+     * have transport_peers_max==1.  The effect is that this code
+     * always uses the configured address if supplied, or otherwise
+     * the existing data peer if one exists; this is as desired. */
+
+    transport_peers_copy(st,&st->setup_peers,&st->peers);
+
+    if (configured_addr)
+	transport_record_peer(st,&st->setup_peers,configured_addr,"setupinit");
+
+    assert(transport_peers_valid(&st->setup_peers));
+    return True;
+}
+
+static void transport_setup_msgok(struct site *st, const struct comm_addr *a) {
+    if (st->peer_mobile)
+	transport_record_peer(st,&st->setup_peers,a,"setupmsg");
+}
+static void transport_data_msgok(struct site *st, const struct comm_addr *a) {
+    if (st->peer_mobile)
+	transport_record_peer(st,&st->peers,a,"datamsg");
+}
+
+static int transport_peers_valid(transport_peers *peers) {
+    return peers->npeers;
+}
+static void transport_peers_clear(struct site *st, transport_peers *peers) {
+    peers->npeers= 0;
+    transport_peers_debug(st,peers,"clear",0,0,0);
+}
+static void transport_peers_copy(struct site *st, transport_peers *dst,
+				 const transport_peers *src) {
+    dst->npeers=src->npeers;
+    memcpy(dst->peers, src->peers, sizeof(*dst->peers) * dst->npeers);
+    transport_peers_debug(st,dst,"copy",
+			  src->npeers, &src->peers->addr, sizeof(src->peers));
+}
+
+void transport_xmit(struct site *st, transport_peers *peers,
+		    struct buffer_if *buf, bool_t candebug) {
+    int slot;
+    transport_peers_expire(st, peers);
+    for (slot=0; slot<peers->npeers; slot++) {
+	transport_peer *peer=&peers->peers[slot];
+	if (candebug)
+	    dump_packet(st, buf, &peer->addr, False);
+	peer->addr.comm->sendmsg(peer->addr.comm->st, buf, &peer->addr);
+    }
+}
+
+/***** END of transport peers declarations *****/
