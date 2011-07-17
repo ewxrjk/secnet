@@ -16,6 +16,8 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "util.h"
 #include "unaligned.h"
 #include "ipaddr.h"
@@ -45,6 +47,30 @@ struct udp {
     bool_t use_proxy;
     struct sockaddr_in proxy;
 };
+
+static const char *saddr_to_string(const struct sockaddr_in *sin) {
+    static char bufs[2][100];
+    static int b;
+
+    b ^= 1;
+    snprintf(bufs[b], sizeof(bufs[b]), "[%s]:%d",
+	     inet_ntoa(sin->sin_addr),
+	     ntohs(sin->sin_port));
+    return bufs[b];
+}
+
+static const char *addr_to_string(void *commst, const struct comm_addr *ca) {
+    struct udp *st=commst;
+    static char sbuf[100];
+
+    struct sockaddr_in la;
+    la.sin_addr.s_addr=htonl(st->addr);
+    la.sin_port=htons(st->port);
+
+    snprintf(sbuf, sizeof(sbuf), "udp:%s-%s",
+	     saddr_to_string(&la), saddr_to_string(&ca->sin));
+    return sbuf;
+}
 
 static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
 			  int *timeout_io)
@@ -267,6 +293,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.request_notify=request_notify;
     st->ops.release_notify=release_notify;
     st->ops.sendmsg=udp_sendmsg;
+    st->ops.addr_to_string=addr_to_string;
     st->port=0;
     st->use_proxy=False;
 

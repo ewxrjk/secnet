@@ -325,6 +325,9 @@ typedef void comm_release_notify_fn(void *commst, void *nst,
 				    comm_notify_fn *fn);
 typedef bool_t comm_sendmsg_fn(void *commst, struct buffer_if *buf,
 			       const struct comm_addr *dest);
+typedef const char *comm_addr_to_string_fn(void *commst,
+					   const struct comm_addr *ca);
+        /* Returned string is in a static buffer. */
 struct comm_if {
     void *st;
     int32_t min_start_pad;
@@ -332,6 +335,7 @@ struct comm_if {
     comm_request_notify_fn *request_notify;
     comm_release_notify_fn *release_notify;
     comm_sendmsg_fn *sendmsg;
+    comm_addr_to_string_fn *addr_to_string;
 };
 
 /* LOG interface */
