@@ -54,6 +54,7 @@ import time
 import sys
 import os
 import getopt
+import re
 
 # The ipaddr library is installed as part of secnet
 sys.path.append("/usr/local/share/secnet")
@@ -108,6 +109,18 @@ class email:
 	def __str__(self):
 		return '<%s>'%(self.addr)
 
+class boolean:
+	"A boolean"
+	def __init__(self,w):
+		if re.match('[TtYy1]',w[1]):
+			self.b=True
+		elif re.match('[FfNn0]',w[1]):
+			self.b=False
+		else:
+			complain("invalid boolean value");
+	def __str__(self):
+		return ['False','True'][self.b]
+
 class num:
 	"A decimal number"
 	def __init__(self,w):
@@ -149,6 +162,7 @@ keywords={
  'pubkey':(rsakey,"RSA public site key"),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
  'address':(address,"External contact address and port"),
+ 'mobile':(boolean,"Site is mobile"),
 }
 
 def sp(name,value):
@@ -253,6 +267,7 @@ class sitelevel(level):
 	 'networks':None,
 	 'peer':None,
 	 'pubkey':(lambda n,v:"key %s;\n"%v),
+	 'mobile':sp,
 	})
 	require_properties={
 	 'dh':"Diffie-Hellman group",
