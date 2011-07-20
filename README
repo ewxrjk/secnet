@@ -281,16 +281,18 @@ site: dict argument
   transform (transform closure): how to mangle packets sent between sites
   dh (dh closure)
   hash (hash closure)
-  key-lifetime (integer): max lifetime of a session key, in ms [one hour]
+  key-lifetime (integer): max lifetime of a session key, in ms
+    [one hour; mobile: 2 days]
   setup-retries (integer): max number of times to transmit a key negotiation
-    packet [5]
+    packet [5; mobile: 30]
   setup-timeout (integer): time between retransmissions of key negotiation
-    packets, in ms [2000]
+    packets, in ms [2000; mobile: 1000]
   wait-time (integer): after failed key setup, wait this long (in ms) before
-    allowing another attempt [20000]
+    allowing another attempt [20000; mobile: 10000]
   renegotiate-time (integer): if we see traffic on the link after this time
     then renegotiate another session key immediately (in ms)
-    [half key-lifetime, or key-lifetime minus 5 mins, whichever is longer].
+    [half key-lifetime, or key-lifetime minus 5 mins (mobile: 12 hours),
+     whichever is longer].
   keepalive (bool): if True then attempt always to keep a valid session key.
     Not actually currently implemented. [false]
   log-events (string list): types of events to log for this site
@@ -327,7 +329,14 @@ site: dict argument
     for us have "mobile True" (and if we find a site configuration for
     ourselves in the config, we insist on this).  The effect is to
     check that there are no links both ends of which are allegedly
-    mobile (which is not supported, so those links are ignored). [false]
+    mobile (which is not supported, so those links are ignored) and
+    to change some of the tuning parameter defaults. [false]
+
+Links involving mobile peers have some different tuning parameter
+default values, which are generally more aggressive about retrying key
+setup but more relaxed about using old keys.  These are noted with
+"mobile:", above, and apply whether the mobile peer is local or
+remote.
 
 ** transform
 

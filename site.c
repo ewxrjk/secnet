@@ -32,6 +32,13 @@
 #define DEFAULT_SETUP_RETRIES 5
 #define DEFAULT_SETUP_RETRY_INTERVAL             (2*1000) /* [ms] */
 #define DEFAULT_WAIT_TIME                       (20*1000) /* [ms] */
+
+#define DEFAULT_MOBILE_KEY_LIFETIME      (2*24*3600*1000) /* [ms] */
+#define DEFAULT_MOBILE_KEY_RENEGOTIATE_GAP (12*3600*1000) /* [ms] */
+#define DEFAULT_MOBILE_SETUP_RETRIES 30
+#define DEFAULT_MOBILE_SETUP_RETRY_INTERVAL      (1*1000) /* [ms] */
+#define DEFAULT_MOBILE_WAIT_TIME                (10*1000) /* [ms] */
+
 #define DEFAULT_MOBILE_PEER_EXPIRY            (2*60)      /* [s] */
 #define DEFAULT_MOBILE_PEERS_MAX 3 /* send at most this many copies (default) */
 
@@ -1346,7 +1353,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
     st->hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
 
-#define DEFAULT(D) DEFAULT_##D
+#define DEFAULT(D) (st->peer_mobile || local_mobile	\
+                    ? DEFAULT_MOBILE_##D : DEFAULT_##D)
 #define CFG_NUMBER(k,D) dict_read_number(dict,(k),False,"site",loc,DEFAULT(D));
 
     st->key_lifetime=         CFG_NUMBER("key-lifetime",  KEY_LIFETIME);
