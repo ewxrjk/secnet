@@ -653,12 +653,10 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 	/* We must forget about the current session. */
 	delete_key(st,"request from peer",LOG_SEC);
 	return True;
-	break;
     case LABEL_MSG9:
 	/* Deliver to netlink layer */
 	st->netlink->deliver(st->netlink->st,msg0);
 	return True;
-	break;
     default:
 	slog(st,LOG_SEC,"incoming encrypted message of type %08x "
 	     "(unknown)",type);
