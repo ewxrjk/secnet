@@ -656,6 +656,9 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
     case LABEL_MSG9:
 	/* Deliver to netlink layer */
 	st->netlink->deliver(st->netlink->st,msg0);
+	/* See whether we should start negotiating a new key */
+	if (st->now > st->renegotiate_key_time)
+	    initiate_key_setup(st,"incoming packet in renegotiation window");
 	return True;
     default:
 	slog(st,LOG_SEC,"incoming encrypted message of type %08x "
@@ -1009,9 +1012,6 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 	    st->comm->sendmsg(st->comm->st,buf,&st->peer);
 	}
 	BUF_FREE(buf);
-	/* See whether we should start negotiating a new key */
-	if (st->now > st->renegotiate_key_time)
-	    initiate_key_setup(st,"outgoing packet in renegotiation window");
 	return;
     }
 
