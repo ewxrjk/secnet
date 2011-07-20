@@ -27,11 +27,11 @@
 
 #define SETUP_BUFFER_LEN 2048
 
-#define DEFAULT_KEY_LIFETIME 3600000 /* One hour */
-#define DEFAULT_KEY_RENEGOTIATE_GAP 300000 /* Five minutes */
+#define DEFAULT_KEY_LIFETIME                  (3600*1000) /* [ms] */
+#define DEFAULT_KEY_RENEGOTIATE_GAP           (5*60*1000) /* [ms] */
 #define DEFAULT_SETUP_RETRIES 5
-#define DEFAULT_SETUP_TIMEOUT 2000
-#define DEFAULT_WAIT_TIME 20000
+#define DEFAULT_SETUP_RETRY_INTERVAL             (2*1000) /* [ms] */
+#define DEFAULT_WAIT_TIME                       (20*1000) /* [ms] */
 
 /* Each site can be in one of several possible states. */
 
@@ -148,7 +148,7 @@ struct site {
 
     uint32_t index; /* Index of this site */
     int32_t setup_retries; /* How many times to send setup packets */
-    int32_t setup_timeout; /* Initial timeout for setup packets */
+    int32_t setup_retry_interval; /* Initial timeout for setup packets */
     int32_t wait_timeout; /* How long to wait if setup unsuccessful */
     int32_t key_lifetime; /* How long a key lasts once set up */
     int32_t key_renegotiate_time; /* If we see traffic (or a keepalive)
@@ -688,7 +688,7 @@ static bool_t send_msg(struct site *st)
     if (st->retries>0) {
 	dump_packet(st,&st->buffer,&st->setup_peer,False);
 	st->comm->sendmsg(st->comm->st,&st->buffer,&st->setup_peer);
-	st->timeout=st->now+st->setup_timeout;
+	st->timeout=st->now+st->setup_retry_interval;
 	st->retries--;
 	return True;
     } else {
@@ -875,7 +875,7 @@ static bool_t enter_new_state(struct site *st, uint32_t next)
     r= gen(st) && send_msg(st);
 
     hacky_par_end(&r,
-		  st->setup_retries, st->setup_timeout,
+		  st->setup_retries, st->setup_retry_interval,
 		  send_msg, st);
     
     if (r) {
@@ -1238,19 +1238,18 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
     st->hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
 
-    st->key_lifetime=dict_read_number(
-	dict,"key-lifetime",False,"site",loc,DEFAULT_KEY_LIFETIME);
-    st->setup_retries=dict_read_number(
-	dict,"setup-retries",False,"site",loc,DEFAULT_SETUP_RETRIES);
-    st->setup_timeout=dict_read_number(
-	dict,"setup-timeout",False,"site",loc,DEFAULT_SETUP_TIMEOUT);
-    st->wait_timeout=dict_read_number(
-	dict,"wait-time",False,"site",loc,DEFAULT_WAIT_TIME);
+#define DEFAULT(D) DEFAULT_##D
+#define CFG_NUMBER(k,D) dict_read_number(dict,(k),False,"site",loc,DEFAULT(D));
 
-    if (st->key_lifetime < DEFAULT_KEY_RENEGOTIATE_GAP*2)
+    st->key_lifetime=         CFG_NUMBER("key-lifetime",  KEY_LIFETIME);
+    st->setup_retries=        CFG_NUMBER("setup-retries", SETUP_RETRIES);
+    st->setup_retry_interval= CFG_NUMBER("setup-timeout", SETUP_RETRY_INTERVAL);
+    st->wait_timeout=         CFG_NUMBER("wait-time",     WAIT_TIME);
+
+    if (st->key_lifetime < DEFAULT(KEY_RENEGOTIATE_GAP)*2)
 	st->key_renegotiate_time=st->key_lifetime/2;
     else
-	st->key_renegotiate_time=st->key_lifetime-DEFAULT_KEY_RENEGOTIATE_GAP;
+	st->key_renegotiate_time=st->key_lifetime-DEFAULT(KEY_RENEGOTIATE_GAP);
     st->key_renegotiate_time=dict_read_number(
 	dict,"renegotiate-time",False,"site",loc,st->key_renegotiate_time);
     if (st->key_renegotiate_time > st->key_lifetime) {

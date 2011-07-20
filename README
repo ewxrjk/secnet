@@ -285,11 +285,12 @@ site: dict argument
   setup-retries (integer): max number of times to transmit a key negotiation
     packet [5]
   setup-timeout (integer): time between retransmissions of key negotiation
-    packets, in ms [1000]
+    packets, in ms [2000]
   wait-time (integer): after failed key setup, wait this long (in ms) before
     allowing another attempt [20000]
   renegotiate-time (integer): if we see traffic on the link after this time
-    then renegotiate another session key immediately [depends on key-lifetime]
+    then renegotiate another session key immediately (in ms)
+    [half key-lifetime, or key-lifetime minus 5 mins, whichever is longer].
   keepalive (bool): if True then attempt always to keep a valid session key.
     Not actually currently implemented. [false]
   log-events (string list): types of events to log for this site
