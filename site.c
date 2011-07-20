@@ -1300,18 +1300,33 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     dict=item->data.dict;
     st->localname=dict_read_string(dict, "local-name", True, "site", loc);
     st->remotename=dict_read_string(dict, "name", True, "site", loc);
+
+    st->peer_mobile=dict_read_bool(dict,"mobile",False,"site",loc,False);
+    bool_t local_mobile=
+	dict_read_bool(dict,"local-mobile",False,"site",loc,False);
+
     /* Sanity check (which also allows the 'sites' file to include
        site() closures for all sites including our own): refuse to
        talk to ourselves */
     if (strcmp(st->localname,st->remotename)==0) {
 	Message(M_DEBUG,"site %s: local-name==name -> ignoring this site\n",
 		st->localname);
+	if (st->peer_mobile != local_mobile)
+	    cfgfatal(loc,"site","site %s's peer-mobile=%d"
+		    " but our local-mobile=%d\n",
+		    st->localname, st->peer_mobile, local_mobile);
 	free(st);
 	return NULL;
     }
+    if (st->peer_mobile && local_mobile) {
+	Message(M_WARNING,"site %s: site is mobile but so are we"
+		" -> ignoring this site\n", st->remotename);
+	free(st);
+	return NULL;
+    }
+
     assert(index_sequence < 0xffffffffUL);
     st->index = ++index_sequence;
-    st->peer_mobile=dict_read_bool(dict,"mobile",False,"site",loc,False);
     st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
     st->comm=find_cl_if(dict,"comm",CL_COMM,True,"site",loc);
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);

@@ -322,6 +322,12 @@ site: dict argument
   mobile-peer-expiry (integer): For "mobile" peers only, the length
     of time (in seconds) for which we will keep sending to multiple
     address/ports from which we have not seen incoming traffic. [120]
+  local-mobile (bool): if True then other peers have been told we are
+    "mobile".  This should be True iff the peers' site configurations
+    for us have "mobile True" (and if we find a site configuration for
+    ourselves in the config, we insist on this).  The effect is to
+    check that there are no links both ends of which are allegedly
+    mobile (which is not supported, so those links are ignored). [false]
 
 ** transform
 
