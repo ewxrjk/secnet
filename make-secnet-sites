@@ -148,7 +148,7 @@ keywords={
  'networks':(networks,"Claimed networks"),
  'pubkey':(rsakey,"RSA public site key"),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
- 'address':(address,"External contact address and port")
+ 'address':(address,"External contact address and port"),
 }
 
 def sp(name,value):
@@ -165,7 +165,7 @@ global_properties={
 	'setup-retries':sp,
 	'wait-time':sp,
 	'renegotiate-time':sp,
-	'restrict-nets':(lambda name,value:"# restrict-nets %s\n"%value)
+	'restrict-nets':(lambda name,value:"# restrict-nets %s\n"%value),
 }
 
 class level:
@@ -252,7 +252,7 @@ class sitelevel(level):
 	 'address':sp,
 	 'networks':None,
 	 'peer':None,
-	 'pubkey':(lambda n,v:"key %s;\n"%v)
+	 'pubkey':(lambda n,v:"key %s;\n"%v),
 	})
 	require_properties={
 	 'dh':"Diffie-Hellman group",
@@ -261,7 +261,7 @@ class sitelevel(level):
 	 'networks':"Networks claimed by the site",
 	 'hash':"hash function",
 	 'peer':"Gateway address of the site",
-	 'pubkey':"RSA public key of the site"
+	 'pubkey':"RSA public key of the site",
 	}
 	def __init__(self,w):
 		level.__init__(self,w)
