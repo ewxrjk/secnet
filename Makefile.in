@@ -139,8 +139,10 @@ version.c: Makefile
 	echo "char version[]=\"secnet $(VERSION)\";" >>$@.new
 	mv -f $@.new $@
 
-install: all
+installdirs:
 	$(INSTALL) -d $(prefix)/share/secnet $(sbindir)
+
+install: installdirs
 	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
 	$(INSTALL) ${srcdir}/ipaddr.py $(prefix)/share/secnet/ipaddr.py
