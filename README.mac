@@ -36,4 +36,48 @@ route to addresses on one interface via another; i.e. if you expect to
 be able to reach an address on en0 with a packet delivered through
 tun0, IP forwarding must be turned on.)
 
-Richard Kettlewell 2011-06-18
+How to import secnet into XCode 3.2:
+
+- Set up build directories as follows:
+    $ mkdir build/Debug build/Release
+    $ cd build/Debug
+    $ ~/src/secnet/configure CFLAGS="-g -O0"
+    $ cd ../Release
+    $ ~/src/secnet/configure
+    $ cd ../..
+  (Replace ~/src/secnet with the *absolute* path to your secnet tree -
+  XCode cannot map the relative paths in errors to the source files
+  otherwise.)
+- Start XCode
+- Menubar -> File -> New Project
+  - Choose the Mac OS X -> Other -> External Build System template
+  - Choose the *parent* of the secnet directory and call the project
+    secnet
+    - OK the overwrite (it won't overwrite anything that matters)
+    - This creates 'build' and 'secnet.xcodeproj' directories in your
+      secnet tree.
+- Right-click Groups & Files -> secnet -> Add -> Existing files and
+  select all the *.c, *.h, *.y and *.fl files.
+  - Omit the following files:
+    - *.yy.[ch]       \
+    - *.tab.[ch]      | generated during build
+    - version.c       |
+    - config.h        /
+    - snprintf.[ch]   - unnecessary on OSX
+  - Sort by 'kind' may make this easier
+  - Leave 'Copy items...' unchecked
+  - Add To Targets should have 'secnet' checked
+  - For conffile.fl, right click Get Info -> General, and set File
+    Type to sourcecode.lex.
+- Under Groups & Files -> secnet, select all source files and right
+  click Get Info -> General, and set:
+  - Tab Width to 8
+  - Indent Width to 4
+  - Check Editor uses tabs
+- Double click click Groups & Files -> Targets secnet
+  - Add '-C $TARGET_BUILD_DIR' to the start of the arguments.
+
+You should now be able to build both debug and release configurations
+using ⌘B.
+
+Richard Kettlewell 2011-07-23
