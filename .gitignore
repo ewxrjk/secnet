@@ -28,3 +28,4 @@ debian/secnet.substvars
 test-example/*.key
 test-example/sites.conf
 test-example/bogus-setup-request
+build-stamp
