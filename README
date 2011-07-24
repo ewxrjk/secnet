@@ -317,8 +317,8 @@ Defines:
 null-netlink: dict argument
   name (string): name for netlink device, used in log messages
   networks (string list): networks on the host side of the netlink device
-  exclude-remote-networks (string list): networks that may never be claimed
-    by any remote site using this netlink device
+  remote-networks (string list): networks that may be claimed
+    by the remote site using this netlink device
   local-address (string): IP address of host's tunnel interface
   secnet-address (string): IP address of this netlink device
   ptp-address (string): IP address of the other end of a point-to-point link
@@ -336,7 +336,7 @@ a netlink closure:
   options (string list):
     allow-route: allow packets coming from this tunnel to be routed to
       other tunnels as well as the host (used for mobile devices like laptops)
-    soft-route: remove these routes from the host's routing table when
+    soft: remove these routes from the host's routing table when
       the tunnel link quality is zero
   mtu (integer): default MTU over this link; may be updated by tunnel code
 
