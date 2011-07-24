@@ -60,7 +60,7 @@ sys.path.append("/usr/local/share/secnet")
 sys.path.append("/usr/share/secnet")
 import ipaddr
 
-VERSION="0.1.16"
+VERSION="0.1.18"
 
 # Classes describing possible datatypes in the configuration file
 
