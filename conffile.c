@@ -639,16 +639,10 @@ void add_closure(dict_t *dict, cstring_t name, apply_fn apply)
 void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
 		 bool_t fail_if_invalid, cstring_t desc, struct cloc loc)
 {
-    list_t *l;
     item_t *i;
     closure_t *cl;
 
-    l=dict_lookup(dict,name);
-    if (!l) {
-	if (!fail_if_invalid) return NULL;
-	cfgfatal(loc,desc,"closure \"%s\" not found\n",name);
-    }
-    i=list_elem(l,0);
+    i = dict_find_item(dict,name,fail_if_invalid,desc,loc);
     if (i->type!=t_closure) {
 	if (!fail_if_invalid) return NULL;
 	cfgfatal(loc,desc,"\"%s\" must be a closure\n",name);
@@ -673,6 +667,8 @@ item_t *dict_find_item(dict_t *dict, cstring_t key, bool_t required,
 	if (!required) return NULL;
 	cfgfatal(loc,desc,"required parameter \"%s\" not found\n",key);
     }
+    if(list_length(l) != 1)
+	cfgfatal(loc,desc,"parameter \"%s\" has wrong number of values",key);
     i=list_elem(l,0);
     return i;
 }
