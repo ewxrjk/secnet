@@ -48,7 +48,7 @@ else
   dscl . -create /Users/$user UniqueID $uid
   dscl . -create /Users/$user UserShell /usr/bin/false
   dscl . -create /Users/$user RealName 'secnet'
-  dscl . -create /Users/$user NFSHomeDirectory pkgstatedir
+  dscl . -create /Users/$user NFSHomeDirectory /var/empty
   dscl . -create /Users/$user PrimaryGroupID $gid
   dscl . -create /Users/$user Password \*
 fi
