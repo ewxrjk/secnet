@@ -58,28 +58,6 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	process.o @LIBOBJS@ \
 	hackypar.o
 
-DISTDIRS:=debian
-DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
-	NEWS NOTES README TODO \
-	setup.mac uk.org.greenend.secnet.plist README.mac \
-	ac_prog_cc_no_writeable_strings.m4 \
-	conffile.c conffile.fl conffile.h conffile.y \
-	conffile_internal.h \
-	config.h.in configure \
-	configure.in depend.sh dh.c \
-	example.conf \
-	install-sh ipaddr.c ipaddr.h ipaddr.py linux log.c \
-	magic.h md5.c md5.h \
-	make-secnet-sites \
-	modules.c netlink.c netlink.h process.c process.h \
-	random.c resolver.c rsa.c \
-	secnet.c secnet.h serpent.c serpent.h serpentsboxes.h \
-	sha1.c site.c slip.c stamp-h.in transform.c tun.c udp.c \
-	unaligned.h util.c util.h \
-	hackypar.c hackypar.h
-DISTSUBDIRS:=debian/copyright debian/changelog debian/control \
-	debian/init debian/rules debian/compat debian/default
-
 %.c:	%.y
 
 %.yy.c:	%.fl
@@ -161,12 +139,30 @@ realclean:	clean
 distclean:	realclean
 
 pfname:=$(PACKAGE)-$(VERSION)
+tarfname:=../$(pfname).tar
 dist:
-	$(RM) -rf $(pfname)
-	mkdir $(pfname)
-	for i in $(DISTDIRS) ; do mkdir $(pfname)/$$i ; done
-	for i in $(DISTFILES) ; do ln -s ../$(srcdir)/$$i $(pfname)/ ; done
-	for i in $(DISTSUBDIRS) ; do ln -s ../../$(srcdir)/$$i $(pfname)/$$i ; done
-	tar hcf ../$(pfname).tar --exclude=CVS --exclude=.cvsignore $(pfname)
-	gzip -9f ../$(pfname).tar
-	$(RM) -rf $(pfname)
+	$(RM) -rf $(tarfname) $(tarfname).gz
+	git archive --format=tar --prefix=$(pfname)/ HEAD -o $(tarfname)
+	gzip -9f $(tarfname)
+
+# Release checklist:
+#  1. Check that the tree has what you want
+#
+#  2. Update VERSION above but DO NOT COMMIT
+#
+#  3. Run
+#       ./configure
+#       make dist
+#     and check that the resulting tarball looks OK.
+#     Eg, untar it and build it, or have it reviewed.
+#
+#  3. Commit the update to VERSION
+#
+#  4. git-tag -s v$(VERSION)
+#
+#  5. git-push origin
+#
+#  6. rsync -v ../secnet-$VERSION.tar.gz \
+#        chiark:/home/ianmdlvl/public-html/secnet/download/
+#
+#  7. write and post a release announcement
