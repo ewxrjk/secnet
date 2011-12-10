@@ -148,7 +148,8 @@ dist:
 # Release checklist:
 #  1. Check that the tree has what you want
 #
-#  2. Update VERSION above but DO NOT COMMIT
+#  2. Update VERSION (above) and debian/changelog
+#     but DO NOT COMMIT
 #
 #  3. Run
 #       ./configure
@@ -156,7 +157,7 @@ dist:
 #     and check that the resulting tarball looks OK.
 #     Eg, untar it and build it, or have it reviewed.
 #
-#  3. Commit the update to VERSION
+#  3. Commit the updates to VERSION (above) and debian/changelog
 #
 #  4. git-tag -s v$(VERSION)
 #
@@ -167,4 +168,15 @@ dist:
 #  7. rsync -v ../secnet-$VERSION.tar.gz* \
 #        chiark:/home/ianmdlvl/public-html/secnet/download/
 #
-#  8. write and post a release announcement
+#  8. On chiark:
+#       tar zxf ~ianmdlvl/public-html/secnet/download/secnet-$(VERSION).tar.gz
+#       cd secnet-$(VERSION)
+#       debian/rules build
+#       fakeroot debian/rules binary
+#       cp ../secnet_0.1.18.1-1_i386.deb ~/public-html/secnet/download/
+#
+#  9. On chiark as user secnet:
+#       cd ~secnet/
+#       rsync ~ianmdlvl/public-html/secnet/download/secnet* .
+#
+#  9. write and post a release announcement
