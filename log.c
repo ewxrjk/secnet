@@ -22,7 +22,7 @@ static void vMessage(uint32_t class, const char *message, va_list args)
     size_t bp;
     char *nlp;
 
-    if (secnet_is_daemon) {
+    if (system_log) {
 	/* Messages go to the system log interface */
 	bp=strlen(buff);
 	assert(bp < MESSAGE_BUFLEN);

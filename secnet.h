@@ -184,13 +184,17 @@ extern void register_for_poll(void *st, beforepoll_fn *before,
 
 /* The secnet program goes through a number of phases in its lifetime.
    Module code may arrange to be called just as various phases are
-   entered. */
+   entered.
+ 
+   Remember to update the table in util.c if changing the set of
+   phases. */
 
 enum phase {
     PHASE_INIT,
     PHASE_GETOPTS,             /* Process command-line arguments */
     PHASE_READCONFIG,          /* Parse and process configuration file */
     PHASE_SETUP,               /* Process information in configuration */
+    PHASE_DAEMONIZE,           /* Become a daemon (if necessary) */
     PHASE_GETRESOURCES,        /* Obtain all external resources */
     PHASE_DROPPRIV,            /* Last chance for privileged operations */
     PHASE_RUN,

@@ -62,6 +62,7 @@ static void parse_options(int argc, char **argv)
 	    {"help", 0, 0, 2},
 	    {"version", 0, 0, 1},
 	    {"nodetach", 0, 0, 'n'},
+	    {"managed", 0, 0, 'm'},
 	    {"silent", 0, 0, 'f'},
 	    {"quiet", 0, 0, 'f'},
 	    {"debug", 0, 0, 'd'},
@@ -71,7 +72,7 @@ static void parse_options(int argc, char **argv)
 	    {0,0,0,0}
 	};
 
-	c=getopt_long(argc, argv, "vwdnjc:ft:s:",
+	c=getopt_long(argc, argv, "vwdnjc:ft:s:m",
 		      long_options, &option_index);
 	if (c==-1)
 	    break;
@@ -89,6 +90,7 @@ static void parse_options(int argc, char **argv)
 		   "  -s, --sites-key=name    configuration key that "
 		   "specifies active sites\n"
 		   "  -n, --nodetach          do not run in background\n"
+		   "  -m, --managed           running under a supervisor\n"
 		   "  -d, --debug             output debug messages\n"
 		   "      --help              display this help and exit\n"
 		   "      --version           output version information "
@@ -122,6 +124,10 @@ static void parse_options(int argc, char **argv)
 
 	case 'n':
 	    background=False;
+	    break;
+
+	case 'm':
+	    secnet_is_daemon=True;
 	    break;
 
 	case 'c':
@@ -184,7 +190,7 @@ static void setup(dict_t *config)
     /* Who are we supposed to run as? */
     userid=dict_read_string(system,"userid",False,"system",loc);
     if (userid) {
-	if(!(pw=getpwnam(userid)))
+	if (!(pw=getpwnam(userid)))
 	    fatal("userid \"%s\" not found",userid);
 	uid=pw->pw_uid;
 	gid=pw->pw_gid;
@@ -349,32 +355,13 @@ static void run(void)
     free(fds);
 }
 
+/* Surrender privileges, if necessary */
 static void droppriv(void)
 {
-    FILE *pf=NULL;
-    pid_t p;
-    int errfds[2];
-
-    add_hook(PHASE_SHUTDOWN,system_phase_hook,NULL);
-
-    /* Open the pidfile for writing now: we may be unable to do so
-       once we drop privileges. */
-    if (pidfile) {
-	pf=fopen(pidfile,"w");
-	if (!pf) {
-	    fatal_perror("cannot open pidfile \"%s\"",pidfile);
-	}
-    }
-    if (!background && pf) {
-	fprintf(pf,"%d\n",getpid());
-	fclose(pf);
-    }
-
-    /* Now drop privileges */
     if (userid) {
 	if (setgid(gid)!=0)
 	    fatal_perror("can't set gid to %ld",(long)gid);
-	if(initgroups(userid, gid) < 0)
+	if (initgroups(userid, gid) < 0)
 	    fatal_perror("initgroups");	
 	if (setuid(uid)!=0) {
 	    fatal_perror("can't set uid to \"%s\"",userid);
@@ -384,39 +371,60 @@ static void droppriv(void)
 	assert(getgid() == gid);
 	assert(getegid() == gid);
     }
-    if (background) {
+}
+
+/* Become a daemon, if necessary */
+static void become_daemon(void)
+{
+    FILE *pf=NULL;
+    pid_t p;
+    int errfds[2];
+
+    add_hook(PHASE_SHUTDOWN,system_phase_hook,NULL);
+
+    /* We only want to become a daemon if we are not one
+     already */
+    if (background && !secnet_is_daemon) {
 	p=fork();
 	if (p>0) {
-	    if (pf) {
-		/* Parent process - write pidfile, exit */
-		fprintf(pf,"%d\n",p);
-		fclose(pf);
-	    }
-	    exit(0);
+	    /* Parent process - just exit */
+	    _exit(0);
 	} else if (p==0) {
 	    /* Child process - all done, just carry on */
-	    if (pf) fclose(pf);
-	    /* Close stdin and stdout; we don't need them any more.
-               stderr is redirected to the system/log facility */
-	    if (pipe(errfds)!=0) {
-		fatal_perror("can't create pipe for stderr");
-	    }
-	    close(0);
-	    close(1);
-	    close(2);
-	    dup2(errfds[1],0);
-	    dup2(errfds[1],1);
-	    dup2(errfds[1],2);
 	    secnet_is_daemon=True;
-	    setsid();
-	    log_from_fd(errfds[0],"stderr",system_log);
+	    if (setsid() < 0)
+		fatal_perror("setsid");
 	} else {
 	    /* Error */
 	    fatal_perror("cannot fork");
 	    exit(1);
 	}
     }
+    if (secnet_is_daemon) {
+	/* stderr etc are redirected to the system/log facility */
+	if (pipe(errfds)!=0) {
+	    fatal_perror("can't create pipe for stderr");
+	}
+	if (dup2(errfds[1],0) < 0
+	    || dup2(errfds[1],1) < 0
+	    || dup2(errfds[1],2) < 0)
+	    fatal_perror("can't dup2 pipe");
+	if (close(errfds[1]) < 0)
+	    fatal_perror("can't close redundant pipe endpoint");
+	log_from_fd(errfds[0],"stderr",system_log);
+    }
     secnet_pid=getpid();
+    
+    /* Now we can write the pidfile */
+    if (pidfile) {
+	pf=fopen(pidfile,"w");
+	if (!pf) {
+	    fatal_perror("cannot open pidfile \"%s\"",pidfile);
+	}
+	if (fprintf(pf,"%ld\n",(long)secnet_pid) < 0
+	    || fclose(pf) < 0)
+	    fatal_perror("cannot write to pidfile \"%s\"",pidfile);
+    }
 }
 
 static signal_notify_fn finish,ignore_hup;
@@ -449,6 +457,9 @@ int main(int argc, char **argv)
 	exit(0);
     }
 
+    enter_phase(PHASE_DAEMONIZE);
+    become_daemon();
+    
     enter_phase(PHASE_GETRESOURCES);
     /* Appropriate phase hooks will have been run */
     

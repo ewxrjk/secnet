@@ -14,7 +14,7 @@
 	<key>ProgramArguments</key>
 	<array>
 		<string>/usr/local/sbin/secnet</string>
-		<string>-n</string>
+		<string>-m</string>
 	</array>
 	<key>WorkingDirectory</key>
 	<string>/</string>

@@ -166,6 +166,7 @@ static const char *phases[NR_PHASES]={
     "PHASE_GETOPTS",
     "PHASE_READCONFIG",
     "PHASE_SETUP",
+    "PHASE_DAEMONIZE",
     "PHASE_GETRESOURCES",
     "PHASE_DROPPRIV",
     "PHASE_RUN",
