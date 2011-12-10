@@ -1,0 +1,776 @@
+.TH secnet 8
+
+.SH NAME
+secnet \- VPN router daemon
+
+.SH SYNOPSIS
+\fBsecnet\fR [\fIOPTIONS\fR]
+
+.SH DESCRIPTION
+\fBsecnet\fR allows virtual private networks to be constructed
+spanning multiple separate sites.
+
+.SH OPTIONS
+.TP
+.B --verbose\fR, \fB-v
+Enable extra diagnostics.
+.TP
+.B --nowarnings\fR, \fB-w
+Suppress warnings.
+.TP
+.B --help
+Display usage message.
+.TP
+.B --version
+Display version string.
+.TP
+.B --nodetach\fR, \fB-n
+Don't go into background.
+The default behaviour is to become a daemon during startup.
+.TP
+.B --silent\fR, \fB--quiet\fR, \fB-f
+Suppress error messages.
+.TP
+.B --debug\fR, \fB-d
+Enable debug messages.
+.TP
+.B --config\fR, \fB-c \fIPATH
+Specify configuration file.
+The default is \fI/etc/secnet/secnet.conf\fR.
+.TP
+.B --just-check-config\fR, \fB-j
+Check configuration and exit.
+.TP
+.B --sites-key\fR, \fB-s \fIKEY
+Configuration file key defining active sites.
+The default is \fBsites\fR.
+
+.SH "CONFIGURATION FILE"
+.SS Overview
+The default configuration file is \fI/etc/secnet/secnet.conf\fR.
+This can be overridden with the \fB--config\fR option.
+.PP
+The configuration file defines a dictionary (a mapping from keys to
+values) of configuration information for secnet.
+It is recursive in nature, i.e. values may themselves include dictionaries.
+Any node in the nested structure thus defined can be identified by a
+\fIpath\fR, which is the sequence of keys necessary to reach it from
+the root, separated by "/" characters.
+See \fBPaths\fR below for how this is used.
+.PP
+Furthermore, when a key is looked up in a dictionary, if it cannot be
+found, it is sought in the parent dictionary, and so on back to the
+root.
+For instance, each \fIsite\fR must contain the \fBresolver\fR key, but
+in a typical configuration there is no value in having different
+resolvers for each site.
+Therefore \fBresolver\fR is defined at the root and thus automatically
+incorporated into all sites.
+.SS Whitespace
+Whitespace, including newlines, is ignored except to the extent that
+it bounds other symbols.
+.PP
+Comment begin with "#" and continues to the end of the line.
+Comments are ignored.
+.SS Inclusion
+A file may be recursively included into the configuration file using a
+line of the form:
+.IP
+\fBinclude \fIPATH
+.PP
+This is handled at a higher level than the main parser and so
+precludes the possibility of using the string \fBinclude\fR for any
+other purpose.
+.\" check if this is true.  it's probably a bug!
+.SS Assignments
+The configuration file contains one or more assigments.
+Each assignment is written:
+.IP
+\fIkey\fR [\fB=\fR] \fIlist\fR\fB;\fR
+.PP
+i.e. the equals sign is optional.
+The semicolon is mandatory in all contexts.
+.PP
+Keys start with a letter or "_" and continue with any numbers of
+letters, digits, "_" and "-".
+.PP
+Each \fIkey\fR is a list of one or more \fIvalues\fR, separated by commas.
+Possible values types are \fIboolean\fR, \fIstring\fR, \fInumber\fR,
+\fIdictionary\fR, \fIpath\fR and \fIclosure evaluation\fR.
+.\" This man page draws a distinction between a closure (the thing
+.\" evaluated) and a closure evaluation (the closure plus is
+.\" arguments).
+.SS "Strings"
+Strings are contained within "double quotes".
+There is (currently) no escape syntax and no way to include quotes
+inside strings.
+.PP
+Example:
+.nf
+        filename "/var/log/secnet";
+.fi
+.SS "Numbers"
+Numbers are encoded in decimal and do not include a sign.
+Numbers must lie in the range 0 to 4294967295.
+.PP
+Example:
+.nf
+        mtu 1400;
+.fi
+.SS "Dictionaries"
+.\" In conffile.y dictionaries can be preceded by a search path, but
+.\" this is not implemented elsewhere, so not documented here.
+Dictionaries consist of one or more assignments, in the same syntax as
+given above, enclosed in "{" and "}".
+.PP
+Example:
+.nf
+        system {
+                userid "secnet";
+                pidfile "/var/run/secnet.pid";
+        };
+.fi
+.SS "Paths"
+Paths allow a key already defined in the configuration to be aliased.
+.PP
+Paths consist of a sequence of keys separated by "/".
+If the path starts with a "/" then it is an \fIabsolute path\fR and
+the search starts at the root of the configuration.
+Otherwise it is a \fIrelative path\fR and starts in the containing
+dictionary or in any of its parents, down to and including the root.
+If there is more than one match, the one furthest from the root "wins".
+.PP
+The value of a path is the list assigned to the key it refers to.
+Lists are flattened; for example if a key is defined as a list of two
+paths, and each of those refers to a list of two integers, the
+original key is therefore defined to be a list of four integers, not
+a list consisting of two lists.
+.PP
+It is not possible to refer to a \fIlater\fR key using a path.
+.PP
+Example:
+.nf
+        vpn {
+          test {
+            kakajou vpn-data/test/kakajou/kakajou;
+            araminta vpn-data/test/araminta/araminta;
+            deodand vpn-data/test/deodand/deodand;
+            all-sites kakajou,araminta,deodand;
+          };
+        };
+        all-sites vpn/test/all-sites;
+.fi
+.PP
+Here, each of \fBvpn/test/kakajou\fR, \fBvpn/test/araminta\fR and
+\fBvpn/test/deodand\fR are defined as aliases to values defined
+elsewhere.
+\fBvpn/tests/all-sites\fR is defined as the list of all three of those
+values, and \fBall-sites\fR is then defined to be an alias for that.
+.SS "Booleans"
+The (single-element) paths \fBfalse\fR, \fBno\fR and \fBnowise\fR are
+predefined and refer to a boolean false value.
+Similarly \fBtrue\fR, \fByes\fR and \fBverily\fR point at a boolean
+true value.
+.PP
+In all six cases, variants with just the first letter capitalized, and
+with all letters capitalized, are also provided.
+.PP
+Example:
+.nf
+        random randomfile("/dev/urandom",no);
+.fi
+.SS "Closure Evaluation"
+Closure evaluation uses the following syntax:
+.IP
+\fICLOSURE \fB( \fIARGUMENTS \fB)
+.PP
+\fICLOSURE\fR may be a path referring to a closure, or may itself be a
+closure evaluation.
+.PP
+\fIARGUMENTS\fR is a list of zero or more values, separated by commas.
+As a shortcut, if the arguments consist of a single dictionary, the
+parentheses may be ommitted:
+.IP
+\fICLOSURE \fB{ \fR... \fB}
+.PP
+Example:
+.nf
+        sites map(site, vpn/test/all-sites);
+.fi
+.PP
+When a closure is evaluated it returns a value (a list, much as above)
+and may also have side effects (which may be immediate or may be
+deferred to some later phase of execution).
+A list of built-in closures is given below.
+.SS "Mandatory Keys"
+Two keys are mandatory.
+\fBsystem\fR must be a dictionary in which the following keys can be
+looked up:
+.TP
+.B log
+A \fIlog closure\fR; see the \fBlogfile\fR documentation below.
+The destination for log messages.
+Mandatory.
+.TP
+.B userid
+A string.
+The userid to run as after dropping privilege.
+Optional.
+.TP
+.B pidfile
+A string.
+The path to write a pidfile.
+Optional.
+.PP
+\fBsites\fR should be a list of \fIsite closures\fR; see the \fBsite\fR documentation below.
+This defines the collection of tunnel endpoints that \fBsecnet\fR will
+communicate with.
+.PP
+Recall the recursive lookup logic described in \fBOverview\fR above:
+if (for instance) \fBlog\fR is defined in the top level dictionary but
+not in \fBsystem\fR, it will nevertheless be found when looked up in
+the latter.
+
+.SH CLOSURES
+\fBsecnet\fR contains a collection of built-in closures
+with names (i.e. single-element paths) given below.
+.PP
+Most of them return anonymous closures of various types,
+which are described contextually.
+
+.SS adns
+\fBadns(\fIDICT\fB)\fR => \fIresolver closure\fR
+.TP
+.I DICT
+This either be empty or contain the single key \fBconfig\fR, with a
+string value giving configuration to supply to ADNS.
+This might be read from a file using \fBreadfile\fR.
+.PP
+A \fIresolver closure\fR is a means of converting hostnames into
+network addresses.
+
+.SS diffie-hellman
+.PP
+\fBdiffie-hellman(\fIMODULUS\fB, \fIGENERATOR\fR[\fB, \fICHECK\fR]\fB)\fR => \fIdh closure\fR
+.TP
+.I MODULUS
+String.
+The prime modulus \fIp\fR in hex.
+.TP
+.I GENERATOR
+String.
+The generator \fIg\fR in hex.
+.TP
+.I CHECK
+Boolean.
+If \fBtrue\fR (the default) then check if \fIp\fR is prime.
+.PP
+A \fIdh closure\fR defines a group to be used for key exchange.
+The same group must be used by all sites in the VPN.
+
+.SS logfile
+\fBlogfile(\fIDICT\fB)\fR => \fIlog closure\fR
+.PP
+Valid keys in the \fIDICT\fR argument are:
+.TP
+.B filename
+The path to log to.
+.TP
+.B class
+A list of strings defining which classes of message to log.
+The possible message classes are \fBdebug-config\fR,
+\fBdebug-phase\fR, \fBdebug\fR, \fBinfo\fR, \fBnotice\fR,
+\fBwarning\fR, \fBerror\fR, \fBsecurity\fR and \fBfatal\fR.
+.IP
+\fBall-debug\fR is the union of all the \fBdebug\fR... classes.
+\fBdefault\fR is equivalent to \fBwarning, error, security, fatal\fR.
+\fBverbose\fR is equivalent to \fBinfo, notice, warning, error,
+security, fatal\fR.
+\fBquiet\fR is equivalent to \fBfatal\fR.
+.PP
+A \fIlog closure\fR is a means of saving log messages.
+See also \fBsyslog\fR below.
+
+.SS makelist
+\fBmakelist(\fIDICT\fB)\fR => \fILIST\fR
+.PP
+Returns the (flattened) list of values from the dictionary, discarding
+the keys.
+
+.SS map
+\fBmap(\fICLOSURE\fB, \fIINPUT\fR...\fB)\fR => \fILIST\fR
+.PP
+Applies \fICLOSURE\fR to all its additional input arguments and
+returns the resulting list.
+
+.SS md5
+\fBmd5\fR is a \fIhash closure\fR implementing the MD5 algorithm.
+
+.SS null-netlink
+\fBnull-netlink(\fIDICT\fB)\fR => \fInetlink closure\fR
+.br
+\fBnull-netlink(\fIDICT\fB)\fR => \fIpure closure\fR
+.\" TODO pure closure is what it's called internally but this is a
+.\" very opaque name to use in docs
+.PP
+Valid keys in the \fIDICT\fR argument are:
+.TP
+.B name
+String.
+The name for the netlink device.
+The default is \fBnull-netlink\fR.
+.TP
+.B networks
+List of strings.
+The networks on the host side of the netlink device.
+.TP
+.B remote-networks
+List of strings.
+Networks that may be claimed by remote sites using this netlink device.
+.TP
+.B secnet-address
+String.
+IP address of this netlink.
+Incompatible with \fBptp-address\fR.
+.TP
+.B ptp-address
+String.
+IP address of the other end of a point-to-point link.
+Incompatible with \fBsecnet-address\fR.
+.TP
+.B mtu
+Number.
+The MTU of the netlink device.
+The default is 1000.
+.PP
+If \fBptp-address\fR is used then the result is a \fInetlink closure\fR.
+This can be used directly with the \fBlink\fR key in the \fBsites\fR
+closure (see below).
+.PP
+If \fBsecnet-address\fR is used then the result is a \fIpure
+closure\fR.
+This must be evaluated to yield a \fInetlink closure\fR, using a
+dictionary argument with the following keys:
+.TP
+.B routes
+String list.
+networks reachable via this tunnel, in \fIaddress\fB/\fIbits\fR format.
+.TP
+.B options
+String list.
+A list of options:
+.RS
+.TP
+.B allow-route
+Allow packets received via this tunnel to be routed down other tunnels
+(without this option only packets from the host will be routed).
+.TP
+.B soft
+Remove these routes from the host routing table when the link quality
+is 0.
+.RE
+.TP
+.B mtu
+Number.
+Default MTU over this link.
+The default is inherited from the \fIpure closure\fR.
+.TP
+.B priority
+Number.
+The priority of this link.
+Higher values beat lower values.
+The default is 0.
+
+.\" TODO ptp-address turns up in sites.conf, but why?  I think this
+.\" is a bug in make-secnet-sites; it is not used by
+ \" netlink_inst_create.
+
+.PP
+A \fInetlink closure\fR is a virtual IP link, and is supplied to the
+\fBlink\fR key of a \fIsite\fR closure.
+.PP
+The netlink created by \fBnull-netlink\fR has no connection to the
+host.
+See \fBtun\fR and \fBuserv-ipif\fR below for more useful alternatives.
+
+
+
+.SS randomfile
+\fBrandomfile(\fIFILENAME\fR[\fB, \fIBLOCKING\fR]\fB)\fR => \fIrandomsource closure\fR
+.TP
+.I FILENAME
+String.
+Path to random device, e.g. \fI/dev/urandom\fR.
+.TP
+.I BLOCKING
+Boolean.
+\fBTrue\fR if this is a blocking device and \fBfalse\fR otherwise (the default).
+Blocking device support is not implemented so this must always be
+\fBFalse\fR or absent.
+.PP
+A \fIrandomsource closure\fR is a source of random numbers.
+
+.SS readfile
+\fBreadfile(\fIPATH\fB)\fR => \fISTRING\fR
+.PP
+Read the contents of the file \fIPATH\fR (a string) and return it as a string.
+
+.SS serpent256-cbc
+\fBserpent256-cbc(\fIDICT\fB)\fR => \fItransform closure\fR
+.PP
+Valid keys in the \fIDICT\fR argument are:
+.TP
+.B max-sequence-skew
+The maximum acceptable difference between the sequence number in a
+received, decrypted message and the previous one.
+The default is 10.
+It may be necessary to increase this is if connectivity is poor.
+.PP
+A \fItransform closure\fR is a reversible means of transforming
+messages for transmission over a (presumably) insecure network.
+It is responsible for both confidentiality and integrity.
+
+.SS rsa-private
+\fBrsa-private(\fIPATH\fB\fR[, \fICHECK\fR]\fB)\fR => \fIrsaprivkey closure\fR
+.TP
+.I PATH
+String.
+The path to a file containing an RSA private key in SSH format
+(version 1).
+There must be no passphrase.
+.TP
+.I CHECK
+Boolean.
+If \fBtrue\fR (the default) then check that the key is valid.
+
+.SS rsa-public
+\fBrsa-public(\fIKEY\fB, \fIMODULUS\fB)\fR => \fIrsapubkey closure\fR
+.TP
+.I KEY
+String.
+The public key exponent (\fIe\fR), in decimal.
+.TP
+.I MODULUS
+String.
+The modulus (\fIn\fR), in decimal.
+
+.SS sha1
+\fBsha1\fR is a \fIhash closure\fR implementing the SHA-1 algorithm.
+
+.SS site
+\fBsite(\fIDICT\fB)\fR => \fIsite closure\fR
+.PP
+Valid keys in the \fIDICT\fR argument are:
+.TP
+.B local-name
+String.
+The site's name for itself.
+.TP
+.B name
+String.
+The name of the site's peer.
+.TP
+.B link
+A \fInetlink closure\fR.
+.TP
+.B comm
+A \fIcomm closure\fR.
+.TP
+.B resolver
+A \fIresolver closure\fR.
+.TP
+.B random
+A \fIrandomsource closure\fR.
+.TP
+.B local-key
+An \fIrsaprivkey closure\fR.
+The key used to prove our identity to the peer.
+.TP
+.B address
+String.
+The DNS name of the peer.
+Optional, but if it is missing then it will not be possible to
+initiate new connections to the peer.
+.TP
+.B port
+Number.
+The port to contact the peer.
+.TP
+.B key
+An \fIrsapubkey closure\fR.
+The key used to verify the peer's identity.
+.TP
+.B transform
+A \fItransform closure\fR.
+Used to protect packets exchanged with the peer.
+.TP
+.B dh
+A \fIdh closure\fR.
+The group to use in key exchange.
+.TP
+.B hash
+The hash function used during setup.
+.\" TODO clarify what we actually use it for!
+.TP
+.B key-lifetime
+Number.
+The maximum lifetime of a session key in milliseconds.
+The default is one hour.
+.TP
+.B setup-retries
+Number.
+The maximum number of times a key negotiation packet will be
+transmitted before giving up.
+The default is 5.
+.TP
+.B setup-timeout
+Number.
+The time between retransmissions of key negotiation packets, in milliseconds.
+The default is one second.
+.TP
+.B wait-time
+Number.
+The time to wait after a failed key setup before making another
+attempt, in milliseconds.
+The default is 20s.
+.TP
+.B renegotiate-time
+Number.
+The time after which a new session key will be negotiated, \fIif\fR
+there is traffic on the link, in milliseconds.
+It must not be greater than the \fBkey-lifetime\fR.
+The default 5 minutes less than the key lifetime, unless the lifetime
+is less than 10 minutes in which case the default is half the
+lifetime.
+.TP
+.B keepalive
+Boolean.
+If \fBtrue\fR then attempt to always maintain a live session key.
+Not implemented.
+.TP
+.B log-events
+String list.
+Types of event to log for this site.
+.RS
+.TP
+.B unexpected
+Unexpected key setup packets (including late retransmissions).
+.TP
+.B setup-init
+Start of attempt to setup a session key.
+.TP
+.B setup-timeout
+Failure of attempt to setup a session key, through timeout.
+.TP
+.B activate-key
+Activation of a new session key.
+.TP
+.B timeout-key
+Deletion of current session key through age.
+.TP
+.B security
+Anything potentially suspicious.
+.TP
+.B state-change
+Steps in the key setup protocol.
+.TP
+.B packet-drop
+Whenever we throw away an outgoing packet.
+.TP
+.B dump-packets
+Every key setup packet we see.
+.TP
+.B errors
+Failure of name resolution, internal errors.
+.TP
+.B all
+Everything (too much!)
+.RE
+.PP
+A \fIsite closure\fR defines one site to communicate with.
+\fBsecnet\fR expects the (root) key \fBsite\fR to be a list of site
+closures.
+
+.SS sysbuffer
+\fBsysbuffer(\fR[\fISIZE\fR[\fB, \fIOPTIONS\fR]]\fB)\fR => \fIbuffer closure\fR
+.TP
+.I SIZE
+Number.
+The size of the buffer in bytes.
+This must be between 64 and 131072.
+The default is 4096.
+.TP
+.I OPTIONS
+Dictionary.
+Optional and presently unused.
+.\" lockdown is accepted but ignored.
+.PP
+A \fIbuffer closure\fR is a means of buffering packets to send or that
+have been received.
+
+.SS syslog
+\fBsyslog(\fIDICT\fB)\fR => \fIlog closure\fR
+.PP
+Valid keys in the \fIDICT\fR argument are:
+.TP
+.B ident
+String.
+The ident string to pass to \fBopenlog\fR(3); this value will appear
+in each message.
+.TP
+.B facility
+String.
+The facility to log as.
+The possible values are \fBauthpriv\fR, \fBcron\fR, \fBdaemon\fR,
+\fBkern\fR, \fBlocal0\fR-\fB7\fR, \fBlpr\fR, \fBmail\fR, \fBnews\fR,
+\fBsyslog\fR, \fBuser\fR and \fBuucp\fR.
+.PP
+See also \fBlogfile\fR above.
+
+.SS tun
+\fBtun(\fIDICT\fB)\fR => \fInetlink closure\fR
+.br
+\fBtun(\fIDICT\fB)\fR => \fIpure closure\fR
+.PP
+Valid keys in the \fIDICT\fR argument are those documented for
+\fBnull-netlink\fR above, plus:
+.TP
+.B flavour
+String.
+The type of TUN interface to use.
+Possible values are \fBlinux\fR, \fBbsd\fR, \fBstreams\fR and \fBguess\fR.
+The default is \fBguess\fR.
+.TP
+.B device
+String.
+The path to the TUN/TAP device file.
+The default is \fI/dev/net/tun\fR for the \fBlinux\fR flavour and
+\fI/dev/tun\fR for the others.
+.TP
+.B interface
+String.
+The interface to use.
+The default is to pick one automatically.
+This cannot be used with the \fBstreams\fR flavour.
+.TP
+.B local-address
+String.
+IP address of the host's tunnel interface.
+.\" README says this belongs to netlink-null but actually it's
+ \" duplicated between slip & tun
+.TP
+.B ifconfig-path
+String.
+The name of the \fBifconfig\fR command.
+The default is simply "ifconfig".
+.TP
+.B route-path
+String.
+The name of the \fBroute\fR command.
+The default is simply "route".
+.TP
+.B ifconfig-type
+String.
+The syntax expected by the \fBifconfig\fR command.
+Possible values are \fBlinux\fR, \fBbsd\fR, \fBioctl\fR,
+\fBsolaris-2.5\fR and \fBguess\fR.
+The default is \fBguess\fR.
+.TP
+.B route-type
+String.
+The syntax expected by the \fBifconfig\fR command.
+Possible values are \fBlinux\fR, \fBbsd\fR, \fBioctl\fR,
+\fBsolaris-2.5\fR and \fBguess\fR.
+The default is \fBguess\fR.
+.TP
+.B buffer
+A \fIbuffer closure\fR to use for packets transferred from the host to secnet.
+The buffer size must be at least 60 greater than the MTU.
+.\" TODO rumour has is that buffers are sometimes shareable between
+.\" netlink devices - document that if the conditions are reasonable
+.\" ones.
+.PP
+The \fBifconfig-type\fR and \fBroute-type\fR values determine how
+those commands are executed.
+If they are set to \fBioctl\fR then low-level system calls are used
+directly instead of invoking the commands.
+.PP
+The netlink created by \fBtun\fR uses the \fBtun\fR device to
+communicate with the host kernel.
+
+.SS udp
+\fBudp(\fIDICT\fB)\fR => \fIcomm closure\fR
+.PP
+Valid keys in the \fIDICT\fR argument are:
+.TP
+.B address
+String.
+The IP address to bind on.
+The default is 0.0.0.0, i.e. "any".
+.TP
+.B port
+Number.
+The port number to bind to.
+The default is 0, i.e. the OS will choose one.
+It is suggested that any given VPN agree a common port number.
+.TP
+.B buffer
+A \fIbuffer closure\fR.
+See the \fBsysbuffer\fR closure above.
+.TP
+.B authbind
+String.
+The path to a helper program to bind the socket.
+Optional.
+.IP
+The program will be invoked with the address and port number as its
+arguments, and with the socket to bind as file descriptor 0.
+It should either bind the socket as requested, or exit with nonzero
+status.
+.PP
+A \fIcomm closure\fR is a means of sending and receiving messages via
+a network.
+It does not provide confidentiality, reliablity or availability.
+
+.SS userv-ipif
+\fBuserv-ipif(\fIDICT\fB)\fR => \fInetlink closure\fR
+.br
+\fBuserv-ipif(\fIDICT\fB)\fR => \fIpure closure\fR
+.PP
+Valid keys in the \fIDICT\fR argument are those documented for
+\fBnull-netlink\fR above, plus:
+.TP
+.B local-address
+String.
+IP address of the host's SLIP interface.
+.\" README says this belongs to netlink-null but actually it's
+ \" duplicated between SLIP & tun
+.TP
+.B userv-path
+String.
+Where to find \fBuserv\fR(1).
+The default is \fB"userv"\fR.
+.TP
+.B service-user
+String.
+The name of the user that owns the service.
+The default is \fB"root"\fR.
+.TP
+.B service-name
+String.
+The name of the service to request.
+The default is \fB"ipif"\fR.
+.TP
+.B buffer
+A \fIbuffer closure\fR to use for packets transferred from the host to secnet.
+.PP
+The netlink created by \fBuserv-ipif\fR invokes the specified \fBuserv\fR service with pipes connected to its standard input and output.
+It uses SLIP to communicate with the host kernel via these pipes.
+
+.SH FILES
+.TP
+.I /etc/secnet/secnet.conf
+Configuration file.
+
+.SH "SEE ALSO"
+\fBuserv\fR(1)
