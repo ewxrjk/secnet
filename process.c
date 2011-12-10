@@ -193,6 +193,9 @@ static int signal_beforepoll(void *st, struct pollfd *fds, int *nfds_io,
     return 0;
 }
 
+/* Bodge to work around Ubuntu's strict header files */
+static void discard(int anything) {}
+
 static afterpoll_fn signal_afterpoll;
 static void signal_afterpoll(void *st, struct pollfd *fds, int nfds)
 {
@@ -201,7 +204,8 @@ static void signal_afterpoll(void *st, struct pollfd *fds, int nfds)
     sigset_t todo,old;
 
     if (nfds && (fds->revents & POLLIN)) {
-	read(spr,buf,16); /* We don't actually care what we read; as
+	discard(read(spr,buf,16));
+	                  /* We don't actually care what we read; as
 			     long as there was at least one byte
 			     (which there was) we'll pick up the
 			     signals in the pending set */
@@ -253,7 +257,8 @@ static void signal_handler(int signum)
        will be atomic, and it seems to be the lesser of the two
        evils. */
     saved_errno=errno;
-    write(spw,&thing,1); /* We don't care if this fails (i.e. the pipe
+    discard(write(spw,&thing,1));
+                         /* We don't care if this fails (i.e. the pipe
 			    is full) because the service routine will
 			    spot the pending signal anyway */
     errno=saved_errno;
