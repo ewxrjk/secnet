@@ -47,9 +47,6 @@
 /* Define to 1 if you have the <net/route.h> header file. */
 #undef HAVE_NET_ROUTE_H
 
-/* Define to 1 if you have the `snprintf' function. */
-#undef HAVE_SNPRINTF
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -178,12 +175,6 @@ typedef unsigned char uint8_t;
 #error I do not know what to use for a uint8_t.
 #endif
 #endif
-#endif
-
-#ifndef HAVE_SNPRINTF
-#include <stdio.h>
-#include <stdarg.h>
-#include "snprintf.h"
 #endif
 
 #ifdef __GNUC__

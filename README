@@ -6,11 +6,6 @@ secnet is Copyright (C) 1995--2003 Stephen Early <steve@greenend.org.uk>
 It is distributed under the terms of the GNU General Public License,
 version 2 or later.  See the file COPYING for more information.
 
-The portable snprintf implementation in snprintf.c is Copyright (C)
-1999 Mark Martinec <mark.martinec@ijs.si> and is distributed under the
-terms of the Frontier Artistic License.  You can find the standard
-version of snprintf.c at http://www.ijs.si/software/snprintf/
-
 The IP address handling library in ipaddr.py is Copyright (C)
 1996--2000 Cendio Systems AB, and is distributed under the terms of
 the GPL.

@@ -73,7 +73,6 @@ DISTFILES:=BUGS COPYING CREDITS INSTALL LICENSE.txt Makefile.in \
 	modules.c netlink.c netlink.h process.c process.h \
 	random.c resolver.c rsa.c \
 	secnet.c secnet.h serpent.c serpent.h serpentsboxes.h \
-	snprintf.c snprintf.h \
 	sha1.c site.c slip.c stamp-h.in transform.c tun.c udp.c \
 	unaligned.h util.c util.h \
 	hackypar.c hackypar.h
