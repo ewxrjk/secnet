@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <pwd.h>
+#include <grp.h>
 
 #include "util.h"
 #include "conffile.h"
@@ -25,6 +26,7 @@ static const char *sites_key="sites";
 bool_t just_check_config=False;
 static char *userid=NULL;
 static uid_t uid=0;
+static gid_t gid;
 bool_t background=True;
 static char *pidfile=NULL;
 bool_t require_root_privileges=False;
@@ -182,17 +184,10 @@ static void setup(dict_t *config)
     /* Who are we supposed to run as? */
     userid=dict_read_string(system,"userid",False,"system",loc);
     if (userid) {
-	do {
-	    pw=getpwent();
-	    if (pw && strcmp(pw->pw_name,userid)==0) {
-		uid=pw->pw_uid;
-		break;
-	    }
-	} while(pw);
-	endpwent();
-	if (uid==0) {
+	if(!(pw=getpwnam(userid)))
 	    fatal("userid \"%s\" not found",userid);
-	}
+	uid=pw->pw_uid;
+	gid=pw->pw_gid;
     }
 
     /* Pidfile name */
@@ -376,10 +371,18 @@ static void droppriv(void)
     }
 
     /* Now drop privileges */
-    if (uid!=0) {
+    if (userid) {
+	if (setgid(gid)!=0)
+	    fatal_perror("can't set gid to %ld",(long)gid);
+	if(initgroups(userid, gid) < 0)
+	    fatal_perror("initgroups");	
 	if (setuid(uid)!=0) {
 	    fatal_perror("can't set uid to \"%s\"",userid);
 	}
+	assert(getuid() == uid);
+	assert(geteuid() == uid);
+	assert(getgid() == gid);
+	assert(getegid() == gid);
     }
     if (background) {
 	p=fork();
