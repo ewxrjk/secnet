@@ -162,7 +162,9 @@ dist:
 #
 #  5. git-push origin
 #
-#  6. rsync -v ../secnet-$VERSION.tar.gz \
+#  6. gpg --detach-sign ../secnet-$(VERSION).tar.gz
+#
+#  7. rsync -v ../secnet-$VERSION.tar.gz* \
 #        chiark:/home/ianmdlvl/public-html/secnet/download/
 #
-#  7. write and post a release announcement
+#  8. write and post a release announcement
