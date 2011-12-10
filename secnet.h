@@ -186,15 +186,18 @@ extern void register_for_poll(void *st, beforepoll_fn *before,
    Module code may arrange to be called just as various phases are
    entered. */
 
-#define PHASE_INIT          0
-#define PHASE_GETOPTS       1  /* Process command-line arguments */
-#define PHASE_READCONFIG    2  /* Parse and process configuration file */
-#define PHASE_SETUP         3  /* Process information in configuration */
-#define PHASE_GETRESOURCES  4  /* Obtain all external resources */
-#define PHASE_DROPPRIV      5  /* Last chance for privileged operations */
-#define PHASE_RUN           6
-#define PHASE_SHUTDOWN      7  /* About to die; delete key material, etc. */
-#define NR_PHASES           8
+enum phase {
+    PHASE_INIT,
+    PHASE_GETOPTS,             /* Process command-line arguments */
+    PHASE_READCONFIG,          /* Parse and process configuration file */
+    PHASE_SETUP,               /* Process information in configuration */
+    PHASE_GETRESOURCES,        /* Obtain all external resources */
+    PHASE_DROPPRIV,            /* Last chance for privileged operations */
+    PHASE_RUN,
+    PHASE_SHUTDOWN,            /* About to die; delete key material, etc. */
+    /* Keep this last: */
+    NR_PHASES,
+};
 
 typedef void hook_fn(void *self, uint32_t newphase);
 bool_t add_hook(uint32_t phase, hook_fn *f, void *state);
