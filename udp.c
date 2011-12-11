@@ -241,8 +241,8 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 	}
 	if (c==0) {
 	    char *argv[4], addrstr[9], portstr[5];
-	    sprintf(addrstr,"%08lX",(long)st->addr);
-	    sprintf(portstr,"%04X",st->port);
+	    sprintf(addrstr,"%08lX",(long)addr.sin_addr.s_addr);
+	    sprintf(portstr,"%04X",addr.sin_port);
 	    argv[0]=st->authbind;
 	    argv[1]=addrstr;
 	    argv[2]=portstr;
