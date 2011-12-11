@@ -163,20 +163,23 @@ dist:
 #
 #  5. git-push origin
 #
-#  6. gpg --detach-sign ../secnet-$(VERSION).tar.gz
+#  6. Run, again,
+#       make dist
 #
-#  7. rsync -v ../secnet-$VERSION.tar.gz* \
+#  7. gpg --detach-sign ../secnet-$(VERSION).tar.gz
+#
+#  8. rsync -v ../secnet-$VERSION.tar.gz* \
 #        chiark:/home/ianmdlvl/public-html/secnet/download/
 #
-#  8. On chiark:
+#  9. On chiark:
 #       tar zxf ~ianmdlvl/public-html/secnet/download/secnet-$(VERSION).tar.gz
 #       cd secnet-$(VERSION)
 #       debian/rules build
 #       fakeroot debian/rules binary
-#       cp ../secnet_0.1.18.1-1_i386.deb ~/public-html/secnet/download/
+#       mv ../secnet_0.1.18.1-1_i386.deb ~/public-html/secnet/download/
 #
-#  9. On chiark as user secnet:
+#  10. On chiark as user secnet:
 #       cd ~secnet/
 #       rsync ~ianmdlvl/public-html/secnet/download/secnet* .
 #
-#  9. write and post a release announcement
+#  11. write and post a release announcement
