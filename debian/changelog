@@ -2,7 +2,7 @@ secnet (0.2.0-1) unstable; urgency=low
 
   * New upstream version.
 
- -- Ian Jackson <ian@zealot.relativity.greenend.org.uk>  Sat, 10 Dec 2011 22:44:41 +0000
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 10 Dec 2011 22:44:41 +0000
 
 secnet (0.1.18-1) unstable; urgency=low
 
