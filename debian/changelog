@@ -1,3 +1,9 @@
+secnet (0.2.1-1) unstable; urgency=low
+
+  * New upstream version.  (authbind endianness fix)
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 11 Dec 2011 13:14:57 +0000
+
 secnet (0.2.0-1) unstable; urgency=low
 
   * New upstream version.
