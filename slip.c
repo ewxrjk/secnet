@@ -257,13 +257,11 @@ static void userv_invoke_userv(struct userv *st)
 
     allnets=ipset_new();
     for (r=st->slip.nl.clients; r; r=r->next) {
-	if (r->up) {
-	    struct ipset *nan;
-	    r->kup=True;
-	    nan=ipset_union(allnets,r->networks);
-	    ipset_free(allnets);
-	    allnets=nan;
-	}
+	struct ipset *nan;
+	r->kup=True;
+	nan=ipset_union(allnets,r->networks);
+	ipset_free(allnets);
+	allnets=nan;
     }
     snets=ipset_to_subnet_list(allnets);
     ipset_free(allnets);
