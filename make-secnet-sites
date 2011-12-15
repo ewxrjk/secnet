@@ -379,6 +379,11 @@ def pline(i):
 
 	complain("unknown keyword '%s'"%(keyword))
 
+def pfilepath(pathname):
+	f=open(pathname)
+	pfile(pathname,f.readlines())
+	f.close()
+
 def pfile(name,lines):
 	"Process a file"
 	global file,line
@@ -450,19 +455,14 @@ else:
 		if not ok:
 			print "caller not in group %s"%group
 			sys.exit(1)
-		f=open(header)
-		headerinput=f.readlines()
-		f.close()
-		pfile(header,headerinput)
+		pfilepath(header)
 		userinput=sys.stdin.readlines()
 		pfile("user input",userinput)
 	else:
 		if len(sys.argv)>3:
 			print "Too many arguments"
 			sys.exit(1)
-		f=open(sys.argv[1])
-		pfile(sys.argv[1],f.readlines())
-		f.close()
+		pfilepath(sys.argv[1])
 		of=sys.stdout
 		if len(sys.argv)>2:
 			of=open(sys.argv[2],'w')
