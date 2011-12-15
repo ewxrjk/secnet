@@ -329,7 +329,7 @@ def set_property(obj,w):
 	else:
 		obj.properties[w[0]]=keywords[w[0]][0](w)
 
-def pline(i):
+def pline(i,allow_include=False):
 	"Process a configuration file line"
 	global allow_defs, obstack, root
 	w=string.split(i)
@@ -339,6 +339,16 @@ def pline(i):
 	if keyword=='end-definitions':
 		allow_defs=sitelevel.depth
 		obstack=[root]
+		return
+	if keyword=='include':
+		if not allow_include:
+			complain("include not permitted here")
+			return
+		if len(w) != 2:
+			complain("include requires one argument")
+			return
+		newfile=os.path.join(os.path.dirname(file),w[1])
+		pfilepath(newfile,allow_include=allow_include)
 		return
 	if levels.has_key(keyword):
 		# We may go up any number of levels, but only down by one
@@ -379,12 +389,12 @@ def pline(i):
 
 	complain("unknown keyword '%s'"%(keyword))
 
-def pfilepath(pathname):
+def pfilepath(pathname,allow_include=False):
 	f=open(pathname)
-	pfile(pathname,f.readlines())
+	pfile(pathname,f.readlines(),allow_include=allow_include)
 	f.close()
 
-def pfile(name,lines):
+def pfile(name,lines,allow_include=False):
 	"Process a file"
 	global file,line
 	file=name
@@ -393,7 +403,7 @@ def pfile(name,lines):
 		line=line+1
 		if (i[0]=='#'): continue
 		if (i[len(i)-1]=='\n'):	i=i[:len(i)-1] # strip trailing LF
-		pline(i)
+		pline(i,allow_include=allow_include)
 
 def outputsites(w):
 	"Output include file for secnet configuration"
@@ -455,14 +465,14 @@ else:
 		if not ok:
 			print "caller not in group %s"%group
 			sys.exit(1)
-		pfilepath(header)
+		pfilepath(header,allow_include=True)
 		userinput=sys.stdin.readlines()
 		pfile("user input",userinput)
 	else:
 		if len(sys.argv)>3:
 			print "Too many arguments"
 			sys.exit(1)
-		pfilepath(sys.argv[1])
+		pfilepath(sys.argv[1],allow_include=True)
 		of=sys.stdout
 		if len(sys.argv)>2:
 			of=open(sys.argv[2],'w')
