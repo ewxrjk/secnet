@@ -320,6 +320,7 @@ def moan(msg):
 root=level(['root','root'])   # All vpns are children of this node
 obstack=[root]
 allow_defs=0   # Level above which new definitions are permitted
+prefix=''
 
 def set_property(obj,w):
 	"Set a property on a configuration node"
@@ -415,20 +416,21 @@ def outputsites(w):
 	w.write("# Command line: %s\n\n"%string.join(sys.argv))
 
 	# Raw VPN data section of file
-	w.write("vpn-data {\n")
+	w.write(prefix+"vpn-data {\n")
 	for i in root.children.values():
 		i.output_data(w,2,"")
 	w.write("};\n")
 
 	# Per-VPN flattened lists
-	w.write("vpn {\n")
+	w.write(prefix+"vpn {\n")
 	for i in root.children.values():
-		i.output_vpnflat(w,2,"vpn-data")
+		i.output_vpnflat(w,2,prefix+"vpn-data")
 	w.write("};\n")
 
 	# Flattened list of sites
-	w.write("all-sites %s;\n"%string.join(map(lambda x:"vpn/%s/all-sites"%
-		x,root.children.keys()),","))
+	w.write(prefix+"all-sites %s;\n"%string.join(
+		map(lambda x:"%svpn/%s/all-sites"%(prefix,x),
+			root.children.keys()),","))
 
 # Are we being invoked from userv?
 service=0
@@ -471,6 +473,9 @@ else:
 		userinput=sys.stdin.readlines()
 		pfile("user input",userinput)
 	else:
+		if sys.argv[1]=='-P':
+			prefix=sys.argv[2]
+			sys.argv[1:3]=[]
 		if len(sys.argv)>3:
 			print "Too many arguments"
 			sys.exit(1)
