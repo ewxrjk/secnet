@@ -376,6 +376,8 @@ def pline(i,allow_include=False):
 			if nl.depth<allow_defs:
 				complain("New definitions not allowed at "
 					"level %d"%nl.depth)
+				# we risk crashing if we continue
+				sys.exit(1)
 			current.children[w[1]]=nl
 			current=nl
 		obstack.append(current)
