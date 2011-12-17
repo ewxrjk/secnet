@@ -267,12 +267,12 @@ class sitelevel(level):
 	 'networks':None,
 	 'peer':None,
 	 'pubkey':(lambda n,v:"key %s;\n"%v),
+	 'address':None,
 	 'mobile':sp,
 	})
 	require_properties={
 	 'dh':"Diffie-Hellman group",
 	 'contact':"Site admin contact address",
-	 'address':"Site external access address",
 	 'networks':"Networks claimed by the site",
 	 'hash':"hash function",
 	 'peer':"Gateway address of the site",
