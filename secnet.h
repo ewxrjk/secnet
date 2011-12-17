@@ -420,10 +420,11 @@ struct transform_if {
 typedef void netlink_deliver_fn(void *st, struct buffer_if *buf);
 /* site code can tell netlink when outgoing packets will be dropped,
    so netlink can generate appropriate ICMP and make routing decisions */
-#define LINK_QUALITY_DOWN 0   /* No chance of a packet being delivered */
-#define LINK_QUALITY_DOWN_STALE_ADDRESS 1 /* Link down, old address information */
-#define LINK_QUALITY_DOWN_CURRENT_ADDRESS 2 /* Link down, current address information */
-#define LINK_QUALITY_UP 3     /* Link active */
+#define LINK_QUALITY_UNUSED 0   /* This link is unused, do not make this netlink */
+#define LINK_QUALITY_DOWN 1   /* No chance of a packet being delivered right away*/
+#define LINK_QUALITY_DOWN_STALE_ADDRESS 2 /* Link down, old address information */
+#define LINK_QUALITY_DOWN_CURRENT_ADDRESS 3 /* Link down, current address information */
+#define LINK_QUALITY_UP 4     /* Link active */
 #define MAXIMUM_LINK_QUALITY 3
 typedef void netlink_link_quality_fn(void *st, uint32_t quality);
 typedef void netlink_register_fn(void *st, netlink_deliver_fn *deliver,

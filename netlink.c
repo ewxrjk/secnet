@@ -909,7 +909,7 @@ static closure_t *netlink_inst_create(struct netlink *st,
     c->deliver=NULL;
     c->dst=NULL;
     c->name=name;
-    c->link_quality=LINK_QUALITY_DOWN;
+    c->link_quality=LINK_QUALITY_UNUSED;
     c->mtu=mtu?mtu:st->mtu;
     c->options=options;
     c->outcount=0;
