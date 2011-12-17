@@ -391,8 +391,10 @@ def pline(i,allow_include=False):
 
 def pfilepath(pathname,allow_include=False):
 	f=open(pathname)
-	pfile(pathname,f.readlines(),allow_include=allow_include)
+	lines=f.readlines()
+	pfile(pathname,lines,allow_include=allow_include)
 	f.close()
+	return lines
 
 def pfile(name,lines,allow_include=False):
 	"Process a file"
@@ -465,7 +467,7 @@ else:
 		if not ok:
 			print "caller not in group %s"%group
 			sys.exit(1)
-		pfilepath(header,allow_include=True)
+		headerinput=pfilepath(header,allow_include=True)
 		userinput=sys.stdin.readlines()
 		pfile("user input",userinput)
 	else:
