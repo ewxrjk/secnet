@@ -327,30 +327,24 @@ struct subnet_list *ipset_to_subnet_list(struct ipset *is)
 char *ipaddr_to_string(uint32_t addr)
 {
     uint8_t a,b,c,d;
-    char *s;
 
-    s=safe_malloc(16,"ipaddr_to_string");
     a=addr>>24;
     b=addr>>16;
     c=addr>>8;
     d=addr;
-    snprintf(s, 16, "%d.%d.%d.%d", a, b, c, d);
-    return s;
+    return safe_asprintf("%d.%d.%d.%d", a, b, c, d);
 }
 
 char *subnet_to_string(struct subnet sn)
 {
     uint32_t addr=sn.prefix;
     uint8_t a,b,c,d;
-    char *s;
 
-    s=safe_malloc(19,"subnet_to_string");
     a=addr>>24;
     b=addr>>16;
     c=addr>>8;
     d=addr;
-    snprintf(s, 19, "%d.%d.%d.%d/%d", a, b, c, d, sn.len);
-    return s;
+    return safe_asprintf("%d.%d.%d.%d/%d", a, b, c, d, sn.len);
 }
 
 static struct subnet string_item_to_subnet(item_t *i, const char *desc,

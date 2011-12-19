@@ -1402,9 +1402,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
 				       log_event_table,"site");
 
-    st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
-			    "site_apply");
-    sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
+    st->tunname = safe_asprintf("%s<->%s",st->localname,st->remotename);
 
     /* The information we expect to see in incoming messages of type 1 */
     /* fixme: lots of unchecked overflows here, but the results are only

@@ -28,6 +28,7 @@
  *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
  */
 
+#define _GNU_SOURCE
 #include "secnet.h"
 #include <stdio.h>
 #include <string.h>
@@ -79,6 +80,19 @@ void *safe_malloc_ary(size_t size, size_t count, const char *message) {
 	fatal("array allocation overflow: %s", message);
     }
     return safe_malloc(size*count, message);
+}
+
+char *safe_asprintf(const char *format, ...) {
+    va_list ap;
+    char *ptr;
+    int n;
+    
+    va_start(ap, format);
+    n = vasprintf(&ptr, format, ap);
+    va_end(ap);
+    if (n < 0)
+	fatal_perror("asprintf");
+    return ptr;
 }
 
 /* Convert a buffer into its MP_INT representation */

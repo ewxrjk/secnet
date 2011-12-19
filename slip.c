@@ -250,8 +250,7 @@ static void userv_invoke_userv(struct userv *st)
     /* This is where we actually invoke userv - all the networks we'll
        be using should already have been registered. */
 
-    addrs=safe_malloc(512,"userv_invoke_userv:addrs");
-    snprintf(addrs,512,"%s,%s,%d,slip",
+    addrs=safe_asprintf("%s,%s,%d,slip",
 	     ipaddr_to_string(st->slip.local_address),
 	     ipaddr_to_string(st->slip.nl.secnet_address),st->slip.nl.mtu);
 

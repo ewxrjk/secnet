@@ -143,7 +143,7 @@ extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
 extern char *safe_strdup(const char *string, const char *message);
 extern void *safe_malloc(size_t size, const char *message);
 extern void *safe_malloc_ary(size_t size, size_t count, const char *message);
-
+extern char *safe_asprintf(const char *format, ...);
 #define NEW(WHAT, MESSAGE) ((WHAT) = safe_malloc(sizeof *(WHAT), MESSAGE))
 #define NEWARRAY(WHAT, N, MESSAGE) ((WHAT) = safe_malloc_ary(sizeof *(WHAT), (N), MESSAGE))
 

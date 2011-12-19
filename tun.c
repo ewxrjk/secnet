@@ -254,16 +254,12 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 
     if (st->tun_flavour==TUN_FLAVOUR_BSD) {
 	if (st->search_for_if) {
-	    char *dname;
 	    int i;
-
-	    dname=safe_malloc(strlen(st->device_path)+4,"tun_old_apply");
-	    st->interface_name=safe_malloc(8,"tun_phase_hook");
 	
 	    for (i=0; i<255; i++) {
-		sprintf(dname,"%s%d",st->device_path,i);
+		char *dname = safe_asprintf("%s%d",st->device_path,i);
 		if ((st->fd=open(dname,O_RDWR))>0) {
-		    sprintf(st->interface_name,"tun%d",i);
+		    st->interface_name = safe_asprintf("tun%d",i);
 		    Message(M_INFO,"%s: allocated network interface %s "
 			    "through %s\n",st->nl.name,st->interface_name,
 			    dname);
@@ -301,8 +297,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	    fatal_perror("%s: ioctl(TUNSETIFF)",st->nl.name);
 	}
 	if (!st->interface_name) {
-	    st->interface_name=safe_malloc(strlen(ifr.ifr_name)+1,"tun_apply");
-	    strcpy(st->interface_name,ifr.ifr_name);
+	    st->interface_name=safe_strdup(ifr.ifr_name,"tun_apply");
 	    Message(M_INFO,"%s: allocated network interface %s\n",st->nl.name,
 		    st->interface_name);
 	}
@@ -334,8 +329,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	if (ioctl(ip_fd, I_LINK, if_fd) < 0) {
 	    fatal_perror("%s: can't link TUN device to IP",st->nl.name);
 	}
-	st->interface_name=safe_malloc(10,"tun_apply");
-	sprintf(st->interface_name,"tun%d",ppa);
+	st->interface_name=safe_asprintf("tun%d",ppa);
 	st->fd=tun_fd;
 #else
 	fatal("tun_phase_hook: TUN_FLAVOUR_STREAMS unexpected");
