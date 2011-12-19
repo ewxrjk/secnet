@@ -190,7 +190,7 @@ bool_t add_hook(uint32_t phase, hook_fn *fn, void *state)
 {
     struct phase_hook *h;
 
-    h=safe_malloc(sizeof(*h),"add_hook");
+    NEW(h,"add_hook");
     h->fn=fn;
     h->state=state;
     h->next=hooks[phase];
@@ -309,7 +309,7 @@ static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
     bool_t lockdown=False;
     uint32_t len=DEFAULT_BUFFER_SIZE;
     
-    st=safe_malloc(sizeof(*st),"buffer_apply");
+    NEW(st,"buffer_apply");
     st->cl.description="buffer";
     st->cl.type=CL_BUFFER;
     st->cl.apply=NULL;

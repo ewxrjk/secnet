@@ -42,7 +42,7 @@ static struct p_node *leafnode(uint32_t type)
 {
 	struct p_node *r;
 
-	r=safe_malloc(sizeof(*r),"leafnode");
+	NEW(r, "leafnode");
 	r->type=type;
 	r->loc.file=config_file;
 	r->loc.line=config_lineno;

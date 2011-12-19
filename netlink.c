@@ -769,8 +769,7 @@ static void netlink_phase_hook(void *sst, uint32_t new_phase)
     /* All the networks serviced by the various tunnels should now
      * have been registered.  We build a routing table by sorting the
      * clients by priority.  */
-    st->routes=safe_malloc_ary(sizeof(*st->routes),st->n_clients,
-			       "netlink_phase_hook");
+    NEWARRAY(st->routes,st->n_clients,"netlink_phase_hook");
     /* Fill the table */
     i=0;
     for (c=st->clients; c; c=c->next) {
@@ -889,7 +888,7 @@ static closure_t *netlink_inst_create(struct netlink *st,
 	return NULL;
     }
 
-    c=safe_malloc(sizeof(*c),"netlink_inst_create");
+    NEW(c,"netlink_inst_create");
     c->cl.description=name;
     c->cl.type=CL_NETLINK;
     c->cl.apply=NULL;
@@ -1060,7 +1059,7 @@ static list_t *null_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *item;
     dict_t *dict;
 
-    st=safe_malloc(sizeof(*st),"null_apply");
+    NEW(st,"null_apply");
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict)

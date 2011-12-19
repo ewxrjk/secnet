@@ -216,7 +216,7 @@ struct log_if *init_log(list_t *ll)
 	if (cl->type!=CL_LOG) {
 	    cfgfatal(item->loc,"init_log","closure is not a logger");
 	}
-	n=safe_malloc(sizeof(*n),"init_log");
+	NEW(n,"init_log");
 	n->l=cl->interface;
 	n->next=l;
 	l=n;
@@ -224,7 +224,7 @@ struct log_if *init_log(list_t *ll)
     if (!l) {
 	fatal("init_log: no log");
     }
-    r=safe_malloc(sizeof(*r), "init_log");
+    NEW(r, "init_log");
     r->st=l;
     r->log=log_multi;
     r->vlog=log_vmulti;
@@ -333,7 +333,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
        phase.  We should defer writing into the logfile until after we
        become a daemon. */
     
-    st=safe_malloc(sizeof(*st),"logfile_apply");
+    NEW(st,"logfile_apply");
     st->cl.description="logfile";
     st->cl.type=CL_LOG;
     st->cl.apply=NULL;
@@ -450,7 +450,7 @@ static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *item;
     char *facstr;
 
-    st=safe_malloc(sizeof(*st),"syslog_apply");
+    NEW(st,"syslog_apply");
     st->cl.description="syslog";
     st->cl.type=CL_LOG;
     st->cl.apply=NULL;
@@ -542,7 +542,7 @@ void log_from_fd(int fd, const char *prefix, struct log_if *log)
 {
     struct fdlog *st;
 
-    st=safe_malloc(sizeof(*st),"log_from_fd");
+    NEW(st,"log_from_fd");
     st->log=log;
     st->fd=fd;
     st->prefix=prefix;

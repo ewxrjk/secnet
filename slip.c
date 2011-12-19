@@ -265,7 +265,7 @@ static void userv_invoke_userv(struct userv *st)
     }
     snets=ipset_to_subnet_list(allnets);
     ipset_free(allnets);
-    nets=safe_malloc(20*snets->entries,"userv_invoke_userv:nets");
+    nets=safe_malloc_ary(snets->entries,20,"userv_invoke_userv:nets");
     *nets=0;
     for (i=0; i<snets->entries; i++) {
 	s=subnet_to_string(snets->list[i]);
@@ -291,7 +291,7 @@ static void userv_invoke_userv(struct userv *st)
     st->txfd=c_stdin[1];
     st->rxfd=c_stdout[0];
 
-    er=safe_malloc(sizeof(*r),"userv_invoke_userv: er");
+    NEW(er,"userv_invoke_userv: er");
 
     er->in=c_stdin[0];
     er->out=c_stdout[1];
@@ -301,7 +301,7 @@ static void userv_invoke_userv(struct userv *st)
        service-name
        local-addr,secnet-addr,mtu,protocol
        route1,route2,... */
-    er->argv=safe_malloc(sizeof(*er->argv)*6,"userv_invoke_userv:argv");
+    NEWARRAY(er->argv,6,"userv_invoke_userv:argv");
     er->argv[0]=st->userv_path;
     er->argv[1]=st->service_user;
     er->argv[2]=st->service_name;
@@ -373,7 +373,7 @@ static list_t *userv_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *item;
     dict_t *dict;
 
-    st=safe_malloc(sizeof(*st),"userv_apply");
+    NEW(st,"userv_apply");
 
     /* First parameter must be a dict */
     item=list_elem(args,0);

@@ -144,6 +144,9 @@ extern char *safe_strdup(const char *string, const char *message);
 extern void *safe_malloc(size_t size, const char *message);
 extern void *safe_malloc_ary(size_t size, size_t count, const char *message);
 
+#define NEW(WHAT, MESSAGE) ((WHAT) = safe_malloc(sizeof *(WHAT), MESSAGE))
+#define NEWARRAY(WHAT, N, MESSAGE) ((WHAT) = safe_malloc_ary(sizeof *(WHAT), (N), MESSAGE))
+
 extern int sys_cmd(const char *file, const char *argc, ...);
 
 extern uint64_t now_global;

@@ -63,7 +63,7 @@ static list_t *dh_apply(closure_t *self, struct cloc loc, dict_t *context,
     char *p,*g;
     item_t *i;
 
-    st=safe_malloc(sizeof(*st),"dh_apply");
+    NEW(st,"dh_apply");
     st->cl.description="dh";
     st->cl.type=CL_DH;
     st->cl.apply=NULL;

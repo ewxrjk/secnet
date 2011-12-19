@@ -45,7 +45,7 @@ static bool_t resolve_request(void *sst, const char *name,
 	return True;
     }
 
-    q=safe_malloc(sizeof *q,"resolve_request");
+    NEW(q,"resolve_request");
     q->cst=cst;
     q->answer=cb;
 
@@ -105,7 +105,7 @@ static list_t *adnsresolver_apply(closure_t *self, struct cloc loc,
     item_t *i;
     char *conf;
 
-    st=safe_malloc(sizeof(*st),"adnsresolver_apply");
+    NEW(st,"adnsresolver_apply");
     st->cl.description="adns";
     st->cl.type=CL_RESOLVER;
     st->cl.apply=NULL;

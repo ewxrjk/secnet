@@ -158,7 +158,7 @@ static void request_notify(void *commst, void *nst, comm_notify_fn *fn)
     struct udp *st=commst;
     struct notify_list *n;
     
-    n=safe_malloc(sizeof(*n),"request_notify");
+    NEW(n,"request_notify");
     n->fn=fn;
     n->state=nst;
     n->next=st->notify;
@@ -281,7 +281,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     list_t *l;
     uint32_t a;
 
-    st=safe_malloc(sizeof(*st),"udp_apply(st)");
+    NEW(st,"udp_apply(st)");
     st->loc=loc;
     st->cl.description="udp";
     st->cl.type=CL_COMM;

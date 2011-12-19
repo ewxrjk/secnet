@@ -288,7 +288,7 @@ static void *sha1_init(void)
 {
     SHA1_CTX *ctx;
 
-    ctx=safe_malloc(sizeof(*ctx),"sha1_init");
+    NEW(ctx,"sha1_init");
     SHA1Init(ctx);
 
     return ctx;
@@ -329,7 +329,7 @@ void sha1_module(dict_t *dict)
     uint8_t digest[20];
     int i;
 
-    st=safe_malloc(sizeof(*st),"sha1_module");
+    NEW(st,"sha1_module");
     st->cl.description="sha1";
     st->cl.type=CL_HASH;
     st->cl.apply=NULL;

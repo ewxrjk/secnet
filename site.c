@@ -1291,7 +1291,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     dict_t *dict;
     int i;
 
-    st=safe_malloc(sizeof(*st),"site_apply");
+    NEW(st,"site_apply");
 
     st->cl.description="site";
     st->cl.type=CL_SITE;
@@ -1341,7 +1341,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     list_t *comms_cfg=dict_lookup(dict,"comm");
     if (!comms_cfg) cfgfatal(loc,"site","closure list \"comm\" not found");
     st->ncomms=list_length(comms_cfg);
-    st->comms=safe_malloc_ary(sizeof(*st->comms),st->ncomms,"comms");
+    NEWARRAY(st->comms,st->ncomms,"comms");
     assert(st->ncomms);
     for (i=0; i<st->ncomms; i++) {
 	item_t *item=list_elem(comms_cfg,i);

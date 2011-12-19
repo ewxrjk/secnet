@@ -241,7 +241,7 @@ static void *md5_init(void)
 {
     struct MD5Context *ctx;
 
-    ctx=safe_malloc(sizeof(*ctx),"md5_init");
+    NEW(ctx,"md5_init");
     MD5Init(ctx);
 
     return ctx;
@@ -278,7 +278,7 @@ void md5_module(dict_t *dict)
     uint8_t digest[16];
     int i;
 
-    st=safe_malloc(sizeof(*st),"md5_module");
+    NEW(st,"md5_module");
     st->cl.description="md5";
     st->cl.type=CL_HASH;
     st->cl.apply=NULL;

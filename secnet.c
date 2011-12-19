@@ -232,7 +232,7 @@ void register_for_poll(void *st, beforepoll_fn *before,
 {
     struct poll_interest *i;
 
-    i=safe_malloc(sizeof(*i),"register_for_poll");
+    NEW(i,"register_for_poll");
     i->before=before;
     i->after=after;
     i->state=st;
@@ -299,7 +299,7 @@ static void run(void)
     int timeout;
     struct pollfd *fds;
 
-    fds=safe_malloc(sizeof(*fds)*total_nfds, "run");
+    NEWARRAY(fds,total_nfds, "run");
 
     Message(M_NOTICE,"%s [%d]: starting\n",version,secnet_pid);
 

@@ -261,7 +261,7 @@ static struct transform_inst_if *transform_create(void *sst)
     struct transform_inst *ti;
     struct transform *st=sst;
 
-    ti=safe_malloc(sizeof(*ti),"transform_create");
+    NEW(ti,"transform_create");
     /* mlock XXX */
 
     ti->ops.st=ti;
@@ -283,7 +283,7 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
     item_t *item;
     dict_t *dict;
 
-    st=safe_malloc(sizeof(*st),"serpent");
+    NEW(st,"serpent");
     st->cl.description="serpent-cbc256";
     st->cl.type=CL_TRANSFORM;
     st->cl.apply=NULL;

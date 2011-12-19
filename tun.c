@@ -445,7 +445,7 @@ static list_t *tun_create(closure_t *self, struct cloc loc, dict_t *context,
     dict_t *dict;
     char *flavour,*type;
 
-    st=safe_malloc(sizeof(*st),"tun_apply");
+    NEW(st,"tun_apply");
 
     /* First parameter must be a dict */
     item=list_elem(args,0);
