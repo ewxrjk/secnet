@@ -242,6 +242,8 @@ static void userv_invoke_userv(struct userv *st)
     struct subnet_list *snets;
     int i, nread;
     uint8_t confirm;
+    char *la, *sa;
+    struct dynstr d[1];
 
     if (st->pid) {
 	fatal("userv_invoke_userv: already running");
@@ -250,9 +252,12 @@ static void userv_invoke_userv(struct userv *st)
     /* This is where we actually invoke userv - all the networks we'll
        be using should already have been registered. */
 
+    la = ipaddr_to_string(st->slip.local_address);
+    sa = ipaddr_to_string(st->slip.nl.secnet_address);
     addrs=safe_asprintf("%s,%s,%d,slip",
-	     ipaddr_to_string(st->slip.local_address),
-	     ipaddr_to_string(st->slip.nl.secnet_address),st->slip.nl.mtu);
+			la,sa,st->slip.nl.mtu);
+    free(la);
+    free(sa);
 
     allnets=ipset_new();
     for (r=st->slip.nl.clients; r; r=r->next) {
@@ -264,15 +269,15 @@ static void userv_invoke_userv(struct userv *st)
     }
     snets=ipset_to_subnet_list(allnets);
     ipset_free(allnets);
-    nets=safe_malloc_ary(snets->entries,20,"userv_invoke_userv:nets");
-    *nets=0;
+    dynstr_init(d);
     for (i=0; i<snets->entries; i++) {
 	s=subnet_to_string(snets->list[i]);
-	strcat(nets,s);
-	strcat(nets,",");
+	dynstr_append(d, s);
+	dynstr_append(d, ",");
 	free(s);
     }
-    nets[strlen(nets)-1]=0;
+    dynstr_terminate(d);
+    nets = d->buffer;
     subnet_list_free(snets);
 
     Message(M_INFO,"%s: about to invoke: %s %s %s %s %s\n",st->slip.nl.name,

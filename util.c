@@ -95,6 +95,18 @@ char *safe_asprintf(const char *format, ...) {
     return ptr;
 }
 
+
+void dynstr_expand(struct dynstr *d, size_t n) {
+    size_t newsize = d->size ? d->size : 32;
+    while(newsize && newsize < n)
+	newsize *= 2;
+    if(!newsize)
+	fatal("dynamic string too large");
+    if(!(d->buffer = realloc(d->buffer, newsize)))
+	fatal_perror("dynstr_expand: realloc");
+    d->size = newsize; 
+}
+
 /* Convert a buffer into its MP_INT representation */
 void read_mpbin(MP_INT *a, uint8_t *bin, int binsize)
 {

@@ -3,6 +3,7 @@
 
 #include "secnet.h"
 #include <gmp.h>
+#include <string.h>
 
 #include "hackypar.h"
 
@@ -37,5 +38,39 @@ extern char *write_mpstring(MP_INT *a);
 extern int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen);
 
 extern struct log_if *init_log(list_t *loglist);
+
+/* Dynamic string */
+
+struct dynstr {
+    char *buffer;
+    size_t pos, size;
+};
+
+extern void dynstr_expand(struct dynstr *d, size_t n);
+
+static inline void dynstr_init(struct dynstr *d) {
+    d->buffer = NULL;
+    d->pos = d->size = 0;
+}
+
+static inline void dynstr_need(struct dynstr *d, size_t n) {
+    if(n > d->size)
+	dynstr_expand(d, n);
+}
+
+static inline void dynstr_append_n(struct dynstr *d, const char *s, size_t n) {
+    dynstr_need(d, d->pos + n + 1);
+    memcpy(d->buffer + d->pos, s, n);
+    d->pos += n;
+}
+
+static inline void dynstr_append(struct dynstr *d, const char *s) {
+    dynstr_append_n(d, s, strlen(s));
+}
+
+static inline void dynstr_terminate(struct dynstr *d) {
+    dynstr_need(d, d->pos + 10);
+    d->buffer[d->pos] = 0;
+}
 
 #endif /* util_h */
