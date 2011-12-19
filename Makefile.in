@@ -37,7 +37,7 @@ CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
 	-Wmissing-declarations -Wnested-externs -Wredundant-decls \
 	-Wpointer-arith -Wformat=2 -Winit-self \
 	-Wswitch-enum -Wunused-variable -Wbad-function-cast \
-	-Wno-strict-aliasing -fno-strict-aliasing
+	-Wno-strict-aliasing -fno-strict-aliasing -Wno-unused-parameter
 ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS)
 CPPFLAGS:=@CPPFLAGS@
 LDFLAGS:=@LDFLAGS@
