@@ -12,10 +12,10 @@ struct dh {
     MP_INT p,g; /* prime modulus and generator */
 };
 
-static string_t dh_makepublic(void *sst, uint8_t *secret, int32_t secretlen)
+static char *dh_makepublic(void *sst, uint8_t *secret, int32_t secretlen)
 {
     struct dh *st=sst;
-    string_t r;
+    char *r;
     MP_INT a, b; /* a is secret key, b is public key */
 
     mpz_init(&a);
@@ -34,7 +34,7 @@ static string_t dh_makepublic(void *sst, uint8_t *secret, int32_t secretlen)
 
 static dh_makeshared_fn dh_makeshared;
 static void dh_makeshared(void *sst, uint8_t *secret, int32_t secretlen,
-			  cstring_t rempublic, uint8_t *sharedsecret,
+			  const char *rempublic, uint8_t *sharedsecret,
 			  int32_t buflen)
 {
     struct dh *st=sst;
@@ -60,7 +60,7 @@ static list_t *dh_apply(closure_t *self, struct cloc loc, dict_t *context,
 			list_t *args)
 {
     struct dh *st;
-    string_t p,g;
+    char *p,*g;
     item_t *i;
 
     st=safe_malloc(sizeof(*st),"dh_apply");

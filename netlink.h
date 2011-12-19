@@ -21,7 +21,7 @@ struct netlink_client {
 			  networks. */
     netlink_deliver_fn *deliver;
     void *dst;
-    string_t name;
+    char *name;
     uint32_t link_quality;
     int32_t mtu;
     uint32_t options;
@@ -40,7 +40,7 @@ typedef bool_t netlink_route_fn(void *cst, struct netlink_client *routes);
 struct netlink {
     closure_t cl;
     void *dst; /* Pointer to host interface state */
-    cstring_t name;
+    const char *name;
     int32_t max_start_pad;
     int32_t max_end_pad;
     struct ipset *networks; /* Local networks */
@@ -62,7 +62,7 @@ struct netlink {
 
 extern netlink_deliver_fn *netlink_init(struct netlink *st,
 					void *dst, struct cloc loc,
-					dict_t *dict, cstring_t description,
+					dict_t *dict, const char *description,
 					netlink_route_fn *set_routes,
 					netlink_deliver_fn *to_host);
 

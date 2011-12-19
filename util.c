@@ -161,7 +161,7 @@ int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen)
     return i;
 }
 
-static const char *phases[NR_PHASES]={
+static const char *const phases[NR_PHASES]={
     "PHASE_INIT",
     "PHASE_GETOPTS",
     "PHASE_READCONFIG",
@@ -224,7 +224,7 @@ struct buffer {
     struct buffer_if ops;
 };
 
-void buffer_assert_free(struct buffer_if *buffer, cstring_t file,
+void buffer_assert_free(struct buffer_if *buffer, const char *file,
 			int line)
 {
     if (!buffer->free) {
@@ -233,7 +233,7 @@ void buffer_assert_free(struct buffer_if *buffer, cstring_t file,
     }
 }
 
-void buffer_assert_used(struct buffer_if *buffer, cstring_t file,
+void buffer_assert_used(struct buffer_if *buffer, const char *file,
 			int line)
 {
     if (buffer->free) {
@@ -277,7 +277,7 @@ void *buf_unprepend(struct buffer_if *buf, int32_t amount) {
 
 /* Append a two-byte length and the string to the buffer. Length is in
    network byte order. */
-void buf_append_string(struct buffer_if *buf, cstring_t s)
+void buf_append_string(struct buffer_if *buf, const char *s)
 {
     size_t len;
 

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "secnet.h"
 
-typedef cstring_t atom_t;
+typedef const char *atom_t;
 
 /* Parse tree for configuration file */
 
@@ -30,20 +30,20 @@ struct p_node {
     struct cloc loc;
     union {
 	atom_t key;
-	string_t string;
+	char *string;
 	uint32_t number;
     } data;
     struct p_node *l;
     struct p_node *r;
 };
 
-extern cstring_t config_file;
+extern const char *config_file;
 extern int config_lineno;
 extern int yynerrs;
 
 /* Keys in dictionaries are 'atoms', which are constructed from strings
    using this call. Atoms may be compared using '=='. */
-extern atom_t intern(cstring_t string);
+extern atom_t intern(const char *string);
 
 extern struct p_node *parse_conffile(FILE *conffile);
 

@@ -24,7 +24,7 @@ struct query {
 };
 
 static resolve_request_fn resolve_request;
-static bool_t resolve_request(void *sst, cstring_t name,
+static bool_t resolve_request(void *sst, const char *name,
 			      resolve_answer_fn *cb, void *cst)
 {
     struct adns *st=sst;
@@ -103,7 +103,7 @@ static list_t *adnsresolver_apply(closure_t *self, struct cloc loc,
     struct adns *st;
     dict_t *d;
     item_t *i;
-    string_t conf;
+    char *conf;
 
     st=safe_malloc(sizeof(*st),"adnsresolver_apply");
     st->cl.description="adns";

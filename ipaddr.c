@@ -73,7 +73,7 @@ void ipset_free(struct ipset *a)
 }
 
 #ifdef DEBUG
-static void ipset_dump(struct ipset *a, string_t name)
+static void ipset_dump(struct ipset *a, char *name)
 {
     int32_t i;
 
@@ -324,10 +324,10 @@ struct subnet_list *ipset_to_subnet_list(struct ipset *is)
 }
 
 /* The string buffer must be at least 16 bytes long */
-string_t ipaddr_to_string(uint32_t addr)
+char *ipaddr_to_string(uint32_t addr)
 {
     uint8_t a,b,c,d;
-    string_t s;
+    char *s;
 
     s=safe_malloc(16,"ipaddr_to_string");
     a=addr>>24;
@@ -338,11 +338,11 @@ string_t ipaddr_to_string(uint32_t addr)
     return s;
 }
 
-string_t subnet_to_string(struct subnet sn)
+char *subnet_to_string(struct subnet sn)
 {
     uint32_t addr=sn.prefix;
     uint8_t a,b,c,d;
-    string_t s;
+    char *s;
 
     s=safe_malloc(19,"subnet_to_string");
     a=addr>>24;
@@ -353,13 +353,13 @@ string_t subnet_to_string(struct subnet sn)
     return s;
 }
 
-static struct subnet string_item_to_subnet(item_t *i, cstring_t desc,
+static struct subnet string_item_to_subnet(item_t *i, const char *desc,
 					   bool_t *invert)
 {
     struct subnet s;
     uint32_t a, b, c, d, n;
     int match;
-    cstring_t in;
+    const char *in;
 
     *invert=False;
 
@@ -404,7 +404,7 @@ static struct subnet string_item_to_subnet(item_t *i, cstring_t desc,
     return s;
 }
 
-uint32_t string_item_to_ipaddr(item_t *i, cstring_t desc)
+uint32_t string_item_to_ipaddr(item_t *i, const char *desc)
 {
     uint32_t a, b, c, d;
     int match;
@@ -426,7 +426,7 @@ uint32_t string_item_to_ipaddr(item_t *i, cstring_t desc)
 }
 
 struct ipset *string_list_to_ipset(list_t *l, struct cloc loc,
-				   cstring_t module, cstring_t param)
+				   const char *module, const char *param)
 {
     struct ipset *r, *n, *isn;
     uint32_t e,i;

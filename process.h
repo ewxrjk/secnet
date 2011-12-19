@@ -9,7 +9,7 @@ typedef void process_entry_fn(void *cst);
 typedef void signal_notify_fn(void *cst, int signum);
 
 extern pid_t makesubproc(process_entry_fn *entry, process_callback_fn *cb,
-			void *est, void *cbst, cstring_t desc);
+			void *est, void *cbst, const char *desc);
 
 extern void request_signal_notification(int signum, signal_notify_fn *notify,
 					void *cst);

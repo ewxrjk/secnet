@@ -414,7 +414,7 @@ static list_t *readfile(closure_t *self, struct cloc loc,
 			dict_t *context, list_t *args)
 {
     FILE *f;
-    string_t filename;
+    char *filename;
     long length;
     item_t *r;
 
@@ -508,7 +508,7 @@ static dict_t *process_config(struct p_node *c)
 
 /***** Externally accessible functions */
 
-atom_t intern(cstring_t s)
+atom_t intern(const char *s)
 {
     struct atomlist *i;
 
@@ -526,22 +526,22 @@ atom_t intern(cstring_t s)
     return i->a;
 }
 
-list_t *dict_lookup(dict_t *dict, cstring_t key)
+list_t *dict_lookup(dict_t *dict, const char *key)
 {
     return dict_ilookup(dict, intern(key));
 }
 
-list_t *dict_lookup_primitive(dict_t *dict, cstring_t key)
+list_t *dict_lookup_primitive(dict_t *dict, const char *key)
 {
     return dict_ilookup_primitive(dict, intern(key));
 }
 
-void dict_add(dict_t *dict, cstring_t key, list_t *val)
+void dict_add(dict_t *dict, const char *key, list_t *val)
 {
     dict_iadd(dict,intern(key),val);
 }
 
-cstring_t *dict_keys(dict_t *dict)
+const char **dict_keys(dict_t *dict)
 {
     atom_t *r, *j;
     struct entry *i;
@@ -624,7 +624,7 @@ list_t *new_closure(closure_t *cl)
     return list_append(NULL,i);
 }
 
-void add_closure(dict_t *dict, cstring_t name, apply_fn apply)
+void add_closure(dict_t *dict, const char *name, apply_fn apply)
 {
     closure_t *c;
     c=safe_malloc(sizeof(*c),"add_closure");
@@ -636,8 +636,8 @@ void add_closure(dict_t *dict, cstring_t name, apply_fn apply)
     dict_add(dict,name,new_closure(c));
 }
 
-void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
-		 bool_t fail_if_invalid, cstring_t desc, struct cloc loc)
+void *find_cl_if(dict_t *dict, const char *name, uint32_t type,
+		 bool_t fail_if_invalid, const char *desc, struct cloc loc)
 {
     item_t *i;
     closure_t *cl;
@@ -656,8 +656,8 @@ void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
 }
 
 /* Convenience functions for modules reading configuration dictionaries */
-item_t *dict_find_item(dict_t *dict, cstring_t key, bool_t required,
-		       cstring_t desc, struct cloc loc)
+item_t *dict_find_item(dict_t *dict, const char *key, bool_t required,
+		       const char *desc, struct cloc loc)
 {
     list_t *l;
     item_t *i;
@@ -673,11 +673,11 @@ item_t *dict_find_item(dict_t *dict, cstring_t key, bool_t required,
     return i;
 }
 
-string_t dict_read_string(dict_t *dict, cstring_t key, bool_t required,
-			  cstring_t desc, struct cloc loc)
+char *dict_read_string(dict_t *dict, const char *key, bool_t required,
+		       const char *desc, struct cloc loc)
 {
     item_t *i;
-    string_t r;
+    char *r;
 
     i=dict_find_item(dict,key,required,desc,loc);
     if (!i) return NULL;
@@ -691,8 +691,8 @@ string_t dict_read_string(dict_t *dict, cstring_t key, bool_t required,
     return r;
 }
 
-uint32_t dict_read_number(dict_t *dict, cstring_t key, bool_t required,
-			  cstring_t desc, struct cloc loc, uint32_t def)
+uint32_t dict_read_number(dict_t *dict, const char *key, bool_t required,
+			  const char *desc, struct cloc loc, uint32_t def)
 {
     item_t *i;
     uint32_t r;
@@ -709,8 +709,8 @@ uint32_t dict_read_number(dict_t *dict, cstring_t key, bool_t required,
     return r;
 }
 
-bool_t dict_read_bool(dict_t *dict, cstring_t key, bool_t required,
-		      cstring_t desc, struct cloc loc, bool_t def)
+bool_t dict_read_bool(dict_t *dict, const char *key, bool_t required,
+		      const char *desc, struct cloc loc, bool_t def)
 {
     item_t *i;
     bool_t r;
@@ -724,8 +724,8 @@ bool_t dict_read_bool(dict_t *dict, cstring_t key, bool_t required,
     return r;
 }
 
-uint32_t string_to_word(cstring_t s, struct cloc loc,
-			struct flagstr *f, cstring_t desc)
+uint32_t string_to_word(const char *s, struct cloc loc,
+			struct flagstr *f, const char *desc)
 {
     struct flagstr *j;
     for (j=f; j->name; j++)
@@ -735,7 +735,7 @@ uint32_t string_to_word(cstring_t s, struct cloc loc,
     return 0;
 }
 
-uint32_t string_list_to_word(list_t *l, struct flagstr *f, cstring_t desc)
+uint32_t string_list_to_word(list_t *l, struct flagstr *f, const char *desc)
 {
     list_t *i;
     uint32_t r=0;

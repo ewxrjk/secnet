@@ -49,7 +49,7 @@ static list_t *random_apply(closure_t *self, struct cloc loc,
 {
     struct rgen_data *st;
     item_t *arg1, *arg2;
-    string_t filename=NULL;
+    char *filename=NULL;
 
     st=safe_malloc(sizeof(*st),"random_apply");
 

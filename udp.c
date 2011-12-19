@@ -41,7 +41,7 @@ struct udp {
     uint32_t addr;
     uint16_t port;
     int fd;
-    string_t authbind;
+    char *authbind;
     struct buffer_if *rbuf;
     struct notify_list *notify;
     bool_t use_proxy;

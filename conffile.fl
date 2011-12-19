@@ -30,13 +30,13 @@ do{									\
 struct include_stack_item {
 	YY_BUFFER_STATE bst;
 	int lineno;
-	cstring_t file;
+	const char *file;
 };
 struct include_stack_item include_stack[MAX_INCLUDE_DEPTH];
 int include_stack_ptr=0;
 
 int config_lineno=0;
-cstring_t config_file="xxx";
+const char *config_file="xxx";
 
 static struct p_node *leafnode(uint32_t type)
 {
@@ -58,7 +58,7 @@ static struct p_node *keynode(atom_t key)
 	return r;
 }
 
-static struct p_node *stringnode(string_t string)
+static struct p_node *stringnode(char *string)
 {
 	struct p_node *r;
 	r=leafnode(T_STRING);
@@ -68,7 +68,7 @@ static struct p_node *stringnode(string_t string)
 	return r;
 }
 
-static struct p_node *numnode(string_t number)
+static struct p_node *numnode(char *number)
 {
 	struct p_node *r;
 	unsigned long n;

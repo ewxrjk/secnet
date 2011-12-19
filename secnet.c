@@ -30,7 +30,7 @@ static gid_t gid;
 bool_t background=True;
 static char *pidfile=NULL;
 bool_t require_root_privileges=False;
-cstring_t require_root_privileges_explanation=NULL;
+const char *require_root_privileges_explanation=NULL;
 
 static pid_t secnet_pid;
 
@@ -41,7 +41,7 @@ struct poll_interest {
     void *state;
     int32_t max_nfds;
     int32_t nfds;
-    cstring_t desc;
+    const char *desc;
     struct poll_interest *next;
 };
 static struct poll_interest *reg=NULL;
@@ -228,7 +228,7 @@ static void setup(dict_t *config)
 }
 
 void register_for_poll(void *st, beforepoll_fn *before,
-		       afterpoll_fn *after, int32_t max_nfds, cstring_t desc)
+		       afterpoll_fn *after, int32_t max_nfds, const char *desc)
 {
     struct poll_interest *i;
 
@@ -431,7 +431,7 @@ static signal_notify_fn finish,ignore_hup;
 static void finish(void *st, int signum)
 {
     finished=True;
-    Message(M_NOTICE,"%s [%d]: received %s\n",version,secnet_pid,(string_t)st);
+    Message(M_NOTICE,"%s [%d]: received %s\n",version,secnet_pid,(char *)st);
 }
 static void ignore_hup(void *st, int signum)
 {

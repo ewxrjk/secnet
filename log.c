@@ -106,7 +106,7 @@ void fatal_perror_status(int status, const char *message, ...)
 }
 
 void vcfgfatal_maybefile(FILE *maybe_f /* or 0 */, struct cloc loc,
-			 cstring_t facility, const char *message, va_list args)
+			 const char *facility, const char *message, va_list args)
 {
     enter_phase(PHASE_SHUTDOWN);
 
@@ -131,7 +131,7 @@ void vcfgfatal_maybefile(FILE *maybe_f /* or 0 */, struct cloc loc,
     exit(current_phase);
 }
 
-void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, cstring_t facility,
+void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, const char *facility,
 			const char *message, ...)
 {
     va_list args;
@@ -141,7 +141,7 @@ void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, cstring_t facility,
     va_end(args);
 }    
 
-void cfgfatal(struct cloc loc, cstring_t facility, const char *message, ...)
+void cfgfatal(struct cloc loc, const char *facility, const char *message, ...)
 {
     va_list args;
 
@@ -235,12 +235,12 @@ struct logfile {
     closure_t cl;
     struct log_if ops;
     struct cloc loc;
-    string_t logfile;
+    char *logfile;
     uint32_t level;
     FILE *f;
 };
 
-static cstring_t months[]={
+static const char *const months[]={
     "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
 
 static void logfile_vlog(void *sst, int class, const char *message,
@@ -362,7 +362,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
 struct syslog {
     closure_t cl;
     struct log_if ops;
-    string_t ident;
+    char *ident;
     int facility;
     bool_t open;
 };
@@ -448,7 +448,7 @@ static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct syslog *st;
     dict_t *d;
     item_t *item;
-    string_t facstr;
+    char *facstr;
 
     st=safe_malloc(sizeof(*st),"syslog_apply");
     st->cl.description="syslog";
@@ -481,8 +481,8 @@ static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
 struct fdlog {
     struct log_if *log;
     int fd;
-    cstring_t prefix;
-    string_t buffer;
+    const char *prefix;
+    char *buffer;
     int i;
     bool_t finished;
 };
@@ -538,7 +538,7 @@ static void log_from_fd_afterpoll(void *sst, struct pollfd *fds, int nfds)
     }
 }
 		
-void log_from_fd(int fd, cstring_t prefix, struct log_if *log)
+void log_from_fd(int fd, const char *prefix, struct log_if *log)
 {
     struct fdlog *st;
 

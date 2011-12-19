@@ -89,7 +89,7 @@
 #define SITE_SENTMSG5 7
 #define SITE_WAIT     8
 
-static cstring_t state_name(uint32_t state)
+static const char *state_name(uint32_t state)
 {
     switch (state) {
     case 0: return "STOP";
@@ -218,12 +218,12 @@ struct site {
     closure_t cl;
     struct site_if ops;
 /* configuration information */
-    string_t localname;
-    string_t remotename;
+    char *localname;
+    char *remotename;
     bool_t peer_mobile; /* Mobile client support */
     int32_t transport_peers_max;
-    string_t tunname; /* localname<->remotename by default, used in logs */
-    string_t address; /* DNS name for bootstrapping, optional */
+    char *tunname; /* localname<->remotename by default, used in logs */
+    char *address; /* DNS name for bootstrapping, optional */
     int remoteport; /* Port for bootstrapping, optional */
     struct netlink_if *netlink;
     struct comm_if **comms;
@@ -284,7 +284,7 @@ struct site {
     struct transform_inst_if *new_transform; /* For key setup/verify */
 };
 
-static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
+static void slog(struct site *st, uint32_t event, const char *msg, ...)
 {
     va_list ap;
     char buf[240];
@@ -315,8 +315,8 @@ static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 }
 
 static void set_link_quality(struct site *st);
-static void delete_key(struct site *st, cstring_t reason, uint32_t loglevel);
-static bool_t initiate_key_setup(struct site *st, cstring_t reason);
+static void delete_key(struct site *st, const char *reason, uint32_t loglevel);
+static bool_t initiate_key_setup(struct site *st, const char *reason);
 static void enter_state_run(struct site *st);
 static bool_t enter_state_resolve(struct site *st);
 static bool_t enter_new_state(struct site *st,uint32_t next);
@@ -348,11 +348,11 @@ struct msg {
 
 /* Build any of msg1 to msg4. msg5 and msg6 are built from the inside
    out using a transform of config data supplied by netlink */
-static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
+static bool_t generate_msg(struct site *st, uint32_t type, const char *what)
 {
     void *hst;
     uint8_t *hash;
-    string_t dhpub, sig;
+    char *dhpub, *sig;
 
     st->retries=st->setup_retries;
     BUF_ALLOC(&st->buffer,what);
@@ -427,7 +427,7 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
 }
 
 static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
-			cstring_t *error)
+			const char **error)
 {
     if (type==LABEL_MSG1) return True;
 
@@ -489,7 +489,7 @@ static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
 			   const struct comm_addr *src)
 {
     struct msg m;
-    cstring_t err;
+    const char *err;
 
     if (!unpick_msg(st,LABEL_MSG2,msg2,&m)) return False;
     if (!check_msg(st,LABEL_MSG2,&m,&err)) {
@@ -515,7 +515,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     struct msg m;
     uint8_t *hash;
     void *hst;
-    cstring_t err;
+    const char *err;
 
     if (!unpick_msg(st,LABEL_MSG3,msg3,&m)) return False;
     if (!check_msg(st,LABEL_MSG3,&m,&err)) {
@@ -566,7 +566,7 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
     struct msg m;
     uint8_t *hash;
     void *hst;
-    cstring_t err;
+    const char *err;
 
     if (!unpick_msg(st,LABEL_MSG4,msg4,&m)) return False;
     if (!check_msg(st,LABEL_MSG4,&m,&err)) {
@@ -621,7 +621,7 @@ static bool_t unpick_msg0(struct site *st, struct buffer_if *msg0,
 
 static bool_t generate_msg5(struct site *st)
 {
-    cstring_t transform_err;
+    const char *transform_err;
 
     BUF_ALLOC(&st->buffer,"site:MSG5");
     /* We are going to add four words to the message */
@@ -644,7 +644,7 @@ static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
 			   const struct comm_addr *src)
 {
     struct msg0 m;
-    cstring_t transform_err;
+    const char *transform_err;
 
     if (!unpick_msg0(st,msg5,&m)) return False;
 
@@ -670,7 +670,7 @@ static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
 
 static bool_t generate_msg6(struct site *st)
 {
-    cstring_t transform_err;
+    const char *transform_err;
 
     BUF_ALLOC(&st->buffer,"site:MSG6");
     /* We are going to add four words to the message */
@@ -693,7 +693,7 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
 			   const struct comm_addr *src)
 {
     struct msg0 m;
-    cstring_t transform_err;
+    const char *transform_err;
 
     if (!unpick_msg0(st,msg6,&m)) return False;
 
@@ -721,7 +721,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 			   const struct comm_addr *src)
 {
     struct msg0 m;
-    cstring_t transform_err;
+    const char *transform_err;
     uint32_t type;
 
     if (!st->current_valid) {
@@ -822,7 +822,7 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
     }
 }
 
-static bool_t initiate_key_setup(struct site *st, cstring_t reason)
+static bool_t initiate_key_setup(struct site *st, const char *reason)
 {
     if (st->state!=SITE_RUN) return False;
     slog(st,LOG_SETUP_INIT,"initiating key exchange (%s)",reason);
@@ -858,7 +858,7 @@ static void activate_new_key(struct site *st)
     enter_state_run(st);
 }
 
-static void delete_key(struct site *st, cstring_t reason, uint32_t loglevel)
+static void delete_key(struct site *st, const char *reason, uint32_t loglevel)
 {
     if (st->current_valid) {
 	slog(st,loglevel,"session closed (%s)",reason);
@@ -994,9 +994,9 @@ static bool_t enter_new_state(struct site *st, uint32_t next)
 }
 
 /* msg7 tells our peer that we're about to forget our key */
-static bool_t send_msg7(struct site *st, cstring_t reason)
+static bool_t send_msg7(struct site *st, const char *reason)
 {
-    cstring_t transform_err;
+    const char *transform_err;
 
     if (st->current_valid && st->buffer.free
 	&& transport_peers_valid(&st->peers)) {
@@ -1086,7 +1086,7 @@ static void site_afterpoll(void *sst, struct pollfd *fds, int nfds)
 static void site_outgoing(void *sst, struct buffer_if *buf)
 {
     struct site *st=sst;
-    cstring_t transform_err;
+    const char *transform_err;
     
     if (st->state==SITE_STOP) {
 	BUF_FREE(buf);

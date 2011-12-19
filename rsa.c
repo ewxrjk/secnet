@@ -36,13 +36,13 @@ struct rsapub {
 
 static const char *hexchars="0123456789abcdef";
 
-static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
+static char *rsa_sign(void *sst, uint8_t *data, int32_t datalen)
 {
     struct rsapriv *st=sst;
     MP_INT a, b, u, v, tmp, tmp2;
     char buff[2048];
     int msize, i;
-    string_t signature;
+    char *signature;
 
     mpz_init(&a);
     mpz_init(&b);
@@ -131,7 +131,7 @@ static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
 
 static rsa_checksig_fn rsa_sig_check;
 static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
-			    cstring_t signature)
+			    const char *signature)
 {
     struct rsapub *st=sst;
     MP_INT a, b, c;
@@ -180,7 +180,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
 {
     struct rsapub *st;
     item_t *i;
-    string_t e,n;
+    char *e,*n;
 
     st=safe_malloc(sizeof(*st),"rsapub_apply");
     st->cl.description="rsapub";
@@ -246,7 +246,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 {
     struct rsapriv *st;
     FILE *f;
-    cstring_t filename;
+    const char *filename;
     item_t *i;
     long length;
     uint8_t *b, *c;

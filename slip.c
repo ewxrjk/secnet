@@ -106,7 +106,7 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 }
 
 static void slip_init(struct slip *st, struct cloc loc, dict_t *dict,
-		      cstring_t name, netlink_deliver_fn *to_host)
+		      const char *name, netlink_deliver_fn *to_host)
 {
     st->netlink_to_tunnel=
 	netlink_init(&st->nl,st,loc,dict,
@@ -124,9 +124,9 @@ struct userv {
     struct slip slip;
     int txfd; /* We transmit to userv */
     int rxfd; /* We receive from userv */
-    cstring_t userv_path;
-    cstring_t service_user;
-    cstring_t service_name;
+    const char *userv_path;
+    const char *service_user;
+    const char *service_name;
     pid_t pid;
     bool_t expecting_userv_exit;
 };
@@ -206,7 +206,7 @@ static void userv_userv_callback(void *sst, pid_t pid, int status)
 }
 
 struct userv_entry_rec {
-    cstring_t path;
+    const char *path;
     const char **argv;
     int in;
     int out;
@@ -234,9 +234,9 @@ static void userv_invoke_userv(struct userv *st)
     struct userv_entry_rec *er;
     int c_stdin[2];
     int c_stdout[2];
-    string_t addrs;
-    string_t nets;
-    string_t s;
+    char *addrs;
+    char *nets;
+    char *s;
     struct netlink_client *r;
     struct ipset *allnets;
     struct subnet_list *snets;

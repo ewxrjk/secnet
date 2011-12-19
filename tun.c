@@ -69,12 +69,12 @@ static struct flagstr config_types[]={
 struct tun {
     struct netlink nl;
     int fd;
-    cstring_t device_path;
-    cstring_t ip_path;
-    string_t interface_name;
-    cstring_t ifconfig_path;
+    const char *device_path;
+    const char *ip_path;
+    char *interface_name;
+    const char *ifconfig_path;
     uint32_t ifconfig_type;
-    cstring_t route_path;
+    const char *route_path;
     uint32_t route_type;
     uint32_t tun_flavour;
     bool_t search_for_if; /* Applies to tun-BSD only */
@@ -84,7 +84,7 @@ struct tun {
     uint32_t local_address; /* host interface address */
 };
 
-static cstring_t tun_flavour_str(uint32_t flavour)
+static const char *tun_flavour_str(uint32_t flavour)
 {
     switch (flavour) {
     case TUN_FLAVOUR_GUESS: return "guess";
@@ -162,7 +162,7 @@ static void tun_deliver_to_kernel(void *sst, struct buffer_if *buf)
 static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 {
     struct tun *st=sst;
-    string_t network, mask, secnetaddr;
+    char *network, *mask, *secnetaddr;
     struct subnet_list *nets;
     int32_t i;
     int fd=-1;
@@ -248,13 +248,13 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 static void tun_phase_hook(void *sst, uint32_t newphase)
 {
     struct tun *st=sst;
-    string_t hostaddr,secnetaddr;
+    char *hostaddr,*secnetaddr;
     char mtu[6];
     struct netlink_client *r;
 
     if (st->tun_flavour==TUN_FLAVOUR_BSD) {
 	if (st->search_for_if) {
-	    string_t dname;
+	    char *dname;
 	    int i;
 
 	    dname=safe_malloc(strlen(st->device_path)+4,"tun_old_apply");
@@ -443,7 +443,7 @@ static list_t *tun_create(closure_t *self, struct cloc loc, dict_t *context,
     struct tun *st;
     item_t *item;
     dict_t *dict;
-    string_t flavour,type;
+    char *flavour,*type;
 
     st=safe_malloc(sizeof(*st),"tun_apply");
 

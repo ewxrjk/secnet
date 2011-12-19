@@ -47,12 +47,13 @@ extern bool_t ipset_contains_addr(struct ipset *a, uint32_t addr);
 extern bool_t ipset_is_subset(struct ipset *super, struct ipset *sub);
 extern struct subnet_list *ipset_to_subnet_list(struct ipset *is);
 
-extern string_t ipaddr_to_string(uint32_t addr);
-extern string_t subnet_to_string(struct subnet sn);
+extern char *ipaddr_to_string(uint32_t addr);
+extern char *subnet_to_string(struct subnet sn);
 
 extern struct ipset *string_list_to_ipset(list_t *l,struct cloc loc,
-					  cstring_t module, cstring_t param);
+					  const char *module,
+					  const char *param);
 					  
-extern uint32_t string_item_to_ipaddr(item_t *i, cstring_t desc);
+extern uint32_t string_item_to_ipaddr(item_t *i, const char *desc);
 
 #endif /* ipaddr_h */

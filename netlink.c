@@ -475,7 +475,7 @@ static void netlink_packet_deliver(struct netlink *st,
 	    st->outcount++;
 	    BUF_ASSERT_FREE(buf);
 	} else {
-	    string_t s,d;
+	    char *s,*d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
 	    Message(M_DEBUG,"%s: don't know where to deliver packet "
@@ -488,7 +488,7 @@ static void netlink_packet_deliver(struct netlink *st,
     } else {
 	if (!allow_route &&
 	    !(st->routes[best_match]->options&OPT_ALLOWROUTE)) {
-	    string_t s,d;
+	    char *s,*d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
 	    /* We have a usable route but aren't allowed to use it.
@@ -615,7 +615,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	/* Check that the packet source is appropriate for the tunnel
 	   it came down */
 	if (!ipset_contains_addr(client->networks,source)) {
-	    string_t s,d;
+	    char *s,*d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
 	    Message(M_WARNING,"%s: packet from tunnel %s with bad "
@@ -629,7 +629,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	   network, and hasn't been forwarded from elsewhere or
 	   generated with the wrong source address */
 	if (!ipset_contains_addr(st->networks,source)) {
-	    string_t s,d;
+	    char *s,*d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
 	    Message(M_WARNING,"%s: outgoing packet with bad source address "
@@ -697,7 +697,7 @@ static void netlink_output_subnets(struct netlink *st, uint32_t loglevel,
 				   struct subnet_list *snets)
 {
     int32_t i;
-    string_t net;
+    char *net;
 
     for (i=0; i<snets->entries; i++) {
 	net=subnet_to_string(snets->list[i]);
@@ -709,7 +709,7 @@ static void netlink_output_subnets(struct netlink *st, uint32_t loglevel,
 static void netlink_dump_routes(struct netlink *st, bool_t requested)
 {
     int i;
-    string_t net;
+    char *net;
     uint32_t c=M_INFO;
 
     if (requested) c=M_WARNING;
@@ -846,7 +846,7 @@ static closure_t *netlink_inst_create(struct netlink *st,
 				      struct cloc loc, dict_t *dict)
 {
     struct netlink_client *c;
-    string_t name;
+    char *name;
     struct ipset *networks;
     uint32_t options,priority;
     int32_t mtu;
@@ -945,7 +945,7 @@ static list_t *netlink_inst_apply(closure_t *self, struct cloc loc,
 
 netlink_deliver_fn *netlink_init(struct netlink *st,
 				 void *dst, struct cloc loc,
-				 dict_t *dict, cstring_t description,
+				 dict_t *dict, const char *description,
 				 netlink_route_fn *set_routes,
 				 netlink_deliver_fn *to_host)
 {

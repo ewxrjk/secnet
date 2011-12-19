@@ -15,7 +15,7 @@ static sigset_t registered,pending;
 
 struct child {
     pid_t pid;
-    cstring_t desc;
+    const char *desc;
     process_callback_fn *cb;
     void *cst;
     bool_t finished;
@@ -42,7 +42,7 @@ static void set_default_signals(void);
    their exit status using the callback function.  We block SIGCHLD
    until signal processing has begun. */
 pid_t makesubproc(process_entry_fn *entry, process_callback_fn *cb,
-		 void *est, void *cst, cstring_t desc)
+		 void *est, void *cst, const char *desc)
 {
     struct child *c;
     pid_t p;
