@@ -126,6 +126,7 @@ install: installdirs
 	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
 	$(INSTALL) ${srcdir}/ipaddr.py $(prefix)/share/secnet/ipaddr.py
 	$(INSTALL) ${srcdir}/secnet.8 $(mandir)/man8/secnet.8
+	$(INSTALL) ${srcdir}/make-secnet-sites.8 $(mandir)/man8/make-secnet-sites.8
 
 clean:
 	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c

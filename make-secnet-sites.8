@@ -1,0 +1,424 @@
+.TH make-secnet-sites 8
+
+.SH NAME
+make-secnet-sites \- construct and manage site configuration for secnet
+
+.SH SYNOPSIS
+\fBmake-secnet-sites\fR [\fISITES-FILE\fR [\fICONF-FILE\fR]]
+.br
+\fBmake-secnet-sites \fB-u \fIHEADER GROUPFILES-DIR OUTPUT GROUP\fR
+
+.SH DESCRIPTION
+\fBmake-secnet-sites\fR manages a central database of VPN sites called
+a \fIsites files\fR and generates a fragment of a \fBsecnet\fR(8)
+configuration file from it.
+This fragment can be included into the main \fIsecnet.conf\fR.
+.PP
+Without the \fB-u\fR option, \fBmake-secnet-sites\fR reads a sites
+file and writes a configuration file fragment.
+.PP
+With the \fB-u\fR option, make-secnet-sites expects to have been
+called from \fBuserv\fR(1).
+
+.SH "VPN USER DOCUMENTATION"
+.SS Information
+VPN users should expect to receive the following information from the
+VPN coordinator:
+.TP 12
+.I VPN
+The name of the VPN.
+.TP
+.I SECNET
+The name of the secnet user.
+.TP
+.I SERVICE
+The name of the service to invoke.
+.PP
+They must also agree the following information with the VPN
+coordinator:
+.TP 12
+.I LOCATION
+The name of the location that the user may administer.
+.TP
+.I GROUP
+The the name of the group to be used to authorize administration.
+.PP
+They must also agree the address range(s) to be used.
+
+.SS "Sites File Fragment"
+The sites file fragment should be formatted as follows.
+(See the reference documentation below for further detail.)
+.PP
+.nf
+  vpn \fIVPN\fR
+  location \fILOCATION\fR
+  contact \fIUSER\fR@\fIDOMAIN\fR
+  site \fISITE\fR
+    networks \fINETWORK\fR/\fIBITS ...\fR
+    peer \fIADDRESS\fR
+    address \fIHOSTNAME PORT\fR
+    pubkey \fIBITS KEY MODULUS\fR
+.fi
+.PP
+Omit the \fBaddress\fR line if your the site has no stable public
+name.
+In this case other sites will not be able to initiate new tunnels to
+it.
+.PP
+Multiple locations may be administered by a single group, and each
+location may contain multiple sites.
+All the sites in all the locations administered by a given group are
+updated as a unit, so they must all be listed within a single sites
+file fragment.
+.PP
+If the group has more multiple members then they must coordinate
+amongst themselves to avoid overwriting one another's work.
+.SS "Updating The Sites File"
+\fBmake-secnet-sites\fR should be invoked as follows:
+.PP
+.RS
+\fBuserv \fISECNET SERVICE GROUP \fB< \fISITES-FRAGMENT
+.RE
+.PP
+This will update the master copy of the sites file.
+.SS "Updating Local Configuration"
+Each individual site is responsible for checking for update versions
+of the sites file; there is no automatic distribution.
+.PP
+Having made a local copy of the sites file, the local \fIsites.conf\fR
+should be updated as follows:
+.PP
+.RS
+\fBmake-secnet-sites \fISITES-FILE CONF-FILE
+.RE
+.PP
+Having done this \fBsecnet\fR should be restarted to pick up the
+changes.
+
+.SH "VPN COORDINATOR DOCUMENTATION"
+.SS Arguments
+The arguments to \fB-u\fR are as follows.
+The first three are supplied by \fBuserv\fR and the last by the caller.
+.TP
+.I HEADER
+This is a fragment of sites file.
+It will be copied into the beginning of the output, and also provides
+information about which system groups are to control which site names
+and IP address ranges.
+.IP
+This file would normally contain a \fBvpn\fR node plus \fBlocation\fR
+children defining the administering group and permitted networks
+(using \fBrestrict-nets\fR) for each location in the VPN.
+.TP
+.I GROUPFILES-DIR
+Each group which can control some site names and address ranges is
+allowed to provide a fragment of sites file.
+These per-group fragments are stored by \fBmake-secnet-sites\fR in this
+directory.
+.\" We don't document its internals.  UTSL.
+.TP
+.I SITES-OUT
+The output file, which is a sites file containing the header and all
+the fragments.
+It is updated by writing to a temporary file and renaming into place.
+.TP
+.I GROUP
+The group to administer.
+The caller must be in this group (as reported by \fBUSERV_GROUP\fR).
+.PP
+\fBmake-secnet-sites\fR will replace the sites file fragment for
+\fIGROUP\fR with the one supplied on standard input and then rewrite
+\fISITES-OUT\fR with the complete sites file.
+.PP
+The generated sites file cannot be used directly but needs to be
+converted for use by userv by running \fBmake-secnet-sites\fR in
+non\fB-u\fR mode.
+.SS "Example userv configuration"
+This configuration assumes a dedicated \fBsecnet\fR user to
+control the sites file.
+They would have the following file installed as
+\fI~secnet/.userv/services.d/vpnsites\fR:
+.PP
+.nf
+  reset
+  no-disconnect-hup
+  no-suppress-args
+  cd ~/vpn
+  execute make-secnet-sites -u sites.header groupfiles sites
+.fi
+.PP
+This configuration uses files as follows:
+.TP
+.I ~/vpn/sites.header
+A sites file fragment containing a \fBvpn\fR node plus a
+\fBlocation\fR node given administration groups and networks for each
+location.
+.TP
+.I ~/vpn/groupfiles
+A directory for containing the per-group sites file fragments.
+.TP
+.I ~/vpn/sites
+The master sites file, generated from \fIsites.header\fR and the
+contents of \fIgroupfiles\fR.
+
+.SH "SITES FILE"
+
+.SS Overview
+The sites file defines a hierarchical collection of configuration
+information.
+Each node in the hierarchy has a name, a \fItype\fR and a collection of
+\fIproperties\fR.
+Each type of node may only appear at a certain level in the hierarchy
+and the set of permitted properties differs between types.
+.PP
+The possible node types are \fBvpn\fR, \fBlocation\fR and \fBsite\fR.
+All \fBlocation\fR nodes are children of a \fBvpn\fR node; and all
+\fBsite\fR nodes are children of a \fBlocation\fR node.
+
+.SS "Syntax"
+Lines beginning with a "#" are comments and are ignored.
+.PP
+Lines are split into words delimited by whitespace (as understood by
+\fBisspace\fR(3)).
+It may be convenient to indent lines to reflect their nesting level,
+but this is not enforced.
+.PP
+A line may either (re-)introduce a node or it may define a property.
+To introduce a node:
+.IP
+\fINODE-TYPE NODE-NAME\fR [\fIARGUMENTS\fR]
+.PP
+\fINODE-TYPE\fR may be \fBvpn\fR, \fBlocation\fR or \fBsite\fR.
+It is only possible either to introduce a new child of the current
+node or to go back up the hierarchy.
+.PP
+To define a property:
+.IP
+\fIPROPERTY-NAME \fIVALUE\fR [...]
+.PP
+The number of words that can appear in the value part depends on the
+property.
+.\" TODO end-definitions
+
+.SH "PROPERTIES"
+.SS address
+\fBaddress \fIHOSTNAME PORT
+.PP
+The public hostname and UDP port number of a peer.
+.SS contact
+\fBcontact \fIEMAIL-ADDRESS
+.PP
+Defines a contact address.
+.SS dh
+\fBdh \fIMODULUS \fIGENERATOR\fR
+.PP
+Defines a group to be used for key exchange.
+.RS
+.TP 18
+.I MODULUS
+The prime modulus \fIp\fR in hex.
+.TP
+.I GENERATOR
+The generator \fIg\fR in hex.
+.RE
+.SS hash
+\fBhash \fBmd5\fR|\fBsha1
+.PP
+A hash function.
+.SS key-lifetime
+\fBkey-lifetime\fR \fIMILLISECONDS
+.PP
+Maximum key lifetime.
+.SS mobile
+\fBmobile \fBtrue\fR|\fBfalse
+.PP
+Whether a site is mobile.
+.SS networks
+\fBnetworks \fINETWORK\fB/\fIMASK\fR [...]
+.PP
+Claimed networks.
+.SS peer
+\fBpeer \fIADDRESS
+.PP
+A peer's tunnel IP address.
+.SS pubkey
+\fBpubkey \fIBITS KEY MODULUS
+.PP
+An RSA public key.
+.RS
+.TP 18
+.I BITS
+The number of bits in the key.
+.TP
+.I KEY
+The public key exponent (\fIe\fR), in decimal.
+.TP
+.I MODULUS
+The modulus (\fIn\fR), in decimal.
+.RE
+.SS renegotiate-time
+\fBrenegotiate \fIMILLISECONDS
+.PP
+Time after key setup to begin renegotiation.
+.SS restrict-nets
+\fBrestrict-nets \fINETWORK\fB/\fIMASK\fR [...]
+.PP
+Allowable networks.
+.SS setup-retries
+\fBsetups-retries\fR \fICOUNT
+.PP
+Maximum key setup packet retries.
+.SS setup-timeout
+\fBsetup-timeout\fR \fIMILLISECONDS
+.PP
+Key setup timeout.
+.SS wait-time
+\fBwait-time \fIMILLISECONDS
+.PP
+Time to wait after unsuccessful key setup.
+
+.SH "VPN NODES"
+\fBvpn \fIVPN-NAME
+.PP
+\fBvpn\fR nodes are used to define whole-VPN properties.
+Typically key exchange properties (\fBdh\fR and \fBhash\fR) would be
+defined here.
+It is also a convenient place to define default retry and key lifetime
+parameters.
+.PP
+\fBvpn\fR nodes may have one or more \fBlocation\fR nodes as children.
+.SS Properties
+\fBvpn\fR nodes may have the following properties listed below.
+Except as noted they generate an assignment from the property's name
+(as the key) to its value, expressed in the appropriate format.
+.RS
+.TP 18
+.B contact
+Mandatory.
+Generates a comment.
+.TP
+.B dh
+The value is a \fBdiffie-hellman\fR closure.
+.TP
+.B hash
+The value is a \fBsha1\fR or \fBmd5\fR closure.
+.TP
+.B key-lifetime
+.TP
+.B renegotiate-time
+.TP
+.B restrict-nets
+Generates a comment.
+.TP
+.B setup-retries
+.TP
+.B setup-timeout
+.TP
+.B wait-time
+.RE
+
+.SH "LOCATION NODES"
+\fBlocation \fILOCATION-NAME \fR[\fIADMIN-GROUP\fR]
+.PP
+A \fBlocation\fR node is an administrative domain within a
+VPN.
+It may contain one or more sites (see below).
+A location would typically have a \fBrestrict-nets\fR property to
+limit the traffic that its sites can claim.
+.PP
+\fIADMIN-GROUP\fR is the name of the group that is permitted to
+administer this location.
+It must be given the first time a location is introduced; it is
+ignored on subsequent re-introductions of an existing location.
+.PP
+\fBlocation\fR nodes may have the same properties, with the same
+meanings, as \fBvpn\fR nodes.
+They may have one or more \fBsite\fR nodes as childrens.
+
+.SH "SITE NODES"
+\fBsite \fISITE-NAME
+.PP
+\fBsite\fR nodes represent a single endpoint and correspond to site
+closures in the generated configuration file.
+Due to the way it is generated they will inherit settings from the
+containing \fBlocation\fR and \fBvpn\fR node.
+.SS Properties
+\fBsite\fR nodes may have the following properties listed below.
+Except as noted they generate an assignment from the property's name
+(as the key) to its value, expressed in the appropriate format.
+.RS
+.TP 18
+.B address
+Mandatory.
+Generates \fItwo\fR assignments, one with key \fBaddress\fR and one
+with key \fBport\fR.
+.TP
+.B dh
+Mandatory, but inheritable.
+.TP
+.B hash
+Mandatory, but inheritable.
+.TP
+.B key-lifetime
+Inheritable.
+.TP
+.B networks
+Mandatory.
+Must be a subset of the \fBrestrict-nets\fR properties of the parent
+nodes.
+Forms the \fBroutes\fR parameter to the netlink closure (see below).
+.TP
+.B peer
+Mandatory.
+Must lie within \fBnetworks\fR.
+Forms the \fBptp-address\fR parameter to the netlink closure.
+.TP
+.B pubkey
+Mandatory.
+The value is an \fBrsa-public\fR closure.
+.TP
+.B mobile
+.TP
+.B renegotiate-time
+Inheritable.
+.TP
+.B restrict-nets
+Generates a comment.
+.TP
+.B setup-retries
+Inheritable.
+.TP
+.B setup-timeout
+Inheritable.
+.TP
+.B wait-time
+Inheritable.
+.RE
+.SS "netlink closure"
+In addition to the property assignments described above, the key
+\fBlink\fR is assigned the value of the closure named \fBnetlink\fR
+evaluated with \fBroutes\fR and \fBptp-address\fR arguments.
+It is required, therefore, that the key \fBnetlink\fR can be found
+elsewhere in the configuration file (using the usual \fIsecnet.conf\fR
+lookup logic).
+.\" TODO why ptp-address - possibly a bug in make-secnet-sites.  cf secnet.8
+
+.SH "ENVIRONMENT"
+.TP
+.B USERV_USER
+The calling user.
+Must be set if invoked with \fB-u\fR.
+Only used for recording (in a comment) who submitted sites file fragments.
+.TP
+.B USERV_GROUP
+The list of groups that the calling user is a member of.
+Must be set if invoked with \fB-u\fR.
+Used to verify that the calling user is permitted to administer sites
+file fragments.
+
+.SH "SEE ALSO"
+\fBuserv\fR(1), \fBsecnet\fR(8)
+
+.\" TODO understand how inheritance is enforced
+.\" TODO general structure & the flattened site list
+
