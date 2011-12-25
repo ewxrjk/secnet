@@ -384,19 +384,29 @@ static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
  * 3. Checksums correctly.
  * 4. Doesn't have a bogus length
  */
-static bool_t netlink_check(struct netlink *st, struct buffer_if *buf)
+static bool_t netlink_check(struct netlink *st, struct buffer_if *buf,
+			    char *errmsgbuf, int errmsgbuflen)
 {
+#define BAD(...) do{					\
+	snprintf(errmsgbuf,errmsgbuflen,__VA_ARGS__);	\
+	return False;					\
+    }while(0)
+
     struct iphdr *iph=(struct iphdr *)buf->start;
     int32_t len;
 
-    if (iph->ihl < 5 || iph->version != 4) return False;
-    if (buf->size < iph->ihl*4) return False;
-    if (ip_fast_csum((uint8_t *)iph, iph->ihl)!=0) return False;
+    if (iph->ihl < 5) BAD("ihl %u",iph->ihl);
+    if (iph->version != 4) BAD("version %u",iph->version);
+    if (buf->size < iph->ihl*4) BAD("size %"PRId32"<%u*4",buf->size,iph->ihl);
+    if (ip_fast_csum((uint8_t *)iph, iph->ihl)!=0) BAD("csum");
     len=ntohs(iph->tot_len);
     /* There should be no padding */
-    if (buf->size!=len || len<(iph->ihl<<2)) return False;
+    if (buf->size!=len) BAD("len %"PRId32"!=%"PRId32,buf->size,len);
+    if (len<(iph->ihl<<2)) BAD("len %"PRId32"<(%u<<2)",len,iph->ihl);
     /* XXX check that there's no source route specified */
     return True;
+
+#undef BAD
 }
 
 /* Deliver a packet. "client" is the _origin_ of the packet, not its
@@ -595,11 +605,13 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 {
     uint32_t source,dest;
     struct iphdr *iph;
+    char errmsgbuf[50];
 
     BUF_ASSERT_USED(buf);
-    if (!netlink_check(st,buf)) {
-	Message(M_WARNING,"%s: bad IP packet from %s\n",
-		st->name,client?client->name:"host");
+    if (!netlink_check(st,buf,errmsgbuf,sizeof(errmsgbuf))) {
+	Message(M_WARNING,"%s: bad IP packet from %s: %s\n",
+		st->name,client?client->name:"host",
+		errmsgbuf);
 	BUF_FREE(buf);
 	return;
     }
