@@ -267,7 +267,7 @@ class sitelevel(level):
 	 'networks':None,
 	 'peer':None,
 	 'pubkey':(lambda n,v:"key %s;\n"%v),
-	 'address':None,
+	 'address':(lambda n,v:"address %s;\n"%v),
 	 'mobile':sp,
 	})
 	require_properties={
