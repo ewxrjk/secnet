@@ -38,6 +38,8 @@ static void vMessage(uint32_t class, const char *message, va_list args)
 	bp=strlen(buff);
 	assert(bp < MESSAGE_BUFLEN);
 	vsnprintf(buff+bp,MESSAGE_BUFLEN-bp,message,args);
+	buff[sizeof(buff)-2] = '\n';
+	buff[sizeof(buff)-1] = '\0';
 	/* Each line is sent separately */
 	while ((nlp=strchr(buff,'\n'))) {
 	    *nlp=0;
