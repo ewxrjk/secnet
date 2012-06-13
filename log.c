@@ -14,9 +14,20 @@ bool_t secnet_is_daemon=False;
 uint32_t message_level=M_WARNING|M_ERR|M_SECURITY|M_FATAL;
 struct log_if *system_log=NULL;
 
-static void vMessage(uint32_t class, const char *message, va_list args)
+static void vMessageFallback(uint32_t class, const char *message, va_list args)
 {
     FILE *dest=stdout;
+    /* Messages go to stdout/stderr */
+    if (class & message_level) {
+	if (class&M_FATAL || class&M_ERR || class&M_WARNING) {
+	    dest=stderr;
+	}
+	vfprintf(dest,message,args);
+    }
+}
+
+static void vMessage(uint32_t class, const char *message, va_list args)
+{
 #define MESSAGE_BUFLEN 1023
     static char buff[MESSAGE_BUFLEN+1]={0,};
     size_t bp;
@@ -34,13 +45,7 @@ static void vMessage(uint32_t class, const char *message, va_list args)
 	    memmove(buff,nlp+1,strlen(nlp+1)+1);
 	}
     } else {
-	/* Messages go to stdout/stderr */
-	if (class & message_level) {
-	    if (class&M_FATAL || class&M_ERR || class&M_WARNING) {
-		dest=stderr;
-	    }
-	    vfprintf(dest,message,args);
-	}
+	vMessageFallback(class,message,args);
     }
 }  
 
@@ -50,6 +55,15 @@ void Message(uint32_t class, const char *message, ...)
 
     va_start(ap,message);
     vMessage(class,message,ap);
+    va_end(ap);
+}
+
+static void MessageFallback(uint32_t class, const char *message, ...)
+{
+    va_list ap;
+
+    va_start(ap,message);
+    vMessageFallback(class,message,ap);
     va_end(ap);
 }
 
@@ -262,8 +276,8 @@ static void logfile_vlog(void *sst, int class, const char *message,
 	    fflush(st->f);
 	}
     } else {
-	vMessage(class,message,args);
-	Message(class,"\n");
+	vMessageFallback(class,message,args);
+	MessageFallback(class,"\n");
     }
 }
 
@@ -391,8 +405,8 @@ static void syslog_vlog(void *sst, int class, const char *message,
     if (st->open)
 	vsyslog(msgclass_to_syslogpriority(class),message,args);
     else {
-	vMessage(class,message,args);
-	Message(class,"\n");
+	vMessageFallback(class,message,args);
+	MessageFallback(class,"\n");
     }
 }
 
