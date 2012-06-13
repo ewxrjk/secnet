@@ -1121,6 +1121,9 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 			    const struct comm_addr *source)
 {
     struct site *st=sst;
+
+    if (buf->size < 12) return False;
+
     uint32_t dest=ntohl(*(uint32_t *)buf->start);
 
     if (dest==0) {

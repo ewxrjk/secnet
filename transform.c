@@ -171,6 +171,10 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 	return 1;
     }
 
+    if (buf->size < 4 + 16 + 16) {
+	*errmsg="msg too short";
+	return 1;
+    }
 
     /* CBC */
     memset(iv,0,16);
@@ -181,6 +185,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     /* Assert bufsize is multiple of blocksize */
     if (buf->size&0xf) {
 	*errmsg="msg not multiple of cipher blocksize";
+	return 1;
     }
     serpent_encrypt(&ti->cryptkey,iv,iv);
     for (n=buf->start; n<buf->start+buf->size; n+=16)

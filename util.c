@@ -269,6 +269,7 @@ void *buf_unappend(struct buffer_if *buf, int32_t amount) {
 
 void *buf_unprepend(struct buffer_if *buf, int32_t amount) {
     void *p;
+    if (buf->size < amount) return 0;
     p=buf->start;
     buf->start+=amount;
     buf->size-=amount;
