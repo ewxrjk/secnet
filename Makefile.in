@@ -38,10 +38,10 @@ CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
 	-Wpointer-arith -Wformat=2 -Winit-self \
 	-Wswitch-enum -Wunused-variable -Wbad-function-cast \
 	-Wno-strict-aliasing -fno-strict-aliasing
-ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS)
-CPPFLAGS:=@CPPFLAGS@
-LDFLAGS:=@LDFLAGS@
-LDLIBS:=@LIBS@
+ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS) $(EXTRA_CFLAGS)
+CPPFLAGS:=@CPPFLAGS@ $(EXTRA_CPPFLAGS)
+LDFLAGS:=@LDFLAGS@ $(EXTRA_LDFLAGS)
+LDLIBS:=@LIBS@ $(EXTRA_LDLIBS)
 
 prefix:=@prefix@
 exec_prefix:=@exec_prefix@
