@@ -628,7 +628,6 @@ static bool_t generate_msg5(struct site *st)
     buffer_init(&st->buffer,st->transform->max_start_pad+(4*4));
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
-    st->netlink->output_config(st->netlink->st,&st->buffer);
     buf_prepend_uint32(&st->buffer,LABEL_MSG5);
     st->new_transform->forwards(st->new_transform->st,&st->buffer,
 				&transform_err);
@@ -660,11 +659,8 @@ static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
 	slog(st,LOG_SEC,"MSG5/PING packet contained wrong label");
 	return False;
     }
-    if (!st->netlink->check_config(st->netlink->st,msg5)) {
-	slog(st,LOG_SEC,"MSG5/PING packet contained bad netlink config");
-	return False;
-    }
-    CHECK_EMPTY(msg5);
+    /* Older versions of secnet used to write some config data here
+     * which we ignore.  So we don't CHECK_EMPTY */
     return True;
 }
 
@@ -677,7 +673,6 @@ static bool_t generate_msg6(struct site *st)
     buffer_init(&st->buffer,st->transform->max_start_pad+(4*4));
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
-    st->netlink->output_config(st->netlink->st,&st->buffer);
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
     st->new_transform->forwards(st->new_transform->st,&st->buffer,
 				&transform_err);
@@ -709,11 +704,8 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
 	slog(st,LOG_SEC,"MSG6/PONG packet contained invalid data");
 	return False;
     }
-    if (!st->netlink->check_config(st->netlink->st,msg6)) {
-	slog(st,LOG_SEC,"MSG6/PONG packet contained bad netlink config");
-	return False;
-    }
-    CHECK_EMPTY(msg6);
+    /* Older versions of secnet used to write some config data here
+     * which we ignore.  So we don't CHECK_EMPTY */
     return True;
 }
 

@@ -438,8 +438,6 @@ struct netlink_if {
     netlink_register_fn *reg;
     netlink_deliver_fn *deliver;
     netlink_link_quality_fn *set_quality;
-    netlink_output_config_fn *output_config;
-    netlink_check_config_fn *check_config;
     netlink_set_mtu_fn *set_mtu;
 };
 

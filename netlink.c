@@ -803,27 +803,6 @@ static void netlink_signal_handler(void *sst, int signum)
     netlink_dump_routes(st,True);
 }
 
-static void netlink_inst_output_config(void *sst, struct buffer_if *buf)
-{
-/*    struct netlink_client *c=sst; */
-/*    struct netlink *st=c->nst; */
-
-    /* For now we don't output anything */
-    BUF_ASSERT_USED(buf);
-}
-
-static bool_t netlink_inst_check_config(void *sst, struct buffer_if *buf)
-{
-/*    struct netlink_client *c=sst; */
-/*    struct netlink *st=c->nst; */
-
-    BUF_ASSERT_USED(buf);
-    /* We need to eat all of the configuration information from the buffer
-       for backward compatibility. */
-    buf->size=0;
-    return True;
-}
-
 static void netlink_inst_set_mtu(void *sst, int32_t new_mtu)
 {
     struct netlink_client *c=sst;
@@ -910,8 +889,6 @@ static closure_t *netlink_inst_create(struct netlink *st,
     c->ops.reg=netlink_inst_reg;
     c->ops.deliver=netlink_inst_incoming;
     c->ops.set_quality=netlink_set_quality;
-    c->ops.output_config=netlink_inst_output_config;
-    c->ops.check_config=netlink_inst_check_config;
     c->ops.set_mtu=netlink_inst_set_mtu;
     c->nst=st;
 
