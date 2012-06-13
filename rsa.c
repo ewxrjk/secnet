@@ -194,7 +194,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     i=list_elem(args,0);
     if (i) {
 	if (i->type!=t_string) {
-	    cfgfatal(i->loc,"rsa-public","first argument must be a string");
+	    cfgfatal(i->loc,"rsa-public","first argument must be a string\n");
 	}
 	e=i->data.string;
 	if (mpz_init_set_str(&st->e,e,10)!=0) {
@@ -208,7 +208,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     i=list_elem(args,1);
     if (i) {
 	if (i->type!=t_string) {
-	    cfgfatal(i->loc,"rsa-public","second argument must be a string");
+	    cfgfatal(i->loc,"rsa-public","second argument must be a string\n");
 	}
 	n=i->data.string;
 	if (mpz_init_set_str(&st->n,n,10)!=0) {
@@ -267,7 +267,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     i=list_elem(args,0);
     if (i) {
 	if (i->type!=t_string) {
-	    cfgfatal(i->loc,"rsa-public","first argument must be a string");
+	    cfgfatal(i->loc,"rsa-public","first argument must be a string\n");
 	}
 	filename=i->data.string;
     } else {
@@ -313,7 +313,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f) != 1) {
-	cfgfatal_maybefile(f,loc,"rsa-private","error reading modulus");
+	cfgfatal_maybefile(f,loc,"rsa-private","error reading modulus\n");
     }
     mpz_init(&st->n);
     read_mpbin(&st->n,b,length);

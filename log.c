@@ -170,11 +170,11 @@ void cfgfile_postreadcheck(struct cloc loc, FILE *f)
 {
     assert(loc.file);
     if (ferror(f)) {
-	Message(M_FATAL, "error reading config file (%s): %s",
+	Message(M_FATAL, "error reading config file (%s): %s\n",
 		loc.file, strerror(errno));
 	exit(current_phase);
     } else if (feof(f)) {
-	Message(M_FATAL, "unexpected end of config file (%s)", loc.file);
+	Message(M_FATAL, "unexpected end of config file (%s)\n", loc.file);
 	exit(current_phase);
     }
 }

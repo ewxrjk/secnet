@@ -1342,15 +1342,16 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
 
     list_t *comms_cfg=dict_lookup(dict,"comm");
-    if (!comms_cfg) cfgfatal(loc,"site","closure list \"comm\" not found");
+    if (!comms_cfg) cfgfatal(loc,"site","closure list \"comm\" not found\n");
     st->ncomms=list_length(comms_cfg);
     st->comms=safe_malloc_ary(sizeof(*st->comms),st->ncomms,"comms");
     assert(st->ncomms);
     for (i=0; i<st->ncomms; i++) {
 	item_t *item=list_elem(comms_cfg,i);
-	if (item->type!=t_closure) cfgfatal(loc,"site","comm is not a closure");
+	if (item->type!=t_closure)
+	    cfgfatal(loc,"site","comm is not a closure\n");
 	closure_t *cl=item->data.closure;
-	if (cl->type!=CL_COMM) cfgfatal(loc,"site","comm closure wrong type");
+	if (cl->type!=CL_COMM) cfgfatal(loc,"site","comm closure wrong type\n");
 	st->comms[i]=cl->interface;
     }
 

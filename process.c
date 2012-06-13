@@ -152,7 +152,7 @@ int sys_cmd(const char *path, const char *arg, ...)
 			path, arg, WTERMSIG(rv), strsignal(WTERMSIG(rv)),
 			WCOREDUMP(rv) ? " - core dumped" : "");
 	    else
-		Message(M_ERR, "sys_cmd(%s,%s,...) exited with wstat %#x",
+		Message(M_ERR, "sys_cmd(%s,%s,...) exited with wstat %#x\n",
 			path, arg, rv);
 	}
     } else if (c==0) {
