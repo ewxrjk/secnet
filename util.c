@@ -301,6 +301,18 @@ void buffer_new(struct buffer_if *buf, int32_t len)
     buf->base=safe_malloc(len,"buffer_new");
 }
 
+void buffer_copy(struct buffer_if *dst, const struct buffer_if *src)
+{
+    if (dst->len < src->len) {
+	dst->base=realloc(dst->base,src->len);
+	if (!dst->base) fatal_perror("buffer_copy");
+	dst->len = src->len;
+    }
+    dst->start = dst->base + (src->start - src->base);
+    dst->size = src->size;
+    memcpy(dst->start, src->start, dst->size);
+}
+
 static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
 			    list_t *args)
 {

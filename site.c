@@ -277,6 +277,7 @@ struct site {
     uint8_t localN[NONCELEN]; /* Nonces for key exchange */
     uint8_t remoteN[NONCELEN];
     struct buffer_if buffer; /* Current outgoing key exchange packet */
+    struct buffer_if scratch;
     int32_t retries; /* Number of retries remaining */
     uint64_t timeout; /* Timeout for current state */
     uint8_t *dhsecret;
@@ -321,6 +322,7 @@ static void enter_state_run(struct site *st);
 static bool_t enter_state_resolve(struct site *st);
 static bool_t enter_new_state(struct site *st,uint32_t next);
 static void enter_state_wait(struct site *st);
+static void activate_new_key(struct site *st);
 
 #define CHECK_AVAIL(b,l) do { if ((b)->size<(l)) return False; } while(0)
 #define CHECK_EMPTY(b) do { if ((b)->size!=0) return False; } while(0)
@@ -711,11 +713,14 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
 
 static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 {
-    cstring_t transform_err;
+    cstring_t transform_err, newkey_err="n/a";
     struct msg0 m;
     uint32_t problem;
 
     if (!unpick_msg0(st,msg0,&m)) return False;
+
+    /* Keep a copy so we can try decrypting it with multiple keys */
+    buffer_copy(&st->scratch, msg0);
 
     problem = st->current_transform->reverse(st->current_transform->st,
 					     msg0,&transform_err);
@@ -726,7 +731,21 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 	return False;
     }
 
-    slog(st,LOG_SEC,"transform: %s",transform_err);
+    if (st->state==SITE_SENTMSG5) {
+	buffer_copy(msg0, &st->scratch);
+	if (!st->new_transform->reverse(st->new_transform->st,
+					msg0,&newkey_err)) {
+	    /* It looks like we didn't get the peer's MSG6 */
+	    /* This is like a cut-down enter_new_state(SITE_RUN) */
+	    slog(st,LOG_STATE,"will enter state RUN (MSG0 with new key)");
+	    BUF_FREE(&st->buffer);
+	    st->timeout=0;
+	    activate_new_key(st);
+	    return True; /* do process the data in this packet */
+	}
+    }
+
+    slog(st,LOG_SEC,"transform: %s (new: %s)",transform_err,newkey_err);
     initiate_key_setup(st,"incoming message would not decrypt");
     return False;
 }
@@ -1236,9 +1255,9 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* Setup packet: expected only in state SENTMSG4 */
 	    /* (may turn up in state RUN if our return MSG6 was lost
 	       and the new key has already been activated. In that
-	       case we should treat it as an ordinary PING packet. We
-	       can't pass it to process_msg5() because the
-	       new_transform will now be unkeyed. XXX) */
+	       case we discard it. The peer will realise that we
+	       are using the new key when they see our data packets.
+	       Until then the peer's data packets to us get discarded. */
 	    if (st->state!=SITE_SENTMSG4) {
 		slog(st,LOG_UNEXPECTED,"unexpected MSG5");
 	    } else if (process_msg5(st,buf,source)) {
@@ -1426,6 +1445,9 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->setup_priority=(strcmp(st->localname,st->remotename)>0);
 
     buffer_new(&st->buffer,SETUP_BUFFER_LEN);
+
+    buffer_new(&st->scratch,0);
+    BUF_ALLOC(&st->scratch,"site:scratch");
 
     /* We are interested in poll(), but only for timeouts. We don't have
        any fds of our own. */
