@@ -709,26 +709,37 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
     return True;
 }
 
-static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
-			   const struct comm_addr *src)
+static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 {
-    struct msg0 m;
     cstring_t transform_err;
-    uint32_t type;
+    struct msg0 m;
+    uint32_t problem;
 
     if (!st->current_valid) {
 	slog(st,LOG_DROP,"incoming message but no current key -> dropping");
-	return initiate_key_setup(st,"incoming message but no current key");
+	initiate_key_setup(st,"incoming message but no current key");
+	return False;
     }
 
     if (!unpick_msg0(st,msg0,&m)) return False;
 
-    if (st->current_transform->reverse(st->current_transform->st,
-				       msg0,&transform_err)) {
-	/* There's a problem */
-	slog(st,LOG_SEC,"transform: %s",transform_err);
-	return initiate_key_setup(st,"incoming message would not decrypt");
-    }
+    problem = st->current_transform->reverse(st->current_transform->st,
+					     msg0,&transform_err);
+    if (!problem) return True;
+
+    slog(st,LOG_SEC,"transform: %s",transform_err);
+    initiate_key_setup(st,"incoming message would not decrypt");
+    return False;
+}
+
+static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
+			   const struct comm_addr *src)
+{
+    uint32_t type;
+
+    if (!decrypt_msg0(st,msg0))
+	return False;
+
     CHECK_AVAIL(msg0,4);
     type=buf_unprepend_uint32(msg0);
     switch(type) {
