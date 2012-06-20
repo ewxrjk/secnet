@@ -715,12 +715,6 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
     struct msg0 m;
     uint32_t problem;
 
-    if (!st->current_valid) {
-	slog(st,LOG_DROP,"incoming message but no current key -> dropping");
-	initiate_key_setup(st,"incoming message but no current key");
-	return False;
-    }
-
     if (!unpick_msg0(st,msg0,&m)) return False;
 
     problem = st->current_transform->reverse(st->current_transform->st,
