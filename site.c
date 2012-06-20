@@ -721,6 +721,11 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 					     msg0,&transform_err);
     if (!problem) return True;
 
+    if (problem==2) {
+	slog(st,LOG_DROP,"transform: %s (merely skew)",transform_err);
+	return False;
+    }
+
     slog(st,LOG_SEC,"transform: %s",transform_err);
     initiate_key_setup(st,"incoming message would not decrypt");
     return False;

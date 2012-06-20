@@ -247,7 +247,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     } else {
 	/* Too much skew */
 	*errmsg="seqnum: too much skew";
-	return 1;
+	return 2;
     }
     
     return 0;

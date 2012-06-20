@@ -389,7 +389,11 @@ typedef struct transform_inst_if *transform_createinstance_fn(void *st);
 typedef bool_t transform_setkey_fn(void *st, uint8_t *key, int32_t keylen);
 typedef void transform_delkey_fn(void *st);
 typedef void transform_destroyinstance_fn(void *st);
-/* Returns 0 for 'all is well', any other value for a problem */
+/* Returns:
+ *   0: all is well
+ *   1: for any other problem
+ *   2: message decrypted but sequence number was out of range
+ */
 typedef uint32_t transform_apply_fn(void *st, struct buffer_if *buf,
 				    const char **errmsg);
 
