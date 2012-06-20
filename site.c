@@ -642,15 +642,15 @@ static bool_t generate_msg5(struct site *st)
 }
 
 static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
-			   const struct comm_addr *src)
+			   const struct comm_addr *src,
+			   struct transform_inst_if *transform)
 {
     struct msg0 m;
     cstring_t transform_err;
 
     if (!unpick_msg0(st,msg5,&m)) return False;
 
-    if (st->new_transform->reverse(st->new_transform->st,
-				   msg5,&transform_err)) {
+    if (transform->reverse(transform->st,msg5,&transform_err)) {
 	/* There's a problem */
 	slog(st,LOG_SEC,"process_msg5: transform: %s",transform_err);
 	return False;
@@ -666,7 +666,8 @@ static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
     return True;
 }
 
-static bool_t generate_msg6(struct site *st)
+static void create_msg6(struct site *st, struct transform_inst_if *transform,
+			uint32_t session_id)
 {
     cstring_t transform_err;
 
@@ -676,12 +677,15 @@ static bool_t generate_msg6(struct site *st)
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
-    st->new_transform->forwards(st->new_transform->st,&st->buffer,
-				&transform_err);
+    transform->forwards(transform->st,&st->buffer,&transform_err);
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
     buf_prepend_uint32(&st->buffer,st->index);
-    buf_prepend_uint32(&st->buffer,st->setup_session_id);
+    buf_prepend_uint32(&st->buffer,session_id);
+}
 
+static bool_t generate_msg6(struct site *st)
+{
+    create_msg6(st,st->new_transform,st->setup_session_id);
     st->retries=1; /* Peer will retransmit MSG5 if this packet gets lost */
     return True;
 }
@@ -1258,13 +1262,25 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	       case we discard it. The peer will realise that we
 	       are using the new key when they see our data packets.
 	       Until then the peer's data packets to us get discarded. */
-	    if (st->state!=SITE_SENTMSG4) {
-		slog(st,LOG_UNEXPECTED,"unexpected MSG5");
-	    } else if (process_msg5(st,buf,source)) {
-		transport_setup_msgok(st,source);
-		enter_new_state(st,SITE_RUN);
+	    if (st->state==SITE_SENTMSG4) {
+		if (process_msg5(st,buf,source,st->new_transform)) {
+		    transport_setup_msgok(st,source);
+		    enter_new_state(st,SITE_RUN);
+		} else {
+		    slog(st,LOG_SEC,"invalid MSG5");
+		}
+	    } else if (st->state==SITE_RUN) {
+		if (process_msg5(st,buf,source,st->current_transform)) {
+		    slog(st,LOG_DROP,"got MSG5, retransmitting MSG6");
+		    transport_setup_msgok(st,source);
+		    create_msg6(st,st->current_transform,st->remote_session_id);
+		    transport_xmit(st,&st->peers,&st->buffer,True);
+		    BUF_FREE(&st->buffer);
+		} else {
+		    slog(st,LOG_SEC,"invalid MSG5 (in state RUN)");
+		}
 	    } else {
-		slog(st,LOG_SEC,"invalid MSG5");
+		slog(st,LOG_UNEXPECTED,"unexpected MSG5");
 	    }
 	    break;
 	case LABEL_MSG6:
