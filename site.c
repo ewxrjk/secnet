@@ -267,7 +267,9 @@ struct site {
     /* The currently established session */
     struct data_key current;
     struct data_key auxiliary_key;
+    bool_t auxiliary_is_new;
     uint64_t renegotiate_key_time; /* When we can negotiate a new key */
+    uint64_t auxiliary_renegotiate_key_time;
     transport_peers peers; /* Current address(es) of peer for data traffic */
 
     /* The current key setup protocol exchange.  We can only be
@@ -742,8 +744,9 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
     problem = st->current.transform->reverse(st->current.transform->st,
 					     msg0,&transform_err);
     if (!problem) {
-	delete_one_key(st,&st->auxiliary_key,
-		       "peer has used new key","auxiliary key",LOG_SEC);
+	if (!st->auxiliary_is_new)
+	    delete_one_key(st,&st->auxiliary_key,
+			   "peer has used new key","auxiliary key",LOG_SEC);
 	return True;
     }
 
@@ -757,6 +760,21 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 	(st->auxiliary_key.transform->st,msg0,&auxkey_err);
     if (problem==0) {
 	slog(st,LOG_DROP,"processing packet which uses auxiliary key");
+	if (st->auxiliary_is_new) {
+	    /* We previously timed out in state SENTMSG5 but it turns
+	     * out that our peer did in fact get our MSG5 and is
+	     * using the new key.  So we should switch to it too. */
+	    /* This is a bit like activate_new_key. */
+	    struct data_key t;
+	    t=st->current;
+	    st->current=st->auxiliary_key;
+	    st->auxiliary_key=t;
+
+	    delete_one_key(st,&st->auxiliary_key,"peer has used new key",
+			   "previous key",LOG_SEC);
+	    st->auxiliary_is_new=0;
+	    st->renegotiate_key_time=st->auxiliary_renegotiate_key_time;
+	}
 	return True;
     }
 
@@ -836,6 +854,24 @@ static bool_t send_msg(struct site *st)
 	st->timeout=st->now+st->setup_retry_interval;
 	st->retries--;
 	return True;
+    } else if (st->state==SITE_SENTMSG5) {
+	slog(st,LOG_SETUP_TIMEOUT,"timed out sending MSG5, stashing new key");
+	/* We stash the key we have produced, in case it turns out that
+	 * our peer did see our MSG5 after all and starts using it. */
+	/* This is a bit like some of activate_new_key */
+	struct transform_inst_if *t;
+	t=st->auxiliary_key.transform;
+	st->auxiliary_key.transform=st->new_transform;
+	st->new_transform=t;
+
+	t->delkey(t->st);
+	st->auxiliary_is_new=1;
+	st->auxiliary_key.key_timeout=st->now+st->key_lifetime;
+	st->auxiliary_renegotiate_key_time=st->now+st->key_renegotiate_time;
+	st->auxiliary_key.remote_session_id=st->setup_session_id;
+
+	enter_state_wait(st);
+	return False;
     } else {
 	slog(st,LOG_SETUP_TIMEOUT,"timed out sending key setup packet "
 	    "(in state %s)",state_name(st->state));
@@ -900,6 +936,7 @@ static void activate_new_key(struct site *st)
 
     t->delkey(t->st);
     st->timeout=0;
+    st->auxiliary_is_new=0;
     st->auxiliary_key.key_timeout=st->current.key_timeout;
     st->current.key_timeout=st->now+st->key_lifetime;
     st->renegotiate_key_time=st->now+st->key_renegotiate_time;
@@ -1545,6 +1582,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->current.transform=st->transform->create(st->transform->st);
     st->auxiliary_key.transform=st->transform->create(st->transform->st);
     st->new_transform=st->transform->create(st->transform->st);
+    st->auxiliary_is_new=0;
 
     enter_state_stop(st);
 
