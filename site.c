@@ -261,7 +261,6 @@ struct site {
     /* The currently established session */
     uint32_t remote_session_id;
     struct transform_inst_if *current_transform;
-    bool_t current_valid;
     uint64_t current_key_timeout; /* End of life of current key */
     uint64_t renegotiate_key_time; /* When we can negotiate a new key */
     transport_peers peers; /* Current address(es) of peer for data traffic */
@@ -323,6 +322,11 @@ static bool_t enter_state_resolve(struct site *st);
 static bool_t enter_new_state(struct site *st,uint32_t next);
 static void enter_state_wait(struct site *st);
 static void activate_new_key(struct site *st);
+
+static bool_t current_valid(struct site *st)
+{
+    return st->current_transform->valid(st->current_transform->st);
+}
 
 #define CHECK_AVAIL(b,l) do { if ((b)->size<(l)) return False; } while(0)
 #define CHECK_EMPTY(b) do { if ((b)->size!=0) return False; } while(0)
@@ -873,7 +877,6 @@ static void activate_new_key(struct site *st)
 
     t->delkey(t->st);
     st->timeout=0;
-    st->current_valid=True;
     st->current_key_timeout=st->now+st->key_lifetime;
     st->renegotiate_key_time=st->now+st->key_renegotiate_time;
     transport_peers_copy(st,&st->peers,&st->setup_peers);
@@ -885,10 +888,9 @@ static void activate_new_key(struct site *st)
 
 static void delete_key(struct site *st, cstring_t reason, uint32_t loglevel)
 {
-    if (st->current_valid) {
+    if (current_valid(st)) {
 	slog(st,loglevel,"session closed (%s)",reason);
 
-	st->current_valid=False;
 	st->current_transform->delkey(st->current_transform->st);
 	st->current_key_timeout=0;
 	set_link_quality(st);
@@ -911,7 +913,7 @@ static void enter_state_stop(struct site *st)
 static void set_link_quality(struct site *st)
 {
     uint32_t quality;
-    if (st->current_valid)
+    if (current_valid(st))
 	quality=LINK_QUALITY_UP;
     else if (st->state==SITE_WAIT || st->state==SITE_STOP)
 	quality=LINK_QUALITY_DOWN;
@@ -1023,7 +1025,7 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
 {
     cstring_t transform_err;
 
-    if (st->current_valid && st->buffer.free
+    if (current_valid(st) && st->buffer.free
 	&& transport_peers_valid(&st->peers)) {
 	BUF_ALLOC(&st->buffer,"site:MSG7");
 	buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
@@ -1120,7 +1122,7 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 
     /* In all other states we consider delivering the packet if we have
        a valid key and a valid address to send it to. */
-    if (st->current_valid && transport_peers_valid(&st->peers)) {
+    if (current_valid(st) && transport_peers_valid(&st->peers)) {
 	/* Transform it and send it */
 	if (buf->size>0) {
 	    buf_prepend_uint32(buf,LABEL_MSG9);
@@ -1470,7 +1472,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     register_for_poll(st, site_beforepoll, site_afterpoll, 0, "site");
     st->timeout=0;
 
-    st->current_valid=False;
     st->current_key_timeout=0;
     transport_peers_clear(st,&st->peers);
     transport_peers_clear(st,&st->setup_peers);
