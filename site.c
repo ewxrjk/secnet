@@ -1603,7 +1603,7 @@ static void transport_peers_copy(struct site *st, transport_peers *dst,
     dst->npeers=src->npeers;
     memcpy(dst->peers, src->peers, sizeof(*dst->peers) * dst->npeers);
     transport_peers_debug(st,dst,"copy",
-			  src->npeers, &src->peers->addr, sizeof(src->peers));
+			  src->npeers, &src->peers->addr, sizeof(*src->peers));
 }
 
 void transport_xmit(struct site *st, transport_peers *peers,
