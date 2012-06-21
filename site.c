@@ -214,6 +214,12 @@ static void transport_xmit(struct site *st, transport_peers *peers,
  /***** END of transport peers declarations *****/
 
 
+struct data_key {
+    struct transform_inst_if *transform;
+    uint64_t key_timeout; /* End of life of current key */
+    uint32_t remote_session_id;
+};
+
 struct site {
     closure_t cl;
     struct site_if ops;
@@ -259,9 +265,7 @@ struct site {
     uint64_t now; /* Most recently seen time */
 
     /* The currently established session */
-    uint32_t remote_session_id;
-    struct transform_inst_if *current_transform;
-    uint64_t current_key_timeout; /* End of life of current key */
+    struct data_key current;
     uint64_t renegotiate_key_time; /* When we can negotiate a new key */
     transport_peers peers; /* Current address(es) of peer for data traffic */
 
@@ -325,7 +329,7 @@ static void activate_new_key(struct site *st);
 
 static bool_t current_valid(struct site *st)
 {
-    return st->current_transform->valid(st->current_transform->st);
+    return st->current.transform->valid(st->current.transform->st);
 }
 
 #define CHECK_AVAIL(b,l) do { if ((b)->size<(l)) return False; } while(0)
@@ -730,7 +734,7 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
     /* Keep a copy so we can try decrypting it with multiple keys */
     buffer_copy(&st->scratch, msg0);
 
-    problem = st->current_transform->reverse(st->current_transform->st,
+    problem = st->current.transform->reverse(st->current.transform->st,
 					     msg0,&transform_err);
     if (!problem) return True;
 
@@ -871,16 +875,16 @@ static void activate_new_key(struct site *st)
 
     /* We have two transform instances, which we swap between active
        and setup */
-    t=st->current_transform;
-    st->current_transform=st->new_transform;
+    t=st->current.transform;
+    st->current.transform=st->new_transform;
     st->new_transform=t;
 
     t->delkey(t->st);
     st->timeout=0;
-    st->current_key_timeout=st->now+st->key_lifetime;
+    st->current.key_timeout=st->now+st->key_lifetime;
     st->renegotiate_key_time=st->now+st->key_renegotiate_time;
     transport_peers_copy(st,&st->peers,&st->setup_peers);
-    st->remote_session_id=st->setup_session_id;
+    st->current.remote_session_id=st->setup_session_id;
 
     slog(st,LOG_ACTIVATE_KEY,"new key activated");
     enter_state_run(st);
@@ -891,8 +895,8 @@ static void delete_key(struct site *st, cstring_t reason, uint32_t loglevel)
     if (current_valid(st)) {
 	slog(st,loglevel,"session closed (%s)",reason);
 
-	st->current_transform->delkey(st->current_transform->st);
-	st->current_key_timeout=0;
+	st->current.transform->delkey(st->current.transform->st);
+	st->current.key_timeout=0;
 	set_link_quality(st);
     }
 }
@@ -1031,11 +1035,11 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
 	buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
 	buf_append_uint32(&st->buffer,LABEL_MSG7);
 	buf_append_string(&st->buffer,reason);
-	st->current_transform->forwards(st->current_transform->st,
+	st->current.transform->forwards(st->current.transform->st,
 					&st->buffer, &transform_err);
 	buf_prepend_uint32(&st->buffer,LABEL_MSG0);
 	buf_prepend_uint32(&st->buffer,st->index);
-	buf_prepend_uint32(&st->buffer,st->remote_session_id);
+	buf_prepend_uint32(&st->buffer,st->current.remote_session_id);
 	transport_xmit(st,&st->peers,&st->buffer,True);
 	BUF_FREE(&st->buffer);
 	return True;
@@ -1076,10 +1080,10 @@ static int site_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     st->now=*now;
 
     /* Work out when our next timeout is. The earlier of 'timeout' or
-       'current_key_timeout'. A stored value of '0' indicates no timeout
+       'current.key_timeout'. A stored value of '0' indicates no timeout
        active. */
     site_settimeout(st->timeout, timeout_io);
-    site_settimeout(st->current_key_timeout, timeout_io);
+    site_settimeout(st->current.key_timeout, timeout_io);
 
     return 0; /* success */
 }
@@ -1102,7 +1106,7 @@ static void site_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		 st->state);
 	}
     }
-    if (st->current_key_timeout && *now>st->current_key_timeout) {
+    if (st->current.key_timeout && *now>st->current.key_timeout) {
 	delete_key(st,"maximum key life exceeded",LOG_TIMEOUT_KEY);
     }
 }
@@ -1126,11 +1130,11 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 	/* Transform it and send it */
 	if (buf->size>0) {
 	    buf_prepend_uint32(buf,LABEL_MSG9);
-	    st->current_transform->forwards(st->current_transform->st,
+	    st->current.transform->forwards(st->current.transform->st,
 					    buf, &transform_err);
 	    buf_prepend_uint32(buf,LABEL_MSG0);
 	    buf_prepend_uint32(buf,st->index);
-	    buf_prepend_uint32(buf,st->remote_session_id);
+	    buf_prepend_uint32(buf,st->current.remote_session_id);
 	    transport_xmit(st,&st->peers,buf,False);
 	}
 	BUF_FREE(buf);
@@ -1210,7 +1214,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	case 0: /* NAK */
 	    /* If the source is our current peer then initiate a key setup,
 	       because our peer's forgotten the key */
-	    if (get_uint32(buf->start+4)==st->remote_session_id) {
+	    if (get_uint32(buf->start+4)==st->current.remote_session_id) {
 		initiate_key_setup(st,"received a NAK");
 	    } else {
 		slog(st,LOG_SEC,"bad incoming NAK");
@@ -1272,10 +1276,11 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		    slog(st,LOG_SEC,"invalid MSG5");
 		}
 	    } else if (st->state==SITE_RUN) {
-		if (process_msg5(st,buf,source,st->current_transform)) {
+		if (process_msg5(st,buf,source,st->current.transform)) {
 		    slog(st,LOG_DROP,"got MSG5, retransmitting MSG6");
 		    transport_setup_msgok(st,source);
-		    create_msg6(st,st->current_transform,st->remote_session_id);
+		    create_msg6(st,st->current.transform,
+				st->current.remote_session_id);
 		    transport_xmit(st,&st->peers,&st->buffer,True);
 		    BUF_FREE(&st->buffer);
 		} else {
@@ -1472,7 +1477,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     register_for_poll(st, site_beforepoll, site_afterpoll, 0, "site");
     st->timeout=0;
 
-    st->current_key_timeout=0;
+    st->current.key_timeout=0;
     transport_peers_clear(st,&st->peers);
     transport_peers_clear(st,&st->setup_peers);
     /* XXX mlock these */
@@ -1499,7 +1504,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     for (i=0; i<st->ncomms; i++)
 	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);
 
-    st->current_transform=st->transform->create(st->transform->st);
+    st->current.transform=st->transform->create(st->transform->st);
     st->new_transform=st->transform->create(st->transform->st);
 
     enter_state_stop(st);
