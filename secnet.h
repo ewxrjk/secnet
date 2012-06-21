@@ -387,6 +387,7 @@ struct site_if {
 
 typedef struct transform_inst_if *transform_createinstance_fn(void *st);
 typedef bool_t transform_setkey_fn(void *st, uint8_t *key, int32_t keylen);
+typedef bool_t transform_valid_fn(void *st); /* 0: no key; 1: ok */
 typedef void transform_delkey_fn(void *st);
 typedef void transform_destroyinstance_fn(void *st);
 /* Returns:
@@ -400,6 +401,7 @@ typedef uint32_t transform_apply_fn(void *st, struct buffer_if *buf,
 struct transform_inst_if {
     void *st;
     transform_setkey_fn *setkey;
+    transform_valid_fn *valid;
     transform_delkey_fn *delkey;
     transform_apply_fn *forwards;
     transform_apply_fn *reverse;

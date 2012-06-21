@@ -68,6 +68,13 @@ static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen)
     return True;
 }
 
+static bool_t transform_valid(void *sst)
+{
+    struct transform_inst *ti=sst;
+
+    return ti->keyed;
+}
+
 static void transform_delkey(void *sst)
 {
     struct transform_inst *ti=sst;
@@ -271,6 +278,7 @@ static struct transform_inst_if *transform_create(void *sst)
 
     ti->ops.st=ti;
     ti->ops.setkey=transform_setkey;
+    ti->ops.valid=transform_valid;
     ti->ops.delkey=transform_delkey;
     ti->ops.forwards=transform_forward;
     ti->ops.reverse=transform_reverse;
