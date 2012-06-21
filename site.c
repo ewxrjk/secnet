@@ -319,7 +319,11 @@ static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 }
 
 static void set_link_quality(struct site *st);
-static void delete_key(struct site *st, cstring_t reason, uint32_t loglevel);
+static void delete_keys(struct site *st, cstring_t reason, uint32_t loglevel);
+static void delete_one_key(struct site *st, struct data_key *key,
+			   const char *reason /* may be 0 meaning don't log*/,
+			   const char *which /* ignored if !reasonn */,
+			   uint32_t loglevel /* ignored if !reasonn */);
 static bool_t initiate_key_setup(struct site *st, cstring_t reason);
 static void enter_state_run(struct site *st);
 static bool_t enter_state_resolve(struct site *st);
@@ -775,7 +779,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
     switch(type) {
     case LABEL_MSG7:
 	/* We must forget about the current session. */
-	delete_key(st,"request from peer",LOG_SEC);
+	delete_keys(st,"request from peer",LOG_SEC);
 	return True;
     case LABEL_MSG9:
 	/* Deliver to netlink layer */
@@ -890,13 +894,21 @@ static void activate_new_key(struct site *st)
     enter_state_run(st);
 }
 
-static void delete_key(struct site *st, cstring_t reason, uint32_t loglevel)
+static void delete_one_key(struct site *st, struct data_key *key,
+			   cstring_t reason, cstring_t which, uint32_t loglevel)
+{
+    if (!key->transform->valid(key->transform->st)) return;
+    if (reason) slog(st,loglevel,"%s deleted (%s)",which,reason);
+    key->transform->delkey(key->transform->st);
+    key->key_timeout=0;
+}
+
+static void delete_keys(struct site *st, cstring_t reason, uint32_t loglevel)
 {
     if (current_valid(st)) {
 	slog(st,loglevel,"session closed (%s)",reason);
 
-	st->current.transform->delkey(st->current.transform->st);
-	st->current.key_timeout=0;
+	delete_one_key(st,&st->current,0,0,0);
 	set_link_quality(st);
     }
 }
@@ -910,7 +922,7 @@ static void enter_state_stop(struct site *st)
 {
     st->state=SITE_STOP;
     st->timeout=0;
-    delete_key(st,"entering state STOP",LOG_TIMEOUT_KEY);
+    delete_keys(st,"entering state STOP",LOG_TIMEOUT_KEY);
     st->new_transform->delkey(st->new_transform->st);
 }
 
@@ -1088,6 +1100,14 @@ static int site_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     return 0; /* success */
 }
 
+static void check_expiry(struct site *st, struct data_key *key,
+			 const char *which)
+{
+    if (key->key_timeout && *now>key->key_timeout) {
+	delete_one_key(st,key,"maximum life exceeded",which,LOG_TIMEOUT_KEY);
+    }
+}
+
 /* NB site_afterpoll will be called before site_beforepoll is ever called */
 static void site_afterpoll(void *sst, struct pollfd *fds, int nfds)
 {
@@ -1106,9 +1126,7 @@ static void site_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		 st->state);
 	}
     }
-    if (st->current.key_timeout && *now>st->current.key_timeout) {
-	delete_key(st,"maximum key life exceeded",LOG_TIMEOUT_KEY);
-    }
+    check_expiry(st,&st->current,"current key");
 }
 
 /* This function is called by the netlink device to deliver packets
