@@ -266,6 +266,7 @@ struct site {
 
     /* The currently established session */
     struct data_key current;
+    struct data_key auxiliary_key;
     uint64_t renegotiate_key_time; /* When we can negotiate a new key */
     transport_peers peers; /* Current address(es) of peer for data traffic */
 
@@ -729,7 +730,7 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
 
 static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 {
-    cstring_t transform_err, newkey_err="n/a";
+    cstring_t transform_err, auxkey_err, newkey_err="n/a";
     struct msg0 m;
     uint32_t problem;
 
@@ -740,11 +741,23 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 
     problem = st->current.transform->reverse(st->current.transform->st,
 					     msg0,&transform_err);
-    if (!problem) return True;
+    if (!problem) {
+	delete_one_key(st,&st->auxiliary_key,
+		       "peer has used new key","auxiliary key",LOG_SEC);
+	return True;
+    }
 
     if (problem==2) {
 	slog(st,LOG_DROP,"transform: %s (merely skew)",transform_err);
 	return False;
+    }
+
+    buffer_copy(msg0, &st->scratch);
+    problem = st->auxiliary_key.transform->reverse
+	(st->auxiliary_key.transform->st,msg0,&auxkey_err);
+    if (problem==0) {
+	slog(st,LOG_DROP,"processing packet which uses auxiliary key");
+	return True;
     }
 
     if (st->state==SITE_SENTMSG5) {
@@ -761,7 +774,8 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 	}
     }
 
-    slog(st,LOG_SEC,"transform: %s (new: %s)",transform_err,newkey_err);
+    slog(st,LOG_SEC,"transform: %s (aux: %s, new: %s)",
+	 transform_err,auxkey_err,newkey_err);
     initiate_key_setup(st,"incoming message would not decrypt");
     return False;
 }
@@ -877,14 +891,16 @@ static void activate_new_key(struct site *st)
 {
     struct transform_inst_if *t;
 
-    /* We have two transform instances, which we swap between active
-       and setup */
-    t=st->current.transform;
+    /* We have three transform instances, which we swap between old,
+       active and setup */
+    t=st->auxiliary_key.transform;
+    st->auxiliary_key.transform=st->current.transform;
     st->current.transform=st->new_transform;
     st->new_transform=t;
 
     t->delkey(t->st);
     st->timeout=0;
+    st->auxiliary_key.key_timeout=st->current.key_timeout;
     st->current.key_timeout=st->now+st->key_lifetime;
     st->renegotiate_key_time=st->now+st->key_renegotiate_time;
     transport_peers_copy(st,&st->peers,&st->setup_peers);
@@ -911,6 +927,7 @@ static void delete_keys(struct site *st, cstring_t reason, uint32_t loglevel)
 	delete_one_key(st,&st->current,0,0,0);
 	set_link_quality(st);
     }
+    delete_one_key(st,&st->auxiliary_key,0,0,0);
 }
 
 static void state_assert(struct site *st, bool_t ok)
@@ -1096,6 +1113,7 @@ static int site_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
        active. */
     site_settimeout(st->timeout, timeout_io);
     site_settimeout(st->current.key_timeout, timeout_io);
+    site_settimeout(st->auxiliary_key.key_timeout, timeout_io);
 
     return 0; /* success */
 }
@@ -1127,6 +1145,7 @@ static void site_afterpoll(void *sst, struct pollfd *fds, int nfds)
 	}
     }
     check_expiry(st,&st->current,"current key");
+    check_expiry(st,&st->auxiliary_key,"auxiliary key");
 }
 
 /* This function is called by the netlink device to deliver packets
@@ -1496,6 +1515,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->timeout=0;
 
     st->current.key_timeout=0;
+    st->auxiliary_key.key_timeout=0;
     transport_peers_clear(st,&st->peers);
     transport_peers_clear(st,&st->setup_peers);
     /* XXX mlock these */
@@ -1523,6 +1543,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);
 
     st->current.transform=st->transform->create(st->transform->st);
+    st->auxiliary_key.transform=st->transform->create(st->transform->st);
     st->new_transform=st->transform->create(st->transform->st);
 
     enter_state_stop(st);
