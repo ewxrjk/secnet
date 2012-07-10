@@ -333,7 +333,7 @@ def set_property(obj,w):
 def pline(i,allow_include=False):
 	"Process a configuration file line"
 	global allow_defs, obstack, root
-	w=string.split(i)
+	w=string.split(i.rstrip('\n'))
 	if len(w)==0: return
 	keyword=w[0]
 	current=obstack[len(obstack)-1]
@@ -407,7 +407,6 @@ def pfile(name,lines,allow_include=False):
 	for i in lines:
 		line=line+1
 		if (i[0]=='#'): continue
-		if (i[len(i)-1]=='\n'):	i=i[:len(i)-1] # strip trailing LF
 		pline(i,allow_include=allow_include)
 
 def outputsites(w):
