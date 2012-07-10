@@ -334,23 +334,22 @@ def pline(i,allow_include=False):
 	"Process a configuration file line"
 	global allow_defs, obstack, root
 	w=string.split(i.rstrip('\n'))
-	if len(w)==0: return
+	if len(w)==0: return [i]
 	keyword=w[0]
 	current=obstack[len(obstack)-1]
 	if keyword=='end-definitions':
 		allow_defs=sitelevel.depth
 		obstack=[root]
-		return
+		return [i]
 	if keyword=='include':
 		if not allow_include:
 			complain("include not permitted here")
-			return
+			return []
 		if len(w) != 2:
 			complain("include requires one argument")
-			return
+			return []
 		newfile=os.path.join(os.path.dirname(file),w[1])
-		pfilepath(newfile,allow_include=allow_include)
-		return
+		return pfilepath(newfile,allow_include=allow_include)
 	if levels.has_key(keyword):
 		# We may go up any number of levels, but only down by one
 		newdepth=levels[keyword].depth
@@ -381,33 +380,34 @@ def pline(i,allow_include=False):
 			current.children[w[1]]=nl
 			current=nl
 		obstack.append(current)
-		return
+		return [i]
 	if current.allow_properties.has_key(keyword):
 		set_property(current,w)
-		return
+		return [i]
 	else:
 		complain("Property %s not allowed at %s level"%
 			(keyword,current.type))
-		return
+		return []
 
 	complain("unknown keyword '%s'"%(keyword))
 
 def pfilepath(pathname,allow_include=False):
 	f=open(pathname)
-	lines=f.readlines()
-	pfile(pathname,lines,allow_include=allow_include)
+	outlines=pfile(pathname,f.readlines(),allow_include=allow_include)
 	f.close()
-	return lines
+	return outlines
 
 def pfile(name,lines,allow_include=False):
 	"Process a file"
 	global file,line
 	file=name
 	line=0
+	outlines=[]
 	for i in lines:
 		line=line+1
 		if (i[0]=='#'): continue
-		pline(i,allow_include=allow_include)
+		outlines += pline(i,allow_include=allow_include)
+	return outlines
 
 def outputsites(w):
 	"Output include file for secnet configuration"
