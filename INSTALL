@@ -8,7 +8,7 @@ VERSIONS.
 
 ** System software support
 
-Ensure that you have libgmp2-dev and adns installed (and bison and
+Ensure that you have libgmp3-dev and adns installed (and bison and
 flex, and for that matter gcc...).
 
 [On BSD install /usr/ports/devel/bison]
