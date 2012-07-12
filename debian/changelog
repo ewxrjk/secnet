@@ -1,3 +1,16 @@
+secnet (0.3.0~beta1) unstable; urgency=low
+
+  * New upstream version.
+   - SECURITY FIX: avoid crashes (or buffer overrun) on short packets.
+   - Bugfixes relating to packet loss during key exchange.
+   - Bugfixes relating to link up/down status.
+   - Bugfixes relating to logging.
+   - make-secnet-sites made more sophisticated to support two vpns on chiark.
+   - Documentation improvements.
+   - Build system improvements.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 12 Jul 2012 20:18:16 +0100
+
 secnet (0.2.1-1) unstable; urgency=low
 
   * New upstream version.  (authbind endianness fix)
