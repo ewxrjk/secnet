@@ -8,6 +8,10 @@ secnet (0.3.0~beta1) unstable; urgency=low
    - make-secnet-sites made more sophisticated to support two vpns on chiark.
    - Documentation improvements.
    - Build system improvements.
+  * Debian packaging improvements:
+   - Native package.
+   - Maintainer / uploaders.
+   - init script requires $remove_fs since we're in /usr.
 
  -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 12 Jul 2012 20:18:16 +0100
 
