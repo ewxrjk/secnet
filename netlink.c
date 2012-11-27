@@ -106,9 +106,6 @@ their use.
 #include "netlink.h"
 #include "process.h"
 
-#define OPT_SOFTROUTE   1
-#define OPT_ALLOWROUTE  2
-
 #define ICMP_TYPE_ECHO_REPLY             0
 
 #define ICMP_TYPE_UNREACHABLE            3

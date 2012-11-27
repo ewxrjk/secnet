@@ -166,8 +166,14 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
     struct subnet_list *nets;
     int32_t i;
     int fd=-1;
+    bool_t up;
 
-    if (routes->up == routes->kup) return False;
+    if (routes->options & OPT_SOFTROUTE)
+        up = routes->up;
+    else
+        up = routes->link_quality > LINK_QUALITY_UNUSED;
+
+    if (up == routes->kup) return False;
     if (st->route_type==TUN_CONFIG_IOCTL) {
 	if (st->tun_flavour==TUN_FLAVOUR_STREAMS) {
 	    fd=open(st->ip_path,O_RDWR);
@@ -187,20 +193,20 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 	network=ipaddr_to_string(nets->list[i].prefix);
 	mask=ipaddr_to_string(nets->list[i].mask);
 	Message(M_INFO,"%s: %s route %s/%d %s kernel routing table\n",
-		st->nl.name,routes->up?"adding":"deleting",network,
-		nets->list[i].len,routes->up?"to":"from");
+		st->nl.name,up?"adding":"deleting",network,
+		nets->list[i].len,up?"to":"from");
 	switch (st->route_type) {
 	case TUN_CONFIG_LINUX:
-	    sys_cmd(st->route_path,"route",routes->up?"add":"del",
+	    sys_cmd(st->route_path,"route",up?"add":"del",
 		    "-net",network,"netmask",mask,
 		    "gw",secnetaddr,(char *)0);
 	    break;
 	case TUN_CONFIG_BSD:
-	    sys_cmd(st->route_path,"route",routes->up?"add":"del",
+	    sys_cmd(st->route_path,"route",up?"add":"del",
 		    "-net",network,secnetaddr,mask,(char *)0);
 	    break;
 	case TUN_CONFIG_SOLARIS25:
-	    sys_cmd(st->route_path,"route",routes->up?"add":"del",
+	    sys_cmd(st->route_path,"route",up?"add":"del",
 		    network,secnetaddr,(char *)0);
 	    break;
 	case TUN_CONFIG_IOCTL:
@@ -222,7 +228,7 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 	    sa->sin_family=AF_INET;
 	    sa->sin_addr.s_addr=htonl(st->nl.secnet_address);
 	    rt.rt_flags=RTF_UP|RTF_GATEWAY;
-	    action=routes->up?SIOCADDRT:SIOCDELRT;
+	    action=up?SIOCADDRT:SIOCDELRT;
 	    if (ioctl(fd,action,&rt)<0) {
 		fatal_perror("tun_set_route: ioctl()");
 	    }
@@ -241,7 +247,7 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
     if (st->route_type==TUN_CONFIG_IOCTL) {
 	close(fd);
     }
-    routes->kup=routes->up;
+    routes->kup=up;
     return True;
 }
 

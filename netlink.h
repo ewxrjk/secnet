@@ -31,6 +31,10 @@ struct netlink_client {
     struct netlink_client *next;
 };
 
+/* options field in 'struct netlink_client' */
+#define OPT_SOFTROUTE   1
+#define OPT_ALLOWROUTE  2
+
 typedef bool_t netlink_route_fn(void *cst, struct netlink_client *routes);
 
 /* Netlink provides one function to the device driver, to call to deliver
