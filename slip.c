@@ -23,6 +23,8 @@ struct slip {
     struct buffer_if *buff; /* We unstuff received packets into here
 			       and send them to the netlink code. */
     bool_t pending_esc;
+    bool_t ignoring_packet; /* If this packet was corrupt or overlong,
+			       we ignore everything up to the next END */
     netlink_deliver_fn *netlink_to_tunnel;
     uint32_t local_address;
 };
@@ -73,33 +75,62 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 
     BUF_ASSERT_USED(st->buff);
     for (i=0; i<l; i++) {
+	int outputchr;
+	enum { OUTPUT_END = 256, OUTPUT_NOTHING = 257 };
+
 	if (st->pending_esc) {
 	    st->pending_esc=False;
 	    switch(buf[i]) {
 	    case SLIP_ESCEND:
-		*(uint8_t *)buf_append(st->buff,1)=SLIP_END;
+		outputchr=SLIP_END;
 		break;
 	    case SLIP_ESCESC:
-		*(uint8_t *)buf_append(st->buff,1)=SLIP_ESC;
+		outputchr=SLIP_ESC;
 		break;
 	    default:
-		fatal("userv_afterpoll: bad SLIP escape character");
+		if (!st->ignoring_packet) {
+		    Message(M_WARNING, "userv_afterpoll: bad SLIP escape"
+			    " character, dropping packet\n");
+		}
+		st->ignoring_packet=True;
+		outputchr=OUTPUT_NOTHING;
+		break;
 	    }
 	} else {
 	    switch (buf[i]) {
 	    case SLIP_END:
+		outputchr=OUTPUT_END;
+		break;
+	    case SLIP_ESC:
+		st->pending_esc=True;
+		outputchr=OUTPUT_NOTHING;
+		break;
+	    default:
+		outputchr=buf[i];
+		break;
+	    }
+	}
+
+	if (st->ignoring_packet) {
+	    if (outputchr == OUTPUT_END) {
+		st->ignoring_packet=False;
+		buffer_init(st->buff,st->nl.max_start_pad);
+	    }
+	} else {
+	    if (outputchr == OUTPUT_END) {
 		if (st->buff->size>0) {
 		    st->netlink_to_tunnel(&st->nl,st->buff);
 		    BUF_ALLOC(st->buff,"userv_afterpoll");
 		}
 		buffer_init(st->buff,st->nl.max_start_pad);
-		break;
-	    case SLIP_ESC:
-		st->pending_esc=True;
-		break;
-	    default:
-		*(uint8_t *)buf_append(st->buff,1)=buf[i];
-		break;
+	    } else if (outputchr != OUTPUT_NOTHING) {
+		if (st->buff->size < st->buff->len) {
+		    *(uint8_t *)buf_append(st->buff,1)=outputchr;
+		} else {
+		    Message(M_WARNING, "userv_afterpoll: dropping overlong"
+			    " SLIP packet\n");
+		    st->ignoring_packet=True;
+		}
 	    }
 	}
     }
@@ -116,6 +147,7 @@ static void slip_init(struct slip *st, struct cloc loc, dict_t *dict,
 	dict_find_item(dict,"local-address", True, name, loc),"netlink");
     BUF_ALLOC(st->buff,"slip_init");
     st->pending_esc=False;
+    st->ignoring_packet=False;
 }
 
 /* Connection to the kernel through userv-ipif */
