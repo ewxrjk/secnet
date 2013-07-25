@@ -36,16 +36,11 @@ struct rsapub {
 
 static const char *hexchars="0123456789abcdef";
 
-static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
+static void emsa_pkcs1(MP_INT *n, MP_INT *m,
+		       const uint8_t *data, int32_t datalen)
 {
-    struct rsapriv *st=sst;
-    MP_INT a, b, u, v, tmp, tmp2;
     char buff[2048];
     int msize, i;
-    string_t signature;
-
-    mpz_init(&a);
-    mpz_init(&b);
 
     /* RSA PKCS#1 v1.5 signature padding:
      *
@@ -65,7 +60,7 @@ static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
      * -iwj 17.9.2002
      */
 
-    msize=mpz_sizeinbase(&st->n, 16);
+    msize=mpz_sizeinbase(n, 16);
 
     if (datalen*2+6>=msize) {
 	fatal("rsa_sign: message too big");
@@ -86,7 +81,20 @@ static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
 
     buff[msize]=0;
 
-    mpz_set_str(&a, buff, 16);
+    mpz_set_str(m, buff, 16);
+}
+
+static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
+{
+    struct rsapriv *st=sst;
+    MP_INT a, b, u, v, tmp, tmp2;
+    string_t signature;
+
+    mpz_init(&a);
+    mpz_init(&b);
+
+    /* Construct the message representative. */
+    emsa_pkcs1(&st->n, &a, data, datalen);
 
     /*
      * Produce an RSA signature (a^d mod n) using the Chinese
@@ -135,32 +143,13 @@ static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
 {
     struct rsapub *st=sst;
     MP_INT a, b, c;
-    char buff[2048];
-    int msize, i;
     bool_t ok;
 
     mpz_init(&a);
     mpz_init(&b);
     mpz_init(&c);
 
-    msize=mpz_sizeinbase(&st->n, 16);
-
-    strcpy(buff,"0001");
-
-    for (i=0; i<datalen; i++) {
-	buff[msize+(-datalen+i)*2]=hexchars[(data[i]&0xf0)>>4];
-	buff[msize+(-datalen+i)*2+1]=hexchars[data[i]&0xf];
-    }
-
-    buff[msize-datalen*2-2]= '0';
-    buff[msize-datalen*2-1]= '0';
-
-    for (i=4; i<msize-datalen*2-2; i++)
-	buff[i]='f';
-
-    buff[msize]=0;
-
-    mpz_set_str(&a, buff, 16);
+    emsa_pkcs1(&st->n, &a, data, datalen);
 
     mpz_set_str(&b, signature, 16);
 
