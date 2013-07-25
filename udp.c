@@ -21,6 +21,7 @@
 #include "util.h"
 #include "unaligned.h"
 #include "ipaddr.h"
+#include "magic.h"
 
 static beforepoll_fn udp_beforepoll;
 static afterpoll_fn udp_afterpoll;
@@ -140,7 +141,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 		    buffer_init(st->rbuf,0);
 		    buf_append_uint32(st->rbuf,dest);
 		    buf_append_uint32(st->rbuf,source);
-		    buf_append_uint32(st->rbuf,0); /* NAK is msg type 0 */
+		    buf_append_uint32(st->rbuf,LABEL_NAK);
 		    sendto(st->fd, st->rbuf->start, st->rbuf->size, 0,
 			   (struct sockaddr *)&from, sizeof(from));
 		    BUF_FREE(st->rbuf);

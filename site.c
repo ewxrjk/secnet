@@ -1286,7 +1286,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	uint32_t msgtype=ntohl(get_uint32(buf->start+8));
 	if (msgtype!=LABEL_MSG0) dump_packet(st,buf,source,True);
 	switch (msgtype) {
-	case 0: /* NAK */
+	case LABEL_NAK:
 	    /* If the source is our current peer then initiate a key setup,
 	       because our peer's forgotten the key */
 	    if (get_uint32(buf->start+4)==st->current.remote_session_id) {

@@ -3,6 +3,7 @@
 #ifndef magic_h
 #define magic_h
 
+#define LABEL_NAK  0x00000000
 #define LABEL_MSG0 0x00020200
 #define LABEL_MSG1 0x01010101
 #define LABEL_MSG2 0x02020202
