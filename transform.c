@@ -234,13 +234,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 	return 1;
     }
 
-    padp=buf_unappend(buf,padlen-1);
-    for (i=0; i<padlen-1; i++) {
-	if (*++padp != padlen) {
-	    *errmsg="pkcs5: corrupted padding";
-	    return 1;
-	}
-    }
+    buf_unappend(buf,padlen-1);
 
     /* Sequence number must be within max_skew of lastrecvseq; lastrecvseq
        is only allowed to increase. */
