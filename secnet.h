@@ -339,8 +339,8 @@ typedef void log_vmsg_fn(void *st, int class, const char *message,
 			 va_list args);
 struct log_if {
     void *st;
-    log_msg_fn *log;
-    log_vmsg_fn *vlog;
+    log_msg_fn *logfn;   /* Do not call these directly - you don't get */
+    log_vmsg_fn *vlogfn; /* printf format checking.  Use [v]slilog instead */
 };
 /* (convenience functions, defined in util.c) */
 extern void slilog(struct log_if *lf, int class, const char *message, ...)
@@ -492,21 +492,25 @@ struct buffer_if {
 #define M_FATAL	       0x100
 
 /* The fatal() family of functions require messages that do not end in '\n' */
-extern NORETURN(fatal(const char *message, ...));
-extern NORETURN(fatal_perror(const char *message, ...));
-extern NORETURN(fatal_status(int status, const char *message, ...));
-extern NORETURN(fatal_perror_status(int status, const char *message, ...));
+extern NORETURN(fatal(const char *message, ...)) FORMAT(printf,1,2);
+extern NORETURN(fatal_perror(const char *message, ...)) FORMAT(printf,1,2);
+extern NORETURN(fatal_status(int status, const char *message, ...))
+       FORMAT(printf,2,3);
+extern NORETURN(fatal_perror_status(int status, const char *message, ...))
+       FORMAT(printf,2,3);
 
 /* The cfgfatal() family of functions require messages that end in '\n' */
 extern NORETURN(cfgfatal(struct cloc loc, cstring_t facility,
-			 const char *message, ...));
+			 const char *message, ...)) FORMAT(printf,3,4);
 extern void cfgfile_postreadcheck(struct cloc loc, FILE *f);
 extern NORETURN(vcfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
 				    cstring_t facility, const char *message,
-				    va_list));
+				    va_list))
+    FORMAT(printf,4,0);
 extern NORETURN(cfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
 				   cstring_t facility,
-				   const char *message, ...));
+				   const char *message, ...))
+    FORMAT(printf,4,5);
 
 extern void Message(uint32_t class, const char *message, ...)
     FORMAT(printf,2,3);

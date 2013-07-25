@@ -15,6 +15,8 @@ uint32_t message_level=M_WARNING|M_ERR|M_SECURITY|M_FATAL;
 struct log_if *system_log=NULL;
 
 static void vMessageFallback(uint32_t class, const char *message, va_list args)
+    FORMAT(printf,2,0);
+static void vMessageFallback(uint32_t class, const char *message, va_list args)
 {
     FILE *dest=stdout;
     /* Messages go to stdout/stderr */
@@ -60,6 +62,8 @@ void Message(uint32_t class, const char *message, ...)
     va_end(ap);
 }
 
+static void MessageFallback(uint32_t class, const char *message, ...)
+    FORMAT(printf,2,3);
 static void MessageFallback(uint32_t class, const char *message, ...)
 {
     va_list ap;
@@ -191,7 +195,7 @@ static void log_vmulti(void *sst, int class, const char *message, va_list args)
 
     if (secnet_is_daemon) {
 	for (i=st; i; i=i->next) {
-	    i->l->vlog(i->l->st,class,message,args);
+	    vslilog(i->l,class,message,args);
 	}
     } else {
 	vMessage(class,message,args);
@@ -199,6 +203,8 @@ static void log_vmulti(void *sst, int class, const char *message, va_list args)
     }
 }
 
+static void log_multi(void *st, int priority, const char *message, ...)
+    FORMAT(printf,3,4);
 static void log_multi(void *st, int priority, const char *message, ...)
 {
     va_list ap;
@@ -242,8 +248,8 @@ struct log_if *init_log(list_t *ll)
     }
     r=safe_malloc(sizeof(*r), "init_log");
     r->st=l;
-    r->log=log_multi;
-    r->vlog=log_vmulti;
+    r->logfn=log_multi;
+    r->vlogfn=log_vmulti;
     return r;
 }
 
@@ -283,6 +289,8 @@ static void logfile_vlog(void *sst, int class, const char *message,
     }
 }
 
+static void logfile_log(void *state, int class, const char *message, ...)
+    FORMAT(printf,3,4);
 static void logfile_log(void *state, int class, const char *message, ...)
 {
     va_list ap;
@@ -355,8 +363,8 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
-    st->ops.log=logfile_log;
-    st->ops.vlog=logfile_vlog;
+    st->ops.logfn=logfile_log;
+    st->ops.vlogfn=logfile_vlog;
     st->loc=loc;
     st->f=NULL;
 
@@ -401,6 +409,9 @@ static int msgclass_to_syslogpriority(uint32_t m)
     
 static void syslog_vlog(void *sst, int class, const char *message,
 			 va_list args)
+    FORMAT(printf,3,0);
+static void syslog_vlog(void *sst, int class, const char *message,
+			 va_list args)
 {
     struct syslog *st=sst;
 
@@ -412,6 +423,8 @@ static void syslog_vlog(void *sst, int class, const char *message,
     }
 }
 
+static void syslog_log(void *sst, int priority, const char *message, ...)
+    FORMAT(printf,3,4);
 static void syslog_log(void *sst, int priority, const char *message, ...)
 {
     va_list ap;
@@ -472,8 +485,8 @@ static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
-    st->ops.log=syslog_log;
-    st->ops.vlog=syslog_vlog;
+    st->ops.logfn=syslog_log;
+    st->ops.vlogfn=syslog_vlog;
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict)
@@ -528,7 +541,7 @@ static void log_from_fd_afterpoll(void *sst, struct pollfd *fds, int nfds)
 	remain=FDLOG_BUFSIZE-st->i-1;
 	if (remain<=0) {
 	    st->buffer[FDLOG_BUFSIZE-1]=0;
-	    st->log->log(st->log,M_WARNING,"%s: overlong line: %s",
+	    slilog(st->log,M_WARNING,"%s: overlong line: %s",
 			 st->prefix,st->buffer);
 	    st->i=0;
 	    remain=FDLOG_BUFSIZE-1;
@@ -539,7 +552,7 @@ static void log_from_fd_afterpoll(void *sst, struct pollfd *fds, int nfds)
 	    for (i=0; i<st->i; i++) {
 		if (st->buffer[i]=='\n') {
 		    st->buffer[i]=0;
-		    st->log->log(st->log->st,M_INFO,"%s: %s",
+		    slilog(st->log,M_INFO,"%s: %s",
 				 st->prefix,st->buffer);
 		    i++;
 		    memmove(st->buffer,st->buffer+i,st->i-i);

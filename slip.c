@@ -230,7 +230,8 @@ static void userv_userv_callback(void *sst, pid_t pid, int status)
 	    fatal("%s: userv exited unexpectedly: uncaught signal %d",
 		  st->slip.nl.name,WTERMSIG(status));
 	} else {
-	    fatal("%s: userv stopped unexpectedly");
+	    fatal("%s: userv stopped unexpectedly",
+		  st->slip.nl.name);
 	}
     }
     Message(M_WARNING,"%s: userv subprocess died with status %d\n",

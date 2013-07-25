@@ -332,7 +332,8 @@ static void run(void)
 		fatal("run: beforepoll_fn (%s) returns %d",i->desc,rv);
 	    }
 	    if (timeout<-1) {
-		fatal("run: beforepoll_fn (%s) set timeout to %d",timeout);
+		fatal("run: beforepoll_fn (%s) set timeout to %d",
+		      i->desc,timeout);
 	    }
 	    idx+=nfds;
 	    remain-=nfds;

@@ -294,6 +294,8 @@ struct site {
 };
 
 static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
+FORMAT(printf,3,4);
+static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 {
     va_list ap;
     char buf[240];
@@ -318,7 +320,7 @@ static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 	}
 
 	vsnprintf(buf,sizeof(buf),msg,ap);
-	st->log->log(st->log->st,class,"%s: %s",st->tunname,buf);
+	slilog(st->log,class,"%s: %s",st->tunname,buf);
     }
     va_end(ap);
 }
@@ -1906,7 +1908,7 @@ static bool_t transport_compute_setupinit_peers(struct site *st,
     slog(st,LOG_SETUP_INIT,
 	 (!configured_addr ? "using only %d old peer address(es)"
 	  : "using configured address, and/or perhaps %d old peer address(es)"),
-	 st->peers);
+	 st->peers.npeers);
 
     /* Non-mobile peers havve st->peers.npeers==0 or ==1, since they
      * have transport_peers_max==1.  The effect is that this code
