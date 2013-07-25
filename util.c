@@ -38,6 +38,7 @@
 #include <sys/wait.h>
 #include "util.h"
 #include "unaligned.h"
+#include "magic.h"
 
 #define MIN_BUFFER_SIZE 64
 #define DEFAULT_BUFFER_SIZE 4096
@@ -379,6 +380,22 @@ static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
     
     return new_closure(&st->cl);
+}
+
+void send_nak(const struct comm_addr *dest, uint32_t our_index,
+	      uint32_t their_index, uint32_t msgtype,
+	      struct buffer_if *buf, const char *logwhy)
+{
+    buffer_init(buf,dest->comm->min_start_pad);
+    buf_append_uint32(buf,their_index);
+    buf_append_uint32(buf,our_index);
+    buf_append_uint32(buf,LABEL_NAK);
+    if (logwhy)
+	Message(M_INFO,"%s: %08"PRIx32"<-%08"PRIx32": %08"PRIx32":"
+		" %s; sending NAK\n",
+		dest->comm->addr_to_string(dest->comm->st,dest),
+		our_index, their_index, msgtype, logwhy);
+    dest->comm->sendmsg(dest->comm->st, buf, dest);
 }
 
 int consttime_memeq(const void *s1in, const void *s2in, size_t n)

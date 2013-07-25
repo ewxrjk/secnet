@@ -45,6 +45,10 @@ extern int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen);
 
 extern struct log_if *init_log(list_t *loglist);
 
+extern void send_nak(const struct comm_addr *dest, uint32_t our_index,
+		     uint32_t their_index, uint32_t msgtype,
+		     struct buffer_if *buf, const char *logwhy);
+
 extern int consttime_memeq(const void *s1, const void *s2, size_t n);
 
 #endif /* util_h */

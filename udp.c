@@ -121,12 +121,12 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 		    buf_unprepend(st->rbuf,2);
 		    memcpy(&from.sin_port,buf_unprepend(st->rbuf,2),2);
 		}
+		struct comm_addr ca;
+		FILLZERO(ca);
+		ca.comm=&st->ops;
+		ca.sin=from;
 		done=False;
 		for (n=st->notify; n; n=n->next) {
-		    struct comm_addr ca;
-		    FILLZERO(ca);
-		    ca.comm=&st->ops;
-		    ca.sin=from;
 		    if (n->fn(n->state, st->rbuf, &ca)) {
 			done=True;
 			break;
@@ -141,17 +141,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 			/* Manufacture and send NAK packet */
 			source=get_uint32(st->rbuf->start); /* Us */
 			dest=get_uint32(st->rbuf->start+4); /* Them */
-			Message(M_INFO,"udp (port %d, peer %s):"
-				" %08"PRIx32"<-%08"PRIx32": %08"PRIx32":"
-				" unwanted/incorrect, sending NAK\n",
-				st->port, saddr_to_string(&from),
-				dest, source, msgtype);
-			buffer_init(st->rbuf,0);
-			buf_append_uint32(st->rbuf,dest);
-			buf_append_uint32(st->rbuf,source);
-			buf_append_uint32(st->rbuf,LABEL_NAK);
-			sendto(st->fd, st->rbuf->start, st->rbuf->size, 0,
-			       (struct sockaddr *)&from, sizeof(from));
+			send_nak(&ca,source,dest,msgtype,st->rbuf,"unwanted");
 		    }
 		    BUF_FREE(st->rbuf);
 		}
