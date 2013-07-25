@@ -199,6 +199,9 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     } else {
 	cfgfatal(loc,"rsa-public","you must provide an encryption key\n");
     }
+    if (mpz_sizeinbase(&st->e, 256) > RSA_MAX_MODBYTES) {
+	cfgfatal(loc, "rsa-public", "implausibly large public exponent\n");
+    }
     
     i=list_elem(args,1);
     if (i) {
@@ -212,6 +215,9 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
 	}
     } else {
 	cfgfatal(loc,"rsa-public","you must provide a modulus\n");
+    }
+    if (mpz_sizeinbase(&st->n, 256) > RSA_MAX_MODBYTES) {
+	cfgfatal(loc, "rsa-public", "implausibly large modulus\n");
     }
     return new_closure(&st->cl);
 }
