@@ -1703,13 +1703,11 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	    worst_##pad=thispad;		\
     }
     COMPUTE_WORST(min_start_pad)
-    COMPUTE_WORST(min_end_pad)
 
     /* We need to register the remote networks with the netlink device */
     st->netlink->reg(st->netlink->st, site_outgoing, st,
 		     st->transform->max_start_pad+(4*4)+
-		     worst_min_start_pad,
-		     st->transform->max_end_pad+worst_min_end_pad);
+		     worst_min_start_pad);
     
     for (i=0; i<st->ncomms; i++)
 	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);

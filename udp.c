@@ -289,7 +289,6 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.interface=&st->ops;
     st->ops.st=st;
     st->ops.min_start_pad=0;
-    st->ops.min_end_pad=0;
     st->ops.request_notify=request_notify;
     st->ops.release_notify=release_notify;
     st->ops.sendmsg=udp_sendmsg;

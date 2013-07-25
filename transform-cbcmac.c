@@ -263,7 +263,6 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
     st->ops.st=st;
     st->ops.max_start_pad=28; /* 4byte seqnum, 16byte pad, 4byte MACIV,
 				 4byte IV */
-    st->ops.max_end_pad=16; /* 16byte CBCMAC */
 
     /* We need 256*2 bits for serpent keys, 32 bits for CBC-IV and 32 bits
        for CBCMAC-IV, and 32 bits for init sequence number */

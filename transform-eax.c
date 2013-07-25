@@ -293,7 +293,6 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
     st->p.padding_mask = padding_round-1;
 
     st->ops.max_start_pad=0;
-    st->ops.max_end_pad= padding_round + st->p.tag_length + SEQLEN;
 
     st->ops.keylen=0;
     st->ops.create=transform_create;

@@ -326,7 +326,6 @@ typedef const char *comm_addr_to_string_fn(void *commst,
 struct comm_if {
     void *st;
     int32_t min_start_pad;
-    int32_t min_end_pad;
     comm_request_notify_fn *request_notify;
     comm_release_notify_fn *release_notify;
     comm_sendmsg_fn *sendmsg;
@@ -364,8 +363,8 @@ struct site_if {
 /* TRANSFORM interface */
 
 /* A reversable transformation. Transforms buffer in-place; may add
-   data to start or end. Maximum amount of data to be added specified
-   in max_start_pad and max_end_pad. (Reverse transformations decrease
+   data to start or end. Maximum amount of data to be added before
+   the packet specified in max_start_pad. (Reverse transformations decrease
    length, of course.)  Transformations may be key-dependent, in which
    case key material is passed in at initialisation time. They may
    also depend on internal factors (eg. time) and keep internal
@@ -401,8 +400,7 @@ struct transform_inst_if {
 
 struct transform_if {
     void *st;
-    int32_t max_start_pad; /* these three are all <<< INT_MAX */
-    int32_t max_end_pad;
+    int32_t max_start_pad; /* these two are both <<< INT_MAX */
     int32_t keylen; /* 0 means give the transform exactly as much as there is */
     transform_createinstance_fn *create;
 };
@@ -425,8 +423,7 @@ typedef void netlink_deliver_fn(void *st, struct buffer_if *buf);
 #define MAXIMUM_LINK_QUALITY 3
 typedef void netlink_link_quality_fn(void *st, uint32_t quality);
 typedef void netlink_register_fn(void *st, netlink_deliver_fn *deliver,
-				 void *dst, int32_t max_start_pad,
-				 int32_t max_end_pad);
+				 void *dst, int32_t max_start_pad);
 typedef void netlink_output_config_fn(void *st, struct buffer_if *buf);
 typedef bool_t netlink_check_config_fn(void *st, struct buffer_if *buf);
 typedef void netlink_set_mtu_fn(void *st, int32_t new_mtu);

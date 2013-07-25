@@ -808,14 +808,12 @@ static void netlink_inst_set_mtu(void *sst, int32_t new_mtu)
 }
 
 static void netlink_inst_reg(void *sst, netlink_deliver_fn *deliver, 
-			     void *dst, int32_t max_start_pad,
-			     int32_t max_end_pad)
+			     void *dst, int32_t max_start_pad)
 {
     struct netlink_client *c=sst;
     struct netlink *st=c->nst;
 
     if (max_start_pad > st->max_start_pad) st->max_start_pad=max_start_pad;
-    if (max_end_pad > st->max_end_pad) st->max_end_pad=max_end_pad;
     c->deliver=deliver;
     c->dst=dst;
 }
@@ -944,7 +942,6 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
     st->cl.apply=netlink_inst_apply;
     st->cl.interface=st;
     st->max_start_pad=0;
-    st->max_end_pad=0;
     st->clients=NULL;
     st->routes=NULL;
     st->n_clients=0;
