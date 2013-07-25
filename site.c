@@ -336,7 +336,7 @@ static void activate_new_key(struct site *st);
 
 static bool_t is_transform_valid(struct transform_inst_if *transform)
 {
-    return transform->valid(transform->st);
+    return transform && transform->valid(transform->st);
 }
 
 static bool_t current_valid(struct site *st)
@@ -350,6 +350,10 @@ static int call_transform_##fwdrev(struct site *st,			\
 				   struct buffer_if *buf,		\
 				   const char **errmsg)			\
 {									\
+    if (!is_transform_valid(transform)) {				\
+	*errmsg="transform not set up";					\
+	return 1;							\
+    }									\
     return transform->fwdrev(transform->st,buf,errmsg);			\
 }
 
@@ -358,9 +362,12 @@ DEFINE_CALL_TRANSFORM(reverse)
 
 static void dispose_transform(struct transform_inst_if **transform_var)
 {
-    /* will become more sophisticated very shortly */
     struct transform_inst_if *transform=*transform_var;
-    transform->delkey(transform->st);
+    if (transform) {
+	transform->delkey(transform->st);
+	transform->destroy(transform->st);
+    }
+    *transform_var = 0;
 }    
 
 #define CHECK_AVAIL(b,l) do { if ((b)->size<(l)) return False; } while(0)
@@ -394,8 +401,12 @@ struct msg {
 
 static void set_new_transform(struct site *st)
 {
-    st->new_transform->setkey(st->new_transform->st,st->sharedsecret,
-			      st->sharedsecretlen,st->setup_priority);
+    struct transform_if *generator=st->transform;
+    struct transform_inst_if *generated=generator->create(generator->st);
+    generated->setkey(generated->st,st->sharedsecret,
+		      st->sharedsecretlen,st->setup_priority);
+    dispose_transform(&st->new_transform);
+    st->new_transform=generated;
 }
 
 struct xinfoadd {
@@ -862,8 +873,8 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	goto skew;
 
     buffer_copy(msg0, &st->scratch);
-    problem = call_transform_reverse
-	(st,st->auxiliary_key.transform->st,msg0,&auxkey_err);
+    problem = call_transform_reverse(st,st->auxiliary_key.transform,
+				     msg0,&auxkey_err);
     if (problem==0) {
 	slog(st,LOG_DROP,"processing packet which uses auxiliary key");
 	if (st->auxiliary_is_new) {
@@ -1703,9 +1714,9 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     for (i=0; i<st->ncomms; i++)
 	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);
 
-    st->current.transform=st->transform->create(st->transform->st);
-    st->auxiliary_key.transform=st->transform->create(st->transform->st);
-    st->new_transform=st->transform->create(st->transform->st);
+    st->current.transform=0;
+    st->auxiliary_key.transform=0;
+    st->new_transform=0;
     st->auxiliary_is_new=0;
 
     enter_state_stop(st);
