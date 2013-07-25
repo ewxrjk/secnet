@@ -397,7 +397,7 @@ struct transform_if {
     void *st;
     int32_t max_start_pad; /* these three are all <<< INT_MAX */
     int32_t max_end_pad;
-    int32_t keylen;
+    int32_t keylen; /* 0 means give the transform exactly as much as there is */
     transform_createinstance_fn *create;
 };
 
@@ -444,6 +444,7 @@ typedef void dh_makeshared_fn(void *st, uint8_t *secret,
 struct dh_if {
     void *st;
     int32_t len; /* Approximate size of modulus in bytes */
+    int32_t ceil_len; /* Number of bytes just sufficient to contain modulus */
     dh_makepublic_fn *makepublic;
     dh_makeshared_fn *makeshared;
 };

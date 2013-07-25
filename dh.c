@@ -125,6 +125,10 @@ static list_t *dh_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->ops.len=sz;
 
+    st->ops.ceil_len=(mpz_sizeinbase(&st->p,2)+7)/8;
+    /* According to the docs, mpz_sizeinbase(,256) is allowed to return
+     * an answer which is 1 too large.  But mpz_sizeinbase(,2) isn't. */
+
     return new_closure(&st->cl);
 }
 

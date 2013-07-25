@@ -288,6 +288,7 @@ struct site {
     uint64_t timeout; /* Timeout for current state */
     uint8_t *dhsecret;
     uint8_t *sharedsecret;
+    uint32_t sharedsecretlen;
     struct transform_inst_if *new_transform; /* For key setup/verify */
 };
 
@@ -561,11 +562,11 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 
     /* Generate the shared key */
     st->dh->makeshared(st->dh->st,st->dhsecret,st->dh->len,m.pk,
-		       st->sharedsecret,st->transform->keylen);
+		       st->sharedsecret,st->sharedsecretlen);
 
     /* Set up the transform */
     st->new_transform->setkey(st->new_transform->st,st->sharedsecret,
-			      st->transform->keylen);
+			      st->sharedsecretlen);
 
     return True;
 }
@@ -609,10 +610,10 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
     m.pk[m.pklen]=0;
     /* Generate the shared key */
     st->dh->makeshared(st->dh->st,st->dhsecret,st->dh->len,m.pk,
-		       st->sharedsecret,st->transform->keylen);
+		       st->sharedsecret,st->sharedsecretlen);
     /* Set up the transform */
     st->new_transform->setkey(st->new_transform->st,st->sharedsecret,
-			      st->transform->keylen);
+			      st->sharedsecretlen);
 
     return True;
 }
@@ -1009,7 +1010,7 @@ static void enter_state_run(struct site *st)
     memset(st->remoteN,0,NONCELEN);
     st->new_transform->delkey(st->new_transform->st);
     memset(st->dhsecret,0,st->dh->len);
-    memset(st->sharedsecret,0,st->transform->keylen);
+    memset(st->sharedsecret,0,st->sharedsecretlen);
     set_link_quality(st);
 }
 
@@ -1557,7 +1558,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     transport_peers_clear(st,&st->setup_peers);
     /* XXX mlock these */
     st->dhsecret=safe_malloc(st->dh->len,"site:dhsecret");
-    st->sharedsecret=safe_malloc(st->transform->keylen,"site:sharedsecret");
+    st->sharedsecretlen=st->transform->keylen?:st->dh->ceil_len;
+    st->sharedsecret=safe_malloc(st->sharedsecretlen,"site:sharedsecret");
 
     /* We need to compute some properties of our comms */
 #define COMPUTE_WORST(pad)			\
