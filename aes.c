@@ -1,6 +1,10 @@
 /**
  *
  * aes.c - integrated in QEMU by Fabrice Bellard from the OpenSSL project.
+ *
+ * Copied to the secnet tree by Ian Jackson from the upstream qemu git
+ * tree revision 55616505876d6683130076b810a27c7889321560
+ * and modified only to remove the include of qemu-common.h.
  */
 /*
  * rijndael-alg-fst.c
@@ -27,7 +31,6 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "qemu-common.h"
 #include "aes.h"
 
 #ifndef NDEBUG

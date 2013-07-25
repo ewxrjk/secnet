@@ -5,6 +5,8 @@ conffile.tab.[ch]
 conffile.yy.[ch]
 /version.c
 /secnet
+/eax-*-test
+/eax-*-test.confirm
 
 /config.log
 /config.h

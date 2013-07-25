@@ -58,6 +58,9 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	process.o @LIBOBJS@ \
 	hackypar.o
 
+TEST_OBJECTS:=eax-aes-test.o eax-serpent-test.o eax-serpentbe-test.o \
+		eax-test.o aes.o
+
 %.c:	%.y
 
 %.yy.c:	%.fl
@@ -69,7 +72,7 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
 
-all:	$(TARGETS)
+all:	$(TARGETS) check
 
 # Automatic remaking of configuration files, from autoconf documentation
 ${srcdir}/configure: configure.in
@@ -93,8 +96,8 @@ config.status: configure
 # End of config file remaking rules
 
 # C and header file dependency rules
-SOURCES:=$(OBJECTS:.o=.c)
-DEPENDS:=$(OBJECTS:.o=.d)
+SOURCES:=$(OBJECTS:.o=.c) $(TEST_OBJECTS:.o=.c)
+DEPENDS:=$(OBJECTS:.o=.d) $(TEST_OBJECTS:.o=.d)
 
 $(DEPENDS): ${srcdir}/depend.sh
 
@@ -112,10 +115,22 @@ conffile.tab.c:	conffile.y
 secnet:	$(OBJECTS)
 	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
 
+check: eax-aes-test.confirm eax-serpent-test.confirm \
+	eax-serpentbe-test.confirm
+
 version.c: Makefile
 	echo "#include \"secnet.h\"" >$@.new
 	echo "char version[]=\"secnet $(VERSION)\";" >>$@.new
 	mv -f $@.new $@
+
+eax-%-test: eax-%-test.o eax-test.o %.o
+	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $^
+
+eax-%-test.confirm: eax-%-test eax-%-test.vectors
+	./$< <$(srcdir)/eax-$*-test.vectors >$@.new
+	mv -f $@.new $@
+
+.PRECIOUS: eax-%-test
 
 installdirs:
 	$(INSTALL) -d $(prefix)/share/secnet $(sbindir)
@@ -129,7 +144,7 @@ install: installdirs
 
 clean:
 	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c
-	$(RM) -f *.d *~
+	$(RM) -f *.d *~ eax-*-test.confirm eax-*-test
 
 realclean:	clean
 	$(RM) -f *~ Makefile config.h  *.d \
