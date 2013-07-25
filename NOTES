@@ -251,10 +251,6 @@ some reason.
 
 8) i?,i?,msg0,(send-packet/msg9,packet)_k
 
-Some messages may take a long time to prepare (software modexp on slow
-machines); this is a "please wait" message to indicate that a message
-is in preparation.
-
 **** Other messages
 
 9) i?,i?,NAK (NAK is encoded as zero)
