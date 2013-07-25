@@ -7,6 +7,7 @@ void init_builtin_modules(dict_t *dict)
     udp_module(dict);
     util_module(dict);
     site_module(dict);
+    transform_eax_module(dict);
     transform_cbcmac_module(dict);
     netlink_module(dict);
     rsa_module(dict);

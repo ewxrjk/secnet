@@ -415,8 +415,8 @@ A \fIrandomsource closure\fR is a source of random numbers.
 .PP
 Read the contents of the file \fIPATH\fR (a string) and return it as a string.
 
-.SS serpent256-cbc
-\fBserpent256-cbc(\fIDICT\fB)\fR => \fItransform closure\fR
+.SS eax-serpent
+\eax-fBserpent(\fIDICT\fB)\fR => \fItransform closure\fR
 .PP
 Valid keys in the \fIDICT\fR argument are:
 .TP
@@ -425,10 +425,27 @@ The maximum acceptable difference between the sequence number in a
 received, decrypted message and the previous one.
 The default is 10.
 It may be necessary to increase this is if connectivity is poor.
+.TP
+.B tag-length-bytes
+The length of the message authentication tag.  The default is 16,
+for a 128-bit tag length.  It must be no longer than the Serpent
+blocksize, 16.  Must be have the same value at both ends.
+.TP
+.B padding-rounding
+Messages are padded to a multiple of this many bytes.  This
+serves to obscure the exact length of messages.  The default is 16,
 .PP
 A \fItransform closure\fR is a reversible means of transforming
 messages for transmission over a (presumably) insecure network.
 It is responsible for both confidentiality and integrity.
+
+.SS serpent256-cbc
+\fBserpent256-cbc(\fIDICT\fB)\fR => \fItransform closure\fR
+.PP
+Valid keys in the \fIDICT\fR argument are:
+.TP
+.B max-sequence-skew
+As above.
 .PP
 Note that this uses a big-endian variant of the Serpent block cipher
 (which is not compatible with most other Serpent implementations).

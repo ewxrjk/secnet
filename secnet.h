@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
+#include <assert.h>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -217,6 +219,7 @@ extern init_module random_module;
 extern init_module udp_module;
 extern init_module util_module;
 extern init_module site_module;
+extern init_module transform_eax_module;
 extern init_module transform_cbcmac_module;
 extern init_module netlink_module;
 extern init_module rsa_module;
