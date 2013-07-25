@@ -368,10 +368,13 @@ struct site_if {
    also depend on internal factors (eg. time) and keep internal
    state. A struct transform_if only represents a particular type of
    transformation; instances of the transformation (eg. with
-   particular key material) have a different C type. */
+   particular key material) have a different C type. The same
+   secret key will be used in opposite directions between a pair of
+   secnets; one of these pairs will get direction==False, the other True. */
 
 typedef struct transform_inst_if *transform_createinstance_fn(void *st);
-typedef bool_t transform_setkey_fn(void *st, uint8_t *key, int32_t keylen);
+typedef bool_t transform_setkey_fn(void *st, uint8_t *key, int32_t keylen,
+				   bool_t direction);
 typedef bool_t transform_valid_fn(void *st); /* 0: no key; 1: ok */
 typedef void transform_delkey_fn(void *st);
 typedef void transform_destroyinstance_fn(void *st);

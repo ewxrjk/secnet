@@ -566,7 +566,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 
     /* Set up the transform */
     st->new_transform->setkey(st->new_transform->st,st->sharedsecret,
-			      st->sharedsecretlen);
+			      st->sharedsecretlen,st->setup_priority);
 
     return True;
 }
@@ -613,7 +613,7 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
 		       st->sharedsecret,st->sharedsecretlen);
     /* Set up the transform */
     st->new_transform->setkey(st->new_transform->st,st->sharedsecret,
-			      st->sharedsecretlen);
+			      st->sharedsecretlen,st->setup_priority);
 
     return True;
 }

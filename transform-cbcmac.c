@@ -40,7 +40,8 @@ struct transform_inst {
 
 #define PKCS5_MASK 15
 
-static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen)
+static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen,
+			       bool_t direction)
 {
     struct transform_inst *ti=sst;
 
