@@ -220,7 +220,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 	serpent_encrypt(&ti->mackey,macplain,macacc);
     }
     serpent_encrypt(&ti->mackey,macacc,macacc);
-    if (memcmp(macexpected,macacc,16)!=0) {
+    if (!consttime_memeq(macexpected,macacc,16)!=0) {
 	*errmsg="invalid MAC";
 	return 1;
     }

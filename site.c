@@ -463,7 +463,7 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
 	return False;
     }
     if (type==LABEL_MSG2) return True;
-    if (memcmp(m->nR,st->remoteN,NONCELEN)!=0) {
+    if (!consttime_memeq(m->nR,st->remoteN,NONCELEN)!=0) {
 	*error="wrong remotely-generated nonce";
 	return False;
     }

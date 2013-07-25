@@ -381,6 +381,22 @@ static list_t *buffer_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
+int consttime_memeq(const void *s1in, const void *s2in, size_t n)
+{
+    const uint8_t *s1=s1in, *s2=s2in;
+    register volatile uint8_t accumulator=0;
+
+    while (n-- > 0) {
+	accumulator |= (*s1++ ^ *s2++);
+    }
+    accumulator |= accumulator >> 4; /* constant-time             */
+    accumulator |= accumulator >> 2; /*  boolean canonicalisation */
+    accumulator |= accumulator >> 1;
+    accumulator &= 1;
+    accumulator ^= 1;
+    return accumulator;
+}
+
 void util_module(dict_t *dict)
 {
     add_closure(dict,"sysbuffer",buffer_apply);
