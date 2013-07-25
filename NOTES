@@ -291,3 +291,37 @@ vaguely recent version of secnet.  (In fact, there is no evidence in
 the git history of it ever being sent.)
 
 This message number is reserved.
+
+11) *,*,PROD,A,B
+
+Sent in response to a NAK from B to A.  Requests that B initiates a
+key exchange with A, if B is willing and lacks a transport key for A.
+(If B doesn't have A's address configured, implicitly supplies A's
+public address.)
+
+This is necessary because if one end of a link (B) is restarted while
+a key exchange is in progress, the following bad state can persist:
+the non-restarted end (A) thinks that the key is still valid and keeps
+sending packets, but B either doesn't realise that a key exchange with
+A is necessary or (if A is a mobile site) doesn't know A's public IP
+address.
+
+Normally in these circumstances B would send NAKs to A, causing A to
+initiate a key exchange.  However if A and B were already in the
+middle of a key exchange then A will not want to try another one until
+the first one has timed out ("setup-time" x "setup-retries") and then
+the key exchange retry timeout ("wait-time") has elapsed.
+
+However if B's setup has timed out, B would be willing to participate
+in a key exchange initiated by A, if A could be induced to do so.
+This is the purpose of the PROD packet.
+
+We send no more PRODs than we would want to send data packets, to
+avoid a traffic amplification attack.  We also send them only in state
+WAIT, as in other states we wouldn't respond favourably.  And we only
+honour them if we don't already have a key.
+
+With PROD, the period of broken communication due to a key exchange
+interrupted by a restart is limited to the key exchange total
+retransmission timeout, rather than also including the key exchange
+retry timeout.

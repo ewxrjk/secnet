@@ -206,7 +206,8 @@ static void transport_peers_copy(struct site *st, transport_peers *dst,
 static void transport_setup_msgok(struct site *st, const struct comm_addr *a);
 static void transport_data_msgok(struct site *st, const struct comm_addr *a);
 static bool_t transport_compute_setupinit_peers(struct site *st,
-        const struct comm_addr *configured_addr /* 0 if none or not found */);
+        const struct comm_addr *configured_addr /* 0 if none or not found */,
+        const struct comm_addr *prod_hint_addr /* 0 if none */);
 static void transport_record_peer(struct site *st, transport_peers *peers,
 				  const struct comm_addr *addr, const char *m);
 
@@ -264,6 +265,7 @@ struct site {
 /* runtime information */
     uint32_t state;
     uint64_t now; /* Most recently seen time */
+    bool_t allow_send_prod;
 
     /* The currently established session */
     struct data_key current;
@@ -333,7 +335,8 @@ static void delete_one_key(struct site *st, struct data_key *key,
 			   const char *reason /* may be 0 meaning don't log*/,
 			   const char *which /* ignored if !reasonn */,
 			   uint32_t loglevel /* ignored if !reasonn */);
-static bool_t initiate_key_setup(struct site *st, cstring_t reason);
+static bool_t initiate_key_setup(struct site *st, cstring_t reason,
+				 const struct comm_addr *prod_hint);
 static void enter_state_run(struct site *st);
 static bool_t enter_state_resolve(struct site *st);
 static bool_t enter_new_state(struct site *st,uint32_t next);
@@ -544,6 +547,10 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
 	m->remote_capabilities=buf_unprepend_uint32(&m->remote.extrainfo);
     }
     if (!unpick_name(msg,&m->local)) return False;
+    if (type==LABEL_PROD) {
+	CHECK_EMPTY(msg);
+	return True;
+    }
     CHECK_AVAIL(msg,NONCELEN);
     m->nR=buf_unprepend(msg,NONCELEN);
     if (type==LABEL_MSG1) {
@@ -987,7 +994,7 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 
     slog(st,LOG_SEC,"transform: %s (aux: %s, new: %s)",
 	 transform_err,auxkey_err,newkey_err);
-    initiate_key_setup(st,"incoming message would not decrypt");
+    initiate_key_setup(st,"incoming message would not decrypt",0);
     send_nak(src,m.dest,m.source,m.type,msg0,"message would not decrypt");
     return False;
 
@@ -1017,7 +1024,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 	transport_data_msgok(st,src);
 	/* See whether we should start negotiating a new key */
 	if (st->now > st->renegotiate_key_time)
-	    initiate_key_setup(st,"incoming packet in renegotiation window");
+	    initiate_key_setup(st,"incoming packet in renegotiation window",0);
 	return True;
     default:
 	slog(st,LOG_SEC,"incoming encrypted message of type %08x "
@@ -1098,7 +1105,7 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 	slog(st,LOG_ERROR,"resolution of %s failed",st->address);
 	ca_use=0;
     }
-    if (transport_compute_setupinit_peers(st,ca_use)) {
+    if (transport_compute_setupinit_peers(st,ca_use,0)) {
 	enter_new_state(st,SITE_SENTMSG1);
     } else {
 	/* Can't figure out who to try to to talk to */
@@ -1107,14 +1114,15 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
     }
 }
 
-static bool_t initiate_key_setup(struct site *st, cstring_t reason)
+static bool_t initiate_key_setup(struct site *st, cstring_t reason,
+				 const struct comm_addr *prod_hint)
 {
     if (st->state!=SITE_RUN) return False;
     slog(st,LOG_SETUP_INIT,"initiating key exchange (%s)",reason);
     if (st->address) {
 	slog(st,LOG_SETUP_INIT,"resolving peer address");
 	return enter_state_resolve(st);
-    } else if (transport_compute_setupinit_peers(st,0)) {
+    } else if (transport_compute_setupinit_peers(st,0,prod_hint)) {
 	return enter_new_state(st,SITE_SENTMSG1);
     }
     slog(st,LOG_SETUP_INIT,"key exchange failed: no address for peer");
@@ -1326,6 +1334,30 @@ static void enter_state_wait(struct site *st)
     /* XXX Erase keys etc. */
 }
 
+static void generate_prod(struct site *st, struct buffer_if *buf)
+{
+    buffer_init(buf,0);
+    buf_append_uint32(buf,0);
+    buf_append_uint32(buf,0);
+    buf_append_uint32(buf,LABEL_PROD);
+    buf_append_string(buf,st->localname);
+    buf_append_string(buf,st->remotename);
+}
+
+static void generate_send_prod(struct site *st,
+			       const struct comm_addr *source)
+{
+    if (!st->allow_send_prod) return; /* too soon */
+    if (!(st->state==SITE_RUN || st->state==SITE_RESOLVE ||
+	  st->state==SITE_WAIT)) return; /* we'd ignore peer's MSG1 */
+
+    slog(st,LOG_SETUP_INIT,"prodding peer for key exchange");
+    st->allow_send_prod=0;
+    generate_prod(st,&st->scratch);
+    dump_packet(st,&st->scratch,source,False);
+    source->comm->sendmsg(source->comm->st, &st->scratch, source);
+}
+
 static inline void site_settimeout(uint64_t timeout, int *timeout_io)
 {
     if (timeout) {
@@ -1398,6 +1430,8 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 	return;
     }
 
+    st->allow_send_prod=1;
+
     /* In all other states we consider delivering the packet if we have
        a valid key and a valid address to send it to. */
     if (current_valid(st) && transport_peers_valid(&st->peers)) {
@@ -1419,7 +1453,7 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 
     slog(st,LOG_DROP,"discarding outgoing packet of size %d",buf->size);
     BUF_FREE(buf);
-    initiate_key_setup(st,"outgoing packet");
+    initiate_key_setup(st,"outgoing packet",0);
 }
 
 static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
@@ -1435,7 +1469,10 @@ static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
 }
 
 /* This function is called by the communication device to deliver
-   packets from our peers. */
+   packets from our peers.
+   It should return True if the packet is recognised as being for
+   this current site instance (and should therefore not be processed
+   by other sites), even if the packet was otherwise ignored. */
 static bool_t site_incoming(void *sst, struct buffer_if *buf,
 			    const struct comm_addr *source)
 {
@@ -1492,6 +1529,20 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	BUF_FREE(buf);
 	return True;
     }
+    if (msgtype==LABEL_PROD) {
+	if (!named_for_us(st,buf,msgtype,&named_msg))
+	    return False;
+	dump_packet(st,buf,source,True);
+	if (st->state!=SITE_RUN) {
+	    slog(st,LOG_DROP,"ignoring PROD when not in state RUN");
+	} else if (current_valid(st)) {
+	    slog(st,LOG_DROP,"ignoring PROD when we think we have a key");
+	} else {
+	    initiate_key_setup(st,"peer sent PROD packet",source);
+	}
+	BUF_FREE(buf);
+	return True;
+    }
     if (dest==st->index) {
 	/* Explicitly addressed to us */
 	if (msgtype!=LABEL_MSG0) dump_packet(st,buf,source,True);
@@ -1500,7 +1551,9 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* If the source is our current peer then initiate a key setup,
 	       because our peer's forgotten the key */
 	    if (get_uint32(buf->start+4)==st->current.remote_session_id) {
-		initiate_key_setup(st,"received a NAK");
+		bool_t initiated;
+		initiated = initiate_key_setup(st,"received a NAK",0);
+		if (!initiated) generate_send_prod(st,source);
 	    } else {
 		slog(st,LOG_SEC,"bad incoming NAK");
 	    }
@@ -1742,6 +1795,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
 				       log_event_table,"site");
 
+    st->allow_send_prod=0;
+
     st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
 			    "site_apply");
     sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
@@ -1889,22 +1944,29 @@ static void transport_record_peer(struct site *st, transport_peers *peers,
 }
 
 static bool_t transport_compute_setupinit_peers(struct site *st,
-        const struct comm_addr *configured_addr /* 0 if none or not found */) {
+        const struct comm_addr *configured_addr /* 0 if none or not found */,
+        const struct comm_addr *prod_hint_addr /* 0 if none */) {
 
-    if (!configured_addr && !transport_peers_valid(&st->peers))
+    if (!configured_addr && !prod_hint_addr &&
+	!transport_peers_valid(&st->peers))
 	return False;
 
     slog(st,LOG_SETUP_INIT,
-	 (!configured_addr ? "using only %d old peer address(es)"
-	  : "using configured address, and/or perhaps %d old peer address(es)"),
+	 "using:%s%s %d old peer address(es)",
+	 configured_addr ? " configured address;" : "",
+	 prod_hint_addr ? " PROD hint address;" : "",
 	 st->peers.npeers);
 
     /* Non-mobile peers havve st->peers.npeers==0 or ==1, since they
      * have transport_peers_max==1.  The effect is that this code
      * always uses the configured address if supplied, or otherwise
-     * the existing data peer if one exists; this is as desired. */
+     * the address of the incoming PROD, or the existing data peer if
+     * one exists; this is as desired. */
 
     transport_peers_copy(st,&st->setup_peers,&st->peers);
+
+    if (prod_hint_addr)
+	transport_record_peer(st,&st->setup_peers,prod_hint_addr,"prod");
 
     if (configured_addr)
 	transport_record_peer(st,&st->setup_peers,configured_addr,"setupinit");

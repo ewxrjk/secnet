@@ -15,6 +15,7 @@
 #define LABEL_MSG7    0x07070707
 #define LABEL_MSG8    0x08080808
 #define LABEL_MSG9    0x09090909
+#define LABEL_PROD    0x0a0a0a0a
 
 /* uses of the 32-bit capability bitmap */
 #define CAPAB_EARLY           0x00000000 /* no Early flags yet (see NOTES) */
