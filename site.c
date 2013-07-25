@@ -239,7 +239,8 @@ struct site {
     struct random_if *random;
     struct rsaprivkey_if *privkey;
     struct rsapubkey_if *pubkey;
-    struct transform_if *transform;
+    struct transform_if **transforms;
+    int ntransforms;
     struct dh_if *dh;
     struct hash_if *hash;
 
@@ -277,6 +278,7 @@ struct site {
        timeout before we can listen for another setup packet); perhaps
        we should keep a list of 'bad' sources for setup packets. */
     uint32_t remote_capabilities;
+    struct transform_if *chosen_transform;
     uint32_t setup_session_id;
     transport_peers setup_peers;
     uint8_t localN[NONCELEN]; /* Nonces for key exchange */
@@ -287,7 +289,7 @@ struct site {
     uint64_t timeout; /* Timeout for current state */
     uint8_t *dhsecret;
     uint8_t *sharedsecret;
-    uint32_t sharedsecretlen;
+    uint32_t sharedsecretlen, sharedsecretallocd;
     struct transform_inst_if *new_transform; /* For key setup/verify */
 };
 
@@ -390,6 +392,7 @@ struct msg {
     struct parsedname remote;
     struct parsedname local;
     uint32_t remote_capabilities;
+    int capab_transformnum;
     uint8_t *nR;
     uint8_t *nL;
     int32_t pklen;
@@ -399,14 +402,33 @@ struct msg {
     char *sig;
 };
 
-static void set_new_transform(struct site *st)
+static void set_new_transform(struct site *st, char *pk)
 {
-    struct transform_if *generator=st->transform;
+    /* Make room for the shared key */
+    st->sharedsecretlen=st->chosen_transform->keylen?:st->dh->ceil_len;
+    assert(st->sharedsecretlen);
+    if (st->sharedsecretlen > st->sharedsecretallocd) {
+	st->sharedsecretallocd=st->sharedsecretlen;
+	st->sharedsecret=realloc(st->sharedsecret,st->sharedsecretallocd);
+    }
+    if (!st->sharedsecret) fatal_perror("site:sharedsecret");
+
+    /* Generate the shared key */
+    st->dh->makeshared(st->dh->st,st->dhsecret,st->dh->len,pk,
+		       st->sharedsecret,st->sharedsecretlen);
+
+    /* Set up the transform */
+    struct transform_if *generator=st->chosen_transform;
     struct transform_inst_if *generated=generator->create(generator->st);
     generated->setkey(generated->st,st->sharedsecret,
 		      st->sharedsecretlen,st->setup_priority);
     dispose_transform(&st->new_transform);
     st->new_transform=generated;
+
+    slog(st,LOG_SETUP_INIT,"key exchange negotiated transform"
+	 " %d (capabilities ours=%#"PRIx32" theirs=%#"PRIx32")",
+	 st->chosen_transform->capab_transformnum,
+	 st->local_capabilities, st->remote_capabilities);
 }
 
 struct xinfoadd {
@@ -468,6 +490,9 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
 
     if (hacky_par_mid_failnow()) return False;
 
+    if (type==LABEL_MSG3BIS)
+	buf_append_uint8(&st->buffer,st->chosen_transform->capab_transformnum);
+
     dhpub=st->dh->makepublic(st->dh->st,st->dhsecret,st->dh->len);
     buf_append_string(&st->buffer,dhpub);
     free(dhpub);
@@ -501,6 +526,7 @@ static bool_t unpick_name(struct buffer_if *msg, struct parsedname *nm)
 static bool_t unpick_msg(struct site *st, uint32_t type,
 			 struct buffer_if *msg, struct msg *m)
 {
+    m->capab_transformnum=-1;
     m->hashstart=msg->start;
     CHECK_AVAIL(msg,4);
     m->dest=buf_unprepend_uint32(msg);
@@ -525,6 +551,12 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     if (type==LABEL_MSG2) {
 	CHECK_EMPTY(msg);
 	return True;
+    }
+    if (type==LABEL_MSG3BIS) {
+	CHECK_AVAIL(msg,1);
+	m->capab_transformnum = buf_unprepend_uint8(msg);
+    } else {
+	m->capab_transformnum = CAPAB_TRANSFORMNUM_ANCIENT;
     }
     CHECK_AVAIL(msg,2);
     m->pklen=buf_unprepend_uint16(msg);
@@ -573,7 +605,7 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
     }
     /* MSG3 has complicated rules about capabilities, which are
      * handled in process_msg3. */
-    if (type==LABEL_MSG3) return True;
+    if (type==LABEL_MSG3 || type==LABEL_MSG3BIS) return True;
     if (m->remote_capabilities!=st->remote_capabilities) {
 	*error="remote capabilities changed";
 	return False;
@@ -622,6 +654,29 @@ static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
     }
     st->setup_session_id=m.source;
     st->remote_capabilities=m.remote_capabilities;
+
+    /* Select the transform to use */
+
+    uint32_t remote_transforms = st->remote_capabilities & CAPAB_TRANSFORM_MASK;
+    if (!remote_transforms)
+	/* old secnets only had this one transform */
+	remote_transforms = 1UL << CAPAB_TRANSFORMNUM_ANCIENT;
+
+    struct transform_if *ti;
+    int i;
+    for (i=0; i<st->ntransforms; i++) {
+	ti=st->transforms[i];
+	if ((1UL << ti->capab_transformnum) & remote_transforms)
+	    goto transform_found;
+    }
+    slog(st,LOG_ERROR,"no transforms in common"
+	 " (us %#"PRIx32"; them: %#"PRIx32")",
+	 st->local_capabilities & CAPAB_TRANSFORM_MASK,
+	 remote_transforms);
+    return False;
+ transform_found:
+    st->chosen_transform=ti;
+
     memcpy(st->remoteN,m.nR,NONCELEN);
     return True;
 }
@@ -631,19 +686,24 @@ static bool_t generate_msg3(struct site *st)
     /* Now we have our nonce and their nonce. Think of a secret key,
        and create message number 3. */
     st->random->generate(st->random->st,st->dh->len,st->dhsecret);
-    return generate_msg(st,LABEL_MSG3,"site:MSG3");
+    return generate_msg(st,
+			(st->remote_capabilities & CAPAB_TRANSFORM_MASK
+			 ? LABEL_MSG3BIS : LABEL_MSG3),
+			"site:MSG3");
 }
 
 static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
-			   const struct comm_addr *src)
+			   const struct comm_addr *src, uint32_t msgtype)
 {
     struct msg m;
     uint8_t *hash;
     void *hst;
     cstring_t err;
 
-    if (!unpick_msg(st,LABEL_MSG3,msg3,&m)) return False;
-    if (!check_msg(st,LABEL_MSG3,&m,&err)) {
+    assert(msgtype==LABEL_MSG3 || msgtype==LABEL_MSG3BIS);
+
+    if (!unpick_msg(st,msgtype,msg3,&m)) return False;
+    if (!check_msg(st,msgtype,&m,&err)) {
 	slog(st,LOG_SEC,"msg3: %s",err);
 	return False;
     }
@@ -656,6 +716,19 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 	return False;
     }
     st->remote_capabilities|=m.remote_capabilities;
+
+    struct transform_if *ti;
+    int i;
+    for (i=0; i<st->ntransforms; i++) {
+	ti=st->transforms[i];
+	if (ti->capab_transformnum == m.capab_transformnum)
+	    goto transform_found;
+    }
+    slog(st,LOG_SEC,"peer chose unknown-to-us transform %d!",
+	 m.capab_transformnum);
+    return False;
+ transform_found:
+    st->chosen_transform=ti;
 
     /* Check signature and store g^x mod m */
     hash=safe_malloc(st->hash->len, "process_msg3");
@@ -676,12 +749,8 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     /* Invent our DH secret key */
     st->random->generate(st->random->st,st->dh->len,st->dhsecret);
 
-    /* Generate the shared key */
-    st->dh->makeshared(st->dh->st,st->dhsecret,st->dh->len,m.pk,
-		       st->sharedsecret,st->sharedsecretlen);
-
-    /* Set up the transform */
-    set_new_transform(st);
+    /* Generate the shared key and set up the transform */
+    set_new_transform(st,m.pk);
 
     return True;
 }
@@ -723,11 +792,9 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
 
     /* Terminate their DH public key with a '0' */
     m.pk[m.pklen]=0;
-    /* Generate the shared key */
-    st->dh->makeshared(st->dh->st,st->dhsecret,st->dh->len,m.pk,
-		       st->sharedsecret,st->sharedsecretlen);
-    /* Set up the transform */
-    set_new_transform(st);
+
+    /* Generate the shared key and set up the transform */
+    set_new_transform(st,m.pk);
 
     return True;
 }
@@ -1454,10 +1521,11 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    }
 	    break;
 	case LABEL_MSG3:
+	case LABEL_MSG3BIS:
 	    /* Setup packet: expected only in state SENTMSG2 */
 	    if (st->state!=SITE_SENTMSG2) {
 		slog(st,LOG_UNEXPECTED,"unexpected MSG3");
-	    } else if (process_msg3(st,buf,source)) {
+	    } else if (process_msg3(st,buf,source,msgtype)) {
 		transport_setup_msgok(st,source);
 		enter_new_state(st,SITE_SENTMSG4);
 	    } else {
@@ -1600,19 +1668,25 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->local_capabilities = 0;
     st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
 
-    list_t *comms_cfg=dict_lookup(dict,"comm");
-    if (!comms_cfg) cfgfatal(loc,"site","closure list \"comm\" not found\n");
-    st->ncomms=list_length(comms_cfg);
-    st->comms=safe_malloc_ary(sizeof(*st->comms),st->ncomms,"comms");
-    assert(st->ncomms);
-    for (i=0; i<st->ncomms; i++) {
-	item_t *item=list_elem(comms_cfg,i);
-	if (item->type!=t_closure)
-	    cfgfatal(loc,"site","comm is not a closure\n");
-	closure_t *cl=item->data.closure;
-	if (cl->type!=CL_COMM) cfgfatal(loc,"site","comm closure wrong type\n");
-	st->comms[i]=cl->interface;
-    }
+#define GET_CLOSURE_LIST(dictkey,things,nthings,CL_TYPE) do{		\
+    list_t *things##_cfg=dict_lookup(dict,dictkey);			\
+    if (!things##_cfg)							\
+	cfgfatal(loc,"site","closure list \"%s\" not found\n",dictkey);	\
+    st->nthings=list_length(things##_cfg);				\
+    st->things=safe_malloc_ary(sizeof(*st->things),st->nthings,dictkey "s"); \
+    assert(st->nthings);						\
+    for (i=0; i<st->nthings; i++) {					\
+	item_t *item=list_elem(things##_cfg,i);				\
+	if (item->type!=t_closure)					\
+	    cfgfatal(loc,"site","%s is not a closure\n",dictkey);	\
+	closure_t *cl=item->data.closure;				\
+	if (cl->type!=CL_TYPE)						\
+	    cfgfatal(loc,"site","%s closure wrong type\n",dictkey);	\
+	st->things[i]=cl->interface;					\
+    }									\
+}while(0)
+
+    GET_CLOSURE_LIST("comm",comms,ncomms,CL_COMM);
 
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
     st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
@@ -1625,8 +1699,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     else st->remoteport=0;
     st->pubkey=find_cl_if(dict,"key",CL_RSAPUBKEY,True,"site",loc);
 
-    st->transform=
-	find_cl_if(dict,"transform",CL_TRANSFORM,True,"site",loc);
+    GET_CLOSURE_LIST("transform",transforms,ntransforms,CL_TRANSFORM);
 
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
     st->hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
@@ -1685,29 +1758,40 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->timeout=0;
 
     st->remote_capabilities=0;
+    st->chosen_transform=0;
     st->current.key_timeout=0;
     st->auxiliary_key.key_timeout=0;
     transport_peers_clear(st,&st->peers);
     transport_peers_clear(st,&st->setup_peers);
     /* XXX mlock these */
     st->dhsecret=safe_malloc(st->dh->len,"site:dhsecret");
-    st->sharedsecretlen=st->transform->keylen?:st->dh->ceil_len;
-    st->sharedsecret=safe_malloc(st->sharedsecretlen,"site:sharedsecret");
+    st->sharedsecretlen=st->sharedsecretallocd=0;
+    st->sharedsecret=0;
 
-    /* We need to compute some properties of our comms */
-#define COMPUTE_WORST(pad)			\
-    int worst_##pad=0;				\
-    for (i=0; i<st->ncomms; i++) {		\
-	int thispad=st->comms[i]->pad;		\
-	if (thispad > worst_##pad)		\
-	    worst_##pad=thispad;		\
+    /* We need to compute some properties of our comms and transports */
+#define COMPUTE_WORST(things,pad)		\
+    int things##_worst_##pad=0;			\
+    for (i=0; i<st->n##things; i++) {		\
+	int thispad=st->things[i]->pad;		\
+	if (thispad > things##_worst_##pad)	\
+	    things##_worst_##pad=thispad;	\
     }
-    COMPUTE_WORST(min_start_pad)
+    COMPUTE_WORST(comms,min_start_pad)
+    COMPUTE_WORST(transforms,max_start_pad)
+
+    for (i=0; i<st->ntransforms; i++) {
+	struct transform_if *ti=st->transforms[i];
+	uint32_t capbit = 1UL << ti->capab_transformnum;
+	if (st->local_capabilities & capbit)
+	    slog(st,LOG_ERROR,"transformnum capability bit"
+		 " %d (%#"PRIx32") reused", ti->capab_transformnum, capbit);
+	st->local_capabilities |= capbit;
+    }
 
     /* We need to register the remote networks with the netlink device */
     st->netlink->reg(st->netlink->st, site_outgoing, st,
-		     st->transform->max_start_pad+(4*4)+
-		     worst_min_start_pad);
+		     transforms_worst_max_start_pad+(4*4)+
+		     comms_worst_min_start_pad);
     
     for (i=0; i<st->ncomms; i++)
 	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);

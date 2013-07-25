@@ -403,6 +403,7 @@ struct transform_if {
     void *st;
     int32_t max_start_pad; /* these two are both <<< INT_MAX */
     int32_t keylen; /* 0 means give the transform exactly as much as there is */
+    int capab_transformnum;
     transform_createinstance_fn *create;
 };
 

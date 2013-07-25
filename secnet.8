@@ -434,6 +434,17 @@ blocksize, 16.  Must be have the same value at both ends.
 .B padding-rounding
 Messages are padded to a multiple of this many bytes.  This
 serves to obscure the exact length of messages.  The default is 16,
+.TP
+.B capab-num
+The transform capability number to use when advertising this
+transform.  Both ends must have the same meaning (or, at least, a
+compatible transform) for each transform capability number they have
+in common.  The default for serpent-eax is 9.
+.IP
+Transform capability numbers in the range 8..15 are intended for
+allocation by the implementation, and may be assigned as the default
+for new transforms in the future.  Transform capability numbers in the
+range 0..7 are reserved for definition by the user.
 .PP
 A \fItransform closure\fR is a reversible means of transforming
 messages for transmission over a (presumably) insecure network.
@@ -442,7 +453,14 @@ It is responsible for both confidentiality and integrity.
 .SS serpent256-cbc
 \fBserpent256-cbc(\fIDICT\fB)\fR => \fItransform closure\fR
 .PP
+This transform
+is deprecated as its security properties are poor; it should be
+specified only alongside a better transform such as eax-serpent.
+.PP
 Valid keys in the \fIDICT\fR argument are:
+.TP
+.B capab-num
+As above.  The default for serpent256-cbc is 8.
 .TP
 .B max-sequence-skew
 As above.
@@ -520,8 +538,13 @@ An \fIrsapubkey closure\fR.
 The key used to verify the peer's identity.
 .TP
 .B transform
-A \fItransform closure\fR.
-Used to protect packets exchanged with the peer.
+One or more \fItransform closures\fR.
+Used to protect packets exchanged with the peer.  These should
+all have distinct \fBcapab-num\fR values, and the same \fBcapab-num\fR
+value should refer to the same (or a compatible) transform at both
+ends.  The list should be in order of preference, most preferred
+first.  (The end which sends MSG1,MSG3 ends up choosing; the ordering
+at the other end is irrelevant.)
 .TP
 .B dh
 A \fIdh closure\fR.

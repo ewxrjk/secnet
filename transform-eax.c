@@ -273,6 +273,8 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
 	cfgfatal(loc,"eax-serpent","parameter must be a dictionary\n");
     dict=item->data.dict;
 
+    SET_CAPAB_TRANSFORMNUM(CAPAB_TRANSFORMNUM_EAXSERPENT);
+
     st->p.max_seq_skew=dict_read_number(dict, "max-sequence-skew",
 					False, "eax-serpent", loc, 10);
 

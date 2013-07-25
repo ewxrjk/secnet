@@ -278,6 +278,8 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
     st->max_seq_skew=dict_read_number(dict, "max-sequence-skew",
 				      False, "serpent-cbc256", loc, 10);
 
+    SET_CAPAB_TRANSFORMNUM(CAPAB_TRANSFORMNUM_SERPENT256CBC);
+
     return new_closure(&st->cl);
 }
 

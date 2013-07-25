@@ -2,6 +2,8 @@
 #ifndef TRANSFORM_COMMON_H
 #define TRANSFORM_COMMON_H
 
+#include "magic.h"
+
 #define KEYED_CHECK do{				\
 	if (!ti->keyed) {			\
 	    *errmsg="transform unkeyed";	\
@@ -39,6 +41,14 @@
 	FILLZERO(*st); /* Destroy key material */	\
 	free(st);					\
     }
+
+#define SET_CAPAB_TRANSFORMNUM(def) do{					\
+        st->ops.capab_transformnum=dict_read_number(dict, "capab-num",	\
+                                     False, "transform", loc, def);	\
+        if (st->ops.capab_transformnum > CAPAB_TRANSFORMNUM_MAX)	\
+	    cfgfatal(loc,"transform","capab-num out of range 0..%d\n",	\
+		     CAPAB_TRANSFORMNUM_MAX);				\
+    }while(0)
 
 #define TRANSFORM_CREATE_CORE				\
 	struct transform_inst *ti;			\
