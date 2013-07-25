@@ -244,6 +244,7 @@ struct site {
     struct hash_if *hash;
 
     uint32_t index; /* Index of this site */
+    uint32_t local_capabilities;
     int32_t setup_retries; /* How many times to send setup packets */
     int32_t setup_retry_interval; /* Initial timeout for setup packets */
     int32_t wait_timeout; /* How long to wait if setup unsuccessful */
@@ -275,6 +276,7 @@ struct site {
        packet; we keep trying to continue the exchange, and have to
        timeout before we can listen for another setup packet); perhaps
        we should keep a list of 'bad' sources for setup packets. */
+    uint32_t remote_capabilities;
     uint32_t setup_session_id;
     transport_peers setup_peers;
     uint8_t localN[NONCELEN]; /* Nonces for key exchange */
@@ -347,8 +349,7 @@ static bool_t current_valid(struct site *st)
 struct parsedname {
     int32_t len;
     uint8_t *name;
-    int32_t extrainfo_len;
-    uint8_t *extrainfo;
+    struct buffer_if extrainfo;
 };
 
 struct msg {
@@ -357,6 +358,7 @@ struct msg {
     uint32_t source;
     struct parsedname remote;
     struct parsedname local;
+    uint32_t remote_capabilities;
     uint8_t *nR;
     uint8_t *nL;
     int32_t pklen;
@@ -365,6 +367,34 @@ struct msg {
     int32_t siglen;
     char *sig;
 };
+
+struct xinfoadd {
+    int32_t lenpos, afternul;
+};
+static void append_string_xinfo_start(struct buffer_if *buf,
+				      struct xinfoadd *xia,
+				      const char *str)
+    /* Helps construct one of the names with additional info as found
+     * in MSG1..4.  Call this function first, then append all the
+     * desired extra info (not including the nul byte) to the buffer,
+     * then call append_string_xinfo_done. */
+{
+    xia->lenpos = buf->size;
+    buf_append_string(buf,str);
+    buf_append_uint8(buf,0);
+    xia->afternul = buf->size;
+}
+static void append_string_xinfo_done(struct buffer_if *buf,
+				     struct xinfoadd *xia)
+{
+    /* we just need to adjust the string length */
+    if (buf->size == xia->afternul) {
+	/* no extra info, strip the nul too */
+	buf_unappend_uint8(buf);
+    } else {
+	put_uint16(buf->start+xia->lenpos, buf->size-(xia->lenpos+2));
+    }
+}
 
 /* Build any of msg1 to msg4. msg5 and msg6 are built from the inside
    out using a transform of config data supplied by netlink */
@@ -381,7 +411,14 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
 	(type==LABEL_MSG1?0:st->setup_session_id));
     buf_append_uint32(&st->buffer,st->index);
     buf_append_uint32(&st->buffer,type);
-    buf_append_string(&st->buffer,st->localname);
+
+    struct xinfoadd xia;
+    append_string_xinfo_start(&st->buffer,&xia,st->localname);
+    if ((st->local_capabilities & CAPAB_EARLY) || (type != LABEL_MSG1)) {
+	buf_append_uint32(&st->buffer,st->local_capabilities);
+    }
+    append_string_xinfo_done(&st->buffer,&xia);
+
     buf_append_string(&st->buffer,st->remotename);
     memcpy(buf_append(&st->buffer,NONCELEN),st->localN,NONCELEN);
     if (type==LABEL_MSG1) return True;
@@ -412,11 +449,9 @@ static bool_t unpick_name(struct buffer_if *msg, struct parsedname *nm)
     nm->name=buf_unprepend(msg,nm->len);
     uint8_t *nul=memchr(nm->name,0,nm->len);
     if (!nul) {
-	nm->extrainfo_len=0;
-	nm->extrainfo=0;
+	buffer_readonly_view(&nm->extrainfo,0,0);
     } else {
-	nm->extrainfo=nul+1;
-	nm->extrainfo_len=msg->start-nm->extrainfo;
+	buffer_readonly_view(&nm->extrainfo, nul+1, msg->start-(nul+1));
 	nm->len=nul-nm->name;
     }
     return True;
@@ -432,6 +467,11 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     m->source=buf_unprepend_uint32(msg);
     CHECK_TYPE(msg,type);
     if (!unpick_name(msg,&m->remote)) return False;
+    m->remote_capabilities=0;
+    if (m->remote.extrainfo.size) {
+	CHECK_AVAIL(&m->remote.extrainfo,4);
+	m->remote_capabilities=buf_unprepend_uint32(&m->remote.extrainfo);
+    }
     if (!unpick_name(msg,&m->local)) return False;
     CHECK_AVAIL(msg,NONCELEN);
     m->nR=buf_unprepend(msg,NONCELEN);
@@ -490,7 +530,13 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
 	*error="wrong remotely-generated nonce";
 	return False;
     }
+    /* MSG3 has complicated rules about capabilities, which are
+     * handled in process_msg3. */
     if (type==LABEL_MSG3) return True;
+    if (m->remote_capabilities!=st->remote_capabilities) {
+	*error="remote capabilities changed";
+	return False;
+    }
     if (type==LABEL_MSG4) return True;
     *error="unknown message type";
     return False;
@@ -511,6 +557,7 @@ static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
 
     transport_record_peer(st,&st->setup_peers,src,"msg1");
     st->setup_session_id=m->source;
+    st->remote_capabilities=m->remote_capabilities;
     memcpy(st->remoteN,m->nR,NONCELEN);
     return True;
 }
@@ -533,6 +580,7 @@ static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
 	return False;
     }
     st->setup_session_id=m.source;
+    st->remote_capabilities=m.remote_capabilities;
     memcpy(st->remoteN,m.nR,NONCELEN);
     return True;
 }
@@ -558,6 +606,15 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 	slog(st,LOG_SEC,"msg3: %s",err);
 	return False;
     }
+    uint32_t capab_adv_late = m.remote_capabilities
+	& ~st->remote_capabilities & CAPAB_EARLY;
+    if (capab_adv_late) {
+	slog(st,LOG_SEC,"msg3 impermissibly adds early capability flag(s)"
+	     " %#"PRIx32" (was %#"PRIx32", now %#"PRIx32")",
+	     capab_adv_late, st->remote_capabilities, m.remote_capabilities);
+	return False;
+    }
+    st->remote_capabilities|=m.remote_capabilities;
 
     /* Check signature and store g^x mod m */
     hash=safe_malloc(st->hash->len, "process_msg3");
@@ -1493,6 +1550,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     assert(index_sequence < 0xffffffffUL);
     st->index = ++index_sequence;
+    st->local_capabilities = 0;
     st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
 
     list_t *comms_cfg=dict_lookup(dict,"comm");
@@ -1579,6 +1637,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     register_for_poll(st, site_beforepoll, site_afterpoll, 0, "site");
     st->timeout=0;
 
+    st->remote_capabilities=0;
     st->current.key_timeout=0;
     st->auxiliary_key.key_timeout=0;
     transport_peers_clear(st,&st->peers);

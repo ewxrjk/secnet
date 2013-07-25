@@ -176,7 +176,7 @@ Definitions:
 
 A is the originating gateway machine name
 B is the destination gateway machine name
-A+ and B+ are the names with optional additional data, currently ignored
+A+ and B+ are the names with optional additional data, see below
 PK_A is the public RSA key of A
 PK_B is the public RSA key of B
 PK_A^-1 is the private RSA key of A
@@ -194,7 +194,31 @@ i? is appropriate index for receiver
 Note that 'i' may be re-used from one session to the next, whereas 'n'
 is always fresh.
 
-The protocol version selection stuff is not yet implemented.
+The optional additional data after the sender's name consists of some
+initial subset of the following list of items:
+ * A 32-bit integer with a set of capability flags, representing the
+   abilities of the sender.
+ * More data which is yet to be defined and which must be ignored
+   by receivers.
+The optional additional data after the receiver's name is not
+currently used.  If any is seen, it must be ignored.
+
+Capability flag bits must be in one the following two categories:
+
+1. Early capability flags must be advertised in MSG1 or MSG2, as
+   applicable.  If MSG3 or MSG4 advertise any "early" capability bits,
+   MSG1 or MSG3 (as applicable) must have advertised them too.  Sadly,
+   advertising an early capability flag will produce MSG1s which are
+   not understood by versions of secnet which predate the capability
+   mechanism.
+
+2. Late capability flags are advertised in MSG2 or MSG3, as
+   applicable.  They may also appear in MSG1, but this is not
+   guaranteed.  MSG4 must advertise the same set as MSG2.
+
+No capability flags are currently defined.  Unknown capability flags
+should be treated as late ones.
+
 
 Messages:
 

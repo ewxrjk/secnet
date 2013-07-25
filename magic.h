@@ -15,4 +15,8 @@
 #define LABEL_MSG8 0x08080808
 #define LABEL_MSG9 0x09090909
 
+/* uses of the 32-bit capability bitmap */
+/* no flags currently defined */
+#define CAPAB_EARLY 0x00000000 /* no Early flags defined (see NOTES) */
+
 #endif /* magic_h */
