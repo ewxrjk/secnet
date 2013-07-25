@@ -396,6 +396,7 @@ struct transform_inst_if {
     transform_apply_fn *forwards;
     transform_apply_fn *reverse;
     transform_destroyinstance_fn *destroy;
+    int32_t max_start_pad; /* same as from transform_if */
 };
 
 struct transform_if {

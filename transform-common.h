@@ -51,6 +51,7 @@
 	ti->ops.forwards=transform_forward;		\
 	ti->ops.reverse=transform_reverse;		\
 	ti->ops.destroy=transform_destroy;		\
+	ti->ops.max_start_pad=st->ops.max_start_pad;	\
 	ti->keyed=False;
 
 #endif /*TRANSFORM_COMMON_H*/

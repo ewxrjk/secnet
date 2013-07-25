@@ -247,6 +247,7 @@ void buffer_assert_used(struct buffer_if *buffer, cstring_t file,
 
 void buffer_init(struct buffer_if *buffer, int32_t max_start_pad)
 {
+    assert(max_start_pad<=buffer->len);
     buffer->start=buffer->base+max_start_pad;
     buffer->size=0;
 }

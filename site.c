@@ -757,7 +757,7 @@ static bool_t generate_msg5(struct site *st)
 
     BUF_ALLOC(&st->buffer,"site:MSG5");
     /* We are going to add four words to the message */
-    buffer_init(&st->buffer,st->transform->max_start_pad+(4*4));
+    buffer_init(&st->buffer,st->new_transform->max_start_pad+(4*4));
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
     buf_prepend_uint32(&st->buffer,LABEL_MSG5);
@@ -804,7 +804,7 @@ static void create_msg6(struct site *st, struct transform_inst_if *transform,
 
     BUF_ALLOC(&st->buffer,"site:MSG6");
     /* We are going to add four words to the message */
-    buffer_init(&st->buffer,st->transform->max_start_pad+(4*4));
+    buffer_init(&st->buffer,transform->max_start_pad+(4*4));
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
@@ -1225,7 +1225,7 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
     if (current_valid(st) && st->buffer.free
 	&& transport_peers_valid(&st->peers)) {
 	BUF_ALLOC(&st->buffer,"site:MSG7");
-	buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
+	buffer_init(&st->buffer,st->current.transform->max_start_pad+(4*3));
 	buf_append_uint32(&st->buffer,LABEL_MSG7);
 	buf_append_string(&st->buffer,reason);
 	if (call_transform_forwards(st, st->current.transform,
