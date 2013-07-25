@@ -53,7 +53,8 @@ mandir:=@mandir@
 TARGETS:=secnet
 
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
-	resolver.o random.o udp.o site.o transform.o netlink.o rsa.o dh.o \
+	resolver.o random.o udp.o site.o transform-cbcmac.o \
+	netlink.o rsa.o dh.o \
 	serpentbe.o md5.o version.o tun.o slip.o sha1.o ipaddr.o log.o \
 	process.o @LIBOBJS@ \
 	hackypar.o

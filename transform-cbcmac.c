@@ -36,6 +36,8 @@ struct transform_inst {
     bool_t keyed;
 };
 
+#include "transform-common.h"
+
 #define PKCS5_MASK 15
 
 static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen)
@@ -67,12 +69,7 @@ static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen)
     return True;
 }
 
-static bool_t transform_valid(void *sst)
-{
-    struct transform_inst *ti=sst;
-
-    return ti->keyed;
-}
+TRANSFORM_VALID;
 
 static void transform_delkey(void *sst)
 {
@@ -95,10 +92,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     uint8_t *p, *n;
     int i;
 
-    if (!ti->keyed) {
-	*errmsg="transform unkeyed";
-	return 1;
-    }
+    KEYED_CHECK;
 
     /* Sequence number */
     buf_prepend_uint32(buf,ti->sendseq);
@@ -164,7 +158,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     uint8_t *padp;
     int padlen;
     int i;
-    uint32_t seqnum, skew;
+    uint32_t seqnum;
     uint8_t iv[16];
     uint8_t pct[16];
     uint8_t macplain[16];
@@ -172,10 +166,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     uint8_t *n;
     uint8_t *macexpected;
 
-    if (!ti->keyed) {
-	*errmsg="transform unkeyed";
-	return 1;
-    }
+    KEYED_CHECK;
 
     if (buf->size < 4 + 16 + 16) {
 	*errmsg="msg too short";
@@ -238,46 +229,20 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     /* Sequence number must be within max_skew of lastrecvseq; lastrecvseq
        is only allowed to increase. */
     seqnum=buf_unprepend_uint32(buf);
-    skew=seqnum-ti->lastrecvseq;
-    if (skew<0x8fffffff) {
-	/* Ok */
-	ti->lastrecvseq=seqnum;
-    } else if ((0-skew)<ti->max_skew) {
-	/* Ok */
-    } else {
-	/* Too much skew */
-	*errmsg="seqnum: too much skew";
-	return 2;
-    }
+    SEQNUM_CHECK(seqnum, ti->max_skew);
     
     return 0;
 }
 
-static void transform_destroy(void *sst)
-{
-    struct transform_inst *st=sst;
-
-    FILLZERO(*st); /* Destroy key material */
-    free(st);
-}
+TRANSFORM_DESTROY;
 
 static struct transform_inst_if *transform_create(void *sst)
 {
-    struct transform_inst *ti;
     struct transform *st=sst;
 
-    ti=safe_malloc(sizeof(*ti),"transform_create");
-    /* mlock XXX */
+    TRANSFORM_CREATE_CORE;
 
-    ti->ops.st=ti;
-    ti->ops.setkey=transform_setkey;
-    ti->ops.valid=transform_valid;
-    ti->ops.delkey=transform_delkey;
-    ti->ops.forwards=transform_forward;
-    ti->ops.reverse=transform_reverse;
-    ti->ops.destroy=transform_destroy;
     ti->max_skew=st->max_seq_skew;
-    ti->keyed=False;
 
     return &ti->ops;
 }
@@ -316,7 +281,7 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
     return new_closure(&st->cl);
 }
 
-void transform_module(dict_t *dict)
+void transform_cbcmac_module(dict_t *dict)
 {
     struct keyInstance k;
     uint8_t data[32];

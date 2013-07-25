@@ -336,7 +336,7 @@ setup but more relaxed about using old keys.  These are noted with
 "mobile:", above, and apply whether the mobile peer is local or
 remote.
 
-** transform
+** transform-cbcmac
 
 Defines:
   serpent256-cbc (closure => transform closure)

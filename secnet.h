@@ -217,7 +217,7 @@ extern init_module random_module;
 extern init_module udp_module;
 extern init_module util_module;
 extern init_module site_module;
-extern init_module transform_module;
+extern init_module transform_cbcmac_module;
 extern init_module netlink_module;
 extern init_module rsa_module;
 extern init_module dh_module;
