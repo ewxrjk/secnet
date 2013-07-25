@@ -430,8 +430,9 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	/*
 	 * Verify that d*e is congruent to 1 mod (p-1), and mod
 	 * (q-1). This is equivalent to it being congruent to 1 mod
-	 * lcm(p-1,q-1), i.e. congruent to 1 mod phi(n). Note that
-	 * phi(n) is _not_ simply (p-1)*(q-1).
+	 * lambda(n) = lcm(p-1,q-1).  The usual `textbook' condition,
+	 * that d e == 1 (mod (p-1)(q-1)) is sufficient, but not
+	 * actually necessary.
 	 */
 	mpz_mul(&tmp, &d, &e);
 	mpz_sub_ui(&tmp2, &st->p, 1);
