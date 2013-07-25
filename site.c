@@ -731,7 +731,8 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
     return True;
 }
 
-static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
+static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
+			   const struct comm_addr *src)
 {
     cstring_t transform_err, auxkey_err, newkey_err="n/a";
     struct msg0 m;
@@ -750,11 +751,8 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 			   "peer has used new key","auxiliary key",LOG_SEC);
 	return True;
     }
-
-    if (problem==2) {
-	slog(st,LOG_DROP,"transform: %s (merely skew)",transform_err);
-	return False;
-    }
+    if (problem==2)
+	goto skew;
 
     buffer_copy(msg0, &st->scratch);
     problem = st->auxiliary_key.transform->reverse
@@ -778,11 +776,14 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 	}
 	return True;
     }
+    if (problem==2)
+	goto skew;
 
     if (st->state==SITE_SENTMSG5) {
 	buffer_copy(msg0, &st->scratch);
-	if (!st->new_transform->reverse(st->new_transform->st,
-					msg0,&newkey_err)) {
+	problem = st->new_transform->reverse(st->new_transform->st,
+					     msg0,&newkey_err);
+	if (!problem) {
 	    /* It looks like we didn't get the peer's MSG6 */
 	    /* This is like a cut-down enter_new_state(SITE_RUN) */
 	    slog(st,LOG_STATE,"will enter state RUN (MSG0 with new key)");
@@ -791,11 +792,18 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0)
 	    activate_new_key(st);
 	    return True; /* do process the data in this packet */
 	}
+	if (problem==2)
+	    goto skew;
     }
 
     slog(st,LOG_SEC,"transform: %s (aux: %s, new: %s)",
 	 transform_err,auxkey_err,newkey_err);
     initiate_key_setup(st,"incoming message would not decrypt");
+    send_nak(src,m.dest,m.source,m.type,msg0,"message would not decrypt");
+    return False;
+
+ skew:
+    slog(st,LOG_DROP,"transform: %s (merely skew)",transform_err);
     return False;
 }
 
@@ -804,7 +812,7 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 {
     uint32_t type;
 
-    if (!decrypt_msg0(st,msg0))
+    if (!decrypt_msg0(st,msg0,src))
 	return False;
 
     CHECK_AVAIL(msg0,4);
