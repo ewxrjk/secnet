@@ -334,10 +334,34 @@ static bool_t enter_new_state(struct site *st,uint32_t next);
 static void enter_state_wait(struct site *st);
 static void activate_new_key(struct site *st);
 
+static bool_t is_transform_valid(struct transform_inst_if *transform)
+{
+    return transform->valid(transform->st);
+}
+
 static bool_t current_valid(struct site *st)
 {
-    return st->current.transform->valid(st->current.transform->st);
+    return is_transform_valid(st->current.transform);
 }
+
+#define DEFINE_CALL_TRANSFORM(fwdrev)					\
+static int call_transform_##fwdrev(struct site *st,			\
+				   struct transform_inst_if *transform,	\
+				   struct buffer_if *buf,		\
+				   const char **errmsg)			\
+{									\
+    return transform->fwdrev(transform->st,buf,errmsg);			\
+}
+
+DEFINE_CALL_TRANSFORM(forwards)
+DEFINE_CALL_TRANSFORM(reverse)
+
+static void dispose_transform(struct transform_inst_if **transform_var)
+{
+    /* will become more sophisticated very shortly */
+    struct transform_inst_if *transform=*transform_var;
+    transform->delkey(transform->st);
+}    
 
 #define CHECK_AVAIL(b,l) do { if ((b)->size<(l)) return False; } while(0)
 #define CHECK_EMPTY(b) do { if ((b)->size!=0) return False; } while(0)
@@ -367,6 +391,12 @@ struct msg {
     int32_t siglen;
     char *sig;
 };
+
+static void set_new_transform(struct site *st)
+{
+    st->new_transform->setkey(st->new_transform->st,st->sharedsecret,
+			      st->sharedsecretlen,st->setup_priority);
+}
 
 struct xinfoadd {
     int32_t lenpos, afternul;
@@ -640,8 +670,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 		       st->sharedsecret,st->sharedsecretlen);
 
     /* Set up the transform */
-    st->new_transform->setkey(st->new_transform->st,st->sharedsecret,
-			      st->sharedsecretlen,st->setup_priority);
+    set_new_transform(st);
 
     return True;
 }
@@ -687,8 +716,7 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
     st->dh->makeshared(st->dh->st,st->dhsecret,st->dh->len,m.pk,
 		       st->sharedsecret,st->sharedsecretlen);
     /* Set up the transform */
-    st->new_transform->setkey(st->new_transform->st,st->sharedsecret,
-			      st->sharedsecretlen,st->setup_priority);
+    set_new_transform(st);
 
     return True;
 }
@@ -722,8 +750,9 @@ static bool_t generate_msg5(struct site *st)
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
     buf_prepend_uint32(&st->buffer,LABEL_MSG5);
-    st->new_transform->forwards(st->new_transform->st,&st->buffer,
-				&transform_err);
+    if (call_transform_forwards(st,st->new_transform,
+				&st->buffer,&transform_err))
+	return False;
     buf_prepend_uint32(&st->buffer,LABEL_MSG5);
     buf_prepend_uint32(&st->buffer,st->index);
     buf_prepend_uint32(&st->buffer,st->setup_session_id);
@@ -741,7 +770,7 @@ static bool_t process_msg5(struct site *st, struct buffer_if *msg5,
 
     if (!unpick_msg0(st,msg5,&m)) return False;
 
-    if (transform->reverse(transform->st,msg5,&transform_err)) {
+    if (call_transform_reverse(st,transform,msg5,&transform_err)) {
 	/* There's a problem */
 	slog(st,LOG_SEC,"process_msg5: transform: %s",transform_err);
 	return False;
@@ -768,7 +797,9 @@ static void create_msg6(struct site *st, struct transform_inst_if *transform,
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
-    transform->forwards(transform->st,&st->buffer,&transform_err);
+    int problem = call_transform_forwards(st,transform,
+					  &st->buffer,&transform_err);
+    assert(!problem);
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
     buf_prepend_uint32(&st->buffer,st->index);
     buf_prepend_uint32(&st->buffer,session_id);
@@ -776,6 +807,8 @@ static void create_msg6(struct site *st, struct transform_inst_if *transform,
 
 static bool_t generate_msg6(struct site *st)
 {
+    if (!is_transform_valid(st->new_transform))
+	return False;
     create_msg6(st,st->new_transform,st->setup_session_id);
     st->retries=1; /* Peer will retransmit MSG5 if this packet gets lost */
     return True;
@@ -789,8 +822,7 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
 
     if (!unpick_msg0(st,msg6,&m)) return False;
 
-    if (st->new_transform->reverse(st->new_transform->st,
-				   msg6,&transform_err)) {
+    if (call_transform_reverse(st,st->new_transform,msg6,&transform_err)) {
 	/* There's a problem */
 	slog(st,LOG_SEC,"process_msg6: transform: %s",transform_err);
 	return False;
@@ -818,8 +850,8 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
     /* Keep a copy so we can try decrypting it with multiple keys */
     buffer_copy(&st->scratch, msg0);
 
-    problem = st->current.transform->reverse(st->current.transform->st,
-					     msg0,&transform_err);
+    problem = call_transform_reverse(st,st->current.transform,
+				     msg0,&transform_err);
     if (!problem) {
 	if (!st->auxiliary_is_new)
 	    delete_one_key(st,&st->auxiliary_key,
@@ -830,8 +862,8 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	goto skew;
 
     buffer_copy(msg0, &st->scratch);
-    problem = st->auxiliary_key.transform->reverse
-	(st->auxiliary_key.transform->st,msg0,&auxkey_err);
+    problem = call_transform_reverse
+	(st,st->auxiliary_key.transform->st,msg0,&auxkey_err);
     if (problem==0) {
 	slog(st,LOG_DROP,"processing packet which uses auxiliary key");
 	if (st->auxiliary_is_new) {
@@ -856,8 +888,8 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 
     if (st->state==SITE_SENTMSG5) {
 	buffer_copy(msg0, &st->scratch);
-	problem = st->new_transform->reverse(st->new_transform->st,
-					     msg0,&newkey_err);
+	problem = call_transform_reverse(st,st->new_transform,
+					 msg0,&newkey_err);
 	if (!problem) {
 	    /* It looks like we didn't get the peer's MSG6 */
 	    /* This is like a cut-down enter_new_state(SITE_RUN) */
@@ -947,8 +979,8 @@ static bool_t send_msg(struct site *st)
 	t=st->auxiliary_key.transform;
 	st->auxiliary_key.transform=st->new_transform;
 	st->new_transform=t;
+	dispose_transform(&st->new_transform);
 
-	t->delkey(t->st);
 	st->auxiliary_is_new=1;
 	st->auxiliary_key.key_timeout=st->now+st->key_lifetime;
 	st->auxiliary_renegotiate_key_time=st->now+st->key_renegotiate_time;
@@ -1017,8 +1049,8 @@ static void activate_new_key(struct site *st)
     st->auxiliary_key.transform=st->current.transform;
     st->current.transform=st->new_transform;
     st->new_transform=t;
+    dispose_transform(&st->new_transform);
 
-    t->delkey(t->st);
     st->timeout=0;
     st->auxiliary_is_new=0;
     st->auxiliary_key.key_timeout=st->current.key_timeout;
@@ -1034,9 +1066,9 @@ static void activate_new_key(struct site *st)
 static void delete_one_key(struct site *st, struct data_key *key,
 			   cstring_t reason, cstring_t which, uint32_t loglevel)
 {
-    if (!key->transform->valid(key->transform->st)) return;
+    if (!is_transform_valid(key->transform)) return;
     if (reason) slog(st,loglevel,"%s deleted (%s)",which,reason);
-    key->transform->delkey(key->transform->st);
+    dispose_transform(&key->transform);
     key->key_timeout=0;
 }
 
@@ -1061,7 +1093,7 @@ static void enter_state_stop(struct site *st)
     st->state=SITE_STOP;
     st->timeout=0;
     delete_keys(st,"entering state STOP",LOG_TIMEOUT_KEY);
-    st->new_transform->delkey(st->new_transform->st);
+    dispose_transform(&st->new_transform);
 }
 
 static void set_link_quality(struct site *st)
@@ -1091,7 +1123,7 @@ static void enter_state_run(struct site *st)
     transport_peers_clear(st,&st->setup_peers);
     memset(st->localN,0,NONCELEN);
     memset(st->remoteN,0,NONCELEN);
-    st->new_transform->delkey(st->new_transform->st);
+    dispose_transform(&st->new_transform);
     memset(st->dhsecret,0,st->dh->len);
     memset(st->sharedsecret,0,st->sharedsecretlen);
     set_link_quality(st);
@@ -1185,13 +1217,15 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
 	buffer_init(&st->buffer,st->transform->max_start_pad+(4*3));
 	buf_append_uint32(&st->buffer,LABEL_MSG7);
 	buf_append_string(&st->buffer,reason);
-	st->current.transform->forwards(st->current.transform->st,
-					&st->buffer, &transform_err);
+	if (call_transform_forwards(st, st->current.transform,
+				    &st->buffer, &transform_err))
+	    goto free_out;
 	buf_prepend_uint32(&st->buffer,LABEL_MSG0);
 	buf_prepend_uint32(&st->buffer,st->index);
 	buf_prepend_uint32(&st->buffer,st->current.remote_session_id);
 	transport_xmit(st,&st->peers,&st->buffer,True);
 	BUF_FREE(&st->buffer);
+    free_out:
 	return True;
     }
     return False;
@@ -1288,13 +1322,15 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 	/* Transform it and send it */
 	if (buf->size>0) {
 	    buf_prepend_uint32(buf,LABEL_MSG9);
-	    st->current.transform->forwards(st->current.transform->st,
-					    buf, &transform_err);
+	    if (call_transform_forwards(st, st->current.transform,
+					buf, &transform_err))
+		goto free_out;
 	    buf_prepend_uint32(buf,LABEL_MSG0);
 	    buf_prepend_uint32(buf,st->index);
 	    buf_prepend_uint32(buf,st->current.remote_session_id);
 	    transport_xmit(st,&st->peers,buf,False);
 	}
+    free_out:
 	BUF_FREE(buf);
 	return;
     }
