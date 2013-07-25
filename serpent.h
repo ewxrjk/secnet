@@ -8,12 +8,12 @@ struct keyInstance {
 
 /*  Function protoypes  */
 void serpent_makekey(struct keyInstance *key, int keyLen,
-		     uint8_t *keyMaterial);
+		     const uint8_t *keyMaterial);
 
-void serpent_encrypt(struct keyInstance *key, uint8_t plaintext[16],
+void serpent_encrypt(struct keyInstance *key, const uint8_t plaintext[16],
 		     uint8_t ciphertext[16]);
 
-void serpent_decrypt(struct keyInstance *key, uint8_t ciphertext[16],
+void serpent_decrypt(struct keyInstance *key, const uint8_t ciphertext[16],
 		     uint8_t plaintext[16]);
 
 #endif /* serpent_h */

@@ -26,7 +26,7 @@
 #include "serpentsboxes.h"
 
 void serpent_makekey(struct keyInstance *key, int keyLen,
-	    uint8_t *keyMaterial)
+	    const uint8_t *keyMaterial)
 {
     int i;
     uint32_t j;
@@ -86,7 +86,7 @@ void serpent_makekey(struct keyInstance *key, int keyLen,
 }
 
 void serpent_encrypt(struct keyInstance *key,
-		     uint8_t plaintext[16], 
+		     const uint8_t plaintext[16], 
 		     uint8_t ciphertext[16])
 {
     register uint32_t x0, x1, x2, x3;
@@ -204,7 +204,7 @@ void serpent_encrypt(struct keyInstance *key,
 }
 
 void serpent_decrypt(struct keyInstance *key,
-		     uint8_t ciphertext[16],
+		     const uint8_t ciphertext[16],
 		     uint8_t plaintext[16])
 {
     register uint32_t x0, x1, x2, x3;
