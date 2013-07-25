@@ -347,14 +347,19 @@ static bool_t current_valid(struct site *st)
     type=buf_unprepend_uint32((b)); \
     if (type!=(t)) return False; } while(0)
 
+struct parsedname {
+    int32_t len;
+    uint8_t *name;
+    int32_t extrainfo_len;
+    uint8_t *extrainfo;
+};
+
 struct msg {
     uint8_t *hashstart;
     uint32_t dest;
     uint32_t source;
-    int32_t remlen;
-    uint8_t *remote;
-    int32_t loclen;
-    uint8_t *local;
+    struct parsedname remote;
+    struct parsedname local;
     uint8_t *nR;
     uint8_t *nL;
     int32_t pklen;
@@ -402,6 +407,24 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     return True;
 }
 
+static bool_t unpick_name(struct buffer_if *msg, struct parsedname *nm)
+{
+    CHECK_AVAIL(msg,2);
+    nm->len=buf_unprepend_uint16(msg);
+    CHECK_AVAIL(msg,nm->len);
+    nm->name=buf_unprepend(msg,nm->len);
+    uint8_t *nul=memchr(nm->name,0,nm->len);
+    if (!nul) {
+	nm->extrainfo_len=0;
+	nm->extrainfo=0;
+    } else {
+	nm->extrainfo=nul+1;
+	nm->extrainfo_len=msg->start-nm->extrainfo;
+	nm->len=nul-nm->name;
+    }
+    return True;
+}
+
 static bool_t unpick_msg(struct site *st, uint32_t type,
 			 struct buffer_if *msg, struct msg *m)
 {
@@ -411,14 +434,8 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     CHECK_AVAIL(msg,4);
     m->source=buf_unprepend_uint32(msg);
     CHECK_TYPE(msg,type);
-    CHECK_AVAIL(msg,2);
-    m->remlen=buf_unprepend_uint16(msg);
-    CHECK_AVAIL(msg,m->remlen);
-    m->remote=buf_unprepend(msg,m->remlen);
-    CHECK_AVAIL(msg,2);
-    m->loclen=buf_unprepend_uint16(msg);
-    CHECK_AVAIL(msg,m->loclen);
-    m->local=buf_unprepend(msg,m->loclen);
+    if (!unpick_name(msg,&m->remote)) return False;
+    if (!unpick_name(msg,&m->local)) return False;
     CHECK_AVAIL(msg,NONCELEN);
     m->nR=buf_unprepend(msg,NONCELEN);
     if (type==LABEL_MSG1) {
@@ -444,6 +461,14 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     return True;
 }
 
+static bool_t name_matches(const struct parsedname *nm, const char *expected)
+{
+    int expected_len=strlen(expected);
+    return
+	nm->len == expected_len &&
+	!memcmp(nm->name, expected, expected_len);
+}    
+
 static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
 			cstring_t *error)
 {
@@ -451,11 +476,11 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
 
     /* Check that the site names and our nonce have been sent
        back correctly, and then store our peer's nonce. */ 
-    if (memcmp(m->remote,st->remotename,strlen(st->remotename)!=0)) {
+    if (!name_matches(&m->remote,st->remotename)) {
 	*error="wrong remote site name";
 	return False;
     }
-    if (memcmp(m->local,st->localname,strlen(st->localname)!=0)) {
+    if (!name_matches(&m->local,st->localname)) {
 	*error="wrong local site name";
 	return False;
     }

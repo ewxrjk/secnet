@@ -174,8 +174,9 @@ quite stable so the feature doesn't gain us much.
 
 Definitions:
 
-A is the originating gateway machine
-B is the destination gateway machine
+A is the originating gateway machine name
+B is the destination gateway machine name
+A+ and B+ are the names with optional additional data, currently ignored
 PK_A is the public RSA key of A
 PK_B is the public RSA key of B
 PK_A^-1 is the private RSA key of A
@@ -199,12 +200,12 @@ Messages:
 
 1) A->B: *,iA,msg1,A,B,nA
 
-2) B->A: iA,iB,msg2,B,A,nB,nA
+2) B->A: iA,iB,msg2,B+,A+,nB,nA
 
 (The order of B and A reverses in alternate messages so that the same
 code can be used to construct them...)
 
-3) A->B: {iB,iA,msg3,A,B,nA,nB,g^x mod m}_PK_A^-1
+3) A->B: {iB,iA,msg3,A+,B+,nA,nB,g^x mod m}_PK_A^-1
 
 If message 1 was a replay then A will not generate message 3, because
 it doesn't recognise nA.
@@ -212,7 +213,7 @@ it doesn't recognise nA.
 If message 2 was from an attacker then B will not generate message 4,
 because it doesn't recognise nB.
 
-4) B->A: {iA,iB,msg4,B,A,nB,nA,g^y mod m}_PK_B^-1
+4) B->A: {iA,iB,msg4,B+,A+,nB,nA,g^y mod m}_PK_B^-1
 
 At this point, A and B share a key, k. B must keep retransmitting
 message 4 until it receives a packet encrypted using key k.
