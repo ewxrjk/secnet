@@ -25,8 +25,21 @@
 #include "serpent.h"
 #include "serpentsboxes.h"
 
+#ifdef SERPENT_BIGENDIAN
+
 #define GETPUT_CP(bytenum) \
     (((basep) + (lenbytes) - (offset) - 4)[(bytenum)])
+
+#define SERPENT_DECORATE(func) serpentbe_##func
+
+#else /* !defined(SERPENT_BIGENDIAN) */
+
+#define GETPUT_CP(bytenum) \
+    (((basep) + (offset))[3-(bytenum)])
+
+#define SERPENT_DECORATE(func) serpent_##func
+
+#endif /* !defined(SERPENT_BIGENDIAN) */
 
 static uint32_t serpent_get_32bit(const uint8_t *basep,
 				  int lenbytes, int offset)
@@ -45,7 +58,7 @@ static void serpent_put_32bit(uint8_t *basep, int lenbytes, int offset, uint32_t
     GETPUT_CP(3) = (char)(value);
 }
 
-void serpent_makekey(struct keyInstance *key, int keyLen,
+void SERPENT_DECORATE(makekey)(struct keyInstance *key, int keyLen,
 	    const uint8_t *keyMaterial)
 {
     int i;
@@ -105,7 +118,7 @@ void serpent_makekey(struct keyInstance *key, int keyLen,
 	    key->subkeys[i][j] = k[4*i+j];
 }
 
-void serpent_encrypt(struct keyInstance *key,
+void SERPENT_DECORATE(encrypt)(struct keyInstance *key,
 		     const uint8_t plaintext[16], 
 		     uint8_t ciphertext[16])
 {
@@ -223,7 +236,7 @@ void serpent_encrypt(struct keyInstance *key,
     serpent_put_32bit(ciphertext,16,12, x3);
 }
 
-void serpent_decrypt(struct keyInstance *key,
+void SERPENT_DECORATE(decrypt)(struct keyInstance *key,
 		     const uint8_t ciphertext[16],
 		     uint8_t plaintext[16])
 {

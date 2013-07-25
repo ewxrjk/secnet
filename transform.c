@@ -57,8 +57,8 @@ static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen)
     }
 #endif /* 0 */
 
-    serpent_makekey(&ti->cryptkey,256,key);
-    serpent_makekey(&ti->mackey,256,key+32);
+    serpentbe_makekey(&ti->cryptkey,256,key);
+    serpentbe_makekey(&ti->mackey,256,key+32);
     ti->cryptiv=get_uint32(key+64);
     ti->maciv=get_uint32(key+68);
     ti->sendseq=get_uint32(key+72);
@@ -122,7 +122,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
        message stays a multiple of 16 bytes long.) */
     memset(iv,0,16);
     put_uint32(iv, ti->maciv);
-    serpent_encrypt(&ti->mackey,iv,macacc);
+    serpentbe_encrypt(&ti->mackey,iv,macacc);
 
     /* CBCMAC: encrypt in CBC mode. The MAC is the last encrypted
        block encrypted once again. */
@@ -130,16 +130,16 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     {
 	for (i = 0; i < 16; i++)
 	    macplain[i] = macacc[i] ^ n[i];
-	serpent_encrypt(&ti->mackey,macplain,macacc);
+	serpentbe_encrypt(&ti->mackey,macplain,macacc);
     }
-    serpent_encrypt(&ti->mackey,macacc,macacc);
+    serpentbe_encrypt(&ti->mackey,macacc,macacc);
     memcpy(buf_append(buf,16),macacc,16);
 
     /* Serpent-CBC. We expand the ID as for CBCMAC, do the encryption,
        and prepend the IV before increasing it. */
     memset(iv,0,16);
     put_uint32(iv, ti->cryptiv);
-    serpent_encrypt(&ti->cryptkey,iv,iv);
+    serpentbe_encrypt(&ti->cryptkey,iv,iv);
 
     /* CBC: each block is XORed with the previous encrypted block (or the IV)
        before being encrypted. */
@@ -149,7 +149,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     {
 	for (i = 0; i < 16; i++)
 	    n[i] ^= p[i];
-	serpent_encrypt(&ti->cryptkey,n,n);
+	serpentbe_encrypt(&ti->cryptkey,n,n);
 	p=n;
     }
 
@@ -194,12 +194,12 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 	*errmsg="msg not multiple of cipher blocksize";
 	return 1;
     }
-    serpent_encrypt(&ti->cryptkey,iv,iv);
+    serpentbe_encrypt(&ti->cryptkey,iv,iv);
     for (n=buf->start; n<buf->start+buf->size; n+=16)
     {
 	for (i = 0; i < 16; i++)
 	    pct[i] = n[i];
-	serpent_decrypt(&ti->cryptkey,n,n);
+	serpentbe_decrypt(&ti->cryptkey,n,n);
 	for (i = 0; i < 16; i++)
 	    n[i] ^= iv[i];
 	memcpy(iv, pct, 16);
@@ -209,7 +209,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     macexpected=buf_unappend(buf,16);
     memset(iv,0,16);
     put_uint32(iv, ti->maciv);
-    serpent_encrypt(&ti->mackey,iv,macacc);
+    serpentbe_encrypt(&ti->mackey,iv,macacc);
 
     /* CBCMAC: encrypt in CBC mode. The MAC is the last encrypted
        block encrypted once again. */
@@ -217,9 +217,9 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     {
 	for (i = 0; i < 16; i++)
 	    macplain[i] = macacc[i] ^ n[i];
-	serpent_encrypt(&ti->mackey,macplain,macacc);
+	serpentbe_encrypt(&ti->mackey,macplain,macacc);
     }
-    serpent_encrypt(&ti->mackey,macacc,macacc);
+    serpentbe_encrypt(&ti->mackey,macacc,macacc);
     if (!consttime_memeq(macexpected,macacc,16)!=0) {
 	*errmsg="invalid MAC";
 	return 1;
@@ -327,8 +327,9 @@ void transform_module(dict_t *dict)
     /*
      * Serpent self-test.
      * 
-     * This test pattern is taken directly from the Serpent test
-     * vectors, to ensure we have all endianness issues correct. -sgt
+     * This test pattern was taken directly from the Serpent test
+     * vectors, which results in a big-endian Serpent which is not
+     * compatible with other implementations.
      */
 
     /* Serpent self-test */
@@ -336,18 +337,18 @@ void transform_module(dict_t *dict)
            "\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xdd\xee\xff"
            "\xff\xee\xdd\xcc\xbb\xaa\x99\x88\x77\x66\x55\x44\x33\x22\x11\x00",
            32);
-    serpent_makekey(&k,256,data);
+    serpentbe_makekey(&k,256,data);
 
     memcpy(plaintext,
            "\x01\x23\x45\x67\x89\xab\xcd\xef\xfe\xdc\xba\x98\x76\x54\x32\x10",
            16);
-    serpent_encrypt(&k,plaintext,ciphertext);
+    serpentbe_encrypt(&k,plaintext,ciphertext);
 
     if (memcmp(ciphertext, "\xca\x7f\xa1\x93\xe3\xeb\x9e\x99"
                "\xbd\x87\xe3\xaf\x3c\x9a\xdf\x93", 16)) {
 	fatal("transform_module: serpent failed self-test (encrypt)");
     }
-    serpent_decrypt(&k,ciphertext,plaintext);
+    serpentbe_decrypt(&k,ciphertext,plaintext);
     if (memcmp(plaintext, "\x01\x23\x45\x67\x89\xab\xcd\xef"
                "\xfe\xdc\xba\x98\x76\x54\x32\x10", 16)) {
 	fatal("transform_module: serpent failed self-test (decrypt)");

@@ -429,7 +429,9 @@ It may be necessary to increase this is if connectivity is poor.
 A \fItransform closure\fR is a reversible means of transforming
 messages for transmission over a (presumably) insecure network.
 It is responsible for both confidentiality and integrity.
-
+.PP
+Note that this uses a big-endian variant of the Serpent block cipher
+(which is not compatible with most other Serpent implementations).
 .SS rsa-private
 \fBrsa-private(\fIPATH\fB\fR[, \fICHECK\fR]\fB)\fR => \fIrsaprivkey closure\fR
 .TP
