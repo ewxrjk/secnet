@@ -859,9 +859,9 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 static void dump_packet(struct site *st, struct buffer_if *buf,
 			const struct comm_addr *addr, bool_t incoming)
 {
-    uint32_t dest=ntohl(*(uint32_t *)buf->start);
-    uint32_t source=ntohl(*(uint32_t *)(buf->start+4));
-    uint32_t msgtype=ntohl(*(uint32_t *)(buf->start+8));
+    uint32_t dest=get_uint32(buf->start);
+    uint32_t source=get_uint32(buf->start+4);
+    uint32_t msgtype=get_uint32(buf->start+8);
 
     if (st->log_events & LOG_DUMP)
 	slilog(st->log,M_DEBUG,"%s: %s: %08x<-%08x: %08x:",
@@ -1268,8 +1268,8 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 
     if (buf->size < 12) return False;
 
-    uint32_t msgtype=ntohl(get_uint32(buf->start+8));
-    uint32_t dest=ntohl(*(uint32_t *)buf->start);
+    uint32_t dest=get_uint32(buf->start);
+    uint32_t msgtype=get_uint32(buf->start+8);
     struct msg named_msg;
 
     if (msgtype==LABEL_MSG1) {
