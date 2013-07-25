@@ -7,6 +7,7 @@
 #include "util.h"
 #include "netlink.h"
 #include "process.h"
+#include "unaligned.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -125,7 +126,7 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 		buffer_init(st->buff,st->nl.max_start_pad);
 	    } else if (outputchr != OUTPUT_NOTHING) {
 		if (st->buff->size < st->buff->len) {
-		    *(uint8_t *)buf_append(st->buff,1)=outputchr;
+		    buf_append_uint8(st->buff,outputchr);
 		} else {
 		    Message(M_WARNING, "userv_afterpoll: dropping overlong"
 			    " SLIP packet\n");

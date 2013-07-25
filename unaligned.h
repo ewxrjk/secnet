@@ -2,6 +2,7 @@
 #define unaligned_h
 
 #include <stdint.h>
+#include "util.h"
 
 /* Parts of the secnet key-exchange protocol require access to
    unaligned big-endian quantities in buffers. These macros provide
@@ -13,34 +14,33 @@
 
 #define put_uint16(a,v) do {(a)[0]=((v)&0xff00)>>8; (a)[1]=(v)&0xff;} while(0)
 
+#define put_uint8(a,v) do {(a)[0]=((v)&0xff);} while(0)
+
 #define get_uint32(a)					\
   (((uint32_t)(a)[0]<<24) | ((uint32_t)(a)[1]<<16) |	\
    ((uint32_t)(a)[2]<<8)  |  (uint32_t)(a)[3])
 
 #define get_uint16(a) (((uint16_t)(a)[0]<<8)|(uint16_t)(a)[1])
 
-#define buf_append_uint32(buf,v) do { uint8_t *c=buf_append((buf),4); \
-    put_uint32(c,(v)); } while(0)
+#define get_uint8(a) (((uint8_t)(a)[0]))
 
-#define buf_append_uint16(buf,v) do { uint8_t *c=buf_append((buf),2); \
-	put_uint16(c,(v)); } while(0)
+#define UNALIGNED_DEF_FORTYPE(type,appre)				\
+static inline void buf_##appre##_##type(struct buffer_if *buf, type##_t v) \
+{									\
+    uint8_t *c=buf_##appre(buf,sizeof(type##_t));			\
+    put_##type(c,v);							\
+}									\
+static inline type##_t buf_un##appre##_##type(struct buffer_if *buf)	\
+{									\
+    const uint8_t *c=buf_un##appre(buf,sizeof(type##_t));		\
+    return get_##type(c);						\
+}
 
-#define buf_prepend_uint32(buf,v) do { uint8_t *c=buf_prepend((buf),4); \
-	    put_uint32(c,(v)); } while(0)
-
-#define buf_prepend_uint16(buf,v) do { uint8_t *c=buf_prepend((buf),2); \
-		put_uint16(c,(v)); } while(0)
-
-#define buf_unappend_uint32(buf) ({uint8_t *c=buf_unappend((buf),4); \
-		    get_uint32(c);})
-
-#define buf_unappend_uint16(buf) ({uint8_t *c=buf_unappend((buf),2); \
-			get_uint16(c);})
-
-#define buf_unprepend_uint32(buf) ({uint8_t *c=buf_unprepend((buf),4); \
-			get_uint32(c);})
-
-#define buf_unprepend_uint16(buf) ({uint8_t *c=buf_unprepend((buf),2); \
-			get_uint16(c);})
+UNALIGNED_DEF_FORTYPE(uint32,append)
+UNALIGNED_DEF_FORTYPE(uint16,append)
+UNALIGNED_DEF_FORTYPE(uint8,append)
+UNALIGNED_DEF_FORTYPE(uint32,prepend)
+UNALIGNED_DEF_FORTYPE(uint16,prepend)
+UNALIGNED_DEF_FORTYPE(uint8,prepend)
 
 #endif /* unaligned_h */
