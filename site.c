@@ -253,9 +253,6 @@ struct site {
 				      after this time, initiate a new
 				      key exchange */
 
-    uint8_t *setupsig; /* Expected signature of incoming MSG1 packets */
-    int32_t setupsiglen; /* Allows us to discard packets quickly if
-			    they are not for us */
     bool_t setup_priority; /* Do we have precedence if both sites emit
 			      message 1 simultaneously? */
     uint32_t log_events;
@@ -506,19 +503,15 @@ static bool_t generate_msg1(struct site *st)
 }
 
 static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
-			   const struct comm_addr *src)
+			   const struct comm_addr *src, struct msg *m)
 {
-    struct msg m;
-
     /* We've already determined we're in an appropriate state to
        process an incoming MSG1, and that the MSG1 has correct values
        of A and B. */
 
-    if (!unpick_msg(st,LABEL_MSG1,msg1,&m)) return False;
-
     transport_record_peer(st,&st->setup_peers,src,"msg1");
-    st->setup_session_id=m.source;
-    memcpy(st->remoteN,m.nR,NONCELEN);
+    st->setup_session_id=m->source;
+    memcpy(st->remoteN,m->nR,NONCELEN);
     return True;
 }
 
@@ -1254,6 +1247,18 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
     initiate_key_setup(st,"outgoing packet");
 }
 
+static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
+			   uint32_t type, struct msg *m)
+    /* For packets which are identified by the local and remote names.
+     * If it has our name and our peer's name in it it's for us. */
+{
+    struct buffer_if buf[1];
+    buffer_readonly_clone(buf,buf_in);
+    return unpick_msg(st,type,buf,m)
+	&& name_matches(&m->remote,st->remotename)
+	&& name_matches(&m->local,st->localname);
+}
+
 /* This function is called by the communication device to deliver
    packets from our peers. */
 static bool_t site_incoming(void *sst, struct buffer_if *buf,
@@ -1263,60 +1268,57 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 
     if (buf->size < 12) return False;
 
+    uint32_t msgtype=ntohl(get_uint32(buf->start+8));
     uint32_t dest=ntohl(*(uint32_t *)buf->start);
+    struct msg named_msg;
 
-    if (dest==0) {
-	/* It could be for any site - it should have LABEL_MSG1 and
-	   might have our name and our peer's name in it */
-	if (buf->size<(st->setupsiglen+8+NONCELEN)) return False;
-	if (memcmp(buf->start+8,st->setupsig,st->setupsiglen)==0) {
-	    /* It's addressed to us. Decide what to do about it. */
-	    dump_packet(st,buf,source,True);
-	    if (st->state==SITE_RUN || st->state==SITE_RESOLVE ||
-		st->state==SITE_WAIT) {
-		/* We should definitely process it */
-		if (process_msg1(st,buf,source)) {
-		    slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
+    if (msgtype==LABEL_MSG1) {
+	if (!named_for_us(st,buf,msgtype,&named_msg))
+	    return False;
+	/* It's a MSG1 addressed to us. Decide what to do about it. */
+	dump_packet(st,buf,source,True);
+	if (st->state==SITE_RUN || st->state==SITE_RESOLVE ||
+	    st->state==SITE_WAIT) {
+	    /* We should definitely process it */
+	    if (process_msg1(st,buf,source,&named_msg)) {
+		slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
+		enter_new_state(st,SITE_SENTMSG2);
+	    } else {
+		slog(st,LOG_ERROR,"failed to process incoming msg1");
+	    }
+	    BUF_FREE(buf);
+	    return True;
+	} else if (st->state==SITE_SENTMSG1) {
+	    /* We've just sent a message 1! They may have crossed on
+	       the wire. If we have priority then we ignore the
+	       incoming one, otherwise we process it as usual. */
+	    if (st->setup_priority) {
+		BUF_FREE(buf);
+		slog(st,LOG_DUMP,"crossed msg1s; we are higher "
+		     "priority => ignore incoming msg1");
+		return True;
+	    } else {
+		slog(st,LOG_DUMP,"crossed msg1s; we are lower "
+		     "priority => use incoming msg1");
+		if (process_msg1(st,buf,source,&named_msg)) {
+		    BUF_FREE(&st->buffer); /* Free our old message 1 */
 		    enter_new_state(st,SITE_SENTMSG2);
 		} else {
-		    slog(st,LOG_ERROR,"failed to process incoming msg1");
+		    slog(st,LOG_ERROR,"failed to process an incoming "
+			 "crossed msg1 (we have low priority)");
 		}
 		BUF_FREE(buf);
 		return True;
-	    } else if (st->state==SITE_SENTMSG1) {
-		/* We've just sent a message 1! They may have crossed on
-		   the wire. If we have priority then we ignore the
-		   incoming one, otherwise we process it as usual. */
-		if (st->setup_priority) {
-		    BUF_FREE(buf);
-		    slog(st,LOG_DUMP,"crossed msg1s; we are higher "
-			 "priority => ignore incoming msg1");
-		    return True;
-		} else {
-		    slog(st,LOG_DUMP,"crossed msg1s; we are lower "
-			 "priority => use incoming msg1");
-		    if (process_msg1(st,buf,source)) {
-			BUF_FREE(&st->buffer); /* Free our old message 1 */
-			enter_new_state(st,SITE_SENTMSG2);
-		    } else {
-			slog(st,LOG_ERROR,"failed to process an incoming "
-			     "crossed msg1 (we have low priority)");
-		    }
-		    BUF_FREE(buf);
-		    return True;
-		}
 	    }
-	    /* The message 1 was received at an unexpected stage of the
-	       key setup. XXX POLICY - what do we do? */
-	    slog(st,LOG_UNEXPECTED,"unexpected incoming message 1");
-	    BUF_FREE(buf);
-	    return True;
 	}
-	return False; /* Not for us. */
+	/* The message 1 was received at an unexpected stage of the
+	   key setup. XXX POLICY - what do we do? */
+	slog(st,LOG_UNEXPECTED,"unexpected incoming message 1");
+	BUF_FREE(buf);
+	return True;
     }
     if (dest==st->index) {
 	/* Explicitly addressed to us */
-	uint32_t msgtype=ntohl(get_uint32(buf->start+8));
 	if (msgtype!=LABEL_MSG0) dump_packet(st,buf,source,True);
 	switch (msgtype) {
 	case LABEL_NAK:
@@ -1565,14 +1567,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     /* The information we expect to see in incoming messages of type 1 */
     /* fixme: lots of unchecked overflows here, but the results are only
        corrupted packets rather than undefined behaviour */
-    st->setupsiglen=strlen(st->remotename)+strlen(st->localname)+8;
-    st->setupsig=safe_malloc(st->setupsiglen,"site_apply");
-    put_uint32(st->setupsig+0,LABEL_MSG1);
-    put_uint16(st->setupsig+4,strlen(st->remotename));
-    memcpy(&st->setupsig[6],st->remotename,strlen(st->remotename));
-    put_uint16(st->setupsig+(6+strlen(st->remotename)),strlen(st->localname));
-    memcpy(&st->setupsig[8+strlen(st->remotename)],st->localname,
-	   strlen(st->localname));
     st->setup_priority=(strcmp(st->localname,st->remotename)>0);
 
     buffer_new(&st->buffer,SETUP_BUFFER_LEN);

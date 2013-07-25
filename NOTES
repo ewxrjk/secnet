@@ -198,7 +198,10 @@ The protocol version selection stuff is not yet implemented.
 
 Messages:
 
-1) A->B: *,iA,msg1,A,B,nA
+1) A->B: *,iA,msg1,A+,B+,nA
+
+i* must be encoded as 0.  (However, it is permitted for a site to use
+zero as its "index" for another site.)
 
 2) B->A: iA,iB,msg2,B+,A+,nB,nA
 
