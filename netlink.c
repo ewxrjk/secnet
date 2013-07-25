@@ -603,11 +603,13 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
     uint32_t source,dest;
     struct iphdr *iph;
     char errmsgbuf[50];
+    const char *sourcedesc=client?client->name:"host";
 
     BUF_ASSERT_USED(buf);
+
     if (!netlink_check(st,buf,errmsgbuf,sizeof(errmsgbuf))) {
 	Message(M_WARNING,"%s: bad IP packet from %s: %s\n",
-		st->name,client?client->name:"host",
+		st->name,sourcedesc,
 		errmsgbuf);
 	BUF_FREE(buf);
 	return;
