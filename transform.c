@@ -13,6 +13,7 @@
 #include "util.h"
 #include "serpent.h"
 #include "unaligned.h"
+#include "hexdebug.h"
 
 /* Required key length in bytes */
 #define REQUIRED_KEYLEN ((512+64+32)/8)
@@ -49,10 +50,8 @@ static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen)
 
 #if 0
     {
-	int i;
 	printf("Setting key to: ");
-	for (i=0; i<keylen; i++)
-	    printf("%02x",key[i]);
+	hexdebug(stdout,key,keylen);
 	printf("\n");
     }
 #endif /* 0 */

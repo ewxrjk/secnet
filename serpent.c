@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 
+#include "hexdebug.h"
 #include "serpent.h"
 #include "serpentsboxes.h"
 
@@ -40,6 +41,26 @@
 #define SERPENT_DECORATE(func) serpent_##func
 
 #endif /* !defined(SERPENT_BIGENDIAN) */
+
+#if 0
+
+#include <stdio.h>
+
+static void SERP_DEBUG(const char *str1,
+		       const void *ary, int sz,
+		       const char *str2)
+{
+    fprintf(stderr,"%s",str1);
+    hexdebug(stderr,ary,sz);
+    fprintf(stderr,"%s",str2);
+}
+
+#else
+
+#define SERP_DEBUG(str1,aryv,sz,str2) /*empty*/
+
+#endif
+
 
 static uint32_t serpent_get_32bit(const uint8_t *basep,
 				  int lenbytes, int offset)
@@ -64,6 +85,8 @@ void SERPENT_DECORATE(makekey)(struct keyInstance *key, int keyLen,
     int i;
     uint32_t j;
     uint32_t w[132],k[132];
+
+    SERP_DEBUG("SERPENT makekey ",keyMaterial,keyLen/8,"\n");
 
     for(i=0; i<keyLen/32; i++)
 	w[i]=serpent_get_32bit(keyMaterial, keyLen/8, i*4);
@@ -124,6 +147,8 @@ void SERPENT_DECORATE(encrypt)(struct keyInstance *key,
 {
     register uint32_t x0, x1, x2, x3;
     register uint32_t y0, y1, y2, y3;
+
+    SERP_DEBUG("SERPENT encrypt ",plaintext,16," ->");
 
     x0=serpent_get_32bit(plaintext,16,+0);
     x1=serpent_get_32bit(plaintext,16,+4);
@@ -234,6 +259,8 @@ void SERPENT_DECORATE(encrypt)(struct keyInstance *key,
     serpent_put_32bit(ciphertext,16,+4, x1);
     serpent_put_32bit(ciphertext,16,+8, x2);
     serpent_put_32bit(ciphertext,16,12, x3);
+
+    SERP_DEBUG(" ",ciphertext,16,"\n");
 }
 
 void SERPENT_DECORATE(decrypt)(struct keyInstance *key,
@@ -242,6 +269,8 @@ void SERPENT_DECORATE(decrypt)(struct keyInstance *key,
 {
     register uint32_t x0, x1, x2, x3;
     register uint32_t y0, y1, y2, y3;
+
+    SERP_DEBUG("SERPENT decrypt ",ciphertext,16," ->");
 
     x0=serpent_get_32bit(ciphertext,16,+0);
     x1=serpent_get_32bit(ciphertext,16,+4);
@@ -352,4 +381,6 @@ void SERPENT_DECORATE(decrypt)(struct keyInstance *key,
     serpent_put_32bit(plaintext,16,+4, x1);
     serpent_put_32bit(plaintext,16,+8, x2);
     serpent_put_32bit(plaintext,16,12, x3);
+
+    SERP_DEBUG(" ",plaintext,16,"\n");
 }
