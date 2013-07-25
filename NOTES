@@ -193,21 +193,18 @@ i? is appropriate index for receiver
 Note that 'i' may be re-used from one session to the next, whereas 'n'
 is always fresh.
 
-The protocol version selection stuff is not yet implemented: I'm not
-yet convinced it's a good idea.  Instead, the initiator could try
-using its preferred protocol (which starts with a different magic
-number) and fall back if there's no reply.
+The protocol version selection stuff is not yet implemented.
 
 Messages:
 
-1) A->B: *,iA,msg1,A,B,protorange-A,nA
+1) A->B: *,iA,msg1,A,B,nA
 
-2) B->A: iA,iB,msg2,B,A,chosen-protocol,nB,nA
+2) B->A: iA,iB,msg2,B,A,nB,nA
 
 (The order of B and A reverses in alternate messages so that the same
 code can be used to construct them...)
 
-3) A->B: {iB,iA,msg3,A,B,protorange-A,chosen-protocol,nA,nB,g^x mod m}_PK_A^-1
+3) A->B: {iB,iA,msg3,A,B,nA,nB,g^x mod m}_PK_A^-1
 
 If message 1 was a replay then A will not generate message 3, because
 it doesn't recognise nA.
@@ -215,17 +212,10 @@ it doesn't recognise nA.
 If message 2 was from an attacker then B will not generate message 4,
 because it doesn't recognise nB.
 
-If an attacker is trying to manipulate the chosen protocol, B can spot
-this when it sees A's message 3.
-
-4) B->A: {iA,iB,msg4,B,A,protorange-B,chosen-protocol,nB,nA,g^y mod m}_PK_B^-1
+4) B->A: {iA,iB,msg4,B,A,nB,nA,g^y mod m}_PK_B^-1
 
 At this point, A and B share a key, k. B must keep retransmitting
 message 4 until it receives a packet encrypted using key k.
-
-A can abandon the exchange if the chosen protocol is not the one that
-it would have chosen knowing the acceptable protocol ranges of A and
-B.
 
 5) A: iB,iA,msg5,(ping/msg5)_k
 
