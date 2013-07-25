@@ -34,12 +34,18 @@ struct rsapub {
 };
 /* Sign data. NB data must be smaller than modulus */
 
+#define RSA_MAX_MODBYTES 2048
+/* The largest modulus I've seen is 15360 bits, which works out at 1920
+ * bytes.  Using keys this big is quite implausible, but it doesn't cost us
+ * much to support them.
+ */
+
 static const char *hexchars="0123456789abcdef";
 
 static void emsa_pkcs1(MP_INT *n, MP_INT *m,
 		       const uint8_t *data, int32_t datalen)
 {
-    char buff[2048];
+    char buff[2*RSA_MAX_MODBYTES + 1];
     int msize, i;
 
     /* RSA PKCS#1 v1.5 signature padding:
@@ -296,7 +302,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     /* Read the public key */
     keyfile_get_int(loc,f); /* Not sure what this is */
     length=(keyfile_get_short(loc,f)+7)/8;
-    if (length>1024) {
+    if (length>RSA_MAX_MODBYTES) {
 	cfgfatal(loc,"rsa-private","implausible length %ld for modulus\n",
 		 length);
     }
@@ -308,7 +314,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     read_mpbin(&st->n,b,length);
     free(b);
     length=(keyfile_get_short(loc,f)+7)/8;
-    if (length>1024) {
+    if (length>RSA_MAX_MODBYTES) {
 	cfgfatal(loc,"rsa-private","implausible length %ld for e\n",length);
     }
     b=safe_malloc(length,"rsapriv_apply");
@@ -339,7 +345,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     /* Read d */
     length=(keyfile_get_short(loc,f)+7)/8;
-    if (length>1024) {
+    if (length>RSA_MAX_MODBYTES) {
 	cfgfatal(loc,"rsa-private","implausibly long (%ld) decryption key\n",
 		 length);
     }
@@ -353,7 +359,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     free(b);
     /* Read iqmp (inverse of q mod p) */
     length=(keyfile_get_short(loc,f)+7)/8;
-    if (length>1024) {
+    if (length>RSA_MAX_MODBYTES) {
 	cfgfatal(loc,"rsa-private","implausibly long (%ld)"
 		 " iqmp auxiliary value\n", length);
     }
@@ -367,7 +373,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     free(b);
     /* Read q (the smaller of the two primes) */
     length=(keyfile_get_short(loc,f)+7)/8;
-    if (length>1024) {
+    if (length>RSA_MAX_MODBYTES) {
 	cfgfatal(loc,"rsa-private","implausibly long (%ld) q value\n",
 		 length);
     }
@@ -381,7 +387,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     free(b);
     /* Read p (the larger of the two primes) */
     length=(keyfile_get_short(loc,f)+7)/8;
-    if (length>1024) {
+    if (length>RSA_MAX_MODBYTES) {
 	cfgfatal(loc,"rsa-private","implausibly long (%ld) p value\n",
 		 length);
     }
