@@ -59,9 +59,9 @@ static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen)
 
     serpent_makekey(&ti->cryptkey,256,key);
     serpent_makekey(&ti->mackey,256,key+32);
-    ti->cryptiv=GET_32BIT_MSB_FIRST(key+64);
-    ti->maciv=GET_32BIT_MSB_FIRST(key+68);
-    ti->sendseq=GET_32BIT_MSB_FIRST(key+72);
+    ti->cryptiv=get_uint32(key+64);
+    ti->maciv=get_uint32(key+68);
+    ti->sendseq=get_uint32(key+72);
     ti->lastrecvseq=ti->sendseq;
     ti->keyed=True;
 
@@ -121,7 +121,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
        it we've have to add 16 bytes to each message, not 4, so that the
        message stays a multiple of 16 bytes long.) */
     memset(iv,0,16);
-    PUT_32BIT_MSB_FIRST(iv, ti->maciv);
+    put_uint32(iv, ti->maciv);
     serpent_encrypt(&ti->mackey,iv,macacc);
 
     /* CBCMAC: encrypt in CBC mode. The MAC is the last encrypted
@@ -138,7 +138,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     /* Serpent-CBC. We expand the ID as for CBCMAC, do the encryption,
        and prepend the IV before increasing it. */
     memset(iv,0,16);
-    PUT_32BIT_MSB_FIRST(iv, ti->cryptiv);
+    put_uint32(iv, ti->cryptiv);
     serpent_encrypt(&ti->cryptkey,iv,iv);
 
     /* CBC: each block is XORed with the previous encrypted block (or the IV)
@@ -187,7 +187,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     memset(iv,0,16);
     {
 	uint32_t ivword = buf_unprepend_uint32(buf);
-	PUT_32BIT_MSB_FIRST(iv, ivword);
+	put_uint32(iv, ivword);
     }
     /* Assert bufsize is multiple of blocksize */
     if (buf->size&0xf) {
@@ -208,7 +208,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     /* CBCMAC */
     macexpected=buf_unappend(buf,16);
     memset(iv,0,16);
-    PUT_32BIT_MSB_FIRST(iv, ti->maciv);
+    put_uint32(iv, ti->maciv);
     serpent_encrypt(&ti->mackey,iv,macacc);
 
     /* CBCMAC: encrypt in CBC mode. The MAC is the last encrypted

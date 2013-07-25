@@ -20,10 +20,30 @@
  *
  */
 
-#include "secnet.h"
+#include <stdint.h>
 
 #include "serpent.h"
 #include "serpentsboxes.h"
+
+#define GETPUT_CP(bytenum) \
+    (((basep) + (lenbytes) - (offset) - 4)[(bytenum)])
+
+static uint32_t serpent_get_32bit(const uint8_t *basep,
+				  int lenbytes, int offset)
+{
+    return (((uint32_t)GETPUT_CP(0) << 24) |
+	    ((uint32_t)GETPUT_CP(1) << 16) |
+	    ((uint32_t)GETPUT_CP(2) << +8) |
+	    ((uint32_t)GETPUT_CP(3)));
+}
+
+static void serpent_put_32bit(uint8_t *basep, int lenbytes, int offset, uint32_t value)
+{
+    GETPUT_CP(0) = (char)((value) >> 24);
+    GETPUT_CP(1) = (char)((value) >> 16);
+    GETPUT_CP(2) = (char)((value) >> 8);
+    GETPUT_CP(3) = (char)(value);
+}
 
 void serpent_makekey(struct keyInstance *key, int keyLen,
 	    const uint8_t *keyMaterial)
@@ -33,9 +53,9 @@ void serpent_makekey(struct keyInstance *key, int keyLen,
     uint32_t w[132],k[132];
 
     for(i=0; i<keyLen/32; i++)
-	w[i]=GET_32BIT_MSB_FIRST(keyMaterial + (keyLen/8 - i*4) - 4);
+	w[i]=serpent_get_32bit(keyMaterial, keyLen/8, i*4);
     if(keyLen<256)
-	w[i]=(GET_32BIT_MSB_FIRST(keyMaterial + (keyLen/8 - i*4) - 4)
+	w[i]=(serpent_get_32bit(keyMaterial, keyLen/8, i*4)
               & ((1L<<((keyLen&31)))-1)) | (1L<<((keyLen&31)));
     for(i++; i<8; i++)
 	w[i]=0;
@@ -92,10 +112,10 @@ void serpent_encrypt(struct keyInstance *key,
     register uint32_t x0, x1, x2, x3;
     register uint32_t y0, y1, y2, y3;
 
-    x0=GET_32BIT_MSB_FIRST(plaintext+12);
-    x1=GET_32BIT_MSB_FIRST(plaintext+8);
-    x2=GET_32BIT_MSB_FIRST(plaintext+4);
-    x3=GET_32BIT_MSB_FIRST(plaintext);
+    x0=serpent_get_32bit(plaintext,16,+0);
+    x1=serpent_get_32bit(plaintext,16,+4);
+    x2=serpent_get_32bit(plaintext,16,+8);
+    x3=serpent_get_32bit(plaintext,16,12);
 
     /* Start to encrypt the plaintext x */
     keying(x0, x1, x2, x3, key->subkeys[ 0]);
@@ -197,10 +217,10 @@ void serpent_encrypt(struct keyInstance *key,
     keying(x0, x1, x2, x3, key->subkeys[32]);
     /* The ciphertext is now in x */
 
-    PUT_32BIT_MSB_FIRST(ciphertext+12, x0);
-    PUT_32BIT_MSB_FIRST(ciphertext+8, x1);
-    PUT_32BIT_MSB_FIRST(ciphertext+4, x2);
-    PUT_32BIT_MSB_FIRST(ciphertext, x3);
+    serpent_put_32bit(ciphertext,16,+0, x0);
+    serpent_put_32bit(ciphertext,16,+4, x1);
+    serpent_put_32bit(ciphertext,16,+8, x2);
+    serpent_put_32bit(ciphertext,16,12, x3);
 }
 
 void serpent_decrypt(struct keyInstance *key,
@@ -210,10 +230,10 @@ void serpent_decrypt(struct keyInstance *key,
     register uint32_t x0, x1, x2, x3;
     register uint32_t y0, y1, y2, y3;
 
-    x0=GET_32BIT_MSB_FIRST(ciphertext+12);
-    x1=GET_32BIT_MSB_FIRST(ciphertext+8);
-    x2=GET_32BIT_MSB_FIRST(ciphertext+4);
-    x3=GET_32BIT_MSB_FIRST(ciphertext);
+    x0=serpent_get_32bit(ciphertext,16,+0);
+    x1=serpent_get_32bit(ciphertext,16,+4);
+    x2=serpent_get_32bit(ciphertext,16,+8);
+    x3=serpent_get_32bit(ciphertext,16,12);
 
     /* Start to decrypt the ciphertext x */
     keying(x0, x1, x2, x3, key->subkeys[32]);
@@ -315,8 +335,8 @@ void serpent_decrypt(struct keyInstance *key,
     keying(x0, x1, x2, x3, key->subkeys[ 0]);
     /* The plaintext is now in x */
 
-    PUT_32BIT_MSB_FIRST(plaintext+12, x0);
-    PUT_32BIT_MSB_FIRST(plaintext+8, x1);
-    PUT_32BIT_MSB_FIRST(plaintext+4, x2);
-    PUT_32BIT_MSB_FIRST(plaintext, x3);
+    serpent_put_32bit(plaintext,16,+0, x0);
+    serpent_put_32bit(plaintext,16,+4, x1);
+    serpent_put_32bit(plaintext,16,+8, x2);
+    serpent_put_32bit(plaintext,16,12, x3);
 }
