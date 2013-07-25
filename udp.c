@@ -102,6 +102,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 	    fromlen=sizeof(from);
 	    BUF_ASSERT_FREE(st->rbuf);
 	    BUF_ALLOC(st->rbuf,"udp_afterpoll");
+	    buffer_init(st->rbuf,calculate_max_start_pad());
 	    rv=recvfrom(st->fd, st->rbuf->start, st->rbuf->len, 0,
 			(struct sockaddr *)&from, &fromlen);
 	    if (rv>0) {
