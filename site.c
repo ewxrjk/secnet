@@ -89,6 +89,8 @@
 #define SITE_SENTMSG5 7
 #define SITE_WAIT     8
 
+int32_t site_max_start_pad = 4*4;
+
 static cstring_t state_name(uint32_t state)
 {
     switch (state) {
@@ -826,7 +828,7 @@ static bool_t generate_msg5(struct site *st)
 
     BUF_ALLOC(&st->buffer,"site:MSG5");
     /* We are going to add four words to the message */
-    buffer_init(&st->buffer,st->new_transform->max_start_pad+(4*4));
+    buffer_init(&st->buffer,calculate_max_start_pad());
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
     buf_prepend_uint32(&st->buffer,LABEL_MSG5);
@@ -873,7 +875,7 @@ static void create_msg6(struct site *st, struct transform_inst_if *transform,
 
     BUF_ALLOC(&st->buffer,"site:MSG6");
     /* We are going to add four words to the message */
-    buffer_init(&st->buffer,transform->max_start_pad+(4*4));
+    buffer_init(&st->buffer,calculate_max_start_pad());
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
@@ -1294,7 +1296,7 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
     if (current_valid(st) && st->buffer.free
 	&& transport_peers_valid(&st->peers)) {
 	BUF_ALLOC(&st->buffer,"site:MSG7");
-	buffer_init(&st->buffer,st->current.transform->max_start_pad+(4*3));
+	buffer_init(&st->buffer,calculate_max_start_pad());
 	buf_append_uint32(&st->buffer,LABEL_MSG7);
 	buf_append_string(&st->buffer,reason);
 	if (call_transform_forwards(st, st->current.transform,
@@ -1770,17 +1772,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->sharedsecretlen=st->sharedsecretallocd=0;
     st->sharedsecret=0;
 
-    /* We need to compute some properties of our comms and transports */
-#define COMPUTE_WORST(things,pad)		\
-    int things##_worst_##pad=0;			\
-    for (i=0; i<st->n##things; i++) {		\
-	int thispad=st->things[i]->pad;		\
-	if (thispad > things##_worst_##pad)	\
-	    things##_worst_##pad=thispad;	\
-    }
-    COMPUTE_WORST(comms,min_start_pad)
-    COMPUTE_WORST(transforms,max_start_pad)
-
     for (i=0; i<st->ntransforms; i++) {
 	struct transform_if *ti=st->transforms[i];
 	uint32_t capbit = 1UL << ti->capab_transformnum;
@@ -1791,9 +1782,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
 
     /* We need to register the remote networks with the netlink device */
-    st->netlink->reg(st->netlink->st, site_outgoing, st,
-		     transforms_worst_max_start_pad+(4*4)+
-		     comms_worst_min_start_pad);
+    st->netlink->reg(st->netlink->st, site_outgoing, st);
     
     for (i=0; i<st->ncomms; i++)
 	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);

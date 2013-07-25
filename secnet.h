@@ -146,6 +146,16 @@ static const struct timeval *const tv_now = &tv_now_global;
 
 /***** END of utility functions *****/
 
+/***** START of max_start_pad handling *****/
+
+extern int32_t site_max_start_pad, transform_max_start_pad,
+    comm_max_start_pad;
+
+void update_max_start_pad(int32_t *our_module_global, int32_t our_instance);
+int32_t calculate_max_start_pad(void);
+
+/***** END of max_start_pad handling *****/
+
 /***** SCHEDULING support */
 
 /* If nfds_io is insufficient for your needs, set it to the required
@@ -325,7 +335,6 @@ typedef const char *comm_addr_to_string_fn(void *commst,
         /* Returned string is in a static buffer. */
 struct comm_if {
     void *st;
-    int32_t min_start_pad;
     comm_request_notify_fn *request_notify;
     comm_release_notify_fn *release_notify;
     comm_sendmsg_fn *sendmsg;
@@ -363,8 +372,7 @@ struct site_if {
 /* TRANSFORM interface */
 
 /* A reversable transformation. Transforms buffer in-place; may add
-   data to start or end. Maximum amount of data to be added before
-   the packet specified in max_start_pad. (Reverse transformations decrease
+   data to start or end. (Reverse transformations decrease
    length, of course.)  Transformations may be key-dependent, in which
    case key material is passed in at initialisation time. They may
    also depend on internal factors (eg. time) and keep internal
@@ -396,14 +404,12 @@ struct transform_inst_if {
     transform_apply_fn *forwards;
     transform_apply_fn *reverse;
     transform_destroyinstance_fn *destroy;
-    int32_t max_start_pad; /* same as from transform_if */
 };
 
 struct transform_if {
     void *st;
-    int32_t max_start_pad; /* these two are both <<< INT_MAX */
-    int32_t keylen; /* 0 means give the transform exactly as much as there is */
     int capab_transformnum;
+    int32_t keylen; /* <<< INT_MAX */
     transform_createinstance_fn *create;
 };
 
@@ -425,7 +431,7 @@ typedef void netlink_deliver_fn(void *st, struct buffer_if *buf);
 #define MAXIMUM_LINK_QUALITY 3
 typedef void netlink_link_quality_fn(void *st, uint32_t quality);
 typedef void netlink_register_fn(void *st, netlink_deliver_fn *deliver,
-				 void *dst, int32_t max_start_pad);
+				 void *dst);
 typedef void netlink_output_config_fn(void *st, struct buffer_if *buf);
 typedef bool_t netlink_check_config_fn(void *st, struct buffer_if *buf);
 typedef void netlink_set_mtu_fn(void *st, int32_t new_mtu);

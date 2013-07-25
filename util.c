@@ -387,7 +387,7 @@ void send_nak(const struct comm_addr *dest, uint32_t our_index,
 	      uint32_t their_index, uint32_t msgtype,
 	      struct buffer_if *buf, const char *logwhy)
 {
-    buffer_init(buf,dest->comm->min_start_pad);
+    buffer_init(buf,calculate_max_start_pad());
     buf_append_uint32(buf,their_index);
     buf_append_uint32(buf,our_index);
     buf_append_uint32(buf,LABEL_NAK);
@@ -418,4 +418,20 @@ int consttime_memeq(const void *s1in, const void *s2in, size_t n)
 void util_module(dict_t *dict)
 {
     add_closure(dict,"sysbuffer",buffer_apply);
+}
+
+void update_max_start_pad(int32_t *our_module_global, int32_t our_instance)
+{
+    if (*our_module_global < our_instance)
+	*our_module_global=our_instance;
+}
+
+int32_t	transform_max_start_pad, comm_max_start_pad;
+
+int32_t calculate_max_start_pad(void)
+{
+    return
+	site_max_start_pad +
+	transform_max_start_pad +
+	comm_max_start_pad;
 }

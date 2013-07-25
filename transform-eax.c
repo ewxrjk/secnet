@@ -294,7 +294,7 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
 	padding_round = 1;
     st->p.padding_mask = padding_round-1;
 
-    st->ops.max_start_pad=0;
+    update_max_start_pad(&transform_max_start_pad, 0);
 
     st->ops.keylen=0;
     st->ops.create=transform_create;

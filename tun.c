@@ -116,8 +116,8 @@ static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds)
     }
     if (fds[0].revents&POLLIN) {
 	BUF_ALLOC(st->buff,"tun_afterpoll");
-	buffer_init(st->buff,st->nl.max_start_pad);
-	l=read(st->fd,st->buff->start,st->buff->len-st->nl.max_start_pad);
+	buffer_init(st->buff,calculate_max_start_pad());
+	l=read(st->fd,st->buff->start,st->buff->len-calculate_max_start_pad());
 	if (l<0) {
 	    fatal_perror("tun_afterpoll: read()");
 	}

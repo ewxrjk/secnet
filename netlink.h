@@ -45,7 +45,6 @@ struct netlink {
     closure_t cl;
     void *dst; /* Pointer to host interface state */
     cstring_t name;
-    int32_t max_start_pad;
     struct ipset *networks; /* Local networks */
     struct subnet_list *subnets; /* Same as networks, for display */
     struct ipset *remote_networks; /* Allowable remote networks */

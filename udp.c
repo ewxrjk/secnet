@@ -193,12 +193,13 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
     uint8_t *sa;
 
     if (st->use_proxy) {
-	sa=buf->start-8;
+	sa=buf_prepend(buf,8);
 	memcpy(sa,&dest->sin.sin_addr,4);
 	memset(sa+4,0,4);
 	memcpy(sa+6,&dest->sin.sin_port,2);
 	sendto(st->fd,sa,buf->size+8,0,(struct sockaddr *)&st->proxy,
 	       sizeof(st->proxy));
+	buf_unprepend(buf,8);
     } else {
 	sendto(st->fd, buf->start, buf->size, 0,
 	       (struct sockaddr *)&dest->sin, sizeof(dest->sin));
@@ -288,7 +289,6 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
-    st->ops.min_start_pad=0;
     st->ops.request_notify=request_notify;
     st->ops.release_notify=release_notify;
     st->ops.sendmsg=udp_sendmsg;
@@ -323,8 +323,9 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 	    cfgfatal(st->loc,"udp","proxy must supply ""addr"",port\n");
 	}
 	st->proxy.sin_port=htons(i->data.number);
-	st->ops.min_start_pad=8;
     }
+
+    update_max_start_pad(&comm_max_start_pad, st->use_proxy ? 8 : 0);
 
     add_hook(PHASE_GETRESOURCES,udp_phase_hook,st);
 

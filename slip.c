@@ -115,7 +115,7 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 	if (st->ignoring_packet) {
 	    if (outputchr == OUTPUT_END) {
 		st->ignoring_packet=False;
-		buffer_init(st->buff,st->nl.max_start_pad);
+		buffer_init(st->buff,calculate_max_start_pad());
 	    }
 	} else {
 	    if (outputchr == OUTPUT_END) {
@@ -123,7 +123,7 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 		    st->netlink_to_tunnel(&st->nl,st->buff);
 		    BUF_ALLOC(st->buff,"userv_afterpoll");
 		}
-		buffer_init(st->buff,st->nl.max_start_pad);
+		buffer_init(st->buff,calculate_max_start_pad());
 	    } else if (outputchr != OUTPUT_NOTHING) {
 		if (st->buff->size < st->buff->len) {
 		    buf_append_uint8(st->buff,outputchr);

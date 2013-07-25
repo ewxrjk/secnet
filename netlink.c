@@ -238,7 +238,7 @@ static struct icmphdr *netlink_icmp_tmpl(struct netlink *st,
     struct icmphdr *h;
 
     BUF_ALLOC(&st->icmp,"netlink_icmp_tmpl");
-    buffer_init(&st->icmp,st->max_start_pad);
+    buffer_init(&st->icmp,calculate_max_start_pad());
     h=buf_append(&st->icmp,sizeof(*h));
 
     h->iph.version=4;
@@ -808,12 +808,10 @@ static void netlink_inst_set_mtu(void *sst, int32_t new_mtu)
 }
 
 static void netlink_inst_reg(void *sst, netlink_deliver_fn *deliver, 
-			     void *dst, int32_t max_start_pad)
+			     void *dst)
 {
     struct netlink_client *c=sst;
-    struct netlink *st=c->nst;
 
-    if (max_start_pad > st->max_start_pad) st->max_start_pad=max_start_pad;
     c->deliver=deliver;
     c->dst=dst;
 }
@@ -941,7 +939,6 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
     st->cl.type=CL_PURE;
     st->cl.apply=netlink_inst_apply;
     st->cl.interface=st;
-    st->max_start_pad=0;
     st->clients=NULL;
     st->routes=NULL;
     st->n_clients=0;
