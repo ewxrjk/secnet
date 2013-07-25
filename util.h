@@ -29,6 +29,12 @@ extern void *buf_prepend(struct buffer_if *buf, int32_t amount);
 extern void *buf_unappend(struct buffer_if *buf, int32_t amount);
 extern void *buf_unprepend(struct buffer_if *buf, int32_t amount);
 
+extern void buffer_readonly_view(struct buffer_if *n, const void*, int32_t len);
+extern void buffer_readonly_clone(struct buffer_if *n, const struct buffer_if*);
+  /* Caller must only use unappend, unprepend et al. on n.
+   * New buffer state (in n) before this can be undefined.  After use,
+   * it must NOT be freed. */
+
 extern void buf_append_string(struct buffer_if *buf, cstring_t s);
 
 extern void read_mpbin(MP_INT *a, uint8_t *bin, int binsize);

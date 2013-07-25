@@ -228,8 +228,9 @@ void buffer_assert_free(struct buffer_if *buffer, cstring_t file,
 			int line)
 {
     if (!buffer->free) {
-	fatal("BUF_ASSERT_FREE, %s line %d, owned by %s",
-	      file,line,buffer->owner);
+	fprintf(stderr,"secnet: BUF_ASSERT_FREE, %s line %d, owned by %s",
+		file,line,buffer->owner);
+	assert(!"buffer_assert_free failure");
     }
 }
 
@@ -237,8 +238,9 @@ void buffer_assert_used(struct buffer_if *buffer, cstring_t file,
 			int line)
 {
     if (buffer->free) {
-	fatal("BUF_ASSERT_USED, %s line %d, last owned by %s",
-	      file,line,buffer->owner);
+	fprintf(stderr,"secnet: BUF_ASSERT_USED, %s line %d, last owned by %s",
+		file,line,buffer->owner);
+	assert(!"buffer_assert_used failure");
     }
 }
 
@@ -299,6 +301,22 @@ void buffer_new(struct buffer_if *buf, int32_t len)
     buf->len=len;
     buf->start=NULL;
     buf->base=safe_malloc(len,"buffer_new");
+}
+
+void buffer_readonly_view(struct buffer_if *buf, const void *data, int32_t len)
+{
+    buf->free=False;
+    buf->owner="READONLY";
+    buf->flags=0;
+    buf->loc.file=NULL;
+    buf->loc.line=0;
+    buf->size=buf->len=len;
+    buf->base=buf->start=(uint8_t*)data;
+}
+
+void buffer_readonly_clone(struct buffer_if *out, const struct buffer_if *in)
+{
+    buffer_readonly_view(out,in->start,in->size);
 }
 
 void buffer_copy(struct buffer_if *dst, const struct buffer_if *src)
