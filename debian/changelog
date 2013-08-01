@@ -6,6 +6,7 @@ secnet (0.3.0~beta2) unstable; urgency=low
    - SECURITY FIX: Provide a new transform, eax-serpent, to replace cbcmac.
    - SECURITY FIX: No longer send NAKs for NAKs, avoiding NAK storm.
    - SECURITY FIX: Fix site name checking when site name A is prefix of B.
+   - SECURITY FIX: Safely reject too-short IP packets.
    - Better robustness for mobile sites (proper user of NAKs, new PROD msg).
    - Better robustness against SLIP decoding errors.
    - Fix bugs which caused routes to sometimes not be advertised.
