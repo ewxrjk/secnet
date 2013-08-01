@@ -293,6 +293,7 @@ static bool_t netlink_icmp_may_reply(struct buffer_if *buf)
     struct icmphdr *icmph;
     uint32_t source;
 
+    if (buf->size < (int)sizeof(struct icmphdr)) return False;
     iph=(struct iphdr *)buf->start;
     icmph=(struct icmphdr *)buf->start;
     if (iph->protocol==1) {
@@ -338,6 +339,7 @@ static bool_t netlink_icmp_may_reply(struct buffer_if *buf)
    */
 static uint16_t netlink_icmp_reply_len(struct buffer_if *buf)
 {
+    if (buf->size < (int)sizeof(struct iphdr)) return 0;
     struct iphdr *iph=(struct iphdr *)buf->start;
     uint16_t hlen,plen;
 
@@ -354,11 +356,11 @@ static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
 				struct netlink_client *client,
 				uint8_t type, uint8_t code)
 {
-    struct iphdr *iph=(struct iphdr *)buf->start;
     struct icmphdr *h;
     uint16_t len;
 
     if (netlink_icmp_may_reply(buf)) {
+	struct iphdr *iph=(struct iphdr *)buf->start;
 	len=netlink_icmp_reply_len(buf);
 	h=netlink_icmp_tmpl(st,ntohl(iph->saddr),len);
 	h->type=type; h->code=code;
@@ -389,6 +391,7 @@ static bool_t netlink_check(struct netlink *st, struct buffer_if *buf,
 	return False;					\
     }while(0)
 
+    if (buf->size < (int)sizeof(struct iphdr)) BAD("len %"PRIu32"",buf->size);
     struct iphdr *iph=(struct iphdr *)buf->start;
     int32_t len;
 
@@ -413,6 +416,13 @@ static void netlink_packet_deliver(struct netlink *st,
 				   struct netlink_client *client,
 				   struct buffer_if *buf)
 {
+    if (buf->size < (int)sizeof(struct iphdr)) {
+	Message(M_ERR,"%s: trying to deliver a too-short packet"
+		" from %s!\n",st->name, client?client->name:"(local)");
+	BUF_FREE(buf);
+	return;
+    }
+
     struct iphdr *iph=(struct iphdr *)buf->start;
     uint32_t dest=ntohl(iph->daddr);
     uint32_t source=ntohl(iph->saddr);
@@ -530,6 +540,7 @@ static void netlink_packet_forward(struct netlink *st,
 				   struct netlink_client *client,
 				   struct buffer_if *buf)
 {
+    if (buf->size < (int)sizeof(struct iphdr)) return;
     struct iphdr *iph=(struct iphdr *)buf->start;
     
     BUF_ASSERT_USED(buf);
@@ -559,6 +570,12 @@ static void netlink_packet_local(struct netlink *st,
 
     st->localcount++;
 
+    if (buf->size < (int)sizeof(struct icmphdr)) {
+	Message(M_WARNING,"%s: short packet addressed to secnet; "
+		"ignoring it\n",st->name);
+	BUF_FREE(buf);
+	return;
+    }
     h=(struct icmphdr *)buf->start;
 
     if ((ntohs(h->iph.frag_off)&0xbfff)!=0) {
@@ -614,6 +631,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	BUF_FREE(buf);
 	return;
     }
+    assert(buf->size >= (int)sizeof(struct icmphdr));
     iph=(struct iphdr *)buf->start;
 
     source=ntohl(iph->saddr);
