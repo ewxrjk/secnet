@@ -1,9 +1,9 @@
-secnet (0.3.0~beta3~~iwj1) unstable; urgency=low
+secnet (0.3.0~beta3) unstable; urgency=low
 
   * New upstream version.
    - Stability bugfix: properly initialise site's scratch buffer.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Mon, 05 Aug 2013 11:49:56 +0100
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Mon, 05 Aug 2013 11:54:09 +0100
 
 secnet (0.3.0~beta2) unstable; urgency=low
 
