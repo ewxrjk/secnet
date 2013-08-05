@@ -1808,7 +1808,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     buffer_new(&st->buffer,SETUP_BUFFER_LEN);
 
-    buffer_new(&st->scratch,0);
+    buffer_new(&st->scratch,SETUP_BUFFER_LEN);
     BUF_ALLOC(&st->scratch,"site:scratch");
 
     /* We are interested in poll(), but only for timeouts. We don't have
