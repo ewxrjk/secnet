@@ -195,7 +195,9 @@ dist:
 #       mv ../secnet_${VERSION}_i386.deb ~ianmdlvl/public-html/secnet/download/
 #
 #  10. On chiark as user secnet:
-#       cd ~secnet/
-#       rsync ~ianmdlvl/public-html/secnet/download/secnet* .
+#       cd ~secnet/public-html/release/
+#       mkdir $VERSION
+#       cd $VERSION
+#       ln -s /home/ianmdlvl/public-html/secnet/download/secnet?$VERSION* .
 #
 #  11. write and post a release announcement
