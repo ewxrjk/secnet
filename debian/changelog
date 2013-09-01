@@ -1,8 +1,9 @@
 secnet (0.3.1~~unstable) unstable; urgency=low
 
   * Updates to release checklist in Makefile.in.
+  * Fix formatting error in secnet.8 manpage.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 01 Sep 2013 20:45:47 +0100
+ --
 
 secnet (0.3.0) unstable; urgency=low
 
