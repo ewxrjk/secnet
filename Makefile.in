@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.3.0~beta3
+VERSION:=0.3.0
 
 @SET_MAKE@
 
@@ -175,24 +175,24 @@ dist:
 #
 #  3. Commit the updates to VERSION (above) and debian/changelog
 #
-#  4. git-tag -s v$(VERSION)
+#  4. git-tag -s v$VERSION
 #
 #  5. git-push origin
 #
 #  6. Run, again,
 #       make dist
 #
-#  7. gpg --detach-sign ../secnet-$(VERSION).tar.gz
+#  7. gpg --detach-sign ../secnet-$VERSION.tar.gz
 #
 #  8. rsync -v ../secnet-$VERSION.tar.gz* \
 #        chiark:/home/ianmdlvl/public-html/secnet/download/
 #
 #  9. On chiark:
-#       tar zxf ~ianmdlvl/public-html/secnet/download/secnet-$(VERSION).tar.gz
-#       cd secnet-$(VERSION)
+#       tar zxf ~ianmdlvl/public-html/secnet/download/secnet-$VERSION.tar.gz
+#       cd secnet-$VERSION
 #       debian/rules build
 #       fakeroot debian/rules binary
-#       mv ../secnet_0.1.18.1-1_i386.deb ~/public-html/secnet/download/
+#       mv ../secnet_${VERSION}_i386.deb ~/public-html/secnet/download/
 #
 #  10. On chiark as user secnet:
 #       cd ~secnet/

@@ -1,3 +1,10 @@
+secnet (0.3.0) unstable; urgency=low
+
+  * Release of 0.3.0.  No code changes since 0.3.0~beta3.
+  * Update release checklist.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 01 Sep 2013 20:27:48 +0100
+
 secnet (0.3.0~beta3) unstable; urgency=low
 
   * New upstream version.
