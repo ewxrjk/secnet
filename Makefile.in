@@ -175,7 +175,7 @@ dist:
 #
 #  3. Commit the updates to VERSION (above) and debian/changelog
 #
-#  4. git-tag -s v$VERSION
+#  4. git-tag -m "secnet $VERSION" -s v$VERSION
 #
 #  5. git-push origin
 #
@@ -192,7 +192,7 @@ dist:
 #       cd secnet-$VERSION
 #       debian/rules build
 #       fakeroot debian/rules binary
-#       mv ../secnet_${VERSION}_i386.deb ~/public-html/secnet/download/
+#       mv ../secnet_${VERSION}_i386.deb ~ianmdlvl/public-html/secnet/download/
 #
 #  10. On chiark as user secnet:
 #       cd ~secnet/
