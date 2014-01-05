@@ -765,7 +765,7 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
     if (requested) c=M_WARNING;
     if (st->ptp) {
 	net=ipaddr_to_string(st->secnet_address);
-	Message(c,"%s: point-to-point (remote end is %s); routes:\n",
+	Message(c,"%s: point-to-point (remote end is %s); routes: ",
 		st->name, net);
 	free(net);
 	netlink_output_subnets(st,c,st->clients->subnets);
