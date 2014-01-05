@@ -409,6 +409,17 @@ static bool_t netlink_check(struct netlink *st, struct buffer_if *buf,
 #undef BAD
 }
 
+/* Deliver a packet _to_ client; used after we have decided
+ * what to do with it. */
+static void netlink_client_deliver(struct netlink *st,
+				   struct netlink_client *client,
+				   uint32_t source, uint32_t dest,
+				   struct buffer_if *buf)
+{
+    client->deliver(client->dst, buf);
+    client->outcount++;
+}
+
 /* Deliver a packet. "client" is the _origin_ of the packet, not its
    destination, and is NULL for packets from the host and packets
    generated internally in secnet.  */
@@ -521,9 +532,8 @@ static void netlink_packet_deliver(struct netlink *st,
 	} else {
 	    if (best_quality>0) {
 		/* XXX Fragment if required */
-		st->routes[best_match]->deliver(
-		    st->routes[best_match]->dst, buf);
-		st->routes[best_match]->outcount++;
+		netlink_client_deliver(st,st->routes[best_match],
+				       source,dest,buf);
 		BUF_ASSERT_FREE(buf);
 	    } else {
 		/* Generate ICMP destination unreachable */
@@ -678,7 +688,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	if (client) {
 	    st->deliver_to_host(st->dst,buf);
 	} else {
-	    st->clients->deliver(st->clients->dst,buf);
+	    netlink_client_deliver(st,st->clients,source,dest,buf);
 	}
 	BUF_ASSERT_FREE(buf);
 	return;
