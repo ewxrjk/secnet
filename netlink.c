@@ -410,12 +410,23 @@ static bool_t netlink_check(struct netlink *st, struct buffer_if *buf,
 }
 
 /* Deliver a packet _to_ client; used after we have decided
- * what to do with it. */
+ * what to do with it (and just to check that the client has
+ * actually registered a delivery function with us). */
 static void netlink_client_deliver(struct netlink *st,
 				   struct netlink_client *client,
 				   uint32_t source, uint32_t dest,
 				   struct buffer_if *buf)
 {
+    if (!client->deliver) {
+	string_t s,d;
+	s=ipaddr_to_string(source);
+	d=ipaddr_to_string(dest);
+	Message(M_ERR,"%s: dropping %s->%s, client not registered\n",
+		st->name,s,d);
+	free(s); free(d);
+	BUF_FREE(buf);
+	return;
+    }
     client->deliver(client->dst, buf);
     client->outcount++;
 }

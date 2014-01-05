@@ -3,6 +3,7 @@ secnet (0.3.1~~unstable) unstable; urgency=low
   * Updates to release checklist in Makefile.in.
   * Fix formatting error in secnet.8 manpage.
   * Internal code rearrangements and improvements.
+  * Fix netlink SEGV on clientless netlinks (i.e. configuration error).
 
  --
 
