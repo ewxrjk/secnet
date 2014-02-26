@@ -30,6 +30,11 @@ typedef const char *cstring_t;
 #define True  (_Bool)1
 typedef _Bool bool_t;
 
+union iaddr {
+    struct sockaddr sa;
+    struct sockaddr_in sin;
+};
+
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
 					 __FILE__,__LINE__); } } while(0)
 
@@ -335,7 +340,7 @@ struct comm_addr {
        must start by memsetting it with FILLZERO, or some
        equivalent. */
     struct comm_if *comm;
-    struct sockaddr_in sin;
+    union iaddr ia;
 };
 
 /* Return True if the packet was processed, and shouldn't be passed to

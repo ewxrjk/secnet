@@ -476,3 +476,39 @@ extern void slilog_part(struct log_if *lf, int priority, const char *message, ..
     vslilog_part(lf,priority,message,ap);
     va_end(ap);
 }
+
+const char *iaddr_to_string(const union iaddr *ia)
+{
+    static char bufs[2][100];
+    static int b;
+
+    b ^= 1;
+
+    assert(ia->sa.sa_family == AF_INET);
+
+    snprintf(bufs[b], sizeof(bufs[b]), "[%s]:%d",
+	     inet_ntoa(ia->sin.sin_addr),
+	     ntohs(ia->sin.sin_port));
+    return bufs[b];
+}
+
+bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib)
+{
+    if (ia->sa.sa_family != ib->sa.sa_family)
+	return 0;
+    switch (ia->sa.sa_family) {
+    case AF_INET:
+	return ia->sin.sin_addr.s_addr == ib->sin.sin_addr.s_addr
+	    && ia->sin.sin_port        == ib->sin.sin_port;
+    default:
+	abort();
+    }
+}
+
+int iaddr_socklen(const union iaddr *ia)
+{
+    switch (ia->sa.sa_family) {
+    case AF_INET:  return sizeof(ia->sin);
+    default:       abort();
+    }
+}

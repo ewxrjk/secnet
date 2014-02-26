@@ -40,37 +40,21 @@ struct udp {
     closure_t cl;
     struct comm_if ops;
     struct cloc loc;
-    uint32_t addr;
-    uint16_t port;
+    union iaddr addr;
     int fd;
     string_t authbind;
     struct buffer_if *rbuf;
     struct notify_list *notify;
     bool_t use_proxy;
-    struct sockaddr_in proxy;
+    union iaddr proxy;
 };
-
-static const char *saddr_to_string(const struct sockaddr_in *sin) {
-    static char bufs[2][100];
-    static int b;
-
-    b ^= 1;
-    snprintf(bufs[b], sizeof(bufs[b]), "[%s]:%d",
-	     inet_ntoa(sin->sin_addr),
-	     ntohs(sin->sin_port));
-    return bufs[b];
-}
 
 static const char *addr_to_string(void *commst, const struct comm_addr *ca) {
     struct udp *st=commst;
     static char sbuf[100];
 
-    struct sockaddr_in la;
-    la.sin_addr.s_addr=htonl(st->addr);
-    la.sin_port=htons(st->port);
-
     snprintf(sbuf, sizeof(sbuf), "udp:%s-%s",
-	     saddr_to_string(&la), saddr_to_string(&ca->sin));
+            iaddr_to_string(&st->addr), iaddr_to_string(&ca->ia));
     return sbuf;
 }
 
@@ -91,7 +75,7 @@ static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
 static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 {
     struct udp *st=state;
-    struct sockaddr_in from;
+    union iaddr from;
     socklen_t fromlen;
     struct notify_list *n;
     bool_t done;
@@ -106,28 +90,29 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 	    buffer_init(st->rbuf,calculate_max_start_pad());
 	    rv=recvfrom(st->fd, st->rbuf->start,
 			buf_remaining_space(st->rbuf),
-			0, (struct sockaddr *)&from, &fromlen);
+			0, &from.sa, &fromlen);
 	    if (rv>0) {
 		st->rbuf->size=rv;
 		if (st->use_proxy) {
 		    /* Check that the packet came from our poxy server;
 		       we shouldn't be contacted directly by anybody else
 		       (since they can trivially forge source addresses) */
-		    if (memcmp(&from.sin_addr,&st->proxy.sin_addr,4)!=0 ||
-			memcmp(&from.sin_port,&st->proxy.sin_port,2)!=0) {
+		    if (!iaddr_equal(&from,&st->proxy)) {
 			Message(M_INFO,"udp: received packet that's not "
 				"from the proxy\n");
 			BUF_FREE(st->rbuf);
 			continue;
 		    }
-		    memcpy(&from.sin_addr,buf_unprepend(st->rbuf,4),4);
+		    /* proxy protocol supports ipv4 transport only */
+		    from.sa.sa_family=AF_INET;
+		    memcpy(&from.sin.sin_addr,buf_unprepend(st->rbuf,4),4);
 		    buf_unprepend(st->rbuf,2);
-		    memcpy(&from.sin_port,buf_unprepend(st->rbuf,2),2);
+		    memcpy(&from.sin.sin_port,buf_unprepend(st->rbuf,2),2);
 		}
 		struct comm_addr ca;
 		FILLZERO(ca);
 		ca.comm=&st->ops;
-		ca.sin=from;
+		ca.ia=from;
 		done=False;
 		for (n=st->notify; n; n=n->next) {
 		    if (n->fn(n->state, st->rbuf, &ca)) {
@@ -197,15 +182,21 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 
     if (st->use_proxy) {
 	sa=buf_prepend(buf,8);
-	memcpy(sa,&dest->sin.sin_addr,4);
+	if (dest->ia.sa.sa_family != AF_INET) {
+	    Message(M_INFO,
+               "udp: proxy means dropping outgoing non-IPv4 packet to %s\n",
+		    iaddr_to_string(&dest->ia));
+	    return False;
+	}
+	memcpy(sa,&dest->ia.sin.sin_addr,4);
 	memset(sa+4,0,4);
-	memcpy(sa+6,&dest->sin.sin_port,2);
-	sendto(st->fd,sa,buf->size+8,0,(struct sockaddr *)&st->proxy,
-	       sizeof(st->proxy));
+	memcpy(sa+6,&dest->ia.sin.sin_port,2);
+	sendto(st->fd,sa,buf->size+8,0,&st->proxy.sa,
+	       iaddr_socklen(&st->proxy));
 	buf_unprepend(buf,8);
     } else {
 	sendto(st->fd, buf->start, buf->size, 0,
-	       (struct sockaddr *)&dest->sin, sizeof(dest->sin));
+	       &dest->ia.sa, iaddr_socklen(&dest->ia));
     }
 
     return True;
@@ -214,7 +205,7 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 static void udp_phase_hook(void *sst, uint32_t new_phase)
 {
     struct udp *st=sst;
-    struct sockaddr_in addr;
+    union iaddr addr;
 
     st->fd=socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (st->fd<0) {
@@ -226,10 +217,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
     }
     setcloexec(st->fd);
 
-    FILLZERO(addr);
-    addr.sin_family=AF_INET;
-    addr.sin_addr.s_addr=htonl(st->addr);
-    addr.sin_port=htons(st->port);
+    addr=st->addr;
     if (st->authbind) {
 	pid_t c;
 	int status;
@@ -242,8 +230,15 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 	}
 	if (c==0) {
 	    char *argv[4], addrstr[9], portstr[5];
-	    sprintf(addrstr,"%08lX",(long)addr.sin_addr.s_addr);
-	    sprintf(portstr,"%04X",addr.sin_port);
+	    switch (addr.sa.sa_family) {
+	    case AF_INET:
+		sprintf(addrstr,"%08lX",(long)addr.sin.sin_addr.s_addr);
+		sprintf(portstr,"%04X",addr.sin.sin_port);
+		break;
+	    default:
+		fatal("udp (%s:%d): unsupported address family for authbind",
+		      st->loc.file,st->loc.line);
+	    }
 	    argv[0]=st->authbind;
 	    argv[1]=addrstr;
 	    argv[2]=portstr;
@@ -265,7 +260,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 		  st->loc.line, WEXITSTATUS(status));
 	}
     } else {
-	if (bind(st->fd, (struct sockaddr *)&addr, sizeof(addr))!=0) {
+	if (bind(st->fd, &addr.sa, iaddr_socklen(&addr))!=0) {
 	    fatal_perror("udp (%s:%d): bind",st->loc.file,st->loc.line);
 	}
     }
@@ -293,7 +288,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.release_notify=release_notify;
     st->ops.sendmsg=udp_sendmsg;
     st->ops.addr_to_string=addr_to_string;
-    st->port=0;
+    FILLZERO(st->addr);
     st->use_proxy=False;
 
     i=list_elem(args,0);
@@ -302,27 +297,28 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
     d=i->data.dict;
 
+    st->addr.sa.sa_family=AF_INET;
     j=dict_find_item(d,"address",False,"udp",st->loc);
-    st->addr=j?string_item_to_ipaddr(j, "udp"):INADDR_ANY;
-    st->port=dict_read_number(d,"port",True,"udp",st->loc,0);
+    st->addr.sin.sin_addr.s_addr=j?string_item_to_ipaddr(j, "udp"):INADDR_ANY;
+    st->addr.sin.sin_port=dict_read_number(d,"port",True,"udp",st->loc,0);
     st->rbuf=find_cl_if(d,"buffer",CL_BUFFER,True,"udp",st->loc);
     st->authbind=dict_read_string(d,"authbind",False,"udp",st->loc);
     l=dict_lookup(d,"proxy");
     if (l) {
 	st->use_proxy=True;
 	FILLZERO(st->proxy);
-	st->proxy.sin_family=AF_INET;
+	st->proxy.sa.sa_family=AF_INET;
 	i=list_elem(l,0);
 	if (!i || i->type!=t_string) {
 	    cfgfatal(st->loc,"udp","proxy must supply ""addr"",port\n");
 	}
 	a=string_item_to_ipaddr(i,"proxy");
-	st->proxy.sin_addr.s_addr=htonl(a);
+	st->proxy.sin.sin_addr.s_addr=htonl(a);
 	i=list_elem(l,1);
 	if (!i || i->type!=t_number) {
 	    cfgfatal(st->loc,"udp","proxy must supply ""addr"",port\n");
 	}
-	st->proxy.sin_port=htons(i->data.number);
+	st->proxy.sin.sin_port=htons(i->data.number);
     }
 
     update_max_start_pad(&comm_max_start_pad, st->use_proxy ? 8 : 0);

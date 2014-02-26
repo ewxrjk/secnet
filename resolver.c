@@ -44,9 +44,9 @@ static bool_t resolve_request(void *sst, cstring_t name,
 	struct comm_addr ca;
 	FILLZERO(ca);
 	ca.comm=comm;
-	ca.sin.sin_family=AF_INET;
-	ca.sin.sin_port=htons(port);
-	if (inet_aton(trimmed,&ca.sin.sin_addr))
+	ca.ia.sin.sin_family=AF_INET;
+	ca.ia.sin.sin_port=htons(port);
+	if (inet_aton(trimmed,&ca.ia.sin.sin_addr))
 	    cb(cst,&ca,1,1);
 	else
 	    cb(cst,0,0,0);
@@ -114,10 +114,10 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		    /* copy fields individually so we leave holes zeroed: */
 		    switch (ra->addr.sa.sa_family) {
 		    case AF_INET:
-			assert(ra->len == sizeof(ca->sin));
-			ca->sin.sin_family=ra->addr.inet.sin_family;
-			ca->sin.sin_addr=  ra->addr.inet.sin_addr;
-			ca->sin.sin_port=  htons(q->port);
+			assert(ra->len == sizeof(ca->ia.sin));
+			ca->ia.sin.sin_family=ra->addr.inet.sin_family;
+			ca->ia.sin.sin_addr=  ra->addr.inet.sin_addr;
+			ca->ia.sin.sin_port=  htons(q->port);
 			wslot++;
 			break;
 		    default:
