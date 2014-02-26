@@ -5,6 +5,7 @@ void init_builtin_modules(dict_t *dict)
     resolver_module(dict);
     random_module(dict);
     udp_module(dict);
+    polypath_module(dict);
     util_module(dict);
     site_module(dict);
     transform_eax_module(dict);

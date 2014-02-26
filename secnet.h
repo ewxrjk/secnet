@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fnmatch.h>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -295,6 +296,7 @@ extern void init_builtin_modules(dict_t *dict);
 extern init_module resolver_module;
 extern init_module random_module;
 extern init_module udp_module;
+extern init_module polypath_module;
 extern init_module util_module;
 extern init_module site_module;
 extern init_module transform_eax_module;

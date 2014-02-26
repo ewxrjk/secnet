@@ -199,6 +199,72 @@ udp: dict argument
   buffer (buffer closure): buffer for incoming packets
   authbind (string): optional, path to authbind-helper program
 
+** polypath
+
+Defines:
+  polypath (closure => comm closure)
+
+polypath: dict argument
+  port (integer): UDP port to listen and send on
+  buffer (buffer closure): buffer for incoming packets
+  authbind (string): optional, path to authbind-helper program
+  max-interfaces (number): optional, max number of different interfaces to
+   use (also, maximum steady-state amount of packet multiplication)
+  interfaces (string list): which interfaces to process; each entry is
+   optionally `!' or `+' followed by a glob pattern (which is applied to a
+   prospective interface using fnmatch with no flags).  If no list is
+   specified, or the list ends with a `!' entry, a default list is
+   used/appended: "!tun*","!tap*","!sl*","!userv*","!lo","*".  Patterns
+   which do not start with `*' or an alphanumeric need to be preceded
+   by `!' or `+'.
+  monitor-command (string list): Program to use to monitor appearance
+   and disappearance of addresses on local network interfaces.  Should
+   produce lines of the form `+|-<ifname> 4|6 <addr>' where <addr> is
+   an address literal.  Each - line should relate to a previously
+   printed + line.  On startup, should produce a + line for each
+   currently existing address.  secnet does filtering so there is no
+   need to strip out tun interfaces, multicast addresses, and so on.
+   The command is run as the user secnet is started as (not the one
+   which secnet may drop privilege to due to the configured `userid').
+   The default depends on the operating system.
+  permit-loopback (boolean): Normally, loopback IPv6 and IPv4
+   addresses on local interfaces are disregarded, because such
+   interfaces are not interesting for communicating with distant
+   hosts.  Setting this option will ignore that check, which can be
+   useful for testing.  Setting this option also removes "!lo*" from
+   the default interface pattern list.
+
+When using this comm, packets are sent out of every active interface
+on the host (where possible).  It is important that interfaces created
+by secnet itself are not included!  secnet's default filter list tries
+to do this.
+
+This comm only makes sense for sites which are mobile.  That is, the
+site closures used with this comm should all have the `local-mobile'
+parameter set to `true'.  When the local site site is not marked
+mobile the address selection machinery might fixate on an unsuitable
+address.
+
+For an interface to work with polypath, it must either have a suitable
+default route, or be a point-to-point interface.  In the general case
+this might mean that the host would have to have multiple default
+routes.  However in practice the most useful configuration is two
+interfaces being (1) wifi (2) mobile internet.
+
+I have had success on Linux by using network-manager for wifi and
+invoking ppp directly for mobile internet.  ppp sets up a
+point-to-point link, and does not add a default route if there already
+is one.  network-manager always sets up a default route.  The result
+is that the wifi always has a default route (so is useable); ppp
+(being a point-to-point link) does not need one.
+
+The use of polypath currently requires that secnet have root
+privilege, to make the setsockopt(,,SO_BINDTODEVICE,) call.
+
+polypath support is only available when secnet is built against an
+IPv6-capable version of adns (because it wants features in the newer
+adns).
+
 ** log
 
 Defines:
