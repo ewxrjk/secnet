@@ -193,6 +193,10 @@ struct iphdr {
     uint16_t   tot_len;
     uint16_t   id;
     uint16_t   frag_off;
+#define IPHDR_FRAG_OFF  ((uint16_t)0x1fff)
+#define IPHDR_FRAG_MORE ((uint16_t)0x2000)
+#define IPHDR_FRAG_DONT ((uint16_t)0x4000)
+/*                 reserved        0x8000 */
     uint8_t    ttl;
     uint8_t    protocol;
     uint16_t   check;
@@ -305,7 +309,7 @@ static bool_t netlink_icmp_may_reply(struct buffer_if *buf)
 	}
     }
     /* How do we spot broadcast destination addresses? */
-    if (ntohs(iph->frag_off)&0x1fff) return False; /* Non-initial fragment */
+    if (ntohs(iph->frag_off)&IPHDR_FRAG_OFF) return False;
     source=ntohl(iph->saddr);
     if (source==0) return False;
     if ((source&0xff000000)==0x7f000000) return False;
@@ -599,7 +603,7 @@ static void netlink_packet_local(struct netlink *st,
     }
     h=(struct icmphdr *)buf->start;
 
-    if ((ntohs(h->iph.frag_off)&0xbfff)!=0) {
+    if ((ntohs(h->iph.frag_off)&(IPHDR_FRAG_OFF|IPHDR_FRAG_MORE))!=0) {
 	Message(M_WARNING,"%s: fragmented packet addressed to secnet; "
 		"ignoring it\n",st->name);
 	BUF_FREE(buf);
