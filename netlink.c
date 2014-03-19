@@ -210,7 +210,7 @@ struct icmphdr {
     uint8_t type;
     uint8_t code;
     uint16_t check;
-    union {
+    union icmpinfofield {
 	uint32_t unused;
 	struct {
 	    uint8_t pointer;
@@ -224,6 +224,8 @@ struct icmphdr {
 	} echo;
     } d;
 };
+
+static const union icmpinfofield icmp_noinfo;
     
 static void netlink_packet_deliver(struct netlink *st,
 				   struct netlink_client *client,
@@ -358,7 +360,8 @@ static uint16_t netlink_icmp_reply_len(struct buffer_if *buf)
    comes from. NULL indicates the host. */
 static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
 				struct netlink_client *client,
-				uint8_t type, uint8_t code)
+				uint8_t type, uint8_t code,
+				union icmpinfofield info)
 {
     struct icmphdr *h;
     uint16_t len;
@@ -367,7 +370,7 @@ static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
 	struct iphdr *iph=(struct iphdr *)buf->start;
 	len=netlink_icmp_reply_len(buf);
 	h=netlink_icmp_tmpl(st,ntohl(iph->saddr),len);
-	h->type=type; h->code=code;
+	h->type=type; h->code=code; h->d=info;
 	memcpy(buf_append(&st->icmp,len),buf->start,len);
 	netlink_icmp_csum(h);
 	netlink_packet_deliver(st,NULL,&st->icmp);
@@ -525,7 +528,7 @@ static void netlink_packet_deliver(struct netlink *st,
 		    "(s=%s, d=%s)\n", st->name, s, d);
 	    free(s); free(d);
 	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
-				ICMP_CODE_NET_UNREACHABLE);
+				ICMP_CODE_NET_UNREACHABLE, icmp_noinfo);
 	    BUF_FREE(buf);
 	}
     } else {
@@ -542,7 +545,7 @@ static void netlink_packet_deliver(struct netlink *st,
 	    free(s); free(d);
 		    
 	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
-				ICMP_CODE_NET_PROHIBITED);
+				ICMP_CODE_NET_PROHIBITED, icmp_noinfo);
 	    BUF_FREE(buf);
 	} else {
 	    if (best_quality>0) {
@@ -552,8 +555,10 @@ static void netlink_packet_deliver(struct netlink *st,
 		BUF_ASSERT_FREE(buf);
 	    } else {
 		/* Generate ICMP destination unreachable */
-		netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
-				    ICMP_CODE_NET_UNREACHABLE); /* client==NULL */
+		netlink_icmp_simple(st,buf,client,/* client==NULL */
+				    ICMP_TYPE_UNREACHABLE,
+				    ICMP_CODE_NET_UNREACHABLE,
+				    icmp_noinfo);
 		BUF_FREE(buf);
 	    }
 	}
@@ -574,7 +579,7 @@ static void netlink_packet_forward(struct netlink *st,
     if (iph->ttl<=1) {
 	/* Generate ICMP time exceeded */
 	netlink_icmp_simple(st,buf,client,ICMP_TYPE_TIME_EXCEEDED,
-			    ICMP_CODE_TTL_EXCEEDED);
+			    ICMP_CODE_TTL_EXCEEDED,icmp_noinfo);
 	BUF_FREE(buf);
 	return;
     }
@@ -629,7 +634,7 @@ static void netlink_packet_local(struct netlink *st,
     } else {
 	/* Send ICMP protocol unreachable */
 	netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
-			    ICMP_CODE_PROTOCOL_UNREACHABLE);
+			    ICMP_CODE_PROTOCOL_UNREACHABLE,icmp_noinfo);
 	BUF_FREE(buf);
 	return;
     }
