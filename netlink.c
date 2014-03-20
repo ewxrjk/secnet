@@ -228,6 +228,10 @@ struct icmphdr {
 	    uint16_t id;
 	    uint16_t seq;
 	} echo;
+	struct {
+	    uint16_t unused;
+	    uint16_t mtu;
+	} fragneeded;
     } d;
 };
 
@@ -429,6 +433,146 @@ static bool_t netlink_check(struct netlink *st, struct buffer_if *buf,
 #undef BAD
 }
 
+static const char *fragment_filter_header(uint8_t *base, long *hlp)
+{
+    const int fixedhl = sizeof(struct iphdr);
+    long hl = *hlp;
+    const uint8_t *ipend = base + hl;
+    uint8_t *op = base + fixedhl;
+    const uint8_t *ip = op;
+
+    while (ip < ipend) {
+	uint8_t opt = ip[0];
+	int remain = ipend - ip;
+	if (opt == 0x00) /* End of Options List */ break;
+	if (opt == 0x01) /* No Operation */ continue;
+	if (remain < 2) return "IPv4 options truncated at length";
+	int optlen = ip[1];
+	if (remain < optlen) return "IPv4 options truncated in option";
+	if (opt & 0x80) /* copy */ {
+	    memmove(op, ip, optlen);
+	    op += optlen;
+	}
+	ip += optlen;
+    }
+    while ((hl = (op - base)) & 0x3)
+	*op++ = 0x00 /* End of Option List */;
+    ((struct iphdr*)base)->ihl = hl >> 2;
+    *hlp = hl;
+
+    return 0;
+}
+
+/* Fragment or send ICMP Fragmentation Needed */
+static void netlink_maybe_fragment(struct netlink *st,
+				   netlink_deliver_fn *deliver,
+				   void *deliver_dst,
+				   const char *delivery_name,
+				   int32_t mtu,
+				   uint32_t source, uint32_t dest,
+				   struct buffer_if *buf)
+{
+    struct iphdr *iph=(struct iphdr*)buf->start;
+    long hl = iph->ihl*4;
+    const char *ssource = ipaddr_to_string(source);
+
+    if (buf->size <= mtu) {
+	deliver(deliver_dst, buf);
+	return;
+    }
+
+    MDEBUG("%s: fragmenting %s->%s org.size=%"PRId32"\n",
+	   st->name, ssource, delivery_name, buf->size);
+
+#define BADFRAG(m, ...)					\
+	Message(M_WARNING,				\
+	        "%s: fragmenting packet from source %s"	\
+		" for transmission via %s: " m "\n",	\
+		st->name, ssource, delivery_name,	\
+		## __VA_ARGS__);
+
+    unsigned orig_frag = ntohs(iph->frag);
+
+    if (orig_frag&IPHDR_FRAG_DONT) {
+	union icmpinfofield info =
+	    { .fragneeded = { .unused = 0, .mtu = htons(mtu) } };
+	netlink_icmp_simple(st,buf,
+			    ICMP_TYPE_UNREACHABLE,
+			    ICMP_CODE_FRAGMENTATION_REQUIRED,
+			    info);
+	BUF_FREE(buf);
+	return;
+    }
+    if (mtu < hl + 8) {
+	BADFRAG("mtu %"PRId32" too small", mtu);
+	BUF_FREE(buf);
+	return;
+    }
+
+    /* we (ab)use the icmp buffer to stash the original packet */
+    struct buffer_if *orig = &st->icmp;
+    BUF_ALLOC(orig,"netlink_client_deliver fragment orig");
+    buffer_copy(orig,buf);
+    BUF_FREE(buf);
+
+    const uint8_t *startindata = orig->start + hl;
+    const uint8_t *indata =      startindata;
+    const uint8_t *endindata =   orig->start + orig->size;
+    _Bool filtered = 0;
+
+    for (;;) {
+	/* compute our fragment offset */
+	long dataoffset = indata - startindata
+	    + (orig_frag & IPHDR_FRAG_OFF)*8;
+	assert(!(dataoffset & 7));
+	if (dataoffset > IPHDR_FRAG_OFF*8) {
+	    BADFRAG("ultimate fragment offset out of range");
+	    break;
+	}
+
+	BUF_ALLOC(buf,"netlink_client_deliver fragment frag");
+	buffer_init(buf,calculate_max_start_pad());
+
+	/* copy header (possibly filtered); will adjust in a bit */
+	struct iphdr *fragh = buf_append(buf, hl);
+	memcpy(fragh, orig->start, hl);
+
+	/* decide how much payload to copy and copy it */
+	long avail = mtu - hl;
+	long remain = endindata - indata;
+	long use = avail < remain ? (avail & ~(long)7) : remain;
+	memcpy(buf_append(buf, use), indata, use);
+	indata += use;
+
+	_Bool last_frag = indata >= endindata;
+
+	/* adjust the header */
+	fragh->tot_len = htons(buf->size);
+	fragh->frag =
+	    htons((orig_frag & ~IPHDR_FRAG_OFF) |
+		  (last_frag ? 0 : IPHDR_FRAG_MORE) |
+		  (dataoffset >> 3));
+	fragh->check = 0;
+	fragh->check = ip_fast_csum((const void*)fragh, fragh->ihl);
+
+	/* actually send it */
+	deliver(deliver_dst, buf);
+	if (last_frag)
+	    break;
+
+	/* after copying the header for the first frag,
+	 * we filter the header for the remaining frags */
+	if (!filtered++) {
+	    const char *bad = fragment_filter_header(orig->start, &hl);
+	    if (bad) { BADFRAG("%s", bad); break; }
+	}
+    }
+
+    BUF_FREE(orig);
+
+#undef BADFRAG
+}
+
 /* Deliver a packet _to_ client; used after we have decided
  * what to do with it (and just to check that the client has
  * actually registered a delivery function with us). */
@@ -447,7 +591,8 @@ static void netlink_client_deliver(struct netlink *st,
 	BUF_FREE(buf);
 	return;
     }
-    client->deliver(client->dst, buf);
+    netlink_maybe_fragment(st, client->deliver,client->dst,client->name,
+			   client->mtu, source,dest,buf);
     client->outcount++;
 }
 
@@ -457,7 +602,8 @@ static void netlink_host_deliver(struct netlink *st,
 				 uint32_t source, uint32_t dest,
 				 struct buffer_if *buf)
 {
-    st->deliver_to_host(st->dst,buf);
+    netlink_maybe_fragment(st, st->deliver_to_host,st->dst,"(host)",
+			   st->mtu, source,dest,buf);
     st->outcount++;
 }
 
@@ -571,7 +717,6 @@ static void netlink_packet_deliver(struct netlink *st,
 	    BUF_FREE(buf);
 	} else {
 	    if (best_quality>0) {
-		/* XXX Fragment if required */
 		netlink_client_deliver(st,st->routes[best_match],
 				       source,dest,buf);
 		BUF_ASSERT_FREE(buf);
@@ -1061,7 +1206,7 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
        though, and will make the route dump look complicated... */
     st->subnets=ipset_to_subnet_list(st->networks);
     st->mtu=dict_read_number(dict, "mtu", False, "netlink", loc, DEFAULT_MTU);
-    buffer_new(&st->icmp,ICMP_BUFSIZE);
+    buffer_new(&st->icmp,MAX(ICMP_BUFSIZE,st->mtu));
     st->outcount=0;
     st->localcount=0;
 
