@@ -304,9 +304,17 @@ static bool_t netlink_icmp_may_reply(struct buffer_if *buf)
     icmph=(struct icmphdr *)buf->start;
     if (iph->protocol==1) {
 	switch(icmph->type) {
-	case 3: /* Destination unreachable */
-	case 11: /* Time Exceeded */
-	case 12: /* Parameter Problem */
+	    /* Based on http://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml#icmp-parameters-types
+	     * as retrieved Thu, 20 Mar 2014 00:16:44 +0000.
+	     * Deprecated, reserved, unassigned and experimental
+	     * options are treated as not safe to reply to.
+	     */
+	case 0: /* Echo Reply */
+	case 8: /* Echo */
+	case 13: /* Timestamp */
+	case 14: /* Timestamp Reply */
+	    return True;
+	default:
 	    return False;
 	}
     }
