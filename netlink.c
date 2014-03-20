@@ -120,7 +120,7 @@ their use.
 #define ICMP_CODE_TTL_EXCEEDED           0
 
 /* Generic IP checksum routine */
-static inline uint16_t ip_csum(uint8_t *iph,int32_t count)
+static inline uint16_t ip_csum(const uint8_t *iph,int32_t count)
 {
     register uint32_t sum=0;
 
@@ -144,7 +144,7 @@ static inline uint16_t ip_csum(uint8_t *iph,int32_t count)
  *      By Jorge Cwik <jorge@laser.satlink.net>, adapted for linux by
  *      Arnt Gulbrandsen.
  */
-static inline uint16_t ip_fast_csum(uint8_t *iph, int32_t ihl) {
+static inline uint16_t ip_fast_csum(const uint8_t *iph, int32_t ihl) {
     uint32_t sum;
 
     __asm__ __volatile__(
