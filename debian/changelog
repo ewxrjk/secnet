@@ -6,6 +6,7 @@ secnet (0.3.1~~unstable) unstable; urgency=low
   * Fix netlink SEGV on clientless netlinks (i.e. configuration error).
   * Fix formatting error in p-t-p startup message.
   * Additions to the test-example suite.
+  * Fixes to MTU and fragmentation handling.
 
  --
 
