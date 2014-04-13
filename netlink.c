@@ -775,9 +775,12 @@ static void netlink_packet_local(struct netlink *st,
     }
     h=(struct icmphdr *)buf->start;
 
-    if ((ntohs(h->iph.frag)&(IPHDR_FRAG_OFF|IPHDR_FRAG_MORE))!=0) {
-	Message(M_WARNING,"%s: fragmented packet addressed to secnet; "
-		"ignoring it\n",st->name);
+    unsigned fraginfo = ntohs(h->iph.frag);
+    if ((fraginfo&(IPHDR_FRAG_OFF|IPHDR_FRAG_MORE))!=0) {
+	if (!(fraginfo & IPHDR_FRAG_OFF))
+	    /* report only for first fragment */
+	    Message(M_WARNING,"%s: fragmented packet addressed to secnet; "
+		    "ignoring it\n",st->name);
 	BUF_FREE(buf);
 	return;
     }
