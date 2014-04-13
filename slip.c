@@ -213,6 +213,14 @@ static void userv_deliver_to_kernel(void *sst, struct buffer_if *buf)
 {
     struct userv *st=sst;
 
+    if (buf->size > st->slip.nl.mtu) {
+	Message(M_ERR,"%s: packet of size %"PRIu32" exceeds mtu %"PRIu32":"
+		" cannot be injected into kernel, dropped\n",
+		st->slip.nl.name, buf->size, st->slip.nl.mtu);
+	BUF_FREE(buf);
+	return;
+    }
+
     slip_stuff(&st->slip,buf,st->txfd);
 }
 
