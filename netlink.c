@@ -367,7 +367,6 @@ static uint16_t netlink_icmp_reply_len(struct buffer_if *buf)
 /* client indicates where the packet we're constructing a response to
    comes from. NULL indicates the host. */
 static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
-				struct netlink_client *client,
 				uint8_t type, uint8_t code,
 				union icmpinfofield info)
 {
@@ -535,7 +534,7 @@ static void netlink_packet_deliver(struct netlink *st,
 	    Message(M_DEBUG,"%s: don't know where to deliver packet "
 		    "(s=%s, d=%s)\n", st->name, s, d);
 	    free(s); free(d);
-	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+	    netlink_icmp_simple(st,buf,ICMP_TYPE_UNREACHABLE,
 				ICMP_CODE_NET_UNREACHABLE, icmp_noinfo);
 	    BUF_FREE(buf);
 	}
@@ -552,7 +551,7 @@ static void netlink_packet_deliver(struct netlink *st,
 		    st->name,s,d);
 	    free(s); free(d);
 		    
-	    netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+	    netlink_icmp_simple(st,buf,ICMP_TYPE_UNREACHABLE,
 				ICMP_CODE_NET_PROHIBITED, icmp_noinfo);
 	    BUF_FREE(buf);
 	} else {
@@ -563,7 +562,7 @@ static void netlink_packet_deliver(struct netlink *st,
 		BUF_ASSERT_FREE(buf);
 	    } else {
 		/* Generate ICMP destination unreachable */
-		netlink_icmp_simple(st,buf,client,/* client==NULL */
+		netlink_icmp_simple(st,buf,
 				    ICMP_TYPE_UNREACHABLE,
 				    ICMP_CODE_NET_UNREACHABLE,
 				    icmp_noinfo);
@@ -586,7 +585,7 @@ static void netlink_packet_forward(struct netlink *st,
     /* Packet has already been checked */
     if (iph->ttl<=1) {
 	/* Generate ICMP time exceeded */
-	netlink_icmp_simple(st,buf,client,ICMP_TYPE_TIME_EXCEEDED,
+	netlink_icmp_simple(st,buf,ICMP_TYPE_TIME_EXCEEDED,
 			    ICMP_CODE_TTL_EXCEEDED,icmp_noinfo);
 	BUF_FREE(buf);
 	return;
@@ -641,7 +640,7 @@ static void netlink_packet_local(struct netlink *st,
 	Message(M_WARNING,"%s: unknown incoming ICMP\n",st->name);
     } else {
 	/* Send ICMP protocol unreachable */
-	netlink_icmp_simple(st,buf,client,ICMP_TYPE_UNREACHABLE,
+	netlink_icmp_simple(st,buf,ICMP_TYPE_UNREACHABLE,
 			    ICMP_CODE_PROTOCOL_UNREACHABLE,icmp_noinfo);
 	BUF_FREE(buf);
 	return;
