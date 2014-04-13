@@ -831,7 +831,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
 	BUF_FREE(buf);
 	return;
     }
-    assert(buf->size >= (int)sizeof(struct icmphdr));
+    assert(buf->size >= (int)sizeof(struct iphdr));
     iph=(struct iphdr *)buf->start;
 
     source=ntohl(iph->saddr);

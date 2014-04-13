@@ -9,6 +9,7 @@ secnet (0.3.1~~unstable) unstable; urgency=low
   * SECURITY: Fixes to MTU and fragmentation handling.
   * SECURITY: Correctly set "unused" ICMP header field.
   * Do not send ICMP errors in response to unknown incoming ICMP.
+  * SECURITY: Fix IP length check not to crash on very short packets.
 
  --
 
