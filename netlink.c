@@ -445,6 +445,16 @@ static void netlink_client_deliver(struct netlink *st,
     client->outcount++;
 }
 
+/* Deliver a packet to the host; used after we have decided that that
+ * is what to do with it. */
+static void netlink_host_deliver(struct netlink *st,
+				 uint32_t source, uint32_t dest,
+				 struct buffer_if *buf)
+{
+    st->deliver_to_host(st->dst,buf);
+    st->outcount++;
+}
+
 /* Deliver a packet. "client" is the _origin_ of the packet, not its
    destination, and is NULL for packets from the host and packets
    generated internally in secnet.  */
@@ -524,8 +534,7 @@ static void netlink_packet_deliver(struct netlink *st,
 	/* The packet's not going down a tunnel.  It might (ought to)
 	   be for the host.   */
 	if (ipset_contains_addr(st->networks,dest)) {
-	    st->deliver_to_host(st->dst,buf);
-	    st->outcount++;
+	    netlink_host_deliver(st,source,dest,buf);
 	    BUF_ASSERT_FREE(buf);
 	} else {
 	    string_t s,d;
@@ -713,7 +722,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
        address validity and generate ICMP, etc. */
     if (st->ptp) {
 	if (client) {
-	    st->deliver_to_host(st->dst,buf);
+	    netlink_host_deliver(st,source,dest,buf);
 	} else {
 	    netlink_client_deliver(st,st->clients,source,dest,buf);
 	}
