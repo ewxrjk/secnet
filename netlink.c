@@ -106,6 +106,12 @@ their use.
 #include "netlink.h"
 #include "process.h"
 
+#ifdef NETLINK_DEBUG
+#define MDEBUG(...) Message(M_DEBUG, __VA_ARGS__)
+#else /* !NETLINK_DEBUG */
+#define MDEBUG(...) ((void)0)
+#endif /* !NETLINK_DEBUG */
+
 #define ICMP_TYPE_ECHO_REPLY             0
 
 #define ICMP_TYPE_UNREACHABLE            3
