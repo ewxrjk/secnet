@@ -24,3 +24,8 @@ For running under valgrind memcheck, do something like this:
     --leak-check=full --suppressions=test-example/memcheck.suppressions \
     ./secnet -dvnc test-example/outside.conf
 NB that --num-callers is needed as secnet's stack can be deep.
+
+The config file outside-unshare.conf can be used on Linux in
+conjunction with test-example/fake-userv and a built checkout of
+userv-utils.git to run the "outside" copy of secnet in a new "network
+namespace".

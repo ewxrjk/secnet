@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+echo >&2 "$0: invoked as $0 $*"
+shift
+shift
+exec 3<&0 4>&1 5>&2 >&2 </dev/null
+exec xterm -T netns -e unshare -n -- sh -xc '
+  ../userv-utils.git/ipif/service \* -- "$@" <&3 >&4 2>&5 &
+  sleep 0.1
+  env - bash -i
+' x "$@"
