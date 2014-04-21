@@ -51,4 +51,12 @@ extern void send_nak(const struct comm_addr *dest, uint32_t our_index,
 
 extern int consttime_memeq(const void *s1, const void *s2, size_t n);
 
+#define MINMAX(ae,be,op) ({			\
+	typeof((ae)) a=(ae);			\
+	typeof((be)) b=(be);			\
+	a op b ? a : b;				\
+    })
+#define MAX(a,b) MINMAX((a),(b),>)
+#define MIN(a,b) MINMAX((a),(b),<)
+
 #endif /* util_h */
