@@ -234,6 +234,7 @@ struct site {
     string_t tunname; /* localname<->remotename by default, used in logs */
     string_t address; /* DNS name for bootstrapping, optional */
     int remoteport; /* Port for bootstrapping, optional */
+    uint32_t mtu_target;
     struct netlink_if *netlink;
     struct comm_if **comms;
     int ncomms;
@@ -282,6 +283,7 @@ struct site {
        timeout before we can listen for another setup packet); perhaps
        we should keep a list of 'bad' sources for setup packets. */
     uint32_t remote_capabilities;
+    uint16_t remote_adv_mtu;
     struct transform_if *chosen_transform;
     uint32_t setup_session_id;
     transport_peers setup_peers;
@@ -386,6 +388,14 @@ static void dispose_transform(struct transform_inst_if **transform_var)
     type=buf_unprepend_uint32((b)); \
     if (type!=(t)) return False; } while(0)
 
+static _Bool type_is_msg34(uint32_t type)
+{
+    return
+	type == LABEL_MSG3 ||
+	type == LABEL_MSG3BIS ||
+	type == LABEL_MSG4;
+}
+
 struct parsedname {
     int32_t len;
     uint8_t *name;
@@ -399,6 +409,7 @@ struct msg {
     struct parsedname remote;
     struct parsedname local;
     uint32_t remote_capabilities;
+    uint16_t remote_mtu;
     int capab_transformnum;
     uint8_t *nR;
     uint8_t *nL;
@@ -487,6 +498,9 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     if ((st->local_capabilities & CAPAB_EARLY) || (type != LABEL_MSG1)) {
 	buf_append_uint32(&st->buffer,st->local_capabilities);
     }
+    if (type_is_msg34(type)) {
+	buf_append_uint16(&st->buffer,st->mtu_target);
+    }
     append_string_xinfo_done(&st->buffer,&xia);
 
     buf_append_string(&st->buffer,st->remotename);
@@ -542,9 +556,14 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     CHECK_TYPE(msg,type);
     if (!unpick_name(msg,&m->remote)) return False;
     m->remote_capabilities=0;
+    m->remote_mtu=0;
     if (m->remote.extrainfo.size) {
 	CHECK_AVAIL(&m->remote.extrainfo,4);
 	m->remote_capabilities=buf_unprepend_uint32(&m->remote.extrainfo);
+    }
+    if (type_is_msg34(type) && m->remote.extrainfo.size) {
+	CHECK_AVAIL(&m->remote.extrainfo,2);
+	m->remote_mtu=buf_unprepend_uint16(&m->remote.extrainfo);
     }
     if (!unpick_name(msg,&m->local)) return False;
     if (type==LABEL_PROD) {
@@ -721,6 +740,8 @@ static bool_t process_msg3_msg4(struct site *st, struct msg *m)
 	return False;
     }
     free(hash);
+
+    st->remote_adv_mtu=m->remote_mtu;
 
     return True;
 }
@@ -1145,7 +1166,15 @@ static void activate_new_key(struct site *st)
     transport_peers_copy(st,&st->peers,&st->setup_peers);
     st->current.remote_session_id=st->setup_session_id;
 
-    slog(st,LOG_ACTIVATE_KEY,"new key activated");
+    /* Compute the inter-site MTU.  This is min( our_mtu, their_mtu ).
+     * But their mtu be unspecified, in which case we just use ours. */
+    uint32_t intersite_mtu=
+	MIN(st->mtu_target, st->remote_adv_mtu ?: ~(uint32_t)0);
+    st->netlink->set_mtu(st->netlink->st,intersite_mtu);
+
+    slog(st,LOG_ACTIVATE_KEY,"new key activated"
+	 " (mtu ours=%"PRId32" theirs=%"PRId32" intersite=%"PRId32")",
+	 st->mtu_target, st->remote_adv_mtu, intersite_mtu);
     enter_state_run(st);
 }
 
@@ -1765,6 +1794,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->setup_retries=        CFG_NUMBER("setup-retries", SETUP_RETRIES);
     st->setup_retry_interval= CFG_NUMBER("setup-timeout", SETUP_RETRY_INTERVAL);
     st->wait_timeout=         CFG_NUMBER("wait-time",     WAIT_TIME);
+    st->mtu_target= dict_read_number(dict,"mtu-target",False,"site",loc,0);
 
     st->mobile_peer_expiry= dict_read_number(
        dict,"mobile-peer-expiry",False,"site",loc,DEFAULT_MOBILE_PEER_EXPIRY);
@@ -1833,7 +1863,10 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
 
     /* We need to register the remote networks with the netlink device */
-    st->netlink->reg(st->netlink->st, site_outgoing, st, 0);
+    uint32_t netlink_mtu; /* local virtual interface mtu */
+    st->netlink->reg(st->netlink->st, site_outgoing, st, &netlink_mtu);
+    if (!st->mtu_target)
+	st->mtu_target=netlink_mtu;
     
     for (i=0; i<st->ncomms; i++)
 	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);

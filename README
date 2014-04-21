@@ -329,6 +329,19 @@ site: dict argument
     check that there are no links both ends of which are allegedly
     mobile (which is not supported, so those links are ignored) and
     to change some of the tuning parameter defaults. [false]
+  mtu-target (integer): Desired value of the inter-site MTU for this
+    peering.  This value will be advertised to the peer (which ought
+    to affect incoming packets), and if the peer advertises an MTU its
+    value will be combined with this setting to compute the inter-site
+    MTU.  (secnet will still accept packets which exceed the
+    (negotiated or assumed) inter-site MTU.)  Setting a lower
+    inter-site MTU can be used to try to restrict the sizes of the
+    packets sent over the underlying public network (e.g. to work
+    around network braindamage).  It is not normally useful to set a
+    larger value for mtu-target than the VPN's general MTU (which
+    should be reflected in the local private interface MTU, ie the mtu
+    parameter to netlink).  If this parameter is not set, or is set
+    to 0, the default is to use the local private link mtu.
 
 Links involving mobile peers have some different tuning parameter
 default values, which are generally more aggressive about retrying key
@@ -375,7 +388,7 @@ a netlink closure:
       other tunnels as well as the host (used for mobile devices like laptops)
     soft: remove these routes from the host's routing table when
       the tunnel link quality is zero
-  mtu (integer): default MTU over this link; may be updated by tunnel code
+  mtu (integer): MTU of host's tunnel interface
 
 Netlink will dump its current routing table to the system/log on
 receipt of SIGUSR1.

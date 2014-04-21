@@ -198,6 +198,8 @@ The optional additional data after the sender's name consists of some
 initial subset of the following list of items:
  * A 32-bit integer with a set of capability flags, representing the
    abilities of the sender.
+ * In MSG3/MSG4: a 16-bit integer being the sender's MTU, or zero.
+   (In other messages: nothing.)  See below.
  * More data which is yet to be defined and which must be ignored
    by receivers.
 The optional additional data after the receiver's name is not
@@ -218,6 +220,45 @@ Capability flag bits must be in one the following two categories:
 
 No capability flags are currently defined.  Unknown capability flags
 should be treated as late ones.
+
+
+MTU handling
+
+In older versions of secnet, secnet was not capable of fragmentation
+or sending ICMP Frag Needed.  Administrators were expected to configure
+consistent MTUs across the network.
+
+It is still the case in the current version that the MTUs need to be
+configured reasonably coherently across the network: the allocated
+buffer sizes must be sufficient to cope with packets from all other
+peers.
+
+However, provided the buffers are sufficient, all packets will be
+processed properly: a secnet receiving a packet larger than the
+applicable MTU for its delivery will either fragment it, or reject it
+with ICMP Frag Needed.
+
+The MTU additional data field allows secnet to advertise an MTU to the
+peer.  This allows the sending end to handle overlarge packets, before
+they are transmitted across the underlying public network.  This can
+therefore be used to work around underlying network braindamage
+affecting large packets.
+
+If the MTU additional data field is zero or not present, then the peer
+should use locally-configured MTU information (normally, its local
+netlink MTU) instead.
+
+If it is nonzero, the peer may send packets up to the advertised size
+(and if that size is bigger than the peer's administratively
+configured size, the advertiser promises that its buffers can handle
+such a large packet).
+
+A secnet instance should not assume that just because it has
+advertised an mtu which is lower than usual for the vpn, the peer will
+honour it, unless the administrator knows that the peers are
+sufficiently modern to understand the mtu advertisement option.  So
+secnet will still accept packets which exceed the link MTU (whether
+negotiated or assumed).
 
 
 Messages:
