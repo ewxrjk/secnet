@@ -1837,7 +1837,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
 
     /* We need to register the remote networks with the netlink device */
-    st->netlink->reg(st->netlink->st, site_outgoing, st);
+    st->netlink->reg(st->netlink->st, site_outgoing, st, 0);
     
     for (i=0; i<st->ncomms; i++)
 	st->comms[i]->request_notify(st->comms[i]->st, st, site_incoming);

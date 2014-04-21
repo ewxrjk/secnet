@@ -431,7 +431,7 @@ typedef void netlink_deliver_fn(void *st, struct buffer_if *buf);
 #define MAXIMUM_LINK_QUALITY 3
 typedef void netlink_link_quality_fn(void *st, uint32_t quality);
 typedef void netlink_register_fn(void *st, netlink_deliver_fn *deliver,
-				 void *dst);
+				 void *dst, uint32_t *localmtu_r /* NULL ok */);
 typedef void netlink_output_config_fn(void *st, struct buffer_if *buf);
 typedef bool_t netlink_check_config_fn(void *st, struct buffer_if *buf);
 typedef void netlink_set_mtu_fn(void *st, int32_t new_mtu);

@@ -1028,12 +1028,16 @@ static void netlink_inst_set_mtu(void *sst, int32_t new_mtu)
 }
 
 static void netlink_inst_reg(void *sst, netlink_deliver_fn *deliver, 
-			     void *dst)
+			     void *dst, uint32_t *localmtu_r)
 {
     struct netlink_client *c=sst;
+    struct netlink *st=c->nst;
 
     c->deliver=deliver;
     c->dst=dst;
+
+    if (localmtu_r)
+	*localmtu_r=st->mtu;
 }
 
 static struct flagstr netlink_option_table[]={
