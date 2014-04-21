@@ -703,12 +703,32 @@ static bool_t generate_msg3(struct site *st)
 			"site:MSG3");
 }
 
+static bool_t process_msg3_msg4(struct site *st, struct msg *m)
+{
+    uint8_t *hash;
+    void *hst;
+
+    /* Check signature and store g^x mod m */
+    hash=safe_malloc(st->hash->len, "process_msg3_msg4");
+    hst=st->hash->init();
+    st->hash->update(hst,m->hashstart,m->hashlen);
+    st->hash->final(hst,hash);
+    /* Terminate signature with a '0' - cheating, but should be ok */
+    m->sig[m->siglen]=0;
+    if (!st->pubkey->check(st->pubkey->st,hash,st->hash->len,m->sig)) {
+	slog(st,LOG_SEC,"msg3/msg4 signature failed check!");
+	free(hash);
+	return False;
+    }
+    free(hash);
+
+    return True;
+}
+
 static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 			   const struct comm_addr *src, uint32_t msgtype)
 {
     struct msg m;
-    uint8_t *hash;
-    void *hst;
     cstring_t err;
 
     assert(msgtype==LABEL_MSG3 || msgtype==LABEL_MSG3BIS);
@@ -741,19 +761,8 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
  transform_found:
     st->chosen_transform=ti;
 
-    /* Check signature and store g^x mod m */
-    hash=safe_malloc(st->hash->len, "process_msg3");
-    hst=st->hash->init();
-    st->hash->update(hst,m.hashstart,m.hashlen);
-    st->hash->final(hst,hash);
-    /* Terminate signature with a '0' - cheating, but should be ok */
-    m.sig[m.siglen]=0;
-    if (!st->pubkey->check(st->pubkey->st,hash,st->hash->len,m.sig)) {
-	slog(st,LOG_SEC,"msg3 signature failed check!");
-	free(hash);
+    if (!process_msg3_msg4(st,&m))
 	return False;
-    }
-    free(hash);
 
     /* Terminate their DH public key with a '0' */
     m.pk[m.pklen]=0;
@@ -777,8 +786,6 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
 			   const struct comm_addr *src)
 {
     struct msg m;
-    uint8_t *hash;
-    void *hst;
     cstring_t err;
 
     if (!unpick_msg(st,LABEL_MSG4,msg4,&m)) return False;
@@ -787,19 +794,8 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
 	return False;
     }
     
-    /* Check signature and store g^x mod m */
-    hash=safe_malloc(st->hash->len, "process_msg4");
-    hst=st->hash->init();
-    st->hash->update(hst,m.hashstart,m.hashlen);
-    st->hash->final(hst,hash);
-    /* Terminate signature with a '0' - cheating, but should be ok */
-    m.sig[m.siglen]=0;
-    if (!st->pubkey->check(st->pubkey->st,hash,st->hash->len,m.sig)) {
-	slog(st,LOG_SEC,"msg4 signature failed check!");
-	free(hash);
+    if (!process_msg3_msg4(st,&m))
 	return False;
-    }
-    free(hash);
 
     /* Terminate their DH public key with a '0' */
     m.pk[m.pklen]=0;
