@@ -381,7 +381,9 @@ static uint16_t netlink_icmp_reply_len(struct buffer_if *buf)
 
 /* client indicates where the packet we're constructing a response to
    comes from. NULL indicates the host. */
-static void netlink_icmp_simple(struct netlink *st, struct buffer_if *buf,
+static void netlink_icmp_simple(struct netlink *st,
+				struct netlink_client *origsender,
+				struct buffer_if *buf,
 				uint8_t type, uint8_t code,
 				union icmpinfofield info)
 {
@@ -470,6 +472,7 @@ static const char *fragment_filter_header(uint8_t *base, long *hlp)
 
 /* Fragment or send ICMP Fragmentation Needed */
 static void netlink_maybe_fragment(struct netlink *st,
+				   struct netlink_client *sender,
 				   netlink_deliver_fn *deliver,
 				   void *deliver_dst,
 				   const char *delivery_name,
@@ -501,7 +504,7 @@ static void netlink_maybe_fragment(struct netlink *st,
     if (orig_frag&IPHDR_FRAG_DONT) {
 	union icmpinfofield info =
 	    { .fragneeded = { .unused = 0, .mtu = htons(mtu) } };
-	netlink_icmp_simple(st,buf,
+	netlink_icmp_simple(st,sender,buf,
 			    ICMP_TYPE_UNREACHABLE,
 			    ICMP_CODE_FRAGMENTATION_REQUIRED,
 			    info);
@@ -596,7 +599,7 @@ static void netlink_client_deliver(struct netlink *st,
 	BUF_FREE(buf);
 	return;
     }
-    netlink_maybe_fragment(st, client->deliver,client->dst,client->name,
+    netlink_maybe_fragment(st,NULL, client->deliver,client->dst,client->name,
 			   client->mtu, source,dest,buf);
     client->outcount++;
 }
@@ -604,10 +607,11 @@ static void netlink_client_deliver(struct netlink *st,
 /* Deliver a packet to the host; used after we have decided that that
  * is what to do with it. */
 static void netlink_host_deliver(struct netlink *st,
+				 struct netlink_client *sender,
 				 uint32_t source, uint32_t dest,
 				 struct buffer_if *buf)
 {
-    netlink_maybe_fragment(st, st->deliver_to_host,st->dst,"(host)",
+    netlink_maybe_fragment(st,sender, st->deliver_to_host,st->dst,"(host)",
 			   st->mtu, source,dest,buf);
     st->outcount++;
 }
@@ -690,7 +694,7 @@ static void netlink_packet_deliver(struct netlink *st,
 	/* The packet's not going down a tunnel.  It might (ought to)
 	   be for the host.   */
 	if (ipset_contains_addr(st->networks,dest)) {
-	    netlink_host_deliver(st,source,dest,buf);
+	    netlink_host_deliver(st,sender,source,dest,buf);
 	    BUF_ASSERT_FREE(buf);
 	} else {
 	    string_t s,d;
@@ -699,7 +703,7 @@ static void netlink_packet_deliver(struct netlink *st,
 	    Message(M_DEBUG,"%s: don't know where to deliver packet "
 		    "(s=%s, d=%s)\n", st->name, s, d);
 	    free(s); free(d);
-	    netlink_icmp_simple(st,buf,ICMP_TYPE_UNREACHABLE,
+	    netlink_icmp_simple(st,sender,buf,ICMP_TYPE_UNREACHABLE,
 				ICMP_CODE_NET_UNREACHABLE, icmp_noinfo);
 	    BUF_FREE(buf);
 	}
@@ -716,7 +720,7 @@ static void netlink_packet_deliver(struct netlink *st,
 		    st->name,s,d);
 	    free(s); free(d);
 		    
-	    netlink_icmp_simple(st,buf,ICMP_TYPE_UNREACHABLE,
+	    netlink_icmp_simple(st,sender,buf,ICMP_TYPE_UNREACHABLE,
 				ICMP_CODE_NET_PROHIBITED, icmp_noinfo);
 	    BUF_FREE(buf);
 	} else {
@@ -726,7 +730,7 @@ static void netlink_packet_deliver(struct netlink *st,
 		BUF_ASSERT_FREE(buf);
 	    } else {
 		/* Generate ICMP destination unreachable */
-		netlink_icmp_simple(st,buf,
+		netlink_icmp_simple(st,sender,buf,
 				    ICMP_TYPE_UNREACHABLE,
 				    ICMP_CODE_NET_UNREACHABLE,
 				    icmp_noinfo);
@@ -749,7 +753,7 @@ static void netlink_packet_forward(struct netlink *st,
     /* Packet has already been checked */
     if (iph->ttl<=1) {
 	/* Generate ICMP time exceeded */
-	netlink_icmp_simple(st,buf,ICMP_TYPE_TIME_EXCEEDED,
+	netlink_icmp_simple(st,sender,buf,ICMP_TYPE_TIME_EXCEEDED,
 			    ICMP_CODE_TTL_EXCEEDED,icmp_noinfo);
 	BUF_FREE(buf);
 	return;
@@ -807,7 +811,7 @@ static void netlink_packet_local(struct netlink *st,
 	Message(M_WARNING,"%s: unknown incoming ICMP\n",st->name);
     } else {
 	/* Send ICMP protocol unreachable */
-	netlink_icmp_simple(st,buf,ICMP_TYPE_UNREACHABLE,
+	netlink_icmp_simple(st,sender,buf,ICMP_TYPE_UNREACHABLE,
 			    ICMP_CODE_PROTOCOL_UNREACHABLE,icmp_noinfo);
 	BUF_FREE(buf);
 	return;
@@ -880,7 +884,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *sender,
        address validity and generate ICMP, etc. */
     if (st->ptp) {
 	if (sender) {
-	    netlink_host_deliver(st,source,dest,buf);
+	    netlink_host_deliver(st,sender,source,dest,buf);
 	} else {
 	    netlink_client_deliver(st,st->clients,source,dest,buf);
 	}
