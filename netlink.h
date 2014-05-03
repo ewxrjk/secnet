@@ -48,6 +48,7 @@ struct netlink {
     struct ipset *networks; /* Local networks */
     struct subnet_list *subnets; /* Same as networks, for display */
     struct ipset *remote_networks; /* Allowable remote networks */
+    uint32_t local_address; /* host interface address */
     uint32_t secnet_address; /* our own address, or the address of the
 				other end of a point-to-point link */
     bool_t ptp;

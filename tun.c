@@ -81,7 +81,6 @@ struct tun {
     struct buffer_if *buff; /* We receive packets into here
 			       and send them to the netlink code. */
     netlink_deliver_fn *netlink_to_tunnel;
-    uint32_t local_address; /* host interface address */
 };
 
 static cstring_t tun_flavour_str(uint32_t flavour)
@@ -353,7 +352,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
        to set the TUN device's address, and route to add routes to all
        our networks. */
 
-    hostaddr=ipaddr_to_string(st->local_address);
+    hostaddr=ipaddr_to_string(st->nl.local_address);
     secnetaddr=ipaddr_to_string(st->nl.secnet_address);
     snprintf(mtu,sizeof(mtu),"%d",st->nl.mtu);
     mtu[5]=0;
@@ -387,7 +386,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	sa=(struct sockaddr_in *)&ifr.ifr_addr;
 	FILLZERO(*sa);
 	sa->sin_family=AF_INET;
-	sa->sin_addr.s_addr=htonl(st->local_address);
+	sa->sin_addr.s_addr=htonl(st->nl.local_address);
 	if (ioctl(fd,SIOCSIFADDR, &ifr)!=0) {
 	    fatal_perror("tun_apply: SIOCSIFADDR");
 	}
@@ -491,8 +490,6 @@ static list_t *tun_create(closure_t *self, struct cloc loc, dict_t *context,
     st->route_path=dict_read_string(dict,"route-path",False,"tun-netlink",loc);
 
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"tun-netlink",loc);
-    st->local_address=string_item_to_ipaddr(
-	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
 
     if (st->tun_flavour==TUN_FLAVOUR_GUESS) {
 	/* If we haven't been told what type of TUN we're using, take

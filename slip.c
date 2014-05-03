@@ -27,7 +27,6 @@ struct slip {
     bool_t ignoring_packet; /* If this packet was corrupt or overlong,
 			       we ignore everything up to the next END */
     netlink_deliver_fn *netlink_to_tunnel;
-    uint32_t local_address;
 };
 
 /* Generic SLIP mangling code */
@@ -147,8 +146,6 @@ static void slip_init(struct slip *st, struct cloc loc, dict_t *dict,
 	netlink_init(&st->nl,st,loc,dict,
 		     "netlink-userv-ipif",NULL,to_host);
     st->buff=find_cl_if(dict,"buffer",CL_BUFFER,True,"name",loc);
-    st->local_address=string_item_to_ipaddr(
-	dict_find_item(dict,"local-address", True, name, loc),"netlink");
     BUF_ALLOC(st->buff,"slip_init");
     st->pending_esc=False;
     st->ignoring_packet=False;
@@ -297,7 +294,7 @@ static void userv_invoke_userv(struct userv *st)
 
     addrs=safe_malloc(512,"userv_invoke_userv:addrs");
     snprintf(addrs,512,"%s,%s,%d,slip",
-	     ipaddr_to_string(st->slip.local_address),
+	     ipaddr_to_string(st->slip.nl.local_address),
 	     ipaddr_to_string(st->slip.nl.secnet_address),st->slip.nl.mtu);
 
     allnets=ipset_new();

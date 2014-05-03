@@ -1198,6 +1198,8 @@ netlink_deliver_fn *netlink_init(struct netlink *st,
 	st->remote_networks=ipset_complement(empty);
 	ipset_free(empty);
     }
+    st->local_address=string_item_to_ipaddr(
+	dict_find_item(dict,"local-address", True, "netlink", loc),"netlink");
 
     sa=dict_find_item(dict,"secnet-address",False,"netlink",loc);
     ptpa=dict_find_item(dict,"ptp-address",False,"netlink",loc);
