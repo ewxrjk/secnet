@@ -607,16 +607,15 @@ static void netlink_host_deliver(struct netlink *st,
     st->outcount++;
 }
 
-/* Deliver a packet. "client" is the _origin_ of the packet, not its
-   destination, and is NULL for packets from the host and packets
+/* Deliver a packet. "sender"==NULL for packets from the host and packets
    generated internally in secnet.  */
 static void netlink_packet_deliver(struct netlink *st,
-				   struct netlink_client *client,
+				   struct netlink_client *sender,
 				   struct buffer_if *buf)
 {
     if (buf->size < (int)sizeof(struct iphdr)) {
 	Message(M_ERR,"%s: trying to deliver a too-short packet"
-		" from %s!\n",st->name, client?client->name:"(local)");
+		" from %s!\n",st->name, sender?sender->name:"(local)");
 	BUF_FREE(buf);
 	return;
     }
@@ -638,9 +637,9 @@ static void netlink_packet_deliver(struct netlink *st,
 	return;
     }
     
-    /* Packets from the host (client==NULL) may always be routed.  Packets
+    /* Packets from the host (sender==NULL) may always be routed.  Packets
        from clients with the allow_route option will also be routed. */
-    if (!client || (client && (client->options & OPT_ALLOWROUTE)))
+    if (!sender || (sender && (sender->options & OPT_ALLOWROUTE)))
 	allow_route=True;
 
     /* If !allow_route, we check the routing table anyway, and if
@@ -734,7 +733,7 @@ static void netlink_packet_deliver(struct netlink *st,
 }
 
 static void netlink_packet_forward(struct netlink *st, 
-				   struct netlink_client *client,
+				   struct netlink_client *sender,
 				   struct buffer_if *buf)
 {
     if (buf->size < (int)sizeof(struct iphdr)) return;
@@ -754,13 +753,13 @@ static void netlink_packet_forward(struct netlink *st,
     iph->check=0;
     iph->check=ip_fast_csum((uint8_t *)iph,iph->ihl);
 
-    netlink_packet_deliver(st,client,buf);
+    netlink_packet_deliver(st,sender,buf);
     BUF_ASSERT_FREE(buf);
 }
 
 /* Deal with packets addressed explicitly to us */
 static void netlink_packet_local(struct netlink *st,
-				 struct netlink_client *client,
+				 struct netlink_client *sender,
 				 struct buffer_if *buf)
 {
     struct icmphdr *h;
@@ -814,13 +813,13 @@ static void netlink_packet_local(struct netlink *st,
 
 /* If cid==NULL packet is from host, otherwise cid specifies which tunnel 
    it came from. */
-static void netlink_incoming(struct netlink *st, struct netlink_client *client,
+static void netlink_incoming(struct netlink *st, struct netlink_client *sender,
 			     struct buffer_if *buf)
 {
     uint32_t source,dest;
     struct iphdr *iph;
     char errmsgbuf[50];
-    const char *sourcedesc=client?client->name:"host";
+    const char *sourcedesc=sender?sender->name:"host";
 
     BUF_ASSERT_USED(buf);
 
@@ -840,15 +839,15 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
     /* Check source. If we don't like the source, there's no point
        generating ICMP because we won't know how to get it to the
        source of the packet. */
-    if (client) {
+    if (sender) {
 	/* Check that the packet source is appropriate for the tunnel
 	   it came down */
-	if (!ipset_contains_addr(client->networks,source)) {
+	if (!ipset_contains_addr(sender->networks,source)) {
 	    string_t s,d;
 	    s=ipaddr_to_string(source);
 	    d=ipaddr_to_string(dest);
 	    Message(M_WARNING,"%s: packet from tunnel %s with bad "
-		    "source address (s=%s,d=%s)\n",st->name,client->name,s,d);
+		    "source address (s=%s,d=%s)\n",st->name,sender->name,s,d);
 	    free(s); free(d);
 	    BUF_FREE(buf);
 	    return;
@@ -875,7 +874,7 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
        where it came from.  It's up to external software to check
        address validity and generate ICMP, etc. */
     if (st->ptp) {
-	if (client) {
+	if (sender) {
 	    netlink_host_deliver(st,source,dest,buf);
 	} else {
 	    netlink_client_deliver(st,st->clients,source,dest,buf);
@@ -887,11 +886,11 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *client,
     /* st->secnet_address needs checking before matching destination
        addresses */
     if (dest==st->secnet_address) {
-	netlink_packet_local(st,client,buf);
+	netlink_packet_local(st,sender,buf);
 	BUF_ASSERT_FREE(buf);
 	return;
     }
-    netlink_packet_forward(st,client,buf);
+    netlink_packet_forward(st,sender,buf);
     BUF_ASSERT_FREE(buf);
 }
 
