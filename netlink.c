@@ -237,6 +237,11 @@ struct icmphdr {
 
 static const union icmpinfofield icmp_noinfo;
     
+static const char *sender_name(struct netlink_client *sender /* or NULL */)
+{
+    return sender?sender->name:"(local)";
+}
+
 static void netlink_packet_deliver(struct netlink *st,
 				   struct netlink_client *client,
 				   struct buffer_if *buf);
@@ -615,7 +620,7 @@ static void netlink_packet_deliver(struct netlink *st,
 {
     if (buf->size < (int)sizeof(struct iphdr)) {
 	Message(M_ERR,"%s: trying to deliver a too-short packet"
-		" from %s!\n",st->name, sender?sender->name:"(local)");
+		" from %s!\n",st->name, sender_name(sender));
 	BUF_FREE(buf);
 	return;
     }
