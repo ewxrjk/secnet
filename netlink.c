@@ -180,7 +180,7 @@ static inline uint16_t ip_fast_csum(const uint8_t *iph, int32_t ihl) {
     return sum;
 }
 #else
-static inline uint16_t ip_fast_csum(uint8_t *iph, int32_t ihl)
+static inline uint16_t ip_fast_csum(const uint8_t *iph, int32_t ihl)
 {
     assert(ihl < INT_MAX/4);
     return ip_csum(iph,ihl*4);
