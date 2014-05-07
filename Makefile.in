@@ -32,7 +32,7 @@ INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 
 CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
-	-W -Wno-unused \
+	-W -Wno-unused -Wno-unused-parameter \
 	-Wno-pointer-sign -Wstrict-prototypes -Wmissing-prototypes \
 	-Wmissing-declarations -Wnested-externs -Wredundant-decls \
 	-Wpointer-arith -Wformat=2 -Winit-self \
