@@ -347,9 +347,27 @@ static void logtimeout(struct site *st, const char *fmt, ...)
 FORMAT(printf,2,3);
 static void logtimeout(struct site *st, const char *fmt, ...)
 {
+    uint32_t class=event_log_priority(st,LOG_SETUP_TIMEOUT);
+    if (!class)
+	return;
+
     va_list ap;
     va_start(ap,fmt);
-    vslog(st,LOG_SETUP_TIMEOUT,fmt,ap);
+
+    slilog_part(st->log,class,"%s: ",st->tunname);
+    vslilog_part(st->log,class,fmt,ap);
+
+    const char *delim;
+    int i;
+    for (i=0, delim=" (tried ";
+	 i<st->setup_peers.npeers;
+	 i++, delim=", ") {
+	transport_peer *peer=&st->setup_peers.peers[i];
+	const char *s=comm_addr_to_string(&peer->addr);
+	slilog_part(st->log,class,"%s%s",delim,s);
+    }
+
+    slilog_part(st->log,class,")\n");
     va_end(ap);
 }
 
