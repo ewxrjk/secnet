@@ -30,24 +30,10 @@ static void vMessageFallback(uint32_t class, const char *message, va_list args)
 
 static void vMessage(uint32_t class, const char *message, va_list args)
 {
-#define MESSAGE_BUFLEN 1023
-    static char buff[MESSAGE_BUFLEN+1]={0,};
-    size_t bp;
-    char *nlp;
 
     if (system_log) {
 	/* Messages go to the system log interface */
-	bp=strlen(buff);
-	assert(bp < MESSAGE_BUFLEN);
-	vsnprintf(buff+bp,MESSAGE_BUFLEN-bp,message,args);
-	buff[sizeof(buff)-2] = '\n';
-	buff[sizeof(buff)-1] = '\0';
-	/* Each line is sent separately */
-	while ((nlp=strchr(buff,'\n'))) {
-	    *nlp=0;
-	    slilog(system_log,class,"%s",buff);
-	    memmove(buff,nlp+1,strlen(nlp+1)+1);
-	}
+	vslilog_part(system_log, class, message, args);
     } else {
 	vMessageFallback(class,message,args);
     }
@@ -248,8 +234,8 @@ struct log_if *init_log(list_t *ll)
     }
     r=safe_malloc(sizeof(*r), "init_log");
     r->st=l;
-    r->logfn=log_multi;
     r->vlogfn=log_vmulti;
+    r->buff[0]=0;
     return r;
 }
 
@@ -363,8 +349,8 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
-    st->ops.logfn=logfile_log;
     st->ops.vlogfn=logfile_vlog;
+    st->ops.buff[0]=0;
     st->loc=loc;
     st->f=NULL;
 
@@ -485,8 +471,8 @@ static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
-    st->ops.logfn=syslog_log;
     st->ops.vlogfn=syslog_vlog;
+    st->ops.buff[0]=0;
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict)

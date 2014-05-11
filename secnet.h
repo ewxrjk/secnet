@@ -346,19 +346,28 @@ struct comm_if {
 
 /* LOG interface */
 
+#define LOG_MESSAGE_BUFLEN 1023
+
 typedef void log_msg_fn(void *st, int class, const char *message, ...);
 typedef void log_vmsg_fn(void *st, int class, const char *message,
 			 va_list args);
 struct log_if {
     void *st;
-    log_msg_fn *logfn;   /* Do not call these directly - you don't get */
     log_vmsg_fn *vlogfn; /* printf format checking.  Use [v]slilog instead */
+    char buff[LOG_MESSAGE_BUFLEN+1];
 };
 /* (convenience functions, defined in util.c) */
 extern void slilog(struct log_if *lf, int class, const char *message, ...)
 FORMAT(printf,3,4);
 extern void vslilog(struct log_if *lf, int class, const char *message, va_list)
 FORMAT(printf,3,0);
+
+/* Versions which take (parts of) (multiple) messages, using \n to
+ * distinguish one message from another. */
+extern void slilog_part(struct log_if *lf, int class, const char *message, ...)
+FORMAT(printf,3,4);
+extern void vslilog_part(struct log_if *lf, int class, const char *message,
+			 va_list) FORMAT(printf,3,0);
 
 /* SITE interface */
 

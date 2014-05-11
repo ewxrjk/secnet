@@ -435,3 +435,30 @@ int32_t calculate_max_start_pad(void)
 	transform_max_start_pad +
 	comm_max_start_pad;
 }
+
+void vslilog_part(struct log_if *lf, int priority, const char *message, va_list ap)
+{
+    char *buff=lf->buff;
+    size_t bp;
+    char *nlp;
+
+    bp=strlen(buff);
+    assert(bp < LOG_MESSAGE_BUFLEN);
+    vsnprintf(buff+bp,LOG_MESSAGE_BUFLEN-bp,message,ap);
+    buff[LOG_MESSAGE_BUFLEN-1] = '\n';
+    buff[LOG_MESSAGE_BUFLEN] = '\0';
+    /* Each line is sent separately */
+    while ((nlp=strchr(buff,'\n'))) {
+	*nlp=0;
+	slilog(lf,priority,"%s",buff);
+	memmove(buff,nlp+1,strlen(nlp+1)+1);
+    }
+}
+
+extern void slilog_part(struct log_if *lf, int priority, const char *message, ...)
+{
+    va_list ap;
+    va_start(ap,message);
+    vslilog_part(lf,priority,message,ap);
+    va_end(ap);
+}
