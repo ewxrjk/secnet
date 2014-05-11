@@ -343,6 +343,16 @@ static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
     va_end(ap);
 }
 
+static void logtimeout(struct site *st, const char *fmt, ...)
+FORMAT(printf,2,3);
+static void logtimeout(struct site *st, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap,fmt);
+    vslog(st,LOG_SETUP_TIMEOUT,fmt,ap);
+    va_end(ap);
+}
+
 static void set_link_quality(struct site *st);
 static void delete_keys(struct site *st, cstring_t reason, uint32_t loglevel);
 static void delete_one_key(struct site *st, struct data_key *key,
@@ -1089,7 +1099,7 @@ static bool_t send_msg(struct site *st)
 	st->retries--;
 	return True;
     } else if (st->state==SITE_SENTMSG5) {
-	slog(st,LOG_SETUP_TIMEOUT,"timed out sending MSG5, stashing new key");
+	logtimeout(st,"timed out sending MSG5, stashing new key");
 	/* We stash the key we have produced, in case it turns out that
 	 * our peer did see our MSG5 after all and starts using it. */
 	/* This is a bit like some of activate_new_key */
@@ -1107,7 +1117,7 @@ static bool_t send_msg(struct site *st)
 	enter_state_wait(st);
 	return False;
     } else {
-	slog(st,LOG_SETUP_TIMEOUT,"timed out sending key setup packet "
+	logtimeout(st,"timed out sending key setup packet "
 	    "(in state %s)",state_name(st->state));
 	enter_state_wait(st);
 	return False;
