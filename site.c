@@ -324,14 +324,14 @@ FORMAT(printf,3,4);
 static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 {
     va_list ap;
-    char buf[240];
     uint32_t class;
 
     class=event_log_priority(st, event);
     if (class) {
 	va_start(ap,msg);
-	vsnprintf(buf,sizeof(buf),msg,ap);
-	slilog(st->log,class,"%s: %s",st->tunname,buf);
+	slilog_part(st->log,class,"%s: ",st->tunname);
+	vslilog_part(st->log,class,msg,ap);
+	slilog_part(st->log,class,"\n");
 	va_end(ap);
     }
 }
