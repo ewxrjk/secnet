@@ -189,17 +189,6 @@ static void log_vmulti(void *sst, int class, const char *message, va_list args)
     }
 }
 
-static void log_multi(void *st, int priority, const char *message, ...)
-    FORMAT(printf,3,4);
-static void log_multi(void *st, int priority, const char *message, ...)
-{
-    va_list ap;
-
-    va_start(ap,message);
-    log_vmulti(st,priority,message,ap);
-    va_end(ap);
-}
-
 struct log_if *init_log(list_t *ll)
 {
     int i=0;
@@ -407,17 +396,6 @@ static void syslog_vlog(void *sst, int class, const char *message,
 	vMessageFallback(class,message,args);
 	MessageFallback(class,"\n");
     }
-}
-
-static void syslog_log(void *sst, int priority, const char *message, ...)
-    FORMAT(printf,3,4);
-static void syslog_log(void *sst, int priority, const char *message, ...)
-{
-    va_list ap;
-
-    va_start(ap,message);
-    syslog_vlog(sst,priority,message,ap);
-    va_end(ap);
 }
 
 static struct flagstr syslog_facility_table[]={
