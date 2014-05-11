@@ -344,6 +344,11 @@ struct comm_if {
     comm_addr_to_string_fn *addr_to_string;
 };
 
+static inline const char *comm_addr_to_string(const struct comm_addr *ca)
+{
+    return ca->comm->addr_to_string(ca->comm->st, ca);
+}
+
 /* LOG interface */
 
 #define LOG_MESSAGE_BUFLEN 1023

@@ -1933,14 +1933,14 @@ static void transport_peers_debug(struct site *st, transport_peers *dst,
 	 i++, (argp+=stride?stride:sizeof(*args))) {
 	const struct comm_addr *ca=(void*)argp;
 	slog(st, LOG_PEER_ADDRS, " args: addrs[%d]=%s",
-	     i, ca->comm->addr_to_string(ca->comm->st,ca));
+	     i, comm_addr_to_string(ca));
     }
     for (i=0; i<dst->npeers; i++) {
 	struct timeval diff;
 	timersub(tv_now,&dst->peers[i].last,&diff);
 	const struct comm_addr *ca=&dst->peers[i].addr;
 	slog(st, LOG_PEER_ADDRS, " peers: addrs[%d]=%s T-%ld.%06ld",
-	     i, ca->comm->addr_to_string(ca->comm->st,ca),
+	     i, comm_addr_to_string(ca),
 	     (unsigned long)diff.tv_sec, (unsigned long)diff.tv_usec);
     }
 }
