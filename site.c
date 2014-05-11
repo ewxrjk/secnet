@@ -319,21 +319,28 @@ static uint32_t event_log_priority(struct site *st, uint32_t event)
     }
 }
 
+static void vslog(struct site *st, uint32_t event, cstring_t msg, va_list ap)
+FORMAT(printf,3,0);
+static void vslog(struct site *st, uint32_t event, cstring_t msg, va_list ap)
+{
+    uint32_t class;
+
+    class=event_log_priority(st, event);
+    if (class) {
+	slilog_part(st->log,class,"%s: ",st->tunname);
+	vslilog_part(st->log,class,msg,ap);
+	slilog_part(st->log,class,"\n");
+    }
+}
+
 static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 FORMAT(printf,3,4);
 static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 {
     va_list ap;
-    uint32_t class;
-
-    class=event_log_priority(st, event);
-    if (class) {
-	va_start(ap,msg);
-	slilog_part(st->log,class,"%s: ",st->tunname);
-	vslilog_part(st->log,class,msg,ap);
-	slilog_part(st->log,class,"\n");
-	va_end(ap);
-    }
+    va_start(ap,msg);
+    vslog(st,event,msg,ap);
+    va_end(ap);
 }
 
 static void set_link_quality(struct site *st);
