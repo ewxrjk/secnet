@@ -299,6 +299,26 @@ struct site {
     struct transform_inst_if *new_transform; /* For key setup/verify */
 };
 
+static uint32_t event_log_priority(struct site *st, uint32_t event)
+{
+    if (!(event&st->log_events))
+	return 0;
+    switch(event) {
+    case LOG_UNEXPECTED:    return M_INFO;
+    case LOG_SETUP_INIT:    return M_INFO;
+    case LOG_SETUP_TIMEOUT: return M_NOTICE;
+    case LOG_ACTIVATE_KEY:  return M_INFO;
+    case LOG_TIMEOUT_KEY:   return M_INFO;
+    case LOG_SEC:           return M_SECURITY;
+    case LOG_STATE:         return M_DEBUG;
+    case LOG_DROP:          return M_DEBUG;
+    case LOG_DUMP:          return M_DEBUG;
+    case LOG_ERROR:         return M_ERR;
+    case LOG_PEER_ADDRS:    return M_DEBUG;
+    default:                return M_ERR;
+    }
+}
+
 static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
 FORMAT(printf,3,4);
 static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
@@ -307,28 +327,13 @@ static void slog(struct site *st, uint32_t event, cstring_t msg, ...)
     char buf[240];
     uint32_t class;
 
-    va_start(ap,msg);
-
-    if (event&st->log_events) {
-	switch(event) {
-	case LOG_UNEXPECTED: class=M_INFO; break;
-	case LOG_SETUP_INIT: class=M_INFO; break;
-	case LOG_SETUP_TIMEOUT: class=M_NOTICE; break;
-	case LOG_ACTIVATE_KEY: class=M_INFO; break;
-	case LOG_TIMEOUT_KEY: class=M_INFO; break;
-	case LOG_SEC: class=M_SECURITY; break;
-	case LOG_STATE: class=M_DEBUG; break;
-	case LOG_DROP: class=M_DEBUG; break;
-	case LOG_DUMP: class=M_DEBUG; break;
-	case LOG_ERROR: class=M_ERR; break;
-	case LOG_PEER_ADDRS: class=M_DEBUG; break;
-	default: class=M_ERR; break;
-	}
-
+    class=event_log_priority(st, event);
+    if (class) {
+	va_start(ap,msg);
 	vsnprintf(buf,sizeof(buf),msg,ap);
 	slilog(st->log,class,"%s: %s",st->tunname,buf);
+	va_end(ap);
     }
-    va_end(ap);
 }
 
 static void set_link_quality(struct site *st);
