@@ -267,6 +267,7 @@ struct site {
     uint32_t state;
     uint64_t now; /* Most recently seen time */
     bool_t allow_send_prod;
+    bool_t resolving;
 
     /* The currently established session */
     struct data_key current;
@@ -1147,6 +1148,8 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
     struct site *st=sst;
     struct comm_addr ca_buf, *ca_use;
 
+    st->resolving=False;
+
     if (st->state!=SITE_RESOLVE) {
 	slog(st,LOG_UNEXPECTED,"site_resolve_callback called unexpectedly");
 	return;
@@ -1285,14 +1288,33 @@ static void enter_state_run(struct site *st)
     set_link_quality(st);
 }
 
+static bool_t ensure_resolving(struct site *st)
+{
+    /* Reentrancy hazard: may call site_resolve_callback and hence
+     * enter_new_state, enter_state_* and generate_msg*. */
+    if (st->resolving)
+        return True;
+
+    /* resolver->request might reentrantly call site_resolve_callback
+     * which will clear st->resolving, so we need to set it beforehand
+     * rather than afterwards; also, it might return False, in which
+     * case we have to clear ->resolving again. */
+    st->resolving=True;
+    bool_t ok = st->resolver->request(st->resolver->st,st->address,
+				      site_resolve_callback,st);
+    if (!ok)
+	st->resolving=False;
+
+    return ok;
+}
+
 static bool_t enter_state_resolve(struct site *st)
 {
     /* Reentrancy hazard!  See ensure_resolving. */
     state_assert(st,st->state==SITE_RUN);
     slog(st,LOG_STATE,"entering state RESOLVE");
     st->state=SITE_RESOLVE;
-    return st->resolver->request(st->resolver->st,st->address,
-				 site_resolve_callback,st);
+    return ensure_resolving(st);
 }
 
 static bool_t enter_new_state(struct site *st, uint32_t next)
@@ -1862,6 +1884,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
 				       log_event_table,"site");
 
+    st->resolving=False;
     st->allow_send_prod=0;
 
     st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
