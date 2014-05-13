@@ -229,7 +229,7 @@ struct site {
 /* configuration information */
     string_t localname;
     string_t remotename;
-    bool_t peer_mobile; /* Mobile client support */
+    bool_t local_mobile, peer_mobile; /* Mobile client support */
     int32_t transport_peers_max;
     string_t tunname; /* localname<->remotename by default, used in logs */
     string_t address; /* DNS name for bootstrapping, optional */
@@ -1785,7 +1785,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->remotename=dict_read_string(dict, "name", True, "site", loc);
 
     st->peer_mobile=dict_read_bool(dict,"mobile",False,"site",loc,False);
-    bool_t local_mobile=
+    st->local_mobile=
 	dict_read_bool(dict,"local-mobile",False,"site",loc,False);
 
     /* Sanity check (which also allows the 'sites' file to include
@@ -1794,14 +1794,14 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (strcmp(st->localname,st->remotename)==0) {
 	Message(M_DEBUG,"site %s: local-name==name -> ignoring this site\n",
 		st->localname);
-	if (st->peer_mobile != local_mobile)
+	if (st->peer_mobile != st->local_mobile)
 	    cfgfatal(loc,"site","site %s's peer-mobile=%d"
 		    " but our local-mobile=%d\n",
-		    st->localname, st->peer_mobile, local_mobile);
+		    st->localname, st->peer_mobile, st->local_mobile);
 	free(st);
 	return NULL;
     }
-    if (st->peer_mobile && local_mobile) {
+    if (st->peer_mobile && st->local_mobile) {
 	Message(M_WARNING,"site %s: site is mobile but so are we"
 		" -> ignoring this site\n", st->remotename);
 	free(st);
@@ -1849,7 +1849,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
     st->hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
 
-#define DEFAULT(D) (st->peer_mobile || local_mobile	\
+#define DEFAULT(D) (st->peer_mobile || st->local_mobile	\
                     ? DEFAULT_MOBILE_##D : DEFAULT_##D)
 #define CFG_NUMBER(k,D) dict_read_number(dict,(k),False,"site",loc,DEFAULT(D));
 
@@ -2050,7 +2050,7 @@ static bool_t transport_compute_setupinit_peers(struct site *st,
 	 prod_hint_addr ? " PROD hint address;" : "",
 	 st->peers.npeers);
 
-    /* Non-mobile peers havve st->peers.npeers==0 or ==1, since they
+    /* Non-mobile peers have st->peers.npeers==0 or ==1, since they
      * have transport_peers_max==1.  The effect is that this code
      * always uses the configured address if supplied, or otherwise
      * the address of the incoming PROD, or the existing data peer if
