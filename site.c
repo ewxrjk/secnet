@@ -699,7 +699,6 @@ static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
        process an incoming MSG1, and that the MSG1 has correct values
        of A and B. */
 
-    transport_record_peer(st,&st->setup_peers,src,"msg1");
     st->setup_session_id=m->source;
     st->remote_capabilities=m->remote_capabilities;
     memcpy(st->remoteN,m->nR,NONCELEN);
@@ -1150,10 +1149,6 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 
     st->resolving=False;
 
-    if (st->state!=SITE_RESOLVE) {
-	slog(st,LOG_UNEXPECTED,"site_resolve_callback called unexpectedly");
-	return;
-    }
     if (address) {
 	FILLZERO(ca_buf);
 	ca_buf.comm=st->comms[0];
@@ -1167,12 +1162,60 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 	slog(st,LOG_ERROR,"resolution of %s failed",st->address);
 	ca_use=0;
     }
-    if (transport_compute_setupinit_peers(st,ca_use,0)) {
-	enter_new_state(st,SITE_SENTMSG1);
-    } else {
-	/* Can't figure out who to try to to talk to */
-	slog(st,LOG_SETUP_INIT,"key exchange failed: cannot find peer address");
-	enter_state_run(st);
+
+    switch (st->state) {
+    case SITE_RESOLVE:
+        if (transport_compute_setupinit_peers(st,ca_use,0)) {
+	    enter_new_state(st,SITE_SENTMSG1);
+	} else {
+	    /* Can't figure out who to try to to talk to */
+	    slog(st,LOG_SETUP_INIT,
+		 "key exchange failed: cannot find peer address");
+	    enter_state_run(st);
+	}
+	break;
+    case SITE_SENTMSG1: case SITE_SENTMSG2:
+    case SITE_SENTMSG3: case SITE_SENTMSG4:
+    case SITE_SENTMSG5:
+	if (ca_use) {
+	    /* We start using the address immediately for data too.
+	     * It's best to store it in st->peers now because we might
+	     * go via SENTMSG5, WAIT, and a MSG0, straight into using
+	     * the new key (without updating the data peer addrs). */
+	    transport_record_peer(st,&st->peers,ca_use,"resolved data");
+	    transport_record_peer(st,&st->setup_peers,ca_use,"resolved setup");
+	} else if (st->local_mobile) {
+	    /* We can't let this rest because we may have a peer
+	     * address which will break in the future. */
+	    slog(st,LOG_SETUP_INIT,"resolution of %s failed: "
+		 "abandoning key exchange",st->address);
+	    enter_state_wait(st);
+	} else {
+	    slog(st,LOG_SETUP_INIT,"resolution of %s failed: "
+		 " continuing to use source address of peer's packets"
+		 " for key exchange and ultimately data",
+		 st->address);
+	}
+	break;
+    case SITE_RUN:
+	if (ca_use) {
+	    slog(st,LOG_SETUP_INIT,"resolution of %s completed tardily,"
+		 " updating peer address(es)",st->address);
+	    transport_record_peer(st,&st->peers,ca_use,"resolved tardily");
+	} else if (st->local_mobile) {
+	    /* Not very good.  We should queue (another) renegotiation
+	     * so that we can update the peer address. */
+	    st->key_renegotiate_time=st->now+st->wait_timeout;
+	} else {
+	    slog(st,LOG_SETUP_INIT,"resolution of %s failed: "
+		 " continuing to use source address of peer's packets",
+		 st->address);
+	}
+	break;
+    case SITE_WAIT:
+    case SITE_STOP:
+	/* oh well */
+	break;
     }
 }
 
@@ -1584,9 +1627,14 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	if (st->state==SITE_RUN || st->state==SITE_RESOLVE ||
 	    st->state==SITE_WAIT) {
 	    /* We should definitely process it */
+	    transport_record_peer(st,&st->setup_peers,source,"msg1");
 	    if (process_msg1(st,buf,source,&named_msg)) {
 		slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
-		enter_new_state(st,SITE_SENTMSG2);
+		bool_t entered=enter_new_state(st,SITE_SENTMSG2);
+		if (entered && st->address)
+		    /* We must do this as the very last thing, because
+		       the resolver callback might reenter us. */
+		    ensure_resolving(st);
 	    } else {
 		slog(st,LOG_ERROR,"failed to process incoming msg1");
 	    }
@@ -1606,6 +1654,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		     "priority => use incoming msg1");
 		if (process_msg1(st,buf,source,&named_msg)) {
 		    BUF_FREE(&st->buffer); /* Free our old message 1 */
+		    transport_setup_msgok(st,source);
 		    enter_new_state(st,SITE_SENTMSG2);
 		} else {
 		    slog(st,LOG_ERROR,"failed to process an incoming "
