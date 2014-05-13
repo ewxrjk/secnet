@@ -1291,9 +1291,8 @@ static bool_t enter_state_resolve(struct site *st)
     state_assert(st,st->state==SITE_RUN);
     slog(st,LOG_STATE,"entering state RESOLVE");
     st->state=SITE_RESOLVE;
-    st->resolver->request(st->resolver->st,st->address,
-			  site_resolve_callback,st);
-    return True;
+    return st->resolver->request(st->resolver->st,st->address,
+				 site_resolve_callback,st);
 }
 
 static bool_t enter_new_state(struct site *st, uint32_t next)

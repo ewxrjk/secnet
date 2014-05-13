@@ -50,8 +50,15 @@ static bool_t resolve_request(void *sst, cstring_t name,
     q->answer=cb;
 
     rv=adns_submit(st->ast, name, adns_r_a, 0, q, &q->query);
+    if (rv) {
+        Message(M_WARNING,
+		"resolver: failed to submit lookup for %s: %s",name,
+		adns_strerror(rv));
+	free(q);
+	return False;
+    }
 
-    return rv==0;
+    return True;
 }
 
 static int resolver_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
