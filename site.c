@@ -1955,7 +1955,7 @@ static void transport_record_peer(struct site *st, transport_peers *peers,
 
     changed=1;
     if (peers->npeers==st->transport_peers_max)
-	slot=st->transport_peers_max;
+	slot=st->transport_peers_max-1;
     else
 	slot=peers->npeers++;
 
