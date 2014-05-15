@@ -16,7 +16,10 @@
 
 typedef char *string_t;
 typedef const char *cstring_t;
-typedef enum {False,True} bool_t;
+
+#define False (_Bool)0
+#define True  (_Bool)1
+typedef _Bool bool_t;
 
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
 					 __FILE__,__LINE__); } } while(0)
