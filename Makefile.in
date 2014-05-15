@@ -177,7 +177,7 @@ dist:
 #
 #  4. git-tag -m "secnet $VERSION" -s v$VERSION
 #
-#  5. git-push origin
+#  5. git-push origin v$VERSION v${VERSION}~0:master
 #
 #  6. Run, again,
 #       make dist
