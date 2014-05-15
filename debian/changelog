@@ -1,3 +1,9 @@
+secnet (0.3.2~~) unstable; urgency=low
+
+  * Updates to release checklist in Makefile.in.
+
+ --
+
 secnet (0.3.1) unstable; urgency=low
 
   * Release of 0.3.1.  No code changes since 0.3.1~beta3.
