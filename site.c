@@ -1174,6 +1174,7 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 static bool_t initiate_key_setup(struct site *st, cstring_t reason,
 				 const struct comm_addr *prod_hint)
 {
+    /* Reentrancy hazard: can call enter_new_state/enter_state_* */
     if (st->state!=SITE_RUN) return False;
     slog(st,LOG_SETUP_INIT,"initiating key exchange (%s)",reason);
     if (st->address) {
@@ -1286,6 +1287,7 @@ static void enter_state_run(struct site *st)
 
 static bool_t enter_state_resolve(struct site *st)
 {
+    /* Reentrancy hazard!  See ensure_resolving. */
     state_assert(st,st->state==SITE_RUN);
     slog(st,LOG_STATE,"entering state RESOLVE");
     st->state=SITE_RESOLVE;
