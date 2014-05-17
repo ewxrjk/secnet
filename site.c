@@ -1161,6 +1161,8 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 	ca_buf.sin.sin_port=htons(st->remoteport);
 	ca_buf.sin.sin_addr=*address;
 	ca_use=&ca_buf;
+	slog(st,LOG_STATE,"resolution of %s completed: %s",
+	     st->address, comm_addr_to_string(ca_use));;
     } else {
 	slog(st,LOG_ERROR,"resolution of %s failed",st->address);
 	ca_use=0;
@@ -1294,6 +1296,8 @@ static bool_t ensure_resolving(struct site *st)
      * enter_new_state, enter_state_* and generate_msg*. */
     if (st->resolving)
         return True;
+
+    assert(st->address);
 
     /* resolver->request might reentrantly call site_resolve_callback
      * which will clear st->resolving, so we need to set it beforehand
