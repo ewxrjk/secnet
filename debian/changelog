@@ -1,5 +1,7 @@
 secnet (0.3.2~~) unstable; urgency=low
 
+  * SECURITY: Properly update peer address array when it is full.
+  * Log peer addresses on key exchange timeout.
   * Updates to release checklist in Makefile.in.
   * Use C99 _Bool for bool_t.
 
