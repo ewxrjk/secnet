@@ -55,12 +55,18 @@ TARGETS:=secnet
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	resolver.o random.o udp.o site.o transform-cbcmac.o transform-eax.o \
 	netlink.o rsa.o dh.o serpent.o serpentbe.o \
-	md5.o sha512.o version.o tun.o slip.o sha1.o ipaddr.o log.o \
+	md5.o sha512.o tun.o slip.o sha1.o ipaddr.o log.o \
 	process.o @LIBOBJS@ \
 	hackypar.o
+# version.o is handled specially below and in the link rule for secnet.
 
 TEST_OBJECTS:=eax-aes-test.o eax-serpent-test.o eax-serpentbe-test.o \
 		eax-test.o aes.o
+
+ifeq (version.o,$(MAKECMDGOALS))
+OBJECTS:=version.o
+TEST_OBJECTS:=
+endif
 
 %.c:	%.y
 
@@ -114,14 +120,31 @@ conffile.tab.c:	conffile.y
 # End of manual dependencies section
 
 secnet:	$(OBJECTS)
-	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
+	$(MAKE) version.o # *.o $(filter-out %.o, $^)
+	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $(OBJECTS) version.o $(LDLIBS)
+# We (always) regenerate the version, but only if we regenerate the
+# binary.  (This is necessary as the version string is can depend on
+# any of the source files, eg to see whether "+" is needed.)
+
+ifneq (,$(wildcard .git/HEAD))
+# If we have (eg) committed, relink and thus regenerate the version
+# with the new info from git describe.
+secnet: Makefile .git/HEAD $(shell sed -n 's#^ref: #.git/#p' .git/HEAD)
+secnet: $(wildcard .git/packed-refs)
+endif
 
 check: eax-aes-test.confirm eax-serpent-test.confirm \
 	eax-serpentbe-test.confirm
 
 version.c: Makefile
 	echo "#include \"secnet.h\"" >$@.new
-	echo "char version[]=\"secnet $(VERSION)\";" >>$@.new
+	@set -ex; if test -e .git; then \
+		v=$$(git describe --match 'v*'); v=$${v#v}; \
+		if ! git diff --quiet HEAD; then v="$$v+"; fi; \
+	else \
+		v="$(VERSION)"; \
+	fi; \
+	echo "char version[]=\"secnet $$v\";" >>$@.new
 	mv -f $@.new $@
 
 eax-%-test: eax-%-test.o eax-test.o %.o
