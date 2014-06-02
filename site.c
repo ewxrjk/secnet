@@ -1631,7 +1631,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    if (process_msg1(st,buf,source,&named_msg)) {
 		slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
 		bool_t entered=enter_new_state(st,SITE_SENTMSG2);
-		if (entered && st->address)
+		if (entered && st->address && st->local_mobile)
 		    /* We must do this as the very last thing, because
 		       the resolver callback might reenter us. */
 		    ensure_resolving(st);
