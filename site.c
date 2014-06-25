@@ -208,6 +208,10 @@ static void transport_data_msgok(struct site *st, const struct comm_addr *a);
 static bool_t transport_compute_setupinit_peers(struct site *st,
         const struct comm_addr *configured_addr /* 0 if none or not found */,
         const struct comm_addr *prod_hint_addr /* 0 if none */);
+static void transport_resolve_complete(struct site *st,
+                                      const struct comm_addr *a);
+static void transport_resolve_complete_tardy(struct site *st,
+					     const struct comm_addr *ca_use);
 static void transport_record_peer(struct site *st, transport_peers *peers,
 				  const struct comm_addr *addr, const char *m);
 
@@ -1182,8 +1186,7 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 	     * It's best to store it in st->peers now because we might
 	     * go via SENTMSG5, WAIT, and a MSG0, straight into using
 	     * the new key (without updating the data peer addrs). */
-	    transport_record_peer(st,&st->peers,ca_use,"resolved data");
-	    transport_record_peer(st,&st->setup_peers,ca_use,"resolved setup");
+	    transport_resolve_complete(st,ca_use);
 	} else if (st->local_mobile) {
 	    /* We can't let this rest because we may have a peer
 	     * address which will break in the future. */
@@ -1201,7 +1204,7 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 	if (ca_use) {
 	    slog(st,LOG_SETUP_INIT,"resolution of %s completed tardily,"
 		 " updating peer address(es)",st->address);
-	    transport_record_peer(st,&st->peers,ca_use,"resolved tardily");
+	    transport_resolve_complete_tardy(st,ca_use);
 	} else if (st->local_mobile) {
 	    /* Not very good.  We should queue (another) renegotiation
 	     * so that we can update the peer address. */
@@ -2143,6 +2146,17 @@ static void transport_peers_copy(struct site *st, transport_peers *dst,
     memcpy(dst->peers, src->peers, sizeof(*dst->peers) * dst->npeers);
     transport_peers_debug(st,dst,"copy",
 			  src->npeers, &src->peers->addr, sizeof(*src->peers));
+}
+
+static void transport_resolve_complete(struct site *st,
+				       const struct comm_addr *ca_use) {
+    transport_record_peer(st,&st->peers,ca_use,"resolved data");
+    transport_record_peer(st,&st->setup_peers,ca_use,"resolved setup");
+}
+
+static void transport_resolve_complete_tardy(struct site *st,
+					     const struct comm_addr *ca_use) {
+    transport_record_peer(st,&st->peers,ca_use,"resolved tardily");
 }
 
 void transport_xmit(struct site *st, transport_peers *peers,
