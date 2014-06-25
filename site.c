@@ -1630,7 +1630,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	if (st->state==SITE_RUN || st->state==SITE_RESOLVE ||
 	    st->state==SITE_WAIT) {
 	    /* We should definitely process it */
-	    transport_record_peer(st,&st->setup_peers,source,"msg1");
+	    transport_compute_setupinit_peers(st,0,source);
 	    if (process_msg1(st,buf,source,&named_msg)) {
 		slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
 		bool_t entered=enter_new_state(st,SITE_SENTMSG2);
