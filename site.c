@@ -198,22 +198,35 @@ typedef struct {
     transport_peer peers[MAX_MOBILE_PEERS_MAX];
 } transport_peers;
 
+/* Basic operations on transport peer address sets */
 static void transport_peers_clear(struct site *st, transport_peers *peers);
 static int transport_peers_valid(transport_peers *peers);
 static void transport_peers_copy(struct site *st, transport_peers *dst,
 				 const transport_peers *src);
 
+/* Record address of incoming setup packet; resp. data packet. */
 static void transport_setup_msgok(struct site *st, const struct comm_addr *a);
 static void transport_data_msgok(struct site *st, const struct comm_addr *a);
+
+/* Initialise the setup addresses.  Called before we send the first
+ * packet in a key exchange.  If we are the initiator, as a result of
+ * resolve completing (or being determined not to be relevant) or an
+ * incoming PROD; if we are the responder, as a result of the MSG1. */
 static bool_t transport_compute_setupinit_peers(struct site *st,
         const struct comm_addr *configured_addr /* 0 if none or not found */,
         const struct comm_addr *incoming_packet_addr /* 0 if none */);
+
+/* Called if we are the responder in a key setup, when the resolve
+ * completes.  transport_compute_setupinit_peers will hvae been called
+ * earlier.  If _complete is called, we are still doing the key setup
+ * (and we should use the new values for both the rest of the key
+ * setup and the ongoing data exchange); if _tardy is called, the key
+ * setup is done (either completed or not) and only the data peers are
+ * relevant */
 static void transport_resolve_complete(struct site *st,
                                       const struct comm_addr *a);
 static void transport_resolve_complete_tardy(struct site *st,
 					     const struct comm_addr *ca_use);
-static void transport_record_peer(struct site *st, transport_peers *peers,
-				  const struct comm_addr *addr, const char *m);
 
 static void transport_xmit(struct site *st, transport_peers *peers,
 			   struct buffer_if *buf, bool_t candebug);
