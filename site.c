@@ -207,7 +207,7 @@ static void transport_setup_msgok(struct site *st, const struct comm_addr *a);
 static void transport_data_msgok(struct site *st, const struct comm_addr *a);
 static bool_t transport_compute_setupinit_peers(struct site *st,
         const struct comm_addr *configured_addr /* 0 if none or not found */,
-        const struct comm_addr *prod_hint_addr /* 0 if none */);
+        const struct comm_addr *incoming_packet_addr /* 0 if none */);
 static void transport_resolve_complete(struct site *st,
                                       const struct comm_addr *a);
 static void transport_resolve_complete_tardy(struct site *st,
@@ -2094,16 +2094,16 @@ static void transport_record_peer(struct site *st, transport_peers *peers,
 
 static bool_t transport_compute_setupinit_peers(struct site *st,
         const struct comm_addr *configured_addr /* 0 if none or not found */,
-        const struct comm_addr *prod_hint_addr /* 0 if none */) {
+        const struct comm_addr *incoming_packet_addr /* 0 if none */) {
 
-    if (!configured_addr && !prod_hint_addr &&
+    if (!configured_addr && !incoming_packet_addr &&
 	!transport_peers_valid(&st->peers))
 	return False;
 
     slog(st,LOG_SETUP_INIT,
 	 "using:%s%s %d old peer address(es)",
 	 configured_addr ? " configured address;" : "",
-	 prod_hint_addr ? " PROD hint address;" : "",
+	 incoming_packet_addr ? " incoming packet address;" : "",
 	 st->peers.npeers);
 
     /* Non-mobile peers have st->peers.npeers==0 or ==1, since they
@@ -2114,8 +2114,9 @@ static bool_t transport_compute_setupinit_peers(struct site *st,
 
     transport_peers_copy(st,&st->setup_peers,&st->peers);
 
-    if (prod_hint_addr)
-	transport_record_peer(st,&st->setup_peers,prod_hint_addr,"prod");
+    if (incoming_packet_addr)
+	transport_record_peer(st,&st->setup_peers,incoming_packet_addr,
+			      "incoming");
 
     if (configured_addr)
 	transport_record_peer(st,&st->setup_peers,configured_addr,"setupinit");
