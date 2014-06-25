@@ -1696,7 +1696,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	       because our peer's forgotten the key */
 	    if (get_uint32(buf->start+4)==st->current.remote_session_id) {
 		bool_t initiated;
-		initiated = initiate_key_setup(st,"received a NAK",0);
+		initiated = initiate_key_setup(st,"received a NAK",source);
 		if (!initiated) generate_send_prod(st,source);
 	    } else {
 		slog(st,LOG_SEC,"bad incoming NAK");
