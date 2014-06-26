@@ -1,3 +1,9 @@
+secnet (0.3.2) unstable; urgency=low
+
+  * Release of 0.3.2.  No code changes since 0.3.1~beta1.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 26 Jun 2014 20:27:58 +0100
+
 secnet (0.3.2~beta1) unstable; urgency=low
 
   For links involving mobile sites:
