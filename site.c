@@ -2092,13 +2092,9 @@ static void transport_peers_debug(struct site *st, transport_peers *dst,
     }
 }
 
-static int transport_peer_compar(const void *av, const void *bv) {
-    const transport_peer *a=av;
-    const transport_peer *b=bv;
-    /* put most recent first in the array */
-    if (timercmp(&a->last, &b->last, <)) return +1;
-    if (timercmp(&a->last, &b->last, >)) return -11;
-    return 0;
+static bool_t transport_addrs_equal(const struct comm_addr *a,
+				    const struct comm_addr *b) {
+    return !memcmp(a,b,sizeof(*a));
 }
 
 static void transport_peers_expire(struct site *st, transport_peers *peers) {
@@ -2114,31 +2110,67 @@ static void transport_peers_expire(struct site *st, transport_peers *peers) {
 	transport_peers_debug(st,peers,"expire", 0,0,0);
 }
 
-static void transport_record_peer(struct site *st, transport_peers *peers,
-				  const struct comm_addr *addr, const char *m) {
-    int slot, changed=0;
+static bool_t transport_peer_record_one(struct site *st, transport_peers *peers,
+					const struct comm_addr *ca,
+					const struct timeval *tv) {
+    /* returns false if output is full */
+    int search;
 
-    for (slot=0; slot<peers->npeers; slot++)
-	if (!memcmp(&peers->peers[slot].addr, addr, sizeof(*addr)))
-	    goto found;
+    if (peers->npeers >= st->transport_peers_max)
+	return 0;
 
-    changed=1;
-    if (peers->npeers==st->transport_peers_max)
-	slot=st->transport_peers_max-1;
-    else
-	slot=peers->npeers++;
+    for (search=0; search<peers->npeers; search++)
+	if (transport_addrs_equal(&peers->peers[search].addr, ca))
+	    return 1;
 
- found:
-    peers->peers[slot].addr=*addr;
-    peers->peers[slot].last=*tv_now;
+    peers->peers[peers->npeers].addr = *ca;
+    peers->peers[peers->npeers].last = *tv;
+    peers->npeers++;
+    return 1;
+}
 
-    if (peers->npeers>1)
-	qsort(peers->peers, peers->npeers,
-	      sizeof(*peers->peers), transport_peer_compar);
+static void transport_record_peers(struct site *st, transport_peers *peers,
+				   const struct comm_addr *addrs, int naddrs,
+				   const char *m) {
+    /* We add addrs into peers.  The new entries end up at the front
+     * and displace entries towards the end (perhaps even off the
+     * end).  Any existing matching entries are moved up to the front.
+     *
+     * Caller must first call transport_peers_expire. */
 
-    if (changed || peers->npeers!=1)
-	transport_peers_debug(st,peers,m, 1,addr,0);
-    transport_peers_expire(st, peers);
+    if (naddrs==1 && peers->npeers>=1 &&
+	transport_addrs_equal(&addrs[0], &peers->peers[0].addr)) {
+	/* optimisation, also avoids debug for trivial updates */
+	peers->peers[0].last = *tv_now;
+	return;
+    }
+
+    int old_npeers=peers->npeers;
+    transport_peer old_peers[old_npeers];
+    COPY_ARRAY(old_peers,peers->peers,old_npeers);
+
+    peers->npeers=0;
+    int i;
+    for (i=0; i<naddrs; i++) {
+	if (!transport_peer_record_one(st,peers, &addrs[i], tv_now))
+	    break;
+    }
+    for (i=0; i<old_npeers; i++) {
+	const transport_peer *old=&old_peers[i];
+	if (!transport_peer_record_one(st,peers, &old->addr, &old->last))
+	    break;
+    }
+
+    transport_peers_debug(st,peers,m, naddrs,addrs,0);
+}
+
+static void transport_expire_record_peers(struct site *st,
+					  transport_peers *peers,
+					  const struct comm_addr *addrs,
+					  int naddrs, const char *m) {
+    /* Convenience function */
+    transport_peers_expire(st,peers);
+    transport_record_peers(st,peers,addrs,naddrs,m);
 }
 
 static bool_t transport_compute_setupinit_peers(struct site *st,
@@ -2162,13 +2194,15 @@ static bool_t transport_compute_setupinit_peers(struct site *st,
      * one exists; this is as desired. */
 
     transport_peers_copy(st,&st->setup_peers,&st->peers);
+    transport_peers_expire(st,&st->setup_peers);
 
     if (incoming_packet_addr)
-	transport_record_peer(st,&st->setup_peers,incoming_packet_addr,
-			      "incoming");
+	transport_record_peers(st,&st->setup_peers,
+			       incoming_packet_addr,1, "incoming");
 
     if (configured_addr)
-	transport_record_peer(st,&st->setup_peers,configured_addr,"setupinit");
+	transport_record_peers(st,&st->setup_peers,
+                              configured_addr,1, "setupinit");
 
     assert(transport_peers_valid(&st->setup_peers));
     return True;
@@ -2176,11 +2210,11 @@ static bool_t transport_compute_setupinit_peers(struct site *st,
 
 static void transport_setup_msgok(struct site *st, const struct comm_addr *a) {
     if (st->peer_mobile)
-	transport_record_peer(st,&st->setup_peers,a,"setupmsg");
+	transport_expire_record_peers(st,&st->setup_peers,a,1,"setupmsg");
 }
 static void transport_data_msgok(struct site *st, const struct comm_addr *a) {
     if (st->peer_mobile)
-	transport_record_peer(st,&st->peers,a,"datamsg");
+	transport_expire_record_peers(st,&st->peers,a,1,"datamsg");
 }
 
 static int transport_peers_valid(transport_peers *peers) {
@@ -2199,14 +2233,14 @@ static void transport_peers_copy(struct site *st, transport_peers *dst,
 }
 
 static void transport_resolve_complete(struct site *st,
-				       const struct comm_addr *ca_use) {
-    transport_record_peer(st,&st->peers,ca_use,"resolved data");
-    transport_record_peer(st,&st->setup_peers,ca_use,"resolved setup");
+				       const struct comm_addr *ca) {
+    transport_expire_record_peers(st,&st->peers,ca,1,"resolved data");
+    transport_expire_record_peers(st,&st->setup_peers,ca,1,"resolved setup");
 }
 
 static void transport_resolve_complete_tardy(struct site *st,
-					     const struct comm_addr *ca_use) {
-    transport_record_peer(st,&st->peers,ca_use,"resolved tardily");
+					     const struct comm_addr *ca) {
+    transport_expire_record_peers(st,&st->peers,ca,1,"resolved tardily");
 }
 
 static void transport_peers__copy_by_mask(transport_peer *out, int *nout_io,
