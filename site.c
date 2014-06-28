@@ -2209,15 +2209,63 @@ static void transport_resolve_complete_tardy(struct site *st,
     transport_record_peer(st,&st->peers,ca_use,"resolved tardily");
 }
 
+static void transport_peers__copy_by_mask(transport_peer *out, int *nout_io,
+					  unsigned mask,
+					  const transport_peers *inp) {
+    /* out and in->peers may be the same region, or nonoverlapping */
+    const transport_peer *in=inp->peers;
+    int slot;
+    for (slot=0; slot<inp->npeers; slot++) {
+	if (!(mask & (1U << slot)))
+	    continue;
+	if (!(out==in && slot==*nout_io))
+	    COPY_OBJ(out[*nout_io], in[slot]);
+	(*nout_io)++;
+    }
+}
+
 void transport_xmit(struct site *st, transport_peers *peers,
 		    struct buffer_if *buf, bool_t candebug) {
     int slot;
     transport_peers_expire(st, peers);
+    unsigned failed=0; /* bitmask */
+    assert(MAX_MOBILE_PEERS_MAX < sizeof(unsigned)*CHAR_BIT);
+
+    int nfailed=0;
     for (slot=0; slot<peers->npeers; slot++) {
 	transport_peer *peer=&peers->peers[slot];
 	if (candebug)
 	    dump_packet(st, buf, &peer->addr, False);
-	peer->addr.comm->sendmsg(peer->addr.comm->st, buf, &peer->addr);
+	bool_t ok =
+	    peer->addr.comm->sendmsg(peer->addr.comm->st, buf, &peer->addr);
+	if (!ok) {
+	    failed |= 1U << slot;
+	    nfailed++;
+	}
+	if (ok && !st->peer_mobile)
+	    break;
+    }
+    /* Now we need to demote/delete failing addrs: if we are mobile we
+     * merely demote them; otherwise we delete them. */
+    if (st->local_mobile) {
+	unsigned expected = ((1U << nfailed)-1) << (peers->npeers-nfailed);
+	/* `expected' has all the failures at the end already */
+	if (failed != expected) {
+	    int fslot=0;
+	    transport_peer failedpeers[nfailed];
+	    transport_peers__copy_by_mask(failedpeers, &fslot, failed,peers);
+	    assert(fslot == nfailed);
+	    int wslot=0;
+	    transport_peers__copy_by_mask(peers->peers,&wslot,~failed,peers);
+	    assert(wslot+nfailed == peers->npeers);
+	    COPY_ARRAY(peers->peers+wslot, failedpeers, nfailed);
+	}
+    } else {
+	if (failed && peers->npeers > 1) {
+	    int wslot=0;
+	    transport_peers__copy_by_mask(peers->peers,&wslot,~failed,peers);
+	    peers->npeers=wslot;
+	}
     }
 }
 
