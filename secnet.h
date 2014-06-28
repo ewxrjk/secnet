@@ -15,6 +15,13 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+
+#define MAX_PEER_ADDRS 5
+/* send at most this many copies; honour at most that many addresses */
+
+struct comm_if;
+struct comm_addr;
 
 typedef char *string_t;
 typedef const char *cstring_t;
@@ -275,11 +282,14 @@ struct buffer_if;
 
 /* Answers to queries are delivered to a function of this
    type. 'address' will be NULL if there was a problem with the query. It
-   will be freed once resolve_answer_fn returns. It is in network byte
-   order. */
-/* XXX extend to be able to provide multiple answers */
-typedef void resolve_answer_fn(void *st, struct in_addr *addr);
+   will be freed once resolve_answer_fn returns.  naddrs is the actual
+   size of the array at addrs; was_naddrs is the number of addresses
+   actually found in the DNS, which may be bigger if addrs is equal
+   to MAX_PEER_ADDRS (ie there were too many). */
+typedef void resolve_answer_fn(void *st, const struct comm_addr *addrs,
+			       int naddrs, int was_naddrs);
 typedef bool_t resolve_request_fn(void *st, cstring_t name,
+				  int remoteport, struct comm_if *comm,
 				  resolve_answer_fn *cb, void *cst);
 struct resolver_if {
     void *st;

@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include "secnet.h"
+#include "util.h"
 #ifndef HAVE_LIBADNS
 #error secnet requires ADNS version 1.0 or above
 #endif
@@ -19,12 +20,15 @@ struct adns {
 
 struct query {
     void *cst;
+    int port;
+    struct comm_if *comm;
     resolve_answer_fn *answer;
     adns_query query;
 };
 
 static resolve_request_fn resolve_request;
 static bool_t resolve_request(void *sst, cstring_t name,
+			      int port, struct comm_if *comm,
 			      resolve_answer_fn *cb, void *cst)
 {
     struct adns *st=sst;
@@ -37,19 +41,25 @@ static bool_t resolve_request(void *sst, cstring_t name,
 	char trimmed[maxlitlen+1];
 	memcpy(trimmed,name+1,l-2);
 	trimmed[l-2]=0;
-	struct in_addr ia;
-	if (inet_aton(trimmed,&ia))
-	    cb(cst,&ia);
+	struct comm_addr ca;
+	FILLZERO(ca);
+	ca.comm=comm;
+	ca.sin.sin_family=AF_INET;
+	ca.sin.sin_port=htons(port);
+	if (inet_aton(trimmed,&ca.sin.sin_addr))
+	    cb(cst,&ca,1,1);
 	else
-	    cb(cst,0);
+	    cb(cst,0,0,0);
 	return True;
     }
 
     q=safe_malloc(sizeof *q,"resolve_request");
     q->cst=cst;
+    q->comm=comm;
+    q->port=port;
     q->answer=cb;
 
-    rv=adns_submit(st->ast, name, adns_r_a, 0, q, &q->query);
+    rv=adns_submit(st->ast, name, adns_r_addr, 0, q, &q->query);
     if (rv) {
         Message(M_WARNING,
 		"resolver: failed to submit lookup for %s: %s",name,
@@ -85,11 +95,36 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 	if (rv==0) {
 	    q=qp;
 	    if (ans->status!=adns_s_ok) {
-		q->answer(q->cst,NULL); /* Failure */
+		q->answer(q->cst,NULL,0,0); /* Failure */
 		free(q);
 		free(ans);
 	    } else {
-		q->answer(q->cst,ans->rrs.inaddr);
+		int rslot, wslot, total;
+		int ca_len=MIN(ans->nrrs,MAX_PEER_ADDRS);
+		struct comm_addr ca_buf[ca_len];
+		FILLZERO(ca_buf);
+		for (rslot=0, wslot=0, total=0;
+		     rslot<ans->nrrs;
+		     rslot++) {
+		    total++;
+		    if (!(wslot<ca_len)) continue;
+		    adns_rr_addr *ra=&ans->rrs.addr[rslot];
+		    struct comm_addr *ca=&ca_buf[wslot];
+		    ca->comm=q->comm;
+		    /* copy fields individually so we leave holes zeroed: */
+		    switch (ra->addr.sa.sa_family) {
+		    case AF_INET:
+			assert(ra->len == sizeof(ca->sin));
+			ca->sin.sin_family=ra->addr.inet.sin_family;
+			ca->sin.sin_addr=  ra->addr.inet.sin_addr;
+			ca->sin.sin_port=  htons(q->port);
+			wslot++;
+			break;
+		    default:
+			break;
+		    }
+		}
+		q->answer(q->cst,ca_buf,wslot,total);
 		free(q);
 		free(ans);
 	    }

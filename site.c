@@ -220,7 +220,7 @@ static struct flagstr log_event_table[]={
 
    */
 
-#define MAX_MOBILE_PEERS_MAX 5 /* send at most this many copies, compiled max */
+#define MAX_MOBILE_PEERS_MAX MAX_PEER_ADDRS /* send at most this many copies */
 
 typedef struct {
     struct timeval last;
@@ -1196,29 +1196,23 @@ static bool_t send_msg(struct site *st)
     }
 }
 
-static void site_resolve_callback(void *sst, struct in_addr *address)
+static void site_resolve_callback(void *sst, const struct comm_addr *addrs,
+				  int naddrs, int was_naddrs)
 {
     struct site *st=sst;
-    struct comm_addr ca_buf;
-    const struct comm_addr *addrs;
-    int naddrs;
 
     st->resolving=False;
 
-    if (address) {
-	FILLZERO(ca_buf);
-	ca_buf.comm=st->comms[0];
-	ca_buf.sin.sin_family=AF_INET;
-	ca_buf.sin.sin_port=htons(st->remoteport);
-	ca_buf.sin.sin_addr=*address;
-	addrs=&ca_buf;
-	naddrs=1;
-	slog(st,LOG_STATE,"resolution of %s completed: %s",
-	     st->address, comm_addr_to_string(&addrs[0]));;
+    if (naddrs) {
+	slog(st,LOG_STATE,"resolution of %s completed, %d addrs, eg: %s",
+	     st->address, was_naddrs, comm_addr_to_string(&addrs[0]));;
+	if (naddrs != was_naddrs) {
+	    slog(st,LOG_SETUP_INIT,"resolution of supplied addresses/names"
+		 " yielded too many results (%d > %d), some ignored",
+		 was_naddrs, naddrs);
+	}
     } else {
 	slog(st,LOG_ERROR,"resolution of %s failed",st->address);
-	addrs=0;
-	naddrs=0;
     }
 
     switch (st->state) {
@@ -1405,6 +1399,7 @@ static bool_t ensure_resolving(struct site *st)
      * case we have to clear ->resolving again. */
     st->resolving=True;
     bool_t ok = st->resolver->request(st->resolver->st,st->address,
+				      st->remoteport,st->comms[0],
 				      site_resolve_callback,st);
     if (!ok)
 	st->resolving=False;
