@@ -143,44 +143,80 @@ static struct flagstr log_event_table[]={
 /***** TRANSPORT PEERS declarations *****/
 
 /* Details of "mobile peer" semantics:
+
+ | Note: this comment is wishful thinking right now.  It will be
+ | implemented in subsequent commits.
+
+   - We use the same data structure for the different configurations,
+     but manage it with different algorithms.
    
-   - We record mobile_peers_max peer address/port numbers ("peers")
-     for key setup, and separately mobile_peers_max for data
-     transfer.  If these lists fill up, we retain the newest peers.
-     (For non-mobile peers we only record one of each.)
+   - We record up to mobile_peers_max peer address/port numbers
+     ("peers") for key setup, and separately up to mobile_peers_max
+     for data transfer.
 
-   - Outgoing packets are sent to every recorded peer in the
-     applicable list.
+   - In general, we make a new set of addrs (see below) when we start
+     a new key exchange; the key setup addrs become the data transport
+     addrs when key setup complets.
 
-   - Data transfer peers are straightforward: whenever we successfully
-     process a data packet, we record the peer.  Also, whenever we
-     successfully complete a key setup, we merge the key setup
+   If our peer is mobile:
+
+   - We send to all recent addresses of incoming packets, plus
+     initially all configured addresses (which we also expire).
+
+   - So, we record addrs of good incoming packets, as follows:
+      1. expire any peers last seen >120s ("mobile-peer-expiry") ago
+      2. add the peer of the just received packet to the applicable list
+         (possibly evicting the oldest entries to make room)
+     NB that we do not expire peers until an incoming packet arrives.
+
+   - If the peer has a configured address or name, we record them the
+     same way, but only as a result of our own initiation of key
+     setup.  (We might evict some incoming packet addrs to make room.)
+
+   - The default number of addrs to keep is 3, or 4 if we have a
+     configured name or address.  That's space for two configured
+     addresses (one IPv6 and one IPv4), plus two received addresses.
+
+   - Outgoing packets are sent to every recorded address in the
+     applicable list.  Any unsupported[1] addresses are deleted from
+     the list right away.  (This should only happen to configured
+     addresses, of course, but there is no need to check that.)
+
+   - When we successfully complete a key setup, we merge the key setup
      peers into the data transfer peers.
 
-     (For "non-mobile" peers we simply copy the peer used for
-     successful key setup, and don't change the peer otherwise.)
+   [1] An unsupported address is one for whose AF we don't have a
+     socket (perhaps because we got EAFNOSUPPORT or some such) or for
+     which sendto gives ENETUNREACH.
 
-   - Key setup peers are slightly more complicated.
+   If neither end is mobile:
 
-     Whenever we receive and successfully process a key exchange
-     packet, we record the peer.
+   - When peer initiated the key exchange, we use the incoming packet
+     address.
 
-     Whenever we try to initiate a key setup, we copy the list of data
-     transfer peers and use it for key setup.  But we also look to see
-     if the config supplies an address and port number and if so we
-     add that as a key setup peer (possibly evicting one of the data
-     transfer peers we just copied).
+   - When we initiate the key exchange, we try configured addresses
+     until we get one which isn't unsupported then fixate on that.
 
-     (For "non-mobile" peers, if we if we have a configured peer
-     address and port, we always use that; otherwise if we have a
-     current data peer address we use that; otherwise we do not
-     attempt to initiate a key setup for lack of a peer address.)
+   - When we complete a key setup, we replace the data transport peers
+     with those from the key setup.
 
-   "Record the peer" means
-    1. expire any peers last seen >120s ("mobile-peer-expiry") ago
-    2. add the peer of the just received packet to the applicable list
-       (possibly evicting older entries)
-   NB that we do not expire peers until an incoming packet arrives.
+   If we are mobile:
+
+   - We can't tell when local network setup changes so we can't cache
+     the unsupported addrs and completely remove the spurious calls to
+     sendto, but we can optimise things a bit by deprioritising addrs
+     which seem to be unsupported.
+
+   - Use only configured addresses.  (Except, that if our peer
+     initiated a key exchange we use the incoming packet address until
+     our name resolution completes.)
+
+   - When we send a packet, try each address in turn; if addr
+     supported, put that address to the end of the list for future
+     packets, and go onto the next address.
+
+   - When we complete a key setup, we replace the data transport peers
+     with those from the key setup.
 
    */
 
