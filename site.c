@@ -249,7 +249,8 @@ static void transport_data_msgok(struct site *st, const struct comm_addr *a);
  * resolve completing (or being determined not to be relevant) or an
  * incoming PROD; if we are the responder, as a result of the MSG1. */
 static bool_t transport_compute_setupinit_peers(struct site *st,
-        const struct comm_addr *configured_addr /* 0 if none or not found */,
+        const struct comm_addr *configured_addrs /* 0 if none or not found */,
+        int n_configured_addrs /* 0 if none or not found */,
         const struct comm_addr *incoming_packet_addr /* 0 if none */);
 
 /* Called if we are the responder in a key setup, when the resolve
@@ -260,9 +261,9 @@ static bool_t transport_compute_setupinit_peers(struct site *st,
  * setup is done (either completed or not) and only the data peers are
  * relevant */
 static void transport_resolve_complete(struct site *st,
-                                      const struct comm_addr *a);
+        const struct comm_addr *addrs, int naddrs);
 static void transport_resolve_complete_tardy(struct site *st,
-					     const struct comm_addr *ca_use);
+        const struct comm_addr *addrs, int naddrs);
 
 static void transport_xmit(struct site *st, transport_peers *peers,
 			   struct buffer_if *buf, bool_t candebug);
@@ -1198,7 +1199,9 @@ static bool_t send_msg(struct site *st)
 static void site_resolve_callback(void *sst, struct in_addr *address)
 {
     struct site *st=sst;
-    struct comm_addr ca_buf, *ca_use;
+    struct comm_addr ca_buf;
+    const struct comm_addr *addrs;
+    int naddrs;
 
     st->resolving=False;
 
@@ -1208,17 +1211,19 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 	ca_buf.sin.sin_family=AF_INET;
 	ca_buf.sin.sin_port=htons(st->remoteport);
 	ca_buf.sin.sin_addr=*address;
-	ca_use=&ca_buf;
+	addrs=&ca_buf;
+	naddrs=1;
 	slog(st,LOG_STATE,"resolution of %s completed: %s",
-	     st->address, comm_addr_to_string(ca_use));;
+	     st->address, comm_addr_to_string(&addrs[0]));;
     } else {
 	slog(st,LOG_ERROR,"resolution of %s failed",st->address);
-	ca_use=0;
+	addrs=0;
+	naddrs=0;
     }
 
     switch (st->state) {
     case SITE_RESOLVE:
-        if (transport_compute_setupinit_peers(st,ca_use,0)) {
+        if (transport_compute_setupinit_peers(st,addrs,naddrs,0)) {
 	    enter_new_state(st,SITE_SENTMSG1);
 	} else {
 	    /* Can't figure out who to try to to talk to */
@@ -1230,12 +1235,12 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
     case SITE_SENTMSG1: case SITE_SENTMSG2:
     case SITE_SENTMSG3: case SITE_SENTMSG4:
     case SITE_SENTMSG5:
-	if (ca_use) {
+	if (naddrs) {
 	    /* We start using the address immediately for data too.
 	     * It's best to store it in st->peers now because we might
 	     * go via SENTMSG5, WAIT, and a MSG0, straight into using
 	     * the new key (without updating the data peer addrs). */
-	    transport_resolve_complete(st,ca_use);
+	    transport_resolve_complete(st,addrs,naddrs);
 	} else if (st->local_mobile) {
 	    /* We can't let this rest because we may have a peer
 	     * address which will break in the future. */
@@ -1250,10 +1255,10 @@ static void site_resolve_callback(void *sst, struct in_addr *address)
 	}
 	break;
     case SITE_RUN:
-	if (ca_use) {
+	if (naddrs) {
 	    slog(st,LOG_SETUP_INIT,"resolution of %s completed tardily,"
 		 " updating peer address(es)",st->address);
-	    transport_resolve_complete_tardy(st,ca_use);
+	    transport_resolve_complete_tardy(st,addrs,naddrs);
 	} else if (st->local_mobile) {
 	    /* Not very good.  We should queue (another) renegotiation
 	     * so that we can update the peer address. */
@@ -1280,7 +1285,7 @@ static bool_t initiate_key_setup(struct site *st, cstring_t reason,
     if (st->address) {
 	slog(st,LOG_SETUP_INIT,"resolving peer address");
 	return enter_state_resolve(st);
-    } else if (transport_compute_setupinit_peers(st,0,prod_hint)) {
+    } else if (transport_compute_setupinit_peers(st,0,0,prod_hint)) {
 	return enter_new_state(st,SITE_SENTMSG1);
     }
     slog(st,LOG_SETUP_INIT,"key exchange failed: no address for peer");
@@ -1679,7 +1684,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	if (st->state==SITE_RUN || st->state==SITE_RESOLVE ||
 	    st->state==SITE_WAIT) {
 	    /* We should definitely process it */
-	    transport_compute_setupinit_peers(st,0,source);
+	    transport_compute_setupinit_peers(st,0,0,source);
 	    if (process_msg1(st,buf,source,&named_msg)) {
 		slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
 		bool_t entered=enter_new_state(st,SITE_SENTMSG2);
@@ -2174,16 +2179,16 @@ static void transport_expire_record_peers(struct site *st,
 }
 
 static bool_t transport_compute_setupinit_peers(struct site *st,
-        const struct comm_addr *configured_addr /* 0 if none or not found */,
+        const struct comm_addr *configured_addrs /* 0 if none or not found */,
+        int n_configured_addrs /* 0 if none or not found */,
         const struct comm_addr *incoming_packet_addr /* 0 if none */) {
-
-    if (!configured_addr && !incoming_packet_addr &&
+    if (!n_configured_addrs && !incoming_packet_addr &&
 	!transport_peers_valid(&st->peers))
 	return False;
 
     slog(st,LOG_SETUP_INIT,
-	 "using:%s%s %d old peer address(es)",
-	 configured_addr ? " configured address;" : "",
+	 "using: %d configured addr(s);%s %d old peer addrs(es)",
+	 n_configured_addrs,
 	 incoming_packet_addr ? " incoming packet address;" : "",
 	 st->peers.npeers);
 
@@ -2200,9 +2205,9 @@ static bool_t transport_compute_setupinit_peers(struct site *st,
 	transport_record_peers(st,&st->setup_peers,
 			       incoming_packet_addr,1, "incoming");
 
-    if (configured_addr)
+    if (n_configured_addrs)
 	transport_record_peers(st,&st->setup_peers,
-                              configured_addr,1, "setupinit");
+			      configured_addrs,n_configured_addrs, "setupinit");
 
     assert(transport_peers_valid(&st->setup_peers));
     return True;
@@ -2233,14 +2238,19 @@ static void transport_peers_copy(struct site *st, transport_peers *dst,
 }
 
 static void transport_resolve_complete(struct site *st,
-				       const struct comm_addr *ca) {
-    transport_expire_record_peers(st,&st->peers,ca,1,"resolved data");
-    transport_expire_record_peers(st,&st->setup_peers,ca,1,"resolved setup");
+				       const struct comm_addr *addrs,
+				       int naddrs) {
+    transport_expire_record_peers(st,&st->peers,addrs,naddrs,
+				  "resolved data");
+    transport_expire_record_peers(st,&st->setup_peers,addrs,naddrs,
+				  "resolved setup");
 }
 
 static void transport_resolve_complete_tardy(struct site *st,
-					     const struct comm_addr *ca) {
-    transport_expire_record_peers(st,&st->peers,ca,1,"resolved tardily");
+					     const struct comm_addr *addrs,
+					     int naddrs) {
+    transport_expire_record_peers(st,&st->peers,addrs,naddrs,
+				  "resolved tardily");
 }
 
 static void transport_peers__copy_by_mask(transport_peer *out, int *nout_io,
