@@ -338,6 +338,9 @@ typedef void comm_release_notify_fn(void *commst, void *nst,
 				    comm_notify_fn *fn);
 typedef bool_t comm_sendmsg_fn(void *commst, struct buffer_if *buf,
 			       const struct comm_addr *dest);
+  /* Only returns false if (we know that) the local network
+   * environment is such that this address cannot work; transient
+   * or unknown/unexpected failures return true. */
 typedef const char *comm_addr_to_string_fn(void *commst,
 					   const struct comm_addr *ca);
         /* Returned string is in a static buffer. */
