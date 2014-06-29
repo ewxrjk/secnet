@@ -477,12 +477,16 @@ extern void slilog_part(struct log_if *lf, int priority, const char *message, ..
     va_end(ap);
 }
 
+#define IADDR_NBUFS_SHIFT 3
+#define IADDR_NBUFS (1 << IADDR_NBUFS_SHIFT)
+
 const char *iaddr_to_string(const union iaddr *ia)
 {
-    static char bufs[2][100];
+    static char bufs[IADDR_NBUFS][100];
     static int b;
 
-    b ^= 1;
+    b++;
+    b &= IADDR_NBUFS-1;
 
     assert(ia->sa.sa_family == AF_INET);
 
