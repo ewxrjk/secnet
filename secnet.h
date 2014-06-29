@@ -33,6 +33,9 @@ typedef _Bool bool_t;
 union iaddr {
     struct sockaddr sa;
     struct sockaddr_in sin;
+#ifdef CONFIG_IPV6
+    struct sockaddr_in6 sin6;
+#endif
 };
 
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \

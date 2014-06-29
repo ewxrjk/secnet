@@ -36,6 +36,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <sys/wait.h>
+#include <adns.h>
 #include "util.h"
 #include "unaligned.h"
 #include "magic.h"
@@ -482,17 +483,47 @@ extern void slilog_part(struct log_if *lf, int priority, const char *message, ..
 
 const char *iaddr_to_string(const union iaddr *ia)
 {
-    static char bufs[IADDR_NBUFS][100];
     static int b;
 
     b++;
     b &= IADDR_NBUFS-1;
+
+#ifndef CONFIG_IPV6
+
+    static char bufs[IADDR_NBUFS][100];
 
     assert(ia->sa.sa_family == AF_INET);
 
     snprintf(bufs[b], sizeof(bufs[b]), "[%s]:%d",
 	     inet_ntoa(ia->sin.sin_addr),
 	     ntohs(ia->sin.sin_port));
+
+#else /* CONFIG_IPV6 => we have adns_addr2text */
+
+    static char bufs[IADDR_NBUFS][1+ADNS_ADDR2TEXT_BUFLEN+20];
+
+    int port;
+
+    char *addrbuf = bufs[b];
+    *addrbuf++ = '[';
+    int addrbuflen = ADNS_ADDR2TEXT_BUFLEN;
+
+    int r = adns_addr2text(&ia->sa, 0, addrbuf, &addrbuflen, &port);
+    if (r) {
+	const char fmt[]= "scoped IPv6 addr, error: %.*s";
+	sprintf(addrbuf, fmt,
+		ADNS_ADDR2TEXT_BUFLEN - sizeof(fmt) /* underestimate */,
+		strerror(r));
+    }
+
+    char *portbuf = addrbuf;
+    int addrl = strlen(addrbuf);
+    portbuf += addrl;
+
+    snprintf(portbuf, sizeof(bufs[b])-addrl, "]:%d", port);
+
+#endif /* CONFIG_IPV6 */
+
     return bufs[b];
 }
 
@@ -504,6 +535,13 @@ bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib)
     case AF_INET:
 	return ia->sin.sin_addr.s_addr == ib->sin.sin_addr.s_addr
 	    && ia->sin.sin_port        == ib->sin.sin_port;
+#ifdef CONFIG_IPV6
+    case AF_INET6:
+	return !memcmp(&ia->sin6.sin6_addr, &ib->sin6.sin6_addr, 16)
+	    && ia->sin6.sin6_scope_id  == ib->sin6.sin6_scope_id
+	    && ia->sin6.sin6_port      == ib->sin6.sin6_port
+	    /* we ignore the flowinfo field */;
+#endif /* CONFIG_IPV6 */
     default:
 	abort();
     }
@@ -513,6 +551,9 @@ int iaddr_socklen(const union iaddr *ia)
 {
     switch (ia->sa.sa_family) {
     case AF_INET:  return sizeof(ia->sin);
+#ifdef CONFIG_IPV6
+    case AF_INET6: return sizeof(ia->sin6);
+#endif /* CONFIG_IPV6 */
     default:       abort();
     }
 }
