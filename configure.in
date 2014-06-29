@@ -70,6 +70,19 @@ AC_CHECK_LIB(resolv,inet_aton)
 AC_CHECK_LIB(adns,adns_init)
 REQUIRE_HEADER([adns.h])
 
+AC_MSG_NOTICE([Checking requirements for IPv6 support...])
+enable_ipv6=true
+m4_define(NO_IPV6,[enable_ipv6=false])
+AC_CHECK_DECL(AF_INET6,        [],[NO_IPV6],[#include <netinet/in.h>])
+AC_CHECK_FUNC(adns_addr2text,  [],[NO_IPV6])
+if $enable_ipv6; then
+    AC_MSG_NOTICE([Enabling IPv6 support])
+    AC_DEFINE(CONFIG_IPV6, 1,
+              [Define to 1 to use IPv6 support in system and adns])
+else
+    AC_MSG_WARN([Disabling IPv6 support])
+fi
+
 AC_OUTPUT(Makefile,echo timestamp >stamp-h)
 
 AH_TOP([
