@@ -115,6 +115,11 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		    case AF_INET:
 			assert(ra->len == sizeof(ca->ia.sin));
 			break;
+#ifdef CONFIG_IPV6
+		    case AF_INET6:
+			assert(ra->len == sizeof(ca->ia.sin6));
+			break;
+#endif /*CONFIG_IPV6*/
 		    default:
 			/* silently skip unexpected AFs from adns */
 			continue;

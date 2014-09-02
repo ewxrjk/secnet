@@ -3,6 +3,8 @@
 #ifndef secnet_h
 #define secnet_h
 
+#define ADNS_FEATURE_MANYAF
+
 #include "config.h"
 #include <stdlib.h>
 #include <stdarg.h>
