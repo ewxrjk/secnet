@@ -561,10 +561,10 @@ list_t *list_new(void)
     return NULL;
 }
 
-int32_t list_length(list_t *a)
+int32_t list_length(const list_t *a)
 {
     int32_t l=0;
-    list_t *i;
+    const list_t *i;
     for (i=a; i; i=i->next) { assert(l < INT_MAX); l++; }
     return l;
 }

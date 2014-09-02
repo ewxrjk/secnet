@@ -418,7 +418,7 @@ static struct subnet string_item_to_subnet(item_t *i, cstring_t desc,
     return s;
 }
 
-uint32_t string_item_to_ipaddr(item_t *i, cstring_t desc)
+uint32_t string_item_to_ipaddr(const item_t *i, cstring_t desc)
 {
     uint32_t a, b, c, d;
     int match;

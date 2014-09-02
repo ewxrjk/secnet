@@ -114,7 +114,7 @@ extern cstring_t *dict_keys(dict_t *dict);
 
 /* List-manipulation functions */
 extern list_t *list_new(void);
-extern int32_t list_length(list_t *a);
+extern int32_t list_length(const list_t *a);
 extern list_t *list_append(list_t *a, item_t *i);
 extern list_t *list_append_list(list_t *a, list_t *b);
 /* Returns an item from the list (index starts at 0), or NULL */
