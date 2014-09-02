@@ -40,6 +40,7 @@
 #include "util.h"
 #include "unaligned.h"
 #include "magic.h"
+#include "ipaddr.h"
 
 #define MIN_BUFFER_SIZE 64
 #define DEFAULT_BUFFER_SIZE 4096
@@ -476,6 +477,29 @@ extern void slilog_part(struct log_if *lf, int priority, const char *message, ..
     va_start(ap,message);
     vslilog_part(lf,priority,message,ap);
     va_end(ap);
+}
+
+void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
+			  const char *desc)
+{
+#ifndef CONFIG_IPV6
+
+    ia->sin.sin_family=AF_INET;
+    ia->sin.sin_addr.s_addr=string_item_to_ipaddr(item,desc);
+
+#else /* CONFIG_IPV6 => we have adns_text2addr */
+
+    if (item->type!=t_string)
+	cfgfatal(item->loc,desc,"expecting a string IP (v4 or v6) address\n");
+    socklen_t salen=sizeof(*ia);
+    int r=adns_text2addr(item->data.string, port,
+			 adns_qf_addrlit_ipv4_quadonly,
+			 &ia->sa, &salen);
+    assert(r!=ENOSPC);
+    if (r) cfgfatal(item->loc,desc,"invalid IP (v4 or v6) address: %s\n",
+		    strerror(r));
+
+#endif /* CONFIG_IPV6 */
 }
 
 #define IADDR_NBUFS_SHIFT 3

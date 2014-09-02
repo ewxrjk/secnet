@@ -84,6 +84,9 @@ extern int consttime_memeq(const void *s1, const void *s2, size_t n);
 const char *iaddr_to_string(const union iaddr *ia);
 int iaddr_socklen(const union iaddr *ia);
 
+void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
+			  const char *desc);
+
 #define MINMAX(ae,be,op) ({			\
 	typeof((ae)) a=(ae);			\
 	typeof((be)) b=(be);			\
