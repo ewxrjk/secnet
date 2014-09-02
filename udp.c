@@ -272,7 +272,8 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 			 list_t *args)
 {
     struct udp *st;
-    item_t *i,*j;
+    item_t *item;
+    item_t *j;
     dict_t *d;
     list_t *l;
     uint32_t a;
@@ -290,11 +291,11 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.addr_to_string=addr_to_string;
     st->use_proxy=False;
 
-    i=list_elem(args,0);
-    if (!i || i->type!=t_dict) {
+    item=list_elem(args,0);
+    if (!item || item->type!=t_dict) {
 	cfgfatal(st->loc,"udp","first argument must be a dictionary\n");
     }
-    d=i->data.dict;
+    d=item->data.dict;
 
     st->addr.sa.sa_family=AF_INET;
     j=dict_find_item(d,"address",False,"udp",st->loc);
@@ -306,17 +307,17 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (l) {
 	st->use_proxy=True;
 	st->proxy.sa.sa_family=AF_INET;
-	i=list_elem(l,0);
-	if (!i || i->type!=t_string) {
+	item=list_elem(l,0);
+	if (!item || item->type!=t_string) {
 	    cfgfatal(st->loc,"udp","proxy must supply ""addr"",port\n");
 	}
-	a=string_item_to_ipaddr(i,"proxy");
+	a=string_item_to_ipaddr(item,"proxy");
 	st->proxy.sin.sin_addr.s_addr=htonl(a);
-	i=list_elem(l,1);
-	if (!i || i->type!=t_number) {
+	item=list_elem(l,1);
+	if (!item || item->type!=t_number) {
 	    cfgfatal(st->loc,"udp","proxy must supply ""addr"",port\n");
 	}
-	st->proxy.sin.sin_port=htons(i->data.number);
+	st->proxy.sin.sin_port=htons(item->data.number);
     }
 
     update_max_start_pad(&comm_max_start_pad, st->use_proxy ? 8 : 0);
