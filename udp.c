@@ -200,22 +200,19 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
     return True;
 }
 
-static void udp_phase_hook(void *sst, uint32_t new_phase)
+static void udp_make_socket(struct udp *st, struct udp *us)
 {
-    struct udp *st=sst;
-    union iaddr addr;
-
-    st->fd=socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (st->fd<0) {
+    const union iaddr *addr=&us->addr;
+    us->fd=socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (us->fd<0) {
 	fatal_perror("udp (%s:%d): socket",st->loc.file,st->loc.line);
     }
-    if (fcntl(st->fd, F_SETFL, fcntl(st->fd, F_GETFL)|O_NONBLOCK)==-1) {
+    if (fcntl(us->fd, F_SETFL, fcntl(us->fd, F_GETFL)|O_NONBLOCK)==-1) {
 	fatal_perror("udp (%s:%d): fcntl(set O_NONBLOCK)",
 		     st->loc.file,st->loc.line);
     }
-    setcloexec(st->fd);
+    setcloexec(us->fd);
 
-    addr=st->addr;
     if (st->authbind) {
 	pid_t c;
 	int status;
@@ -228,10 +225,10 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 	}
 	if (c==0) {
 	    char *argv[4], addrstr[9], portstr[5];
-	    switch (addr.sa.sa_family) {
+	    switch (addr->sa.sa_family) {
 	    case AF_INET:
-		sprintf(addrstr,"%08lX",(long)addr.sin.sin_addr.s_addr);
-		sprintf(portstr,"%04X",addr.sin.sin_port);
+		sprintf(addrstr,"%08lX",(long)addr->sin.sin_addr.s_addr);
+		sprintf(portstr,"%04X",addr->sin.sin_port);
 		break;
 	    default:
 		fatal("udp (%s:%d): unsupported address family for authbind",
@@ -241,7 +238,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 	    argv[1]=addrstr;
 	    argv[2]=portstr;
 	    argv[3]=NULL;
-	    dup2(st->fd,0);
+	    dup2(us->fd,0);
 	    execvp(st->authbind,argv);
 	    _exit(255);
 	}
@@ -258,11 +255,16 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 		  st->loc.line, WEXITSTATUS(status));
 	}
     } else {
-	if (bind(st->fd, &addr.sa, iaddr_socklen(&addr))!=0) {
+	if (bind(st->fd, &addr->sa, iaddr_socklen(addr))!=0) {
 	    fatal_perror("udp (%s:%d): bind",st->loc.file,st->loc.line);
 	}
     }
+}
 
+static void udp_phase_hook(void *sst, uint32_t new_phase)
+{
+    struct udp *st=sst;
+    udp_make_socket(st,st);
     register_for_poll(st,udp_beforepoll,udp_afterpoll,1,"udp");
 }
 
