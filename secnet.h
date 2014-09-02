@@ -574,6 +574,7 @@ extern void log_from_fd(int fd, cstring_t prefix, struct log_if *log);
 #define STRING(x) STRING2(x)
 
 #define FILLZERO(obj) (memset(&(obj),0,sizeof((obj))))
+#define ARRAY_SIZE(ary) (sizeof((ary))/sizeof((ary)[0]))
 
 /*
  * void COPY_OBJ(  OBJECT& dst, const OBJECT& src);
