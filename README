@@ -194,7 +194,7 @@ Defines:
   udp (closure => comm closure)
 
 udp: dict argument
-  address (string): IP address to listen and send on
+  address (string list): IPv6 or IPv4 addresses to listen and send on
   port (integer): UDP port to listen and send on
   buffer (buffer closure): buffer for incoming packets
   authbind (string): optional, path to authbind-helper program

@@ -43,6 +43,7 @@ static bool_t resolve_request(void *sst, cstring_t name,
 	trimmed[l-2]=0;
 	struct comm_addr ca;
 	ca.comm=comm;
+	ca.ix=-1;
 	ca.ia.sin.sin_family=AF_INET;
 	ca.ia.sin.sin_port=htons(port);
 	if (inet_aton(trimmed,&ca.ia.sin.sin_addr))
@@ -109,6 +110,7 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		    adns_rr_addr *ra=&ans->rrs.addr[rslot];
 		    struct comm_addr *ca=&ca_buf[wslot];
 		    ca->comm=q->comm;
+		    ca->ix=-1;
 		    switch (ra->addr.sa.sa_family) {
 		    case AF_INET:
 			assert(ra->len == sizeof(ca->ia.sin));

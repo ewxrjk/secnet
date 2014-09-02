@@ -339,6 +339,7 @@ struct comm_addr {
        freely copy it. */
     struct comm_if *comm;
     union iaddr ia;
+    int ix; /* see comment `Re comm_addr.ix' in udp.c */
 };
 
 /* Return True if the packet was processed, and shouldn't be passed to
