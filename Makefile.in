@@ -163,7 +163,6 @@ installdirs:
 install: installdirs
 	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
-	$(INSTALL) ${srcdir}/ipaddr.py $(prefix)/share/secnet/ipaddr.py
 	$(INSTALL) ${srcdir}/ipaddrset.py $(prefix)/share/secnet/ipaddrset.py
 	$(INSTALL) secnet.8 $(mandir)/man8/secnet.8
 

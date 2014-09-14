@@ -56,10 +56,11 @@ import os
 import getopt
 import re
 
-# The ipaddr library is installed as part of secnet
+import ipaddr
+
 sys.path.insert(0,"/usr/local/share/secnet")
 sys.path.insert(0,"/usr/share/secnet")
-import ipaddr
+import ipaddrset
 
 VERSION="0.1.18"
 
@@ -68,22 +69,19 @@ VERSION="0.1.18"
 class single_ipaddr:
 	"An IP address"
 	def __init__(self,w):
-		self.addr=ipaddr.ipaddr(w[1])
+		self.addr=ipaddr.IPAddress(w[1])
 	def __str__(self):
-		return '"%s"'%self.addr.ip_str()
+		return '"%s"'%self.addr
 
 class networks:
 	"A set of IP addresses specified as a list of networks"
 	def __init__(self,w):
-		self.set=ipaddr.ip_set()
+		self.set=ipaddrset.IPAddressSet()
 		for i in w[1:]:
-			x=string.split(i,"/")
-			self.set.append(ipaddr.network(x[0],x[1],
-				ipaddr.DEMAND_NETWORK))
+			x=ipaddr.IPNetwork(i,strict=True)
+			self.set.append([x])
 	def __str__(self):
-		return string.join(map(lambda x:'"%s/%s"'%(x.ip_str(),
-			x.mask.netmask_bits_str),
-			self.set.as_list_of_networks()),",")
+		return ",".join(map((lambda n: '"%s"'%n), self.set.networks()))
 
 class dhgroup:
 	"A Diffie-Hellman group"
@@ -522,13 +520,7 @@ def checkconstraints(n,p,ra):
 	else:
 		new_ra=ra
 	if n.properties.has_key("networks"):
-		# I'd like to do this:
-		# n.properties["networks"].set.is_subset(new_ra)
-		# but there isn't an is_subset() method
-		# Instead we see if we intersect with the complement of new_ra
-		rac=new_ra.complement()
-		i=rac.intersection(n.properties["networks"].set)
-		if not i.is_empty():
+		if not n.properties["networks"].set <= new_ra:
 			moan("%s %s networks out of bounds"%(n.type,n.name))
 		if n.properties.has_key("peer"):
 			if not n.properties["networks"].set.contains(
@@ -537,7 +529,7 @@ def checkconstraints(n,p,ra):
 	for i in n.children.keys():
 		checkconstraints(n.children[i],new_p,new_ra)
 
-checkconstraints(root,{},ipaddr.complete_set)
+checkconstraints(root,{},ipaddrset.complete_set())
 
 if complaints>0:
 	if complaints==1: print "There was 1 problem."
