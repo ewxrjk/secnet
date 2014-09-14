@@ -130,7 +130,7 @@ secnet: $(wildcard .git/packed-refs)
 endif
 
 check: eax-aes-test.confirm eax-serpent-test.confirm \
-	eax-serpentbe-test.confirm
+	eax-serpentbe-test.confirm check-ipaddrset
 
 version.c: Makefile
 	echo "#include \"secnet.h\"" >$@.new
@@ -150,6 +150,10 @@ eax-%-test.confirm: eax-%-test eax-%-test.vectors
 	./$< <$(srcdir)/eax-$*-test.vectors >$@.new
 	mv -f $@.new $@
 
+check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
+	$(srcdir)/ipaddrset-test.py >ipaddrset-test.new
+	diff -u ipaddrset-test.expected ipaddrset-test.new
+
 .PRECIOUS: eax-%-test
 
 installdirs:
@@ -160,6 +164,7 @@ install: installdirs
 	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
 	$(INSTALL) ${srcdir}/ipaddr.py $(prefix)/share/secnet/ipaddr.py
+	$(INSTALL) ${srcdir}/ipaddrset.py $(prefix)/share/secnet/ipaddrset.py
 	$(INSTALL) secnet.8 $(mandir)/man8/secnet.8
 
 clean:
