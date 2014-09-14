@@ -1,17 +1,7 @@
 #!/usr/bin/python
 
-import sys
-import copy
-import os
-saved_path=copy.copy(sys.path)
-for p in ['','.',os.getcwd()]:
-    try: sys.path.remove(p)
-    except ValueError: pass
-
 import ipaddr
 from ipaddr import IPNetwork, IPAddress
-
-sys.path=saved_path
 
 import ipaddrset
 from ipaddrset import IPAddressSet
