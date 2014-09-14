@@ -57,8 +57,8 @@ import getopt
 import re
 
 # The ipaddr library is installed as part of secnet
-sys.path.append("/usr/local/share/secnet")
-sys.path.append("/usr/share/secnet")
+sys.path.insert(0,"/usr/local/share/secnet")
+sys.path.insert(0,"/usr/share/secnet")
 import ipaddr
 
 VERSION="0.1.18"
