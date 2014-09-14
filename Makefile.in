@@ -69,6 +69,12 @@ OBJECTS:=version.o
 TEST_OBJECTS:=
 endif
 
+STALE_PYTHON_FILES=	$(foreach e, py pyc, \
+			$(foreach p, /usr /usr/local, \
+			$(foreach l, ipaddr, \
+			$p/share/secnet/$l.$e \
+			)))
+
 %.c:	%.y
 
 %.yy.c:	%.fl
@@ -161,10 +167,22 @@ installdirs:
 	$(INSTALL) -d $(mandir)/man8
 
 install: installdirs
+	set -e; ok=true; for f in $(STALE_PYTHON_FILES); do \
+		if test -e $$f; then \
+			echo >&2 "ERROR: $$f still exists "\
+				"- try \`make install-force'"; \
+			ok=false; \
+		fi; \
+	done; \
+	$$ok
 	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
 	$(INSTALL) ${srcdir}/ipaddrset.py $(prefix)/share/secnet/ipaddrset.py
 	$(INSTALL) secnet.8 $(mandir)/man8/secnet.8
+
+install-force:
+	rm -f $(STALE_PYTHON_FILES)
+	$(MAKE) install
 
 clean:
 	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c
