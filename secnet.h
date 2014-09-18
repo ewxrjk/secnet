@@ -297,7 +297,8 @@ struct buffer_if;
    actually found in the DNS, which may be bigger if addrs is equal
    to MAX_PEER_ADDRS (ie there were too many). */
 typedef void resolve_answer_fn(void *st, const struct comm_addr *addrs,
-			       int naddrs, int was_naddrs);
+			       int naddrs, int was_naddrs,
+			       const char *failwhy);
 typedef bool_t resolve_request_fn(void *st, cstring_t name,
 				  int remoteport, struct comm_if *comm,
 				  resolve_answer_fn *cb, void *cst);

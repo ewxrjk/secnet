@@ -1191,7 +1191,8 @@ static bool_t send_msg(struct site *st)
 }
 
 static void site_resolve_callback(void *sst, const struct comm_addr *addrs,
-				  int naddrs, int was_naddrs)
+				  int naddrs, int was_naddrs,
+				  const char *failwhy)
 {
     struct site *st=sst;
 
@@ -1206,7 +1207,7 @@ static void site_resolve_callback(void *sst, const struct comm_addr *addrs,
 		 was_naddrs, naddrs);
 	}
     } else {
-	slog(st,LOG_ERROR,"resolution of %s failed",st->address);
+	slog(st,LOG_ERROR,"resolution of %s failed: %s",st->address,failwhy);
     }
 
     switch (st->state) {

@@ -47,9 +47,9 @@ static bool_t resolve_request(void *sst, cstring_t name,
 	ca.ia.sin.sin_family=AF_INET;
 	ca.ia.sin.sin_port=htons(port);
 	if (inet_aton(trimmed,&ca.ia.sin.sin_addr))
-	    cb(cst,&ca,1,1);
+	    cb(cst,&ca,1,1,0);
 	else
-	    cb(cst,0,0,0);
+	    cb(cst,0,0,0,"invalid IP address");
 	return True;
     }
 
@@ -95,7 +95,7 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 	if (rv==0) {
 	    q=qp;
 	    if (ans->status!=adns_s_ok) {
-		q->answer(q->cst,NULL,0,0); /* Failure */
+		q->answer(q->cst,NULL,0,0,adns_strerror(ans->status));
 		free(q);
 		free(ans);
 	    } else {
@@ -127,7 +127,7 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		    memcpy(&ca->ia,&ra->addr,ra->len);
 		    wslot++;
 		}
-		q->answer(q->cst,ca_buf,wslot,total);
+		q->answer(q->cst,ca_buf,wslot,total,0);
 		free(q);
 		free(ans);
 	    }
