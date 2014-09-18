@@ -1,3 +1,20 @@
+secnet (0.3.3~beta1) unstable; urgency=low
+
+  Installation compatibility fix:
+  * In make-secnet-sites, always use our own ipaddr.py even if the
+    incompatible modern ipaddr.py is installed (eg via python-ipaddr.deb).
+    (Future versions of secnet are going to need that Python module to be
+    installed.)
+
+  For links involving mobile sites:
+  * Use source of NAK packets as hint for peer transport address.
+  * When initiating rekey, make use of data transport peer addresses.
+
+  Build fix:
+  * Provide clean target in test-example/Makefile.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Fri, 19 Sep 2014 00:11:44 +0100
+
 secnet (0.3.2) unstable; urgency=low
 
   * Release of 0.3.2.  No code changes since 0.3.1~beta1.
