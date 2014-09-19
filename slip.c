@@ -313,7 +313,6 @@ static void userv_invoke_userv(struct userv *st)
 	s=subnet_to_string(snets->list[i]);
 	strcat(nets,s);
 	strcat(nets,",");
-	free(s);
     }
     nets[strlen(nets)-1]=0;
     subnet_list_free(snets);

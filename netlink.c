@@ -976,7 +976,6 @@ static void netlink_output_subnets(struct netlink *st, uint32_t loglevel,
     for (i=0; i<snets->entries; i++) {
 	net=subnet_to_string(snets->list[i]);
 	Message(loglevel,"%s ",net);
-	free(net);
     }
 }
 
@@ -1014,7 +1013,6 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 	for (i=0; i<st->subnets->entries; i++) {
 	    net=subnet_to_string(st->subnets->list[i]);
 	    Message(c,"%s ",net);
-	    free(net);
 	}
 	if (i>0)
 	    Message(c,"-> host (use %d)\n",st->outcount);

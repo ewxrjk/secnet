@@ -358,7 +358,7 @@ string_t subnet_to_string(struct subnet sn)
     uint8_t a,b,c,d;
     string_t s;
 
-    s=safe_malloc(19,"subnet_to_string");
+    s=ipaddr_getbuf();
     a=addr>>24;
     b=addr>>16;
     c=addr>>8;
