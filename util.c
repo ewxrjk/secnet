@@ -254,7 +254,7 @@ void buffer_init(struct buffer_if *buffer, int32_t max_start_pad)
 
 void *buf_append(struct buffer_if *buf, int32_t amount) {
     void *p;
-    assert(buf->size <= buf->len - amount);
+    assert(amount <= buf_remaining_space(buf));
     p=buf->start + buf->size;
     buf->size+=amount;
     return p;

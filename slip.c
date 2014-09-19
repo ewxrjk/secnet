@@ -127,7 +127,7 @@ static void slip_unstuff(struct slip *st, uint8_t *buf, uint32_t l)
 		}
 		st->buff->size=0;
 	    } else if (outputchr != OUTPUT_NOTHING) {
-		if (st->buff->size < st->buff->len) {
+		if (buf_remaining_space(st->buff)) {
 		    buf_append_uint8(st->buff,outputchr);
 		} else {
 		    Message(M_WARNING, "userv_afterpoll: dropping overlong"

@@ -29,6 +29,11 @@ extern void *buf_prepend(struct buffer_if *buf, int32_t amount);
 extern void *buf_unappend(struct buffer_if *buf, int32_t amount);
 extern void *buf_unprepend(struct buffer_if *buf, int32_t amount);
 
+static inline int32_t buf_remaining_space(const struct buffer_if *buf)
+{
+    return (buf->base + buf->len) - buf->start;
+}
+
 extern void buffer_readonly_view(struct buffer_if *n, const void*, int32_t len);
 extern void buffer_readonly_clone(struct buffer_if *n, const struct buffer_if*);
   /* Caller must only use unappend, unprepend et al. on n.
