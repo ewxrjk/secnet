@@ -637,7 +637,6 @@ static void netlink_client_deliver(struct netlink *st,
 	d=ipaddr_to_string(dest);
 	Message(M_ERR,"%s: dropping %s->%s, client not registered\n",
 		st->name,s,d);
-	free(s); free(d);
 	BUF_FREE(buf);
 	return;
     }
@@ -744,7 +743,6 @@ static void netlink_packet_deliver(struct netlink *st,
 	    d=ipaddr_to_string(dest);
 	    Message(M_DEBUG,"%s: don't know where to deliver packet "
 		    "(s=%s, d=%s)\n", st->name, s, d);
-	    free(s); free(d);
 	    netlink_icmp_simple(st,sender,buf,ICMP_TYPE_UNREACHABLE,
 				ICMP_CODE_NET_UNREACHABLE, icmp_noinfo);
 	    BUF_FREE(buf);
@@ -760,7 +758,6 @@ static void netlink_packet_deliver(struct netlink *st,
 	       with destination network administratively prohibited */
 	    Message(M_NOTICE,"%s: denied forwarding for packet (s=%s, d=%s)\n",
 		    st->name,s,d);
-	    free(s); free(d);
 		    
 	    netlink_icmp_simple(st,sender,buf,ICMP_TYPE_UNREACHABLE,
 				ICMP_CODE_NET_PROHIBITED, icmp_noinfo);
@@ -899,7 +896,6 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *sender,
 	    d=ipaddr_to_string(dest);
 	    Message(M_WARNING,"%s: packet from tunnel %s with bad "
 		    "source address (s=%s,d=%s)\n",st->name,sender->name,s,d);
-	    free(s); free(d);
 	    BUF_FREE(buf);
 	    return;
 	}
@@ -913,7 +909,6 @@ static void netlink_incoming(struct netlink *st, struct netlink_client *sender,
 	    d=ipaddr_to_string(dest);
 	    Message(M_WARNING,"%s: outgoing packet with bad source address "
 		    "(s=%s,d=%s)\n",st->name,s,d);
-	    free(s); free(d);
 	    BUF_FREE(buf);
 	    return;
 	}
@@ -996,7 +991,6 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 	net=ipaddr_to_string(st->secnet_address);
 	Message(c,"%s: point-to-point (remote end is %s); routes: ",
 		st->name, net);
-	free(net);
 	netlink_output_subnets(st,c,st->clients->subnets);
 	Message(c,"\n");
     } else {
@@ -1017,7 +1011,6 @@ static void netlink_dump_routes(struct netlink *st, bool_t requested)
 	net=ipaddr_to_string(st->secnet_address);
 	Message(c,"%s/32 -> netlink \"%s\" (use %d)\n",
 		net,st->name,st->localcount);
-	free(net);
 	for (i=0; i<st->subnets->entries; i++) {
 	    net=subnet_to_string(st->subnets->list[i]);
 	    Message(c,"%s ",net);

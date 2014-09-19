@@ -323,13 +323,27 @@ struct subnet_list *ipset_to_subnet_list(struct ipset *is)
     return r;
 }
 
+#define IPADDR_NBUFS_SHIFT 4
+#define IPADDR_NBUFS (1 << IPADDR_NBUFS_SHIFT)
+#define IPADDR_BUFLEN 20
+
+static char *ipaddr_getbuf(void)
+{
+    static int ipaddr_bufnum;
+    static char ipaddr_bufs[IPADDR_NBUFS][IPADDR_BUFLEN];
+
+    ipaddr_bufnum++;
+    ipaddr_bufnum &= IPADDR_NBUFS-1;
+    return ipaddr_bufs[ipaddr_bufnum];
+}
+
 /* The string buffer must be at least 16 bytes long */
 string_t ipaddr_to_string(uint32_t addr)
 {
     uint8_t a,b,c,d;
     string_t s;
 
-    s=safe_malloc(16,"ipaddr_to_string");
+    s=ipaddr_getbuf();
     a=addr>>24;
     b=addr>>16;
     c=addr>>8;

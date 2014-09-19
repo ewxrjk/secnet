@@ -240,9 +240,7 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 	    fatal("tun_set_route: unsupported route command type");
 	    break;
 	}
-	free(network); free(mask);
     }
-    free(secnetaddr);
     if (st->route_type==TUN_CONFIG_IOCTL) {
 	close(fd);
     }
