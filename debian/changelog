@@ -1,3 +1,17 @@
+secnet (0.3.3) unstable; urgency=high
+
+  SECURITY FIXES:
+  * Pass correct size argument to recvfrom.  This is a serious security
+    problem which may be exploitable from outside the VPN.
+  * Fix a memory leak in some error logging.
+
+  Other related fixes:
+  * Two other latent bugs in buffer length handling found and fixed.
+  * Non-critical stylistic improvements to buffer length handling, to make
+    the code clearer and to assist audit.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Fri, 19 Sep 2014 23:50:45 +0100
+
 secnet (0.3.3~beta1) unstable; urgency=low
 
   Installation compatibility fix:
