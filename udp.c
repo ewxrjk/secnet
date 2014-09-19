@@ -278,20 +278,35 @@ static void udp_make_socket(struct udp *st, struct udpsock *us)
 	    fatal_perror("udp_phase_hook: fork() for authbind");
 	}
 	if (c==0) {
-	    char *argv[4], addrstr[9], portstr[5];
+	    char *argv[5], addrstr[33], portstr[5];
+	    const char *addrfam;
+	    int port;
 	    switch (addr->sa.sa_family) {
 	    case AF_INET:
 		sprintf(addrstr,"%08lX",(long)addr->sin.sin_addr.s_addr);
-		sprintf(portstr,"%04X",addr->sin.sin_port);
+		port=addr->sin.sin_port;
+		addrfam=NULL;
 		break;
+#ifdef CONFIG_IPV6
+	    case AF_INET6: {
+		int i;
+		for (i=0; i<16; i++)
+		    sprintf(addrstr+i*2,"%02X",addr->sin6.sin6_addr.s6_addr[i]);
+		port=addr->sin6.sin6_port;
+		addrfam="6";
+		break;
+	    }
+#endif /*CONFIG_IPV6*/
 	    default:
 		fatal("udp (%s:%d): unsupported address family for authbind",
 		      st->loc.file,st->loc.line);
 	    }
+	    sprintf(portstr,"%04X",port);
 	    argv[0]=st->authbind;
 	    argv[1]=addrstr;
 	    argv[2]=portstr;
-	    argv[3]=NULL;
+	    argv[3]=(char*)addrfam;
+	    argv[4]=NULL;
 	    dup2(us->fd,0);
 	    execvp(st->authbind,argv);
 	    _exit(255);
