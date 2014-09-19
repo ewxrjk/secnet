@@ -34,8 +34,13 @@ static bool_t resolve_request(void *sst, cstring_t name,
     struct adns *st=sst;
     struct query *q;
     int rv;
-    const int maxlitlen=50;
-
+    const int maxlitlen=
+#ifdef CONFIG_IPV6
+	ADNS_ADDR2TEXT_BUFLEN*2
+#else
+	50
+#endif
+	;
     ssize_t l=strlen(name);
     if (name[0]=='[' && l<maxlitlen && l>2 && name[l-1]==']') {
 	char trimmed[maxlitlen+1];
@@ -44,12 +49,28 @@ static bool_t resolve_request(void *sst, cstring_t name,
 	struct comm_addr ca;
 	ca.comm=comm;
 	ca.ix=-1;
+#ifdef CONFIG_IPV6
+	socklen_t salen=sizeof(ca.ia);
+	rv=adns_text2addr(trimmed, port, adns_qf_addrlit_ipv4_quadonly,
+			  &ca.ia.sa, &salen);
+	assert(rv!=ENOSPC);
+	if (rv) {
+	    char msg[250];
+	    snprintf(msg,sizeof(msg),"invalid address literal: %s",
+		     strerror(rv));
+	    msg[sizeof(msg)-1]=0;
+	    cb(cst,0,0,0,msg);
+	} else {
+	    cb(cst,&ca,1,1,0);
+	}
+#else
 	ca.ia.sin.sin_family=AF_INET;
 	ca.ia.sin.sin_port=htons(port);
 	if (inet_aton(trimmed,&ca.ia.sin.sin_addr))
 	    cb(cst,&ca,1,1,0);
 	else
 	    cb(cst,0,0,0,"invalid IP address");
+#endif
 	return True;
     }
 
