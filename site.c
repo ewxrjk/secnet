@@ -143,9 +143,6 @@ static struct flagstr log_event_table[]={
 
 /* Details of "mobile peer" semantics:
 
- | Note: this comment is wishful thinking right now.  It will be
- | implemented in subsequent commits.
-
    - We use the same data structure for the different configurations,
      but manage it with different algorithms.
    
