@@ -499,7 +499,7 @@ struct buffer_if {
     uint8_t *base;
     uint8_t *start;
     int32_t size; /* Size of buffer contents */
-    int32_t len; /* Total length allocated at base */
+    int32_t alloclen; /* Total length allocated at base */
 };
 
 /***** LOG functions *****/

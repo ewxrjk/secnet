@@ -247,7 +247,7 @@ void buffer_assert_used(struct buffer_if *buffer, cstring_t file,
 
 void buffer_init(struct buffer_if *buffer, int32_t max_start_pad)
 {
-    assert(max_start_pad<=buffer->len);
+    assert(max_start_pad<=buffer->alloclen);
     buffer->start=buffer->base+max_start_pad;
     buffer->size=0;
 }
@@ -300,7 +300,7 @@ void buffer_new(struct buffer_if *buf, int32_t len)
     buf->loc.file=NULL;
     buf->loc.line=0;
     buf->size=0;
-    buf->len=len;
+    buf->alloclen=len;
     buf->start=NULL;
     buf->base=safe_malloc(len,"buffer_new");
 }
@@ -312,7 +312,7 @@ void buffer_readonly_view(struct buffer_if *buf, const void *data, int32_t len)
     buf->flags=0;
     buf->loc.file=NULL;
     buf->loc.line=0;
-    buf->size=buf->len=len;
+    buf->size=buf->alloclen=len;
     buf->base=buf->start=(uint8_t*)data;
 }
 
@@ -323,10 +323,10 @@ void buffer_readonly_clone(struct buffer_if *out, const struct buffer_if *in)
 
 void buffer_copy(struct buffer_if *dst, const struct buffer_if *src)
 {
-    if (dst->len < src->len) {
-	dst->base=realloc(dst->base,src->len);
+    if (dst->alloclen < src->alloclen) {
+	dst->base=realloc(dst->base,src->alloclen);
 	if (!dst->base) fatal_perror("buffer_copy");
-	dst->len = src->len;
+	dst->alloclen = src->alloclen;
     }
     dst->start = dst->base + (src->start - src->base);
     dst->size = src->size;
