@@ -71,17 +71,30 @@ char *safe_strdup(const char *s, const char *message)
 void *safe_malloc(size_t size, const char *message)
 {
     void *r;
+    if (!size)
+	return 0;
     r=malloc(size);
     if (!r) {
 	fatal_perror("%s",message);
     }
     return r;
 }
-void *safe_malloc_ary(size_t size, size_t count, const char *message) {
+void *safe_realloc_ary(void *p, size_t size, size_t count,
+		       const char *message) {
     if (count >= INT_MAX/size) {
 	fatal("array allocation overflow: %s", message);
     }
-    return safe_malloc(size*count, message);
+    assert(size && count);
+    p = realloc(p, size*count);
+    if (!p)
+	fatal_perror("%s", message);
+    return p;
+}
+
+void *safe_malloc_ary(size_t size, size_t count, const char *message) {
+    if (!size || !count)
+	return 0;
+    return safe_realloc_ary(0,size,count,message);
 }
 
 /* Convert a buffer into its MP_INT representation */
