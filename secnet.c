@@ -45,7 +45,6 @@ struct poll_interest {
     LIST_ENTRY(poll_interest) entry;
 };
 static LIST_HEAD(, poll_interest) reg = LIST_HEAD_INITIALIZER(&reg);
-static int32_t total_nfds=10;
 
 static bool_t finished=False;
 
@@ -239,8 +238,6 @@ void register_for_poll(void *st, beforepoll_fn *before,
     i->max_nfds=max_nfds;
     i->nfds=0;
     i->desc=desc;
-    assert(total_nfds < INT_MAX - max_nfds);
-    total_nfds+=max_nfds;
     LIST_INSERT_HEAD(&reg, i, entry);
     return;
 }
@@ -296,9 +293,8 @@ static void run(void)
     struct poll_interest *i;
     int rv, nfds, remain, idx;
     int timeout;
-    struct pollfd *fds;
-
-    fds=safe_malloc(sizeof(*fds)*total_nfds, "run");
+    struct pollfd *fds=0;
+    int allocdfds=0, shortfall=0;
 
     Message(M_NOTICE,"%s [%d]: starting\n",version,secnet_pid);
 
@@ -319,16 +315,25 @@ static void run(void)
 	    i->after(i->state, fds+idx, i->nfds);
 	    idx+=i->nfds;
 	}
-	remain=total_nfds;
+	if (shortfall) {
+	    allocdfds *= 2;
+	    allocdfds += shortfall;
+	    fds=safe_realloc_ary(fds,sizeof(*fds),allocdfds, "run");
+	}
+	remain=allocdfds;
+	shortfall=0;
 	idx=0;
 	timeout=-1;
 	LIST_FOREACH(i, &reg, entry) {
 	    nfds=remain;
 	    rv=i->before(i->state, fds+idx, &nfds, &timeout);
 	    if (rv!=0) {
-		/* XXX we need to handle this properly: increase the
-		   nfds available */
-		fatal("run: beforepoll_fn (%s) returns %d",i->desc,rv);
+		if (rv!=ERANGE)
+		    fatal("run: beforepoll_fn (%s) returns %d",i->desc,rv);
+		assert(nfds < INT_MAX/4 - shortfall);
+		shortfall += nfds-remain;
+		nfds=0;
+		timeout=0;
 	    }
 	    if (timeout<-1) {
 		fatal("run: beforepoll_fn (%s) set timeout to %d",
