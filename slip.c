@@ -170,13 +170,13 @@ static int userv_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
     struct userv *st=sst;
 
     if (st->rxfd!=-1) {
-	*nfds_io=2;
+	BEFOREPOLL_WANT_FDS(2);
 	fds[0].fd=st->txfd;
 	fds[0].events=0; /* Might want to pick up POLLOUT sometime */
 	fds[1].fd=st->rxfd;
 	fds[1].events=POLLIN;
     } else {
-	*nfds_io=0;
+	BEFOREPOLL_WANT_FDS(0);
     }
     return 0;
 }

@@ -485,9 +485,11 @@ static int log_from_fd_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
 {
     struct fdlog *st=sst;
     if (!st->finished) {
-	*nfds_io=1;
+	BEFOREPOLL_WANT_FDS(1);
 	fds[0].fd=st->fd;
 	fds[0].events=POLLIN;
+    } else {
+	BEFOREPOLL_WANT_FDS(0);
     }
     return 0;
 }

@@ -1600,7 +1600,7 @@ static int site_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
 {
     struct site *st=sst;
 
-    *nfds_io=0; /* We don't use any file descriptors */
+    BEFOREPOLL_WANT_FDS(0); /* We don't use any file descriptors */
     st->now=*now;
 
     /* Work out when our next timeout is. The earlier of 'timeout' or

@@ -98,7 +98,7 @@ static int tun_beforepoll(void *sst, struct pollfd *fds, int *nfds_io,
 			  int *timeout_io)
 {
     struct tun *st=sst;
-    *nfds_io=1;
+    BEFOREPOLL_WANT_FDS(1);
     fds[0].fd=st->fd;
     fds[0].events=POLLIN;
     return 0;

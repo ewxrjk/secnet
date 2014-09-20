@@ -87,11 +87,7 @@ static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
 {
     int i;
     struct udp *st=state;
-    if (*nfds_io<st->n_socks) {
-	*nfds_io=st->n_socks;
-	return ERANGE;
-    }
-    *nfds_io=st->n_socks;
+    BEFOREPOLL_WANT_FDS(st->n_socks);
     for (i=0; i<st->n_socks; i++) {
 	fds[i].fd=st->socks[i].fd;
 	fds[i].events=POLLIN;

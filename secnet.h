@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -199,6 +200,16 @@ int32_t calculate_max_start_pad(void);
 typedef int beforepoll_fn(void *st, struct pollfd *fds, int *nfds_io,
 			  int *timeout_io);
 typedef void afterpoll_fn(void *st, struct pollfd *fds, int nfds);
+
+/* void BEFOREPOLL_WANT_FDS(int want);
+ *   Expects: int *nfds_io;
+ *   Can perform non-local exit.
+ * Checks whether there is space for want fds.  If so, sets *nfds_io.
+ * If not, sets *nfds_io and returns. */
+#define BEFOREPOLL_WANT_FDS(want) do{				\
+    if (*nfds_io<(want)) { *nfds_io=(want); return ERANGE; }	\
+    *nfds_io=(want);						\
+  }while(0)
 
 /* Register interest in the main loop of the program. Before a call
    to poll() your supplied beforepoll function will be called. After
