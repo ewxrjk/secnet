@@ -545,7 +545,7 @@ void log_from_fd(int fd, cstring_t prefix, struct log_if *log)
     st->i=0;
     st->finished=False;
 
-    register_for_poll(st,log_from_fd_beforepoll,log_from_fd_afterpoll,1,
+    register_for_poll(st,log_from_fd_beforepoll,log_from_fd_afterpoll,
 		      prefix);
 }
 

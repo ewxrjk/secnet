@@ -391,7 +391,7 @@ static void userv_phase_hook(void *sst, uint32_t newphase)
     if (newphase==PHASE_RUN) {
 	userv_invoke_userv(st);
 	/* Register for poll() */
-	register_for_poll(st, userv_beforepoll, userv_afterpoll, 2,
+	register_for_poll(st, userv_beforepoll, userv_afterpoll,
 			  st->slip.nl.name);
     }
     if (newphase==PHASE_SHUTDOWN) {

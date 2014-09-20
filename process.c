@@ -313,7 +313,7 @@ void start_signal_handling(void)
 	fatal_perror("start_signal_handling: fcntl(O_NONBLOCK)");
     }
 
-    register_for_poll(NULL,signal_beforepoll,signal_afterpoll,1,"signal");
+    register_for_poll(NULL,signal_beforepoll,signal_afterpoll,"signal");
     signal_handling=True;
 
     /* Register signal handlers for all the signals we're interested in */

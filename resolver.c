@@ -200,7 +200,7 @@ static list_t *adnsresolver_apply(closure_t *self, struct cloc loc,
     }
 
     register_for_poll(st, resolver_beforepoll, resolver_afterpoll,
-		      ADNS_POLLFDS_RECOMMENDED+5,"resolver");
+		      "resolver");
 
     return new_closure(&st->cl);
 }

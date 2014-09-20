@@ -39,7 +39,6 @@ struct poll_interest {
     beforepoll_fn *before;
     afterpoll_fn *after;
     void *state;
-    int32_t max_nfds;
     int32_t nfds;
     cstring_t desc;
     LIST_ENTRY(poll_interest) entry;
@@ -227,7 +226,7 @@ static void setup(dict_t *config)
 }
 
 void register_for_poll(void *st, beforepoll_fn *before,
-		       afterpoll_fn *after, int32_t max_nfds, cstring_t desc)
+		       afterpoll_fn *after, cstring_t desc)
 {
     struct poll_interest *i;
 
@@ -235,7 +234,6 @@ void register_for_poll(void *st, beforepoll_fn *before,
     i->before=before;
     i->after=after;
     i->state=st;
-    i->max_nfds=max_nfds;
     i->nfds=0;
     i->desc=desc;
     LIST_INSERT_HEAD(&reg, i, entry);

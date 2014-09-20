@@ -441,7 +441,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
     }
 
     /* Register for poll() */
-    register_for_poll(st, tun_beforepoll, tun_afterpoll, 1, st->nl.name);
+    register_for_poll(st, tun_beforepoll, tun_afterpoll, st->nl.name);
 }
 
 static list_t *tun_create(closure_t *self, struct cloc loc, dict_t *context,

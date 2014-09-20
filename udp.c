@@ -326,7 +326,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
     for (i=0; i<st->n_socks; i++)
 	udp_make_socket(st,&st->socks[i]);
 
-    register_for_poll(st,udp_beforepoll,udp_afterpoll,MAX_SOCKETS,"udp");
+    register_for_poll(st,udp_beforepoll,udp_afterpoll,"udp");
 }
 
 static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,

@@ -215,13 +215,9 @@ typedef void afterpoll_fn(void *st, struct pollfd *fds, int nfds);
 
 /* Register interest in the main loop of the program. Before a call
    to poll() your supplied beforepoll function will be called. After
-   the call to poll() the supplied afterpoll function will be called.
-   max_nfds is a _hint_ about the maximum number of struct pollfd
-   structures you may require - you can always ask for more in
-   *nfds_io. */
+   the call to poll() the supplied afterpoll function will be called. */
 extern void register_for_poll(void *st, beforepoll_fn *before,
-			      afterpoll_fn *after, int32_t max_nfds,
-			      cstring_t desc);
+			      afterpoll_fn *after, cstring_t desc);
 
 /***** END of scheduling support */
 

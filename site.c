@@ -2049,7 +2049,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     /* We are interested in poll(), but only for timeouts. We don't have
        any fds of our own. */
-    register_for_poll(st, site_beforepoll, site_afterpoll, 0, "site");
+    register_for_poll(st, site_beforepoll, site_afterpoll, "site");
     st->timeout=0;
 
     st->remote_capabilities=0;
