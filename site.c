@@ -40,7 +40,7 @@
 #define DEFAULT_MOBILE_WAIT_TIME                (10*1000) /* [ms] */
 
 #define DEFAULT_MOBILE_PEER_EXPIRY            (2*60)      /* [s] */
-#define DEFAULT_MOBILE_PEERS_MAX 3 /* send at most this many copies (default) */
+#define DEFAULT_PEERS_MAX 3 /* send at most this many copies (default) */
 
 /* Each site can be in one of several possible states. */
 
@@ -220,8 +220,6 @@ static struct flagstr log_event_table[]={
 
    */
 
-#define MAX_MOBILE_PEERS_MAX MAX_PEER_ADDRS /* send at most this many copies */
-
 typedef struct {
     struct timeval last;
     struct comm_addr addr;
@@ -231,7 +229,7 @@ typedef struct {
 /* configuration information */
 /* runtime information */
     int npeers;
-    transport_peer peers[MAX_MOBILE_PEERS_MAX];
+    transport_peer peers[MAX_PEER_ADDRS];
 } transport_peers;
 
 /* Basic operations on transport peer address sets */
@@ -1967,12 +1965,14 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->mobile_peer_expiry= dict_read_number(
        dict,"mobile-peer-expiry",False,"site",loc,DEFAULT_MOBILE_PEER_EXPIRY);
 
-    st->transport_peers_max= !st->peer_mobile ? 1 : dict_read_number(
-	dict,"mobile-peers-max",False,"site",loc,DEFAULT_MOBILE_PEERS_MAX);
+    const char *peerskey= st->peer_mobile
+	? "mobile-peers-max" : "static-peers-max";
+    st->transport_peers_max= dict_read_number(
+	dict,peerskey,False,"site",loc,DEFAULT_PEERS_MAX);
     if (st->transport_peers_max<1 ||
-	st->transport_peers_max>MAX_MOBILE_PEERS_MAX) {
-	cfgfatal(loc,"site","mobile-peers-max must be in range 1.."
-		 STRING(MAX_MOBILE_PEERS_MAX) "\n");
+	st->transport_peers_max>MAX_PEER_ADDRS) {
+	cfgfatal(loc,"site", "%s must be in range 1.."
+		 STRING(MAX_PEER_ADDRS) "\n", peerskey);
     }
 
     if (st->key_lifetime < DEFAULT(KEY_RENEGOTIATE_GAP)*2)
@@ -2187,11 +2187,11 @@ static bool_t transport_compute_setupinit_peers(struct site *st,
 	 incoming_packet_addr ? " incoming packet address;" : "",
 	 st->peers.npeers);
 
-    /* Non-mobile peers have st->peers.npeers==0 or ==1, since they
-     * have transport_peers_max==1.  The effect is that this code
-     * always uses the configured address if supplied, or otherwise
-     * the address of the incoming PROD, or the existing data peer if
-     * one exists; this is as desired. */
+    /* Non-mobile peers try addresses until one is plausible.  The
+     * effect is that this code always tries first the configured
+     * address if supplied, or otherwise the address of the incoming
+     * PROD, or finally the existing data peer if one exists; this is
+     * as desired. */
 
     transport_peers_copy(st,&st->setup_peers,&st->peers);
     transport_peers_expire(st,&st->setup_peers);
@@ -2268,7 +2268,7 @@ void transport_xmit(struct site *st, transport_peers *peers,
     int slot;
     transport_peers_expire(st, peers);
     unsigned failed=0; /* bitmask */
-    assert(MAX_MOBILE_PEERS_MAX < sizeof(unsigned)*CHAR_BIT);
+    assert(MAX_PEER_ADDRS < sizeof(unsigned)*CHAR_BIT);
 
     int nfailed=0;
     for (slot=0; slot<peers->npeers; slot++) {

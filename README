@@ -319,6 +319,9 @@ site: dict argument
     their contact addresses might both change at once. [false]
   mobile-peers-max (integer): Maximum number of peer port/addr pairs we
     remember and send to.  Must be at least 1 and no more than 5.  [3]
+  static-peers-max (integer): Maximum number of peer port/addr pairs
+    we can try for a static site.  Must be at least 1 and no more
+    than 5.  [3]
   mobile-peer-expiry (integer): For "mobile" peers only, the length
     of time (in seconds) for which we will keep sending to multiple
     address/ports from which we have not seen incoming traffic. [120]
