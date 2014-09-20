@@ -216,8 +216,9 @@ typedef void afterpoll_fn(void *st, struct pollfd *fds, int nfds);
 /* Register interest in the main loop of the program. Before a call
    to poll() your supplied beforepoll function will be called. After
    the call to poll() the supplied afterpoll function will be called. */
-extern void register_for_poll(void *st, beforepoll_fn *before,
+struct poll_interest *register_for_poll(void *st, beforepoll_fn *before,
 			      afterpoll_fn *after, cstring_t desc);
+void deregister_for_poll(struct poll_interest *i);
 
 /***** END of scheduling support */
 

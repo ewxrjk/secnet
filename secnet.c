@@ -36,7 +36,7 @@ static pid_t secnet_pid;
 
 /* Structures dealing with poll() call */
 struct poll_interest {
-    beforepoll_fn *before;
+    beforepoll_fn *before; /* 0 if deregistered and waiting to be deleted */
     afterpoll_fn *after;
     void *state;
     int32_t nfds;
@@ -44,6 +44,11 @@ struct poll_interest {
     LIST_ENTRY(poll_interest) entry;
 };
 static LIST_HEAD(, poll_interest) reg = LIST_HEAD_INITIALIZER(&reg);
+
+static bool_t interest_isregistered(const struct poll_interest *i)
+{
+    return !!i->before;
+}
 
 static bool_t finished=False;
 
@@ -225,7 +230,7 @@ static void setup(dict_t *config)
     }
 }
 
-void register_for_poll(void *st, beforepoll_fn *before,
+struct poll_interest *register_for_poll(void *st, beforepoll_fn *before,
 		       afterpoll_fn *after, cstring_t desc)
 {
     struct poll_interest *i;
@@ -237,7 +242,15 @@ void register_for_poll(void *st, beforepoll_fn *before,
     i->nfds=0;
     i->desc=desc;
     LIST_INSERT_HEAD(&reg, i, entry);
-    return;
+    return i;
+}
+
+void deregister_for_poll(struct poll_interest *i)
+{
+    /* We cannot simply throw this away because we're reentrantly
+     * inside the main loop, which needs to remember which range of
+     * fds corresponds to this now-obsolete interest */
+    i->before=0;
 }
 
 static void system_phase_hook(void *sst, uint32_t newphase)
@@ -288,7 +301,7 @@ uint64_t now_global;
 
 static void run(void)
 {
-    struct poll_interest *i;
+    struct poll_interest *i, *itmp;
     int rv, nfds, idx;
     int timeout;
     struct pollfd *fds=0;
@@ -305,12 +318,14 @@ static void run(void)
 	idx=0;
 	LIST_FOREACH(i, &reg, entry) {
 	    int check;
-	    for (check=0; check<i->nfds; check++) {
-		if(fds[idx+check].revents & POLLNVAL) {
-		    fatal("run: poll (%s#%d) set POLLNVAL", i->desc, check);
+	    if (interest_isregistered(i)) {
+		for (check=0; check<i->nfds; check++) {
+		    if(fds[idx+check].revents & POLLNVAL) {
+			fatal("run: poll (%s#%d) set POLLNVAL", i->desc, check);
+		    }
 		}
+		i->after(i->state, fds+idx, i->nfds);
 	    }
-	    i->after(i->state, fds+idx, i->nfds);
 	    idx+=i->nfds;
 	}
 	if (shortfall) {
@@ -321,21 +336,32 @@ static void run(void)
 	shortfall=0;
 	idx=0;
 	timeout=-1;
-	LIST_FOREACH(i, &reg, entry) {
+	LIST_FOREACH_SAFE(i, &reg, entry, itmp) {
 	    int remain=allocdfds-idx;
 	    nfds=remain;
-	    rv=i->before(i->state, fds+idx, &nfds, &timeout);
-	    if (rv!=0) {
-		if (rv!=ERANGE)
-		    fatal("run: beforepoll_fn (%s) returns %d",i->desc,rv);
-		assert(nfds < INT_MAX/4 - shortfall);
-		shortfall += nfds-remain;
+	    if (interest_isregistered(i)) {
+		rv=i->before(i->state, fds+idx, &nfds, &timeout);
+		if (rv!=0) {
+		    if (rv!=ERANGE)
+			fatal("run: beforepoll_fn (%s) returns %d",i->desc,rv);
+		    assert(nfds < INT_MAX/4 - shortfall);
+		    shortfall += nfds-remain;
+		    nfds=0;
+		    timeout=0;
+		}
+	    } else {
 		nfds=0;
-		timeout=0;
 	    }
 	    if (timeout<-1) {
 		fatal("run: beforepoll_fn (%s) set timeout to %d",
 		      i->desc,timeout);
+	    }
+	    if (!interest_isregistered(i)) {
+		/* check this here, rather than earlier, so that we
+		   handle the case where i->before() calls deregister */
+		LIST_REMOVE(i, entry);
+		free(i);
+		continue;
 	    }
 	    idx+=nfds;
 	    i->nfds=nfds;
