@@ -30,11 +30,12 @@ static comm_request_notify_fn request_notify;
 static comm_release_notify_fn release_notify;
 static comm_sendmsg_fn udp_sendmsg;
 
-struct notify_list {
+struct comm_notify_entry {
     comm_notify_fn *fn;
     void *state;
-    struct notify_list *next;
+    LIST_ENTRY(comm_notify_entry) entry;
 };
+LIST_HEAD(comm_notify_list, comm_notify_entry) notify;
 
 #define MAX_SOCKETS 3 /* 2 ought to do really */
 
@@ -51,7 +52,7 @@ struct udp {
     struct udpsock socks[MAX_SOCKETS];
     string_t authbind;
     struct buffer_if *rbuf;
-    struct notify_list *notify;
+    struct comm_notify_list notify;
     bool_t use_proxy;
     union iaddr proxy;
 };
@@ -103,7 +104,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
     struct udp *st=state;
     union iaddr from;
     socklen_t fromlen;
-    struct notify_list *n;
+    struct comm_notify_entry *n;
     bool_t done;
     int rv;
     int i;
@@ -144,7 +145,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 		ca.ia=from;
 		ca.ix=i;
 		done=False;
-		for (n=st->notify; n; n=n->next) {
+		LIST_FOREACH(n, &st->notify, entry) {
 		    if (n->fn(n->state, st->rbuf, &ca)) {
 			done=True;
 			break;
@@ -174,32 +175,24 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 static void request_notify(void *commst, void *nst, comm_notify_fn *fn)
 {
     struct udp *st=commst;
-    struct notify_list *n;
+    struct comm_notify_entry *n;
     
     n=safe_malloc(sizeof(*n),"request_notify");
     n->fn=fn;
     n->state=nst;
-    n->next=st->notify;
-    st->notify=n;
+    LIST_INSERT_HEAD(&st->notify, n, entry);
 }
 
 static void release_notify(void *commst, void *nst, comm_notify_fn *fn)
 {
     struct udp *st=commst;
-    struct notify_list *n, **p, *t;
+    struct comm_notify_entry *n, *t;
 
     /* XXX untested */
-    p=&st->notify;
-    for (n=st->notify; n; )
-    {
+    LIST_FOREACH_SAFE(n, &st->notify, entry, t) {
 	if (n->state==nst && n->fn==fn) {
-	    t=n;
-	    *p=n->next;
-	    n=n->next;
-	    free(t);
-	} else {
-	    p=&n->next;
-	    n=n->next;
+	    LIST_REMOVE(n, entry);
+	    free(n);
 	}
     }
 }
@@ -363,6 +356,7 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.sendmsg=udp_sendmsg;
     st->ops.addr_to_string=addr_to_string;
     st->use_proxy=False;
+    LIST_INIT(&st->notify);
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict) {

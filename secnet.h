@@ -19,6 +19,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <bsd/sys/queue.h>
+
 #define MAX_PEER_ADDRS 5
 /* send at most this many copies; honour at most that many addresses */
 
