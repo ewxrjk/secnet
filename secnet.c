@@ -42,9 +42,9 @@ struct poll_interest {
     int32_t max_nfds;
     int32_t nfds;
     cstring_t desc;
-    struct poll_interest *next;
+    LIST_ENTRY(poll_interest) entry;
 };
-static struct poll_interest *reg=NULL;
+static LIST_HEAD(, poll_interest) reg = LIST_HEAD_INITIALIZER(&reg);
 static int32_t total_nfds=10;
 
 static bool_t finished=False;
@@ -241,8 +241,7 @@ void register_for_poll(void *st, beforepoll_fn *before,
     i->desc=desc;
     assert(total_nfds < INT_MAX - max_nfds);
     total_nfds+=max_nfds;
-    i->next=reg;
-    reg=i;
+    LIST_INSERT_HEAD(&reg, i, entry);
     return;
 }
 
@@ -310,7 +309,7 @@ static void run(void)
 	now_global=((uint64_t)tv_now_global.tv_sec*(uint64_t)1000)+
 	           ((uint64_t)tv_now_global.tv_usec/(uint64_t)1000);
 	idx=0;
-	for (i=reg; i; i=i->next) {
+	LIST_FOREACH(i, &reg, entry) {
 	    int check;
 	    for (check=0; check<i->nfds; check++) {
 		if(fds[idx+check].revents & POLLNVAL) {
@@ -323,7 +322,7 @@ static void run(void)
 	remain=total_nfds;
 	idx=0;
 	timeout=-1;
-	for (i=reg; i; i=i->next) {
+	LIST_FOREACH(i, &reg, entry) {
 	    nfds=remain;
 	    rv=i->before(i->state, fds+idx, &nfds, &timeout);
 	    if (rv!=0) {
