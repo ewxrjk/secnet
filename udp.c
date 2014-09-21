@@ -29,20 +29,9 @@ static beforepoll_fn udp_beforepoll;
 static afterpoll_fn udp_afterpoll;
 static comm_sendmsg_fn udp_sendmsg;
 
-#define UDP_MAX_SOCKETS 3 /* 2 ought to do really */
-
-struct udpsock {
-    union iaddr addr;
-    int fd;
-};
-
 struct udp {
-    struct commcommon cc;
-    int n_socks;
-    struct udpsock socks[UDP_MAX_SOCKETS];
-    string_t authbind;
-    bool_t use_proxy;
-    union iaddr proxy;
+    struct udpcommon uc;
+    struct udpsocks socks;
 };
 
 /*
@@ -60,7 +49,7 @@ struct udp {
 static const char *udp_addr_to_string(void *commst, const struct comm_addr *ca)
 {
     struct udp *st=commst;
-    struct udp *socks=st; /* for now */
+    struct udpsocks *socks=&st->socks;
     static char sbuf[100];
     int ix=ca->ix>=0 ? ca->ix : 0;
 
@@ -72,12 +61,11 @@ static const char *udp_addr_to_string(void *commst, const struct comm_addr *ca)
     return sbuf;
 }
 
-static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
-			  int *timeout_io)
+int udp_socks_beforepoll(struct udpsocks *socks,
+			 struct pollfd *fds, int *nfds_io,
+			 int *timeout_io)
 {
     int i;
-    struct udp *st=state;
-    struct udp *socks=st; /* for now */
     BEFOREPOLL_WANT_FDS(socks->n_socks);
     for (i=0; i<socks->n_socks; i++) {
 	fds[i].fd=socks->socks[i].fd;
@@ -86,19 +74,25 @@ static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
     return 0;
 }
 
-static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
+static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
+			  int *timeout_io)
 {
     struct udp *st=state;
-    struct commcommon *cc=&st->cc;
-    struct udp *socks=st; /* for now */
-    struct udp *uc=st; /* for now */
+    return udp_socks_beforepoll(&st->socks,fds,nfds_io,timeout_io);
+}
+
+void udp_socks_afterpoll(struct udpcommon *uc, struct udpsocks *socks,
+			 struct pollfd *fds, int nfds)
+{
     union iaddr from;
     socklen_t fromlen;
     bool_t done;
     int rv;
     int i;
 
-    for (i=0; i<st->n_socks; i++) {
+    struct commcommon *cc=&uc->cc;
+
+    for (i=0; i<socks->n_socks; i++) {
 	if (i>=nfds) continue;
 	if (!(fds[i].revents & POLLIN)) continue;
 	assert(fds[i].fd == socks->socks[i].fd);
@@ -155,12 +149,18 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
     }
 }
 
+static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
+{
+    struct udp *st=state;
+    return udp_socks_afterpoll(&st->uc,&st->socks,fds,nfds);
+}
+
 static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 			  const struct comm_addr *dest)
 {
     struct udp *st=commst;
-    struct udp *uc=st; /* for now */
-    struct udp *socks=st; /* for now */
+    struct udpcommon *uc=&st->uc;
+    struct udpsocks *socks=&st->socks;
     uint8_t *sa;
 
     if (uc->use_proxy) {
@@ -200,8 +200,9 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 static void udp_make_socket(struct udp *st, struct udpsock *us)
 {
     const union iaddr *addr=&us->addr;
-    struct commcommon *cc=&st->cc; /* for now */
-    struct udp *uc=st; /* for now */
+    struct udpcommon *uc=&st->uc;
+    struct commcommon *cc=&uc->cc;
+
     us->fd=socket(addr->sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
     if (us->fd<0) {
 	fatal_perror("udp (%s:%d): socket",cc->loc.file,cc->loc.line);
@@ -288,7 +289,7 @@ static void udp_make_socket(struct udp *st, struct udpsock *us)
 static void udp_phase_hook(void *sst, uint32_t new_phase)
 {
     struct udp *st=sst;
-    struct udp *socks=st; /* for now */
+    struct udpsocks *socks=&st->socks;
     int i;
     for (i=0; i<socks->n_socks; i++)
 	udp_make_socket(st,&socks->socks[i]);
@@ -305,25 +306,22 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     uint32_t a;
     int i;
 
-    COMM_APPLY(st,&st->cc,udp_,"udp",loc);
-    struct commcommon *cc=&st->cc; /* for now */
-    struct udp *uc=st; /* for now */
-    struct udp *socks=st; /* for now */
+    COMM_APPLY(st,&st->uc.cc,udp_,"udp",loc);
+    COMM_APPLY_STANDARD(st,&st->uc.cc,"udp",args);
+    UDP_APPLY_STANDARD(st,&st->uc,"udp");
 
-    uc->use_proxy=False;
-
-    COMM_APPLY_STANDARD(st,&st->cc,"udp",args);
-
-    int port=dict_read_number(d,"port",True,"udp",cc->loc,0);
+    struct udpcommon *uc=&st->uc;
+    struct udpsocks *socks=&st->socks;
+    struct commcommon *cc=&uc->cc;
 
     union iaddr defaultaddrs[] = {
 #ifdef CONFIG_IPV6
 	{ .sin6 = { .sin6_family=AF_INET6,
-		    .sin6_port=htons(port),
+		    .sin6_port=htons(uc->port),
 		    .sin6_addr=IN6ADDR_ANY_INIT } },
 #endif
 	{ .sin = { .sin_family=AF_INET,
-		   .sin_port=htons(port),
+		   .sin_port=htons(uc->port),
 		   .sin_addr= { .s_addr=INADDR_ANY } } }
     };
 
@@ -338,12 +336,11 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 	if (!list_length(caddrl)) {
 	    us->addr=defaultaddrs[i];
 	} else {
-	    string_item_to_iaddr(list_elem(caddrl,i),port,&us->addr,"udp");
+	    string_item_to_iaddr(list_elem(caddrl,i),uc->port,&us->addr,"udp");
 	}
 	us->fd=-1;
     }
 
-    uc->authbind=dict_read_string(d,"authbind",False,"udp",cc->loc);
     l=dict_lookup(d,"proxy");
     if (l) {
 	uc->use_proxy=True;

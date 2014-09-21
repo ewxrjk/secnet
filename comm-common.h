@@ -4,6 +4,8 @@
 
 #include "secnet.h"
 
+/*----- for all comms -----*/
+
 struct comm_notify_entry {
     comm_notify_fn *fn;
     void *state;
@@ -54,6 +56,44 @@ void comm_apply(struct commcommon *cc, void *st);
      *   // Declares:
      *   //    item_t *item = <undefined>;
      *   //    dict_t *dict = <construction dictionary argument>;
+     */
+
+/*----- for udp-based comms -----*/
+
+#define UDP_MAX_SOCKETS 3 /* 2 ought to do really */
+
+struct udpsock {
+    union iaddr addr;
+    int fd;
+};
+
+struct udpsocks {
+    int n_socks;
+    struct udpsock socks[UDP_MAX_SOCKETS];
+};
+
+struct udpcommon {
+    struct commcommon cc;
+    int port;
+    string_t authbind;
+    bool_t use_proxy;
+    union iaddr proxy;
+};
+
+int udp_socks_beforepoll(struct udpsocks *s,
+			 struct pollfd *fds, int *nfds_io,
+			 int *timeout_io);
+
+void udp_socks_afterpoll(struct udpcommon *u, struct udpsocks *s,
+			 struct pollfd *fds, int nfds);
+
+#define UDP_APPLY_STANDARD(st,uc,desc)					\
+    (uc)->use_proxy=False;						\
+    (uc)->authbind=dict_read_string(d,"authbind",False,"udp",(uc)->cc.loc); \
+    (uc)->port=dict_read_number(d,"port",True,"udp",(uc)->cc.loc,0)
+    /* void UDP_APPLY_STANDARD(SOMETHING *st, struct udpcommon *uc,
+     *                         const char *desc);
+     *   // Expects in scope:  dict_t *d=...;   as from COMM_APPLY_STANDARD
      */
 
 #endif /*COMM_COMMON_H*/
