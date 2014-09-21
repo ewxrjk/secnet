@@ -1,0 +1,45 @@
+#!/usr/bin/perl -w
+
+use strict;
+use POSIX;
+
+open R, '/dev/urandom' or die $!;
+
+system 'cat >/dev/null &';
+
+sub randbytes ($) {
+    my ($count) = @_;
+    my $s;
+    my $r = read R, $s, $count;
+    die $! unless $r==$count;
+    return $s;
+}
+
+sub randbyteval () {
+    my $b = randbytes 1;
+    my ($r) = unpack 'C', $b;
+    return $r;
+}
+
+sub randvalue ($$) {
+    my ($min,$maxplus1) = @_;
+    my $b = randbyteval;
+    return floor(($b/256.0) * ($maxplus1-$min)) + $min;
+}
+
+for (;;) {
+    my $lenbits = randvalue 0,14;
+    my $len= (randbyteval << 8) | randbyteval;
+    $len &= (1 << $lenbits)-1;
+    my $data = randbytes $len;
+    if (randbyteval >= 0x80) {
+	$data =~ s{[\xc0\xdb]}{
+            $& eq "\xc0" ? "\xcb\xdc" :
+            $& eq "\xdb" ? "\xcb\xdd" :
+            die
+        }ge;
+    }
+    print "\xc0";
+    print $data;
+    STDOUT->flush;
+}
