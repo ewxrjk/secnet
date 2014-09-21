@@ -23,19 +23,11 @@
 #include "unaligned.h"
 #include "ipaddr.h"
 #include "magic.h"
+#include "comm-common.h"
 
 static beforepoll_fn udp_beforepoll;
 static afterpoll_fn udp_afterpoll;
-static comm_request_notify_fn request_notify;
-static comm_release_notify_fn release_notify;
 static comm_sendmsg_fn udp_sendmsg;
-
-struct comm_notify_entry {
-    comm_notify_fn *fn;
-    void *state;
-    LIST_ENTRY(comm_notify_entry) entry;
-};
-LIST_HEAD(comm_notify_list, comm_notify_entry) notify;
 
 #define UDP_MAX_SOCKETS 3 /* 2 ought to do really */
 
@@ -45,14 +37,10 @@ struct udpsock {
 };
 
 struct udp {
-    closure_t cl;
-    struct comm_if ops;
-    struct cloc loc;
+    struct commcommon cc;
     int n_socks;
     struct udpsock socks[UDP_MAX_SOCKETS];
     string_t authbind;
-    struct buffer_if *rbuf;
-    struct comm_notify_list notify;
     bool_t use_proxy;
     union iaddr proxy;
 };
@@ -69,7 +57,8 @@ struct udp {
  * description of the source of an incoming packet.
  */
 
-static const char *addr_to_string(void *commst, const struct comm_addr *ca) {
+static const char *udp_addr_to_string(void *commst, const struct comm_addr *ca)
+{
     struct udp *st=commst;
     struct udp *socks=st; /* for now */
     static char sbuf[100];
@@ -100,12 +89,11 @@ static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
 static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 {
     struct udp *st=state;
+    struct commcommon *cc=&st->cc;
     struct udp *socks=st; /* for now */
-    struct udp *cc=st; /* for now */
     struct udp *uc=st; /* for now */
     union iaddr from;
     socklen_t fromlen;
-    struct comm_notify_entry *n;
     bool_t done;
     int rv;
     int i;
@@ -145,13 +133,7 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 		ca.comm=&cc->ops;
 		ca.ia=from;
 		ca.ix=i;
-		done=False;
-		LIST_FOREACH(n, &cc->notify, entry) {
-		    if (n->fn(n->state, cc->rbuf, &ca)) {
-			done=True;
-			break;
-		    }
-		}
+		done=comm_notify(&cc->notify, cc->rbuf, &ca);
 		if (!done) {
 		    uint32_t msgtype;
 		    if (cc->rbuf->size>12 /* prevents traffic amplification */
@@ -170,33 +152,6 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 		BUF_FREE(cc->rbuf);
 	    }
 	} while (rv>=0);
-    }
-}
-
-static void request_notify(void *commst, void *nst, comm_notify_fn *fn)
-{
-    struct udp *st=commst;
-    struct udp *cc=st; /* for now */
-    struct comm_notify_entry *n;
-    
-    n=safe_malloc(sizeof(*n),"request_notify");
-    n->fn=fn;
-    n->state=nst;
-    LIST_INSERT_HEAD(&cc->notify, n, entry);
-}
-
-static void release_notify(void *commst, void *nst, comm_notify_fn *fn)
-{
-    struct udp *st=commst;
-    struct udp *cc=st; /* for now */
-    struct comm_notify_entry *n, *t;
-
-    /* XXX untested */
-    LIST_FOREACH_SAFE(n, &cc->notify, entry, t) {
-	if (n->state==nst && n->fn==fn) {
-	    LIST_REMOVE(n, entry);
-	    free(n);
-	}
     }
 }
 
@@ -245,7 +200,7 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 static void udp_make_socket(struct udp *st, struct udpsock *us)
 {
     const union iaddr *addr=&us->addr;
-    struct udp *cc=st; /* for now */
+    struct commcommon *cc=&st->cc; /* for now */
     struct udp *uc=st; /* for now */
     us->fd=socket(addr->sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
     if (us->fd<0) {
@@ -345,35 +300,19 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 			 list_t *args)
 {
     struct udp *st;
-    item_t *item;
     list_t *caddrl;
-    dict_t *d;
     list_t *l;
     uint32_t a;
     int i;
 
-    st=safe_malloc(sizeof(*st),"udp_apply(st)");
-    struct udp *cc=st; /* for now */
+    COMM_APPLY(st,&st->cc,udp_,"udp",loc);
+    struct commcommon *cc=&st->cc; /* for now */
     struct udp *uc=st; /* for now */
     struct udp *socks=st; /* for now */
-    cc->loc=loc;
-    cc->cl.description="udp";
-    cc->cl.type=CL_COMM;
-    cc->cl.apply=NULL;
-    cc->cl.interface=&cc->ops;
-    cc->ops.st=st;
-    cc->ops.request_notify=request_notify;
-    cc->ops.release_notify=release_notify;
-    cc->ops.sendmsg=udp_sendmsg;
-    cc->ops.addr_to_string=addr_to_string;
-    uc->use_proxy=False;
-    LIST_INIT(&cc->notify);
 
-    item=list_elem(args,0);
-    if (!item || item->type!=t_dict) {
-	cfgfatal(cc->loc,"udp","first argument must be a dictionary\n");
-    }
-    d=item->data.dict;
+    uc->use_proxy=False;
+
+    COMM_APPLY_STANDARD(st,&st->cc,"udp",args);
 
     int port=dict_read_number(d,"port",True,"udp",cc->loc,0);
 
@@ -404,7 +343,6 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 	us->fd=-1;
     }
 
-    cc->rbuf=find_cl_if(d,"buffer",CL_BUFFER,True,"udp",cc->loc);
     uc->authbind=dict_read_string(d,"authbind",False,"udp",cc->loc);
     l=dict_lookup(d,"proxy");
     if (l) {

@@ -378,7 +378,7 @@ struct comm_addr {
 };
 
 /* Return True if the packet was processed, and shouldn't be passed to
-   any other potential receivers. */
+   any other potential receivers. (buf is freed iff True returned.) */
 typedef bool_t comm_notify_fn(void *state, struct buffer_if *buf,
 			      const struct comm_addr *source);
 typedef void comm_request_notify_fn(void *commst, void *nst,
