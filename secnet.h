@@ -198,10 +198,20 @@ int32_t calculate_max_start_pad(void);
 
 /* If nfds_io is insufficient for your needs, set it to the required
    number and return ERANGE. timeout is in milliseconds; if it is too
-   high then lower it. It starts at -1 (==infinite) */
+   high then lower it. It starts at -1 (==infinite). */
+/* Note that beforepoll_fn may NOT do anything which might change the
+   fds or timeouts wanted by other registered poll loop loopers.
+   Callers should make sure of this by not making any calls into other
+   modules from the beforepoll_fn; the easiest way to ensure this is
+   for beforepoll_fn to only retreive information and not take any
+   action.
+ */
 typedef int beforepoll_fn(void *st, struct pollfd *fds, int *nfds_io,
 			  int *timeout_io);
 typedef void afterpoll_fn(void *st, struct pollfd *fds, int nfds);
+  /* If beforepoll_fn returned ERANGE, afterpoll_fn gets nfds==0.
+     afterpoll_fn never gets !!(fds[].revents & POLLNVAL) - such
+     a report is detected as a fatal error by the event loop. */
 
 /* void BEFOREPOLL_WANT_FDS(int want);
  *   Expects: int *nfds_io;
