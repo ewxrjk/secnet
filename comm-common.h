@@ -70,6 +70,8 @@ struct udpsock {
 struct udpsocks {
     int n_socks;
     struct udpsock socks[UDP_MAX_SOCKETS];
+    /* private for udp_socks_* */
+    struct udpcommon *uc; /* link to parent, for cfg, notify list, etc. */
 };
 
 struct udpcommon {
@@ -80,12 +82,8 @@ struct udpcommon {
     union iaddr proxy;
 };
 
-int udp_socks_beforepoll(struct udpsocks *s,
-			 struct pollfd *fds, int *nfds_io,
-			 int *timeout_io);
-
-void udp_socks_afterpoll(struct udpcommon *u, struct udpsocks *s,
-			 struct pollfd *fds, int nfds);
+void udp_make_socket(struct udpcommon *uc, struct udpsock *us);
+void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks);
 
 #define UDP_APPLY_STANDARD(st,uc,desc)					\
     (uc)->use_proxy=False;						\

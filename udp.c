@@ -25,8 +25,6 @@
 #include "magic.h"
 #include "comm-common.h"
 
-static beforepoll_fn udp_beforepoll;
-static afterpoll_fn udp_afterpoll;
 static comm_sendmsg_fn udp_sendmsg;
 
 struct udp {
@@ -61,10 +59,10 @@ static const char *udp_addr_to_string(void *commst, const struct comm_addr *ca)
     return sbuf;
 }
 
-int udp_socks_beforepoll(struct udpsocks *socks,
-			 struct pollfd *fds, int *nfds_io,
-			 int *timeout_io)
+static int udp_socks_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
+				int *timeout_io)
 {
+    struct udpsocks *socks=state;
     int i;
     BEFOREPOLL_WANT_FDS(socks->n_socks);
     for (i=0; i<socks->n_socks; i++) {
@@ -74,16 +72,10 @@ int udp_socks_beforepoll(struct udpsocks *socks,
     return 0;
 }
 
-static int udp_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
-			  int *timeout_io)
+static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 {
-    struct udp *st=state;
-    return udp_socks_beforepoll(&st->socks,fds,nfds_io,timeout_io);
-}
-
-void udp_socks_afterpoll(struct udpcommon *uc, struct udpsocks *socks,
-			 struct pollfd *fds, int nfds)
-{
+    struct udpsocks *socks=state;
+    struct udpcommon *uc=socks->uc;
     union iaddr from;
     socklen_t fromlen;
     bool_t done;
@@ -149,12 +141,6 @@ void udp_socks_afterpoll(struct udpcommon *uc, struct udpsocks *socks,
     }
 }
 
-static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
-{
-    struct udp *st=state;
-    return udp_socks_afterpoll(&st->uc,&st->socks,fds,nfds);
-}
-
 static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 			  const struct comm_addr *dest)
 {
@@ -197,10 +183,9 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
     return True;
 }
 
-static void udp_make_socket(struct udp *st, struct udpsock *us)
+void udp_make_socket(struct udpcommon *uc, struct udpsock *us)
 {
     const union iaddr *addr=&us->addr;
-    struct udpcommon *uc=&st->uc;
     struct commcommon *cc=&uc->cc;
 
     us->fd=socket(addr->sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
@@ -286,15 +271,22 @@ static void udp_make_socket(struct udp *st, struct udpsock *us)
     }
 }
 
+void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks)
+{
+    socks->uc=uc;
+    register_for_poll(socks,udp_socks_beforepoll,udp_socks_afterpoll,"udp");
+}
+
 static void udp_phase_hook(void *sst, uint32_t new_phase)
 {
     struct udp *st=sst;
     struct udpsocks *socks=&st->socks;
+    struct udpcommon *uc=&st->uc;
     int i;
     for (i=0; i<socks->n_socks; i++)
-	udp_make_socket(st,&socks->socks[i]);
+	udp_make_socket(uc,&socks->socks[i]);
 
-    register_for_poll(st,udp_beforepoll,udp_afterpoll,"udp");
+    udp_socks_register(uc,socks);
 }
 
 static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
