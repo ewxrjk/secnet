@@ -189,6 +189,42 @@ static void log_vmulti(void *sst, int class, const char *message, va_list args)
     }
 }
 
+void lg_vperror(struct log_if *lg, const char *desc, struct cloc *loc,
+		int class, int errnoval, const char *fmt, va_list al)
+{
+    int status=current_phase;
+    int esave=errno;
+
+    if (!lg)
+	lg=system_log;
+
+    if (class & M_FATAL)
+	enter_phase(PHASE_SHUTDOWN);
+
+    slilog_part(lg,class,"%s",desc);
+    if (loc)
+	slilog_part(lg,class," (%s:%d)",loc->file,loc->line);
+    slilog_part(lg,class,": ");
+    vslilog_part(lg,class,fmt,al);
+    if (errnoval)
+	slilog_part(lg,class,": %s",strerror(errnoval));
+    slilog_part(lg,class,"\n");
+
+    if (class & M_FATAL)
+	exit(status);
+
+    errno=esave;
+}
+
+void lg_perror(struct log_if *lg, const char *desc, struct cloc *loc,
+	       int class, int errnoval, const char *fmt, ...)
+{
+    va_list al;
+    va_start(al,fmt);
+    lg_vperror(lg,desc,loc,class,errnoval,fmt,al);
+    va_end(al);
+}
+
 struct log_if *init_log(list_t *ll)
 {
     int i=0;

@@ -587,6 +587,17 @@ extern NORETURN(fatal_status(int status, const char *message, ...))
 extern NORETURN(fatal_perror_status(int status, const char *message, ...))
        FORMAT(printf,2,3);
 
+/* Convenient nonfatal logging.  Requires message that does not end in '\n'.
+ * If class contains M_FATAL, exits (after entering PHASE_SHUTDOWN).
+ * lg, errnoval and loc may sensibly be 0.  desc must NOT be 0.
+ * lg_[v]perror save and restore errno. */
+void lg_vperror(struct log_if *lg, const char *desc, struct cloc *loc,
+		int class, int errnoval, const char *fmt, va_list al)
+    FORMAT(printf,6,0);
+void lg_perror(struct log_if *lg, const char *desc, struct cloc *loc,
+	       int class, int errnoval, const char *fmt, ...)
+    FORMAT(printf,6,7);
+
 /* The cfgfatal() family of functions require messages that end in '\n' */
 extern NORETURN(cfgfatal(struct cloc loc, cstring_t facility,
 			 const char *message, ...)) FORMAT(printf,3,4);
