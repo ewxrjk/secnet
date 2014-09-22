@@ -272,10 +272,9 @@ static void userv_entry(void *sst)
 
 static void userv_invoke_userv(struct userv *st)
 {
-    struct userv_entry_rec *er;
+    struct userv_entry_rec er[1];
     int c_stdin[2];
     int c_stdout[2];
-    string_t addrs;
     string_t nets;
     string_t s;
     struct netlink_client *r;
@@ -291,8 +290,8 @@ static void userv_invoke_userv(struct userv *st)
     /* This is where we actually invoke userv - all the networks we'll
        be using should already have been registered. */
 
-    addrs=safe_malloc(512,"userv_invoke_userv:addrs");
-    snprintf(addrs,512,"%s,%s,%d,slip",
+    char addrs[512];
+    snprintf(addrs,sizeof(addrs),"%s,%s,%d,slip",
 	     ipaddr_to_string(st->slip.nl.local_address),
 	     ipaddr_to_string(st->slip.nl.secnet_address),st->slip.nl.mtu);
 
@@ -330,8 +329,6 @@ static void userv_invoke_userv(struct userv *st)
     st->txfd=c_stdin[1];
     st->rxfd=c_stdout[0];
 
-    er=safe_malloc(sizeof(*r),"userv_invoke_userv: er");
-
     er->in=c_stdin[0];
     er->out=c_stdout[1];
     /* The arguments are:
@@ -340,7 +337,8 @@ static void userv_invoke_userv(struct userv *st)
        service-name
        local-addr,secnet-addr,mtu,protocol
        route1,route2,... */
-    er->argv=safe_malloc(sizeof(*er->argv)*6,"userv_invoke_userv:argv");
+    const char *er_argv[6];
+    er->argv=er_argv;
     er->argv[0]=st->userv_path;
     er->argv[1]=st->service_user;
     er->argv[2]=st->service_name;
@@ -353,9 +351,6 @@ static void userv_invoke_userv(struct userv *st)
 			er, st, st->slip.nl.name);
     close(er->in);
     close(er->out);
-    free(er->argv);
-    free(er);
-    free(addrs);
     free(nets);
     Message(M_INFO,"%s: userv-ipif pid is %d\n",st->slip.nl.name,st->pid);
     /* Read a single character from the pipe to confirm userv-ipif is
