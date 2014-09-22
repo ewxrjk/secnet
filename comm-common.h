@@ -82,7 +82,10 @@ struct udpcommon {
     union iaddr proxy;
 };
 
-void udp_make_socket(struct udpcommon *uc, struct udpsock *us);
+bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
+		       int failmsgclass);
+  /* Fills in us->fd.  Logs any errors with lg_[v]perror. */
+
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks);
 
 #define UDP_APPLY_STANDARD(st,uc,desc)					\

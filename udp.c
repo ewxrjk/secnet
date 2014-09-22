@@ -183,19 +183,23 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
     return True;
 }
 
-void udp_make_socket(struct udpcommon *uc, struct udpsock *us)
+bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
+		       int failmsgclass)
 {
     const union iaddr *addr=&us->addr;
     struct commcommon *cc=&uc->cc;
+    us->fd=-1;
+
+#define FAIL_LG 0, cc->cl.description, &cc->loc, failmsgclass
+#define FAIL(...) do{						\
+        lg_perror(FAIL_LG,errno,__VA_ARGS__);	\
+	goto failed;						\
+    }while(0)
 
     us->fd=socket(addr->sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
-    if (us->fd<0) {
-	fatal_perror("udp (%s:%d): socket",cc->loc.file,cc->loc.line);
-    }
-    if (fcntl(us->fd, F_SETFL, fcntl(us->fd, F_GETFL)|O_NONBLOCK)==-1) {
-	fatal_perror("udp (%s:%d): fcntl(set O_NONBLOCK)",
-		     cc->loc.file,cc->loc.line);
-    }
+    if (us->fd<0) FAIL("socket");
+    if (fcntl(us->fd, F_SETFL, fcntl(us->fd, F_GETFL)|O_NONBLOCK)==-1)
+	FAIL("fcntl(set O_NONBLOCK)");
     setcloexec(us->fd);
 #ifdef CONFIG_IPV6
     if (addr->sa.sa_family==AF_INET6) {
@@ -203,8 +207,7 @@ void udp_make_socket(struct udpcommon *uc, struct udpsock *us)
 	int optval=1;
 	socklen_t optlen=sizeof(optval);
 	r=setsockopt(us->fd,IPPROTO_IPV6,IPV6_V6ONLY,&optval,optlen);
-	if (r) fatal_perror("udp (%s:%d): setsockopt(,IPV6_V6ONLY,&1,)",
-			    cc->loc.file,cc->loc.line);
+	if (r) FAIL("setsockopt(,IPV6_V6ONLY,&1,)");
     }
 #endif
 
@@ -215,9 +218,8 @@ void udp_make_socket(struct udpcommon *uc, struct udpsock *us)
 	/* XXX this fork() and waitpid() business needs to be hidden
 	   in some system-specific library functions. */
 	c=fork();
-	if (c==-1) {
-	    fatal_perror("udp_phase_hook: fork() for authbind");
-	}
+	if (c==-1)
+	    FAIL("fork() for authbind");
 	if (c==0) {
 	    char *argv[5], addrstr[33], portstr[5];
 	    const char *addrfam;
@@ -254,21 +256,33 @@ void udp_make_socket(struct udpcommon *uc, struct udpsock *us)
 	}
 	while (waitpid(c,&status,0)==-1) {
 	    if (errno==EINTR) continue;
-	    fatal_perror("udp (%s:%d): authbind",cc->loc.file,cc->loc.line);
+	    FAIL("waitpid for authbind");
 	}
 	if (WIFSIGNALED(status)) {
-	    fatal("udp (%s:%d): authbind died on signal %d",cc->loc.file,
-		  cc->loc.line, WTERMSIG(status));
+	    lg_perror(FAIL_LG,0,"authbind died on signal %s (%d)",
+			strsignal(WTERMSIG(status)),WTERMSIG(status));
+	    goto failed;
 	}
 	if (WIFEXITED(status) && WEXITSTATUS(status)!=0) {
-	    fatal("udp (%s:%d): authbind died with status %d",cc->loc.file,
-		  cc->loc.line, WEXITSTATUS(status));
+	    lg_perror(FAIL_LG,0,
+		      "authbind died with error exit status %d",
+		      WEXITSTATUS(status));
+	    goto failed;
 	}
     } else {
-	if (bind(us->fd, &addr->sa, iaddr_socklen(addr))!=0) {
-	    fatal_perror("udp (%s:%d): bind",cc->loc.file,cc->loc.line);
-	}
+	if (bind(us->fd, &addr->sa, iaddr_socklen(addr))!=0)
+	    FAIL("bind (%s)",iaddr_to_string(addr));
     }
+    return True;
+
+failed:
+    if (us->fd>=0) {
+	close(us->fd);
+	us->fd=-1;
+    }
+    return False;
+
+#undef FAIL
 }
 
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks)
@@ -284,7 +298,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
     struct udpcommon *uc=&st->uc;
     int i;
     for (i=0; i<socks->n_socks; i++)
-	udp_make_socket(uc,&socks->socks[i]);
+	udp_make_socket(uc,&socks->socks[i],M_FATAL);
 
     udp_socks_register(uc,socks);
 }
