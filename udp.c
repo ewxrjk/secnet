@@ -224,10 +224,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 	fatal_perror("udp (%s:%d): fcntl(set O_NONBLOCK)",
 		     st->loc.file,st->loc.line);
     }
-    if (fcntl(st->fd, F_SETFD, FD_CLOEXEC)==-1) {
-	fatal_perror("udp (%s:%d): fcntl(set FD_CLOEXEC)",
-		     st->loc.file,st->loc.line);
-    }
+    setcloexec(st->fd);
 
     FILLZERO(addr);
     addr.sin_family=AF_INET;

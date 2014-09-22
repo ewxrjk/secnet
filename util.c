@@ -162,6 +162,13 @@ int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen)
     return i;
 }
 
+void setcloexec(int fd) {
+    int r=fcntl(fd, F_GETFD);
+    if (r<0) fatal_perror("fcntl(,F_GETFD) failed");
+    r=fcntl(fd, F_SETFD, r|FD_CLOEXEC);
+    if (r<0) fatal_perror("fcntl(,F_SETFD,|FD_CLOEXEC) failed");
+}
+
 static const char *phases[NR_PHASES]={
     "PHASE_INIT",
     "PHASE_GETOPTS",

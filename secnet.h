@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -135,6 +137,8 @@ extern uint32_t string_list_to_word(list_t *l, struct flagstr *f,
 extern char *safe_strdup(const char *string, const char *message);
 extern void *safe_malloc(size_t size, const char *message);
 extern void *safe_malloc_ary(size_t size, size_t count, const char *message);
+
+void setcloexec(int fd); /* cannot fail */
 
 extern int sys_cmd(const char *file, const char *argc, ...);
 

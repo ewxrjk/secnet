@@ -340,6 +340,8 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	st->interface_name=safe_malloc(10,"tun_apply");
 	sprintf(st->interface_name,"tun%d",ppa);
 	st->fd=tun_fd;
+	setcloexec(if_ifd);
+	setcloexec(ip_ifd);
 #else
 	fatal("tun_phase_hook: TUN_FLAVOUR_STREAMS unexpected");
 #endif /* HAVE_TUN_STREAMS */
@@ -349,6 +351,8 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
     /* All the networks we'll be using have been registered. Invoke ifconfig
        to set the TUN device's address, and route to add routes to all
        our networks. */
+
+    setcloexec(st->fd);
 
     hostaddr=ipaddr_to_string(st->nl.local_address);
     secnetaddr=ipaddr_to_string(st->nl.secnet_address);
