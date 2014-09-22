@@ -31,7 +31,7 @@ extern void *buf_unprepend(struct buffer_if *buf, int32_t amount);
 
 static inline int32_t buf_remaining_space(const struct buffer_if *buf)
 {
-    return (buf->base + buf->alloclen) - buf->start;
+    return (buf->base + buf->alloclen) - (buf->start + buf->size);
 }
 
 extern void buffer_readonly_view(struct buffer_if *n, const void*, int32_t len);
