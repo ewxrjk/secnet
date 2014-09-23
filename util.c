@@ -598,3 +598,89 @@ int iaddr_socklen(const union iaddr *ia)
     default:       abort();
     }
 }
+
+enum async_linebuf_result
+async_linebuf_read(struct pollfd *pfd, struct buffer_if *buf,
+		   const char **emsg_out)
+{
+    int revents=pfd->revents;
+
+#define BAD(m) do{ *emsg_out=(m); return async_linebuf_broken; }while(0)
+#define BADBIT(b) \
+    if (!(revents & b)) ; else BAD(#b)
+    BADBIT(POLLERR);
+    BADBIT(POLLHUP);
+    /* POLLNVAL is handled by the event loop - see afterpoll_fn comment */
+#undef BADBIT
+
+    if (!(revents & POLLIN))
+	return async_linebuf_nothing;
+
+    /*
+     * Data structure: A line which has been returned to the user is
+     * stored in buf at base before start.  But we retain the usual
+     * buffer meaning of size.  So:
+     *
+     *   | returned :    | input read,   |    unused    |
+     *   |  to user : \0 |  awaiting     |     buffer   |
+     *   |          :    |  processing   |      space   |
+     *   |          :    |               |              |
+     *   ^base           ^start          ^start+size    ^base+alloclen
+     */
+
+    BUF_ASSERT_USED(buf);
+
+    /* firstly, eat any previous */
+    if (buf->start != buf->base) {
+	memmove(buf->base,buf->start,buf->size);
+	buf->start=buf->base;
+    }
+
+    uint8_t *searched=buf->base;
+
+    /*
+     * During the workings here we do not use start.  We set start
+     * when we return some actual data.  So we have this:
+     *
+     *   | searched     | read, might   |  unused      |
+     *   |  for \n      |  contain \n   |   buffer     |
+     *   |  none found  |  but not \0   |    space     |
+     *   |              |               |              |
+     *   ^base          ^searched       ^base+size     ^base+alloclen
+     *  [^start]                        ^dataend
+     *
+     */
+    for (;;) {
+	uint8_t *dataend=buf->base+buf->size;
+	char *newline=memchr(searched,'\n',dataend-searched);
+	if (newline) {
+	    *newline=0;
+	    buf->start=newline+1;
+	    buf->size=dataend-buf->start;
+	    return async_linebuf_ok;
+	}
+	searched=dataend;
+	ssize_t space=(buf->base+buf->alloclen)-dataend;
+	if (!space) BAD("input line too long");
+	ssize_t r=read(pfd->fd,searched,space);
+	if (r==0) {
+	    *searched=0;
+	    *emsg_out=buf->size?"no newline at eof":0;
+	    buf->start=searched+1;
+	    buf->size=0;
+	    return async_linebuf_eof;
+	}
+	if (r<0) {
+	    if (errno==EINTR)
+		continue;
+	    if (iswouldblock(errno))
+		return async_linebuf_nothing;
+	    BAD(strerror(errno));
+	}
+	assert(r<=space);
+	if (memchr(searched,0,r)) BAD("nul in input data");
+	buf->size+=r;
+    }
+
+#undef BAD
+}

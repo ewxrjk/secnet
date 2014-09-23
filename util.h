@@ -87,6 +87,72 @@ int iaddr_socklen(const union iaddr *ia);
 void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
 			  const char *desc);
 
+
+/*----- line-buffered asynch input -----*/
+
+enum async_linebuf_result {
+    async_linebuf_nothing,
+    async_linebuf_ok,
+    async_linebuf_eof,
+    async_linebuf_broken,
+};
+
+enum async_linebuf_result
+async_linebuf_read(struct pollfd *pfd, struct buffer_if *buf,
+		   const char **emsg_out);
+   /* Implements reading whole lines, asynchronously.  Use like
+    * this:
+    *   - set up the fd, which should be readable, O_NONBLOCK
+    *   - set up and initialise buffer, which should be big enough
+    *     for one line plus its trailing newline, and be empty
+    *     with start==base
+    *   - in your beforepoll_fn, be interested in POLLIN
+    *   - in your afterpoll_fn, repeatedly call this function
+    *     until it doesn't return `nothing'
+    *   - after you're done, simply close fd and free or reset buf
+    * State on return from async_linebuf_read depends on return value:
+    *
+    *   async_linebuf_nothing:
+    *
+    *      No complete lines available right now.  You should return
+    *      from afterpoll.  buf should be left untouched until the
+    *      next call to async_linebuf_read.
+    *
+    *   async_linebuf_ok:
+    *
+    *      buf->base contains a input line as a nul-terminated string
+    *      (\n replaced by \0); *emsg_out==0.  You must call
+    *      async_linebuf_read again before returning from afterpoll.
+    *
+    *   async_linebuf_eof:
+    *
+    *      EOF on stream.  buf->base contains any partial
+    *      (non-newline-terminated) line; *emsg_out!=0 iff there was
+    *      such a partial line.  You can call async_linebuf_read again
+    *      if you like but it will probably just return eof again.
+    *
+    *   broken:
+    *
+    *      Fatal problem (might be overly long lines, nuls in input
+    *      data, bad bits in pfd->revents, errors from read, etc.)
+    *
+    *      *emsg_out is the error message describing the problem;
+    *      this message might be stored in buf, might be from
+    *      strerror, or might be a constant.
+    *
+    *      You must not call async_linebuf_read again.  buf contents
+    *      is undefined: it is only safe to reset or free.
+    *
+    * While using this function, do not look at buf->start or ->size
+    * or anything after the first '\0' in buf.
+    *
+    * If you decide to stop reading with async_linebuf_read that's
+    * fine and you can reset or free buf, but you risk missing some
+    * read-but-not-reported data.
+    */
+
+/*----- some handy macros -----*/
+
 #define MINMAX(ae,be,op) ({			\
 	typeof((ae)) a=(ae);			\
 	typeof((be)) b=(be);			\
