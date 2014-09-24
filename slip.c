@@ -231,19 +231,10 @@ static void userv_userv_callback(void *sst, pid_t pid, int status)
 	return;
     }
     if (!st->expecting_userv_exit) {
-	if (WIFEXITED(status)) {
-	    fatal("%s: userv exited unexpectedly with status %d",
-		  st->slip.nl.name,WEXITSTATUS(status));
-	} else if (WIFSIGNALED(status)) {
-	    fatal("%s: userv exited unexpectedly: uncaught signal %d",
-		  st->slip.nl.name,WTERMSIG(status));
-	} else {
-	    fatal("%s: userv stopped unexpectedly",
-		  st->slip.nl.name);
-	}
+	lg_exitstatus(0,st->slip.nl.name,0,
+		      st->expecting_userv_exit ? M_WARNING : M_FATAL,
+		      status,"userv");
     }
-    Message(M_WARNING,"%s: userv subprocess died with status %d\n",
-	    st->slip.nl.name,WEXITSTATUS(status));
     st->pid=0;
 }
 

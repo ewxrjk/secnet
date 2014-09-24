@@ -258,15 +258,8 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 	    if (errno==EINTR) continue;
 	    FAIL("waitpid for authbind");
 	}
-	if (WIFSIGNALED(status)) {
-	    lg_perror(FAIL_LG,0,"authbind died on signal %s (%d)",
-			strsignal(WTERMSIG(status)),WTERMSIG(status));
-	    goto failed;
-	}
-	if (WIFEXITED(status) && WEXITSTATUS(status)!=0) {
-	    lg_perror(FAIL_LG,0,
-		      "authbind died with error exit status %d",
-		      WEXITSTATUS(status));
+	if (status) {
+	    lg_exitstatus(FAIL_LG,status,"authbind");
 	    goto failed;
 	}
     } else {

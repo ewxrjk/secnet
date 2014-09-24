@@ -143,17 +143,8 @@ int sys_cmd(const char *path, const char *arg, ...)
 	    fatal("sys_cmd: waitpid for %s returned wrong process ID!",
 		  path);
 	if (rv) {
-	    /* If the command failed reporting its exit status */
-	    if (WIFEXITED(rv))
-		Message(M_ERR, "sys_cmd(%s,%s,...) exited with status %d\n",
-			path, arg, WEXITSTATUS(rv));
-	    else if(WIFSIGNALED(rv))
-		Message(M_ERR, "sys_cmd(%s,%s,...) exited with signal %d (%s)%s\n",
-			path, arg, WTERMSIG(rv), strsignal(WTERMSIG(rv)),
-			WCOREDUMP(rv) ? " - core dumped" : "");
-	    else
-		Message(M_ERR, "sys_cmd(%s,%s,...) exited with wstat %#x\n",
-			path, arg, rv);
+	    /* If the command failed report its exit status */
+	    lg_exitstatus(0,"sys_cmd",0,M_ERR,rv,path);
 	}
     } else if (c==0) {
 	char *args[100];
