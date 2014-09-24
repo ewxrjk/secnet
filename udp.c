@@ -288,7 +288,14 @@ failed:
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks)
 {
     socks->uc=uc;
-    register_for_poll(socks,udp_socks_beforepoll,udp_socks_afterpoll,"udp");
+    socks->interest=
+	register_for_poll(socks,udp_socks_beforepoll,udp_socks_afterpoll,"udp");
+}
+
+void udp_socks_deregister(struct udpcommon *uc, struct udpsocks *socks)
+{
+    socks->uc=uc;
+    deregister_for_poll(socks->interest);
 }
 
 static void udp_phase_hook(void *sst, uint32_t new_phase)

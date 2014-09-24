@@ -72,6 +72,7 @@ struct udpsocks {
     struct udpsock socks[UDP_MAX_SOCKETS];
     /* private for udp_socks_* */
     struct udpcommon *uc; /* link to parent, for cfg, notify list, etc. */
+    struct poll_interest *interest;
 };
 
 struct udpcommon {
@@ -87,6 +88,7 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
   /* Fills in us->fd.  Logs any errors with lg_[v]perror. */
 
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks);
+void udp_socks_deregister(struct udpcommon *uc, struct udpsocks *socks);
 
 #define UDP_APPLY_STANDARD(st,uc,desc)					\
     (uc)->use_proxy=False;						\
