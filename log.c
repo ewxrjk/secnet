@@ -225,6 +225,23 @@ void lg_perror(struct log_if *lg, const char *desc, struct cloc *loc,
     va_end(al);
 }
 
+void lg_exitstatus(struct log_if *lg, const char *desc, struct cloc *loc,
+		   int class, int status, const char *progname)
+{
+    if (!status)
+	lg_perror(lg,desc,loc,class,0,"%s exited",progname);
+    else if (WIFEXITED(status))
+	lg_perror(lg,desc,loc,class,0,"%s exited with error exit status %d",
+		  progname,WEXITSTATUS(status));
+    else if (WIFSIGNALED(status))
+	lg_perror(lg,desc,loc,class,0,"%s died due to fatal signal %s (%d)%s",
+		  progname,strsignal(WTERMSIG(status)),WTERMSIG(status),
+		  WCOREDUMP(status)?" (core dumped)":"");
+    else
+	lg_perror(lg,desc,loc,class,0,"%s died with unknown wait status %d",
+		  progname,status);
+}
+
 struct log_if *init_log(list_t *ll)
 {
     int i=0;

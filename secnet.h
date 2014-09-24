@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <sys/poll.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -597,6 +598,8 @@ void lg_vperror(struct log_if *lg, const char *desc, struct cloc *loc,
 void lg_perror(struct log_if *lg, const char *desc, struct cloc *loc,
 	       int class, int errnoval, const char *fmt, ...)
     FORMAT(printf,6,7);
+void lg_exitstatus(struct log_if *lg, const char *desc, struct cloc *loc,
+		   int class, int status, const char *progname);
 
 /* The cfgfatal() family of functions require messages that end in '\n' */
 extern NORETURN(cfgfatal(struct cloc loc, cstring_t facility,
