@@ -183,6 +183,14 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
     return True;
 }
 
+void udp_destroy_socket(struct udpcommon *uc, struct udpsock *us)
+{
+    if (us->fd>=0) {
+	close(us->fd);
+	us->fd=-1;
+    }
+}
+
 bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 		       int failmsgclass)
 {
@@ -276,10 +284,7 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
     return True;
 
 failed:
-    if (us->fd>=0) {
-	close(us->fd);
-	us->fd=-1;
-    }
+    udp_destroy_socket(uc,us);
     return False;
 
 #undef FAIL

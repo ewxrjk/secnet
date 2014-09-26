@@ -87,6 +87,9 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 		       int failmsgclass);
   /* Fills in us->fd.  Logs any errors with lg_[v]perror. */
 
+void udp_destroy_socket(struct udpcommon *uc, struct udpsock *us);
+  /* Idempotent.  No errors are possible. */
+
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks);
 void udp_socks_deregister(struct udpcommon *uc, struct udpsocks *socks);
 
