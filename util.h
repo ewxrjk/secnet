@@ -95,4 +95,7 @@ void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
 #define MAX(a,b) MINMAX((a),(b),>)
 #define MIN(a,b) MINMAX((a),(b),<)
 
+static inline bool_t iswouldblock(int e)
+    { return e==EWOULDBLOCK || e==EAGAIN; }
+
 #endif /* util_h */

@@ -302,6 +302,7 @@ void start_signal_handling(void)
     spw=p[1];
     spr=p[0];
     setnonblock(spw);
+    setnonblock(spr);
 
     register_for_poll(NULL,signal_beforepoll,signal_afterpoll,"signal");
     signal_handling=True;

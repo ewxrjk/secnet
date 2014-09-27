@@ -118,6 +118,7 @@ static void tun_afterpoll(void *sst, struct pollfd *fds, int nfds)
 	buffer_init(st->buff,calculate_max_start_pad());
 	l=read(st->fd, st->buff->start, buf_remaining_space(st->buff));
 	if (l<0) {
+	    if (errno==EINTR || iswouldblock(errno)) return;
 	    fatal_perror("tun_afterpoll: read()");
 	}
 	if (l==0) {
@@ -353,6 +354,7 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
        our networks. */
 
     setcloexec(st->fd);
+    setnonblock(st->fd);
 
     hostaddr=ipaddr_to_string(st->nl.local_address);
     secnetaddr=ipaddr_to_string(st->nl.secnet_address);

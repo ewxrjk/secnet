@@ -31,6 +31,27 @@ struct slip {
 
 /* Generic SLIP mangling code */
 
+static void slip_write(int fd, const uint8_t *p, size_t l)
+{
+    while (l) {
+	ssize_t written=write(fd,p,l);
+	if (written<0) {
+	    if (errno==EINTR) {
+		continue;
+	    } else if (iswouldblock(errno)) {
+		lg_perror(0,"slip",0,M_ERR,errno,"write() (packet(s) lost)");
+		return;
+	    } else {
+		fatal_perror("slip_stuff: write()");
+	    }
+	}
+	assert(written>0);
+	assert((size_t)written<=l);
+	p+=written;
+	l-=written;
+    }
+}
+
 static void slip_stuff(struct slip *st, struct buffer_if *buf, int fd)
 {
     uint8_t txbuf[DEFAULT_BUFSIZE];
@@ -56,16 +77,12 @@ static void slip_stuff(struct slip *st, struct buffer_if *buf, int fd)
 	    break;
 	}
 	if ((j+2)>DEFAULT_BUFSIZE) {
-	    if (write(fd,txbuf,j)<0) {
-		fatal_perror("slip_stuff: write()");
-	    }
+	    slip_write(fd,txbuf,j);
 	    j=0;
 	}
     }
     txbuf[j++]=SLIP_END;
-    if (write(fd,txbuf,j)<0) {
-	fatal_perror("slip_stuff: write()");
-    }
+    slip_write(fd,txbuf,j);
     BUF_FREE(buf);
 }
 
@@ -195,7 +212,7 @@ static void userv_afterpoll(void *sst, struct pollfd *fds, int nfds)
     if (fds[1].revents&POLLIN) {
 	l=read(st->rxfd,rxbuf,DEFAULT_BUFSIZE);
 	if (l<0) {
-	    if (errno!=EINTR)
+	    if (errno!=EINTR && !iswouldblock(errno))
 		fatal_perror("%s: userv_afterpoll: read(rxfd)",
 			     st->slip.nl.name);
 	} else if (l==0) {
@@ -366,6 +383,8 @@ static void userv_invoke_userv(struct userv *st)
 		  st->slip.nl.name,confirm);
 	}
     }
+    setnonblock(st->txfd);
+    setnonblock(st->rxfd);
 }
 
 static void userv_kill_userv(struct userv *st)

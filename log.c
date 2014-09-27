@@ -579,6 +579,7 @@ static void log_from_fd_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		    i=-1;
 		}
 	    }
+	} else if (errno==EINTR || iswouldblock(errno)) {
 	} else {
 	    Message(M_WARNING,"log_from_fd: %s\n",strerror(errno));
 	    st->finished=True;
@@ -597,6 +598,8 @@ void log_from_fd(int fd, cstring_t prefix, struct log_if *log)
     st->buffer=safe_malloc(FDLOG_BUFSIZE,"log_from_fd");
     st->i=0;
     st->finished=False;
+
+    setnonblock(st->fd);
 
     register_for_poll(st,log_from_fd_beforepoll,log_from_fd_afterpoll,
 		      prefix);
