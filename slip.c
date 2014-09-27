@@ -273,8 +273,6 @@ static void userv_entry(void *sst)
     dup2(st->out,1);
 
     setsid();
-    /* XXX We really should strdup() all of argv[] but because we'll just
-       exit anyway if execvp() fails it doesn't seem worth bothering. */
     execvp(st->path,(char *const*)st->argv);
     perror("userv-entry: execvp()");
     exit(1);
