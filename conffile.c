@@ -691,6 +691,31 @@ string_t dict_read_string(dict_t *dict, cstring_t key, bool_t required,
     return r;
 }
 
+const char **dict_read_string_array(dict_t *dict, cstring_t key,
+				    bool_t required, cstring_t desc,
+				    struct cloc loc, const char *const *def)
+{
+    list_t *l;
+    const char **ra, **rap;
+
+    l=dict_lookup(dict,key);
+    if (!l) {
+	if (!required) return (const char**)def;
+	cfgfatal(loc,desc,"required string list \"%s\" not found\n",key);
+    }
+
+    int32_t ll=list_length(l);
+    ra=safe_malloc_ary(sizeof(*ra), ll+1, "dict_read_string_array");
+    for (rap=ra; l; l=l->next,rap++) {
+	item_t *it=l->item;
+	if (it->type!=t_string)
+	    cfgfatal(it->loc,desc,"\"%s\" entry must be a string\n",key);
+	*rap=it->data.string;
+    }
+    *rap=0;
+    return ra;
+}
+
 uint32_t dict_read_number(dict_t *dict, cstring_t key, bool_t required,
 			  cstring_t desc, struct cloc loc, uint32_t def)
 {

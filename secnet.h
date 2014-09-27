@@ -138,6 +138,14 @@ extern uint32_t dict_read_number(dict_t *dict, cstring_t key, bool_t required,
   /* return value can safely be assigned to int32_t */
 extern bool_t dict_read_bool(dict_t *dict, cstring_t key, bool_t required,
 			     cstring_t desc, struct cloc loc, bool_t def);
+const char **dict_read_string_array(dict_t *dict, cstring_t key,
+				    bool_t required, cstring_t desc,
+				    struct cloc loc, const char *const *def);
+  /* Return value is a NULL-terminated array obtained from malloc;
+   * Individual string values are still owned by config file machinery
+   * and must not be modified or freed.  Returns NULL if key not
+   * found. */
+
 struct flagstr {
     cstring_t name;
     uint32_t value;
