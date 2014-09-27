@@ -35,8 +35,6 @@ static struct signotify *sigs=NULL;
 
 static int spw,spr; /* file descriptors for signal notification pipe */
 
-static void set_default_signals(void);
-
 /* Long-lived subprocesses can only be started once we've started
    signal processing so that we can catch SIGCHLD for them and report
    their exit status using the callback function.  We block SIGCHLD
@@ -58,8 +56,7 @@ pid_t makesubproc(process_entry_fn *entry, process_callback_fn *cb,
     p=fork();
     if (p==0) {
 	/* Child process */
-	set_default_signals();
-	sigprocmask(SIG_SETMASK,&emptyset,NULL);
+	afterfork();
 	entry(est);
 	abort();
     } else if (p==-1) {
@@ -155,6 +152,7 @@ int sys_cmd(const char *path, const char *arg, ...)
 	   if the execvp() fails this seems somewhat pointless, and
 	   increases the chance of the child process failing before it
 	   gets to exec(). */
+	afterfork();
 	va_start(ap,arg);
 	args[0]=(char *)arg; /* program name */
 	i=1;
@@ -214,7 +212,7 @@ static void signal_afterpoll(void *st, struct pollfd *fds, int nfds)
     }
 }
 
-static void set_default_signals(void)
+void afterfork(void)
 {
     struct signotify *n;
     sigset_t done;
@@ -229,6 +227,9 @@ static void set_default_signals(void)
 	    sa.sa_flags=0;
 	    sigaction(n->signum,&sa,NULL);
 	}
+
+    sigemptyset(&emptyset);
+    sigprocmask(SIG_SETMASK,&emptyset,NULL);
 }
 
 static void signal_handler(int signum)

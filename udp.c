@@ -232,6 +232,7 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 	    char *argv[5], addrstr[33], portstr[5];
 	    const char *addrfam;
 	    int port;
+	    afterfork();
 	    switch (addr->sa.sa_family) {
 	    case AF_INET:
 		sprintf(addrstr,"%08lX",(long)addr->sin.sin_addr.s_addr);

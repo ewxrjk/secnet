@@ -55,6 +55,7 @@ static HPState start(void)
     }
 
     if (!child) { /* we are the child */
+	afterfork();
 	return hp_compute;
     }
 

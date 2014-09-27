@@ -59,6 +59,10 @@ extern struct log_if *system_log;
 /* from process.c */
 extern void start_signal_handling(void);
 
+void afterfork(void);
+/* Must be called before exec in every child made after
+   start_signal_handling.  Safe to call in earlier children too. */
+
 /***** CONFIGURATION support *****/
 
 extern bool_t just_check_config; /* If True then we're going to exit after
