@@ -11,28 +11,46 @@
 	}					\
     }while(0)
 
-#define SEQNUM_CHECK(seqnum, p) do{			\
-	uint32_t skew=seqnum-ti->lastrecvseq;		\
-	if (skew<0x8fffffff) {				\
-	    /* Ok */					\
-	    ti->lastrecvseq=seqnum;			\
-	} else if ((0-skew)<(p)->max_seq_skew) {	\
-	    /* Ok */					\
-	} else {					\
-	    /* Too much skew */				\
-	    *errmsg="seqnum: too much skew";		\
-	    return 2;					\
-	}						\
+#define RECVBITMAP_SIZE 32
+typedef uint32_t recvbitmap_type;
+
+#define SEQNUM_CHECK(seqnum, p) do{				\
+	uint32_t skew=seqnum-ti->lastrecvseq;			\
+	if (skew<0x8fffffff) {					\
+	    /* Ok */						\
+	    ti->lastrecvseq=seqnum;				\
+	    if (skew < RECVBITMAP_SIZE)				\
+                ti->recvbitmap <<= skew;			\
+            else						\
+                ti->recvbitmap=0;				\
+            skew=0;						\
+	} else if ((0-skew)<(p)->max_seq_skew) {		\
+	    /* Ok */						\
+	} else {						\
+	    /* Too much skew */					\
+	    *errmsg="seqnum: too much skew";			\
+	    return 2;						\
+	}							\
+	if ((p)->dedupe) {					\
+	    recvbitmap_type recvbit=(uint32_t)1 << skew;	\
+	    if (ti->recvbitmap & recvbit) {			\
+		*errmsg="seqnum: duplicate";			\
+		return 2;					\
+	    }							\
+	    ti->recvbitmap |= recvbit;				\
+	}							\
     }while(0)
 
 #define SEQNUM_KEYED_FIELDS						\
     uint32_t sendseq;							\
     uint32_t lastrecvseq;						\
+    recvbitmap_type recvbitmap; /* 1<<0 is lastrecvseq (i.e., most recent) */ \
     bool_t keyed
 
 #define SEQNUM_KEYED_INIT(initlastrecvseq,initsendseq)	\
     (ti->lastrecvseq=(initlastrecvseq),			\
      ti->sendseq=(initsendseq),				\
+     ti->recvbitmap=0,					\
      ti->keyed=True)
 
 #define TRANSFORM_VALID				\
@@ -74,11 +92,18 @@
 	ti->keyed=False;
 
 #define SEQNUM_PARAMS_FIELDS			\
-    uint32_t max_seq_skew
+    uint32_t max_seq_skew;			\
+    bool_t dedupe;
 
 #define SEQNUM_PARAMS_INIT(dict,p,desc,loc)				\
     (p)->max_seq_skew=dict_read_number((dict), "max-sequence-skew",	\
-					False, (desc), (loc), 10);
-
+					False, (desc), (loc), 10);	\
+    bool_t can_dedupe=(p)->max_seq_skew < RECVBITMAP_SIZE;		\
+    (p)->dedupe=dict_read_bool((dict), "dedupe",			\
+			       False,(desc),(loc), can_dedupe);		\
+    if ((p)->dedupe && !can_dedupe)					\
+	cfgfatal(loc,"transform",					\
+                 "cannot dedupe with max-sequence-skew>=32");		\
+    else (void)0
 
 #endif /*TRANSFORM_COMMON_H*/
