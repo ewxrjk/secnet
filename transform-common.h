@@ -11,19 +11,29 @@
 	}					\
     }while(0)
 
-#define SEQNUM_CHECK(seqnum, max_skew) do{	\
-	uint32_t skew=seqnum-ti->lastrecvseq;	\
-	if (skew<0x8fffffff) {			\
-	    /* Ok */				\
-	    ti->lastrecvseq=seqnum;		\
-	} else if ((0-skew)<max_skew) {	\
-	    /* Ok */				\
-	} else {				\
-	    /* Too much skew */			\
-	    *errmsg="seqnum: too much skew";	\
-	    return 2;				\
-	}					\
+#define SEQNUM_CHECK(seqnum, p) do{			\
+	uint32_t skew=seqnum-ti->lastrecvseq;		\
+	if (skew<0x8fffffff) {				\
+	    /* Ok */					\
+	    ti->lastrecvseq=seqnum;			\
+	} else if ((0-skew)<(p)->max_seq_skew) {	\
+	    /* Ok */					\
+	} else {					\
+	    /* Too much skew */				\
+	    *errmsg="seqnum: too much skew";		\
+	    return 2;					\
+	}						\
     }while(0)
+
+#define SEQNUM_KEYED_FIELDS						\
+    uint32_t sendseq;							\
+    uint32_t lastrecvseq;						\
+    bool_t keyed
+
+#define SEQNUM_KEYED_INIT(initlastrecvseq,initsendseq)	\
+    (ti->lastrecvseq=(initlastrecvseq),			\
+     ti->sendseq=(initsendseq),				\
+     ti->keyed=True)
 
 #define TRANSFORM_VALID				\
     static bool_t transform_valid(void *sst)	\
@@ -44,7 +54,7 @@
 
 #define SET_CAPAB_TRANSFORMNUM(def) do{					\
         st->ops.capab_transformnum=dict_read_number(dict, "capab-num",	\
-                                     False, "transform", loc, def);	\
+                                     False, "transform", loc, (def));	\
         if (st->ops.capab_transformnum > CAPAB_TRANSFORMNUM_MAX)	\
 	    cfgfatal(loc,"transform","capab-num out of range 0..%d\n",	\
 		     CAPAB_TRANSFORMNUM_MAX);				\
@@ -62,5 +72,13 @@
 	ti->ops.reverse=transform_reverse;		\
 	ti->ops.destroy=transform_destroy;		\
 	ti->keyed=False;
+
+#define SEQNUM_PARAMS_FIELDS			\
+    uint32_t max_seq_skew
+
+#define SEQNUM_PARAMS_INIT(dict,p,desc,loc)				\
+    (p)->max_seq_skew=dict_read_number((dict), "max-sequence-skew",	\
+					False, (desc), (loc), 10);
+
 
 #endif /*TRANSFORM_COMMON_H*/

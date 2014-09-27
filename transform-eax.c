@@ -55,7 +55,8 @@
 #define SEQLEN 4
 
 struct transform_params {
-    uint32_t max_seq_skew, tag_length, padding_mask;
+    SEQNUM_PARAMS_FIELDS;
+    uint32_t tag_length, padding_mask;
 };
 
 struct transform {
@@ -67,11 +68,9 @@ struct transform {
 struct transform_inst {
     struct transform_inst_if ops;
     struct transform_params p;
-    unsigned keyed:1;
     /* remaining valid iff keyed */
     unsigned direction:1;
-    uint32_t sendseq;
-    uint32_t lastrecvseq;
+    SEQNUM_KEYED_FIELDS;
     struct keyInstance key;
     uint8_t info_b[BLOCK_SIZE], info_p[BLOCK_SIZE];
 };
@@ -127,11 +126,10 @@ static bool_t transform_setkey(void *sst, uint8_t *key, int32_t keylen,
     TEAX_DEBUG(hash_out+32,8);
 
     ti->direction=direction;
-    ti->sendseq=get_uint32(hash_out+32+direction*4);
-    ti->lastrecvseq=get_uint32(hash_out+32+!direction*4);
     serpent_makekey(&ti->key, 32*8, hash_out);
     eax_setup(ti);
-    ti->keyed=True;
+    SEQNUM_KEYED_INIT(get_uint32(hash_out+32+!direction*4),
+		      get_uint32(hash_out+32+direction*4));
 
     return True;
 }
@@ -231,7 +229,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     size_t padlen = *padp;
     if (!buf_unappend(buf,padlen-1)) goto too_short;
 
-    SEQNUM_CHECK(seqnum, ti->p.max_seq_skew);
+    SEQNUM_CHECK(seqnum, &ti->p);
 
     TEAX_DEBUG(buf->start,buf->size);
 
@@ -275,8 +273,7 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
 
     SET_CAPAB_TRANSFORMNUM(CAPAB_TRANSFORMNUM_EAXSERPENT);
 
-    st->p.max_seq_skew=dict_read_number(dict, "max-sequence-skew",
-					False, "eax-serpent", loc, 10);
+    SEQNUM_PARAMS_INIT(dict,&st->p,"eax-serpent",loc);
 
     st->p.tag_length=dict_read_number(dict, "tag-length-bytes",
 				      False, "eax-serpent", loc, 128/8);
