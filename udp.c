@@ -85,10 +85,11 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
     struct commcommon *cc=&uc->cc;
 
     for (i=0; i<socks->n_socks; i++) {
+	struct udpsock *us=&socks->socks[i];
 	if (i>=nfds) continue;
 	if (!(fds[i].revents & POLLIN)) continue;
-	assert(fds[i].fd == socks->socks[i].fd);
-	int fd=socks->socks[i].fd;
+	assert(fds[i].fd == us->fd);
+	int fd=us->fd;
 	do {
 	    fromlen=sizeof(from);
 	    BUF_ASSERT_FREE(cc->rbuf);
@@ -134,7 +135,7 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 		    BUF_FREE(cc->rbuf);
 		}
 		BUF_ASSERT_FREE(cc->rbuf);
-	    } else {
+	    } else { /* rv<=0 */
 		BUF_FREE(cc->rbuf);
 	    }
 	} while (rv>=0);
@@ -150,6 +151,7 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
     uint8_t *sa;
 
     if (uc->use_proxy) {
+	struct udpsock *us=&socks->socks[0];
 	sa=buf_prepend(buf,8);
 	if (dest->ia.sa.sa_family != AF_INET) {
 	    Message(M_INFO,
@@ -160,17 +162,19 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 	memcpy(sa,&dest->ia.sin.sin_addr,4);
 	memset(sa+4,0,4);
 	memcpy(sa+6,&dest->ia.sin.sin_port,2);
-	sendto(socks->socks[0].fd,sa,buf->size+8,0,&uc->proxy.sa,
+	sendto(us->fd,sa,buf->size+8,0,&uc->proxy.sa,
 	       iaddr_socklen(&uc->proxy));
 	buf_unprepend(buf,8);
     } else {
 	int i,r;
 	bool_t allunsupported=True;
+	int af=dest->ia.sa.sa_family;
 	for (i=0; i<socks->n_socks; i++) {
-	    if (dest->ia.sa.sa_family != socks->socks[i].addr.sa.sa_family)
+	    struct udpsock *us=&socks->socks[i];
+	    if (us->addr.sa.sa_family != af)
 		/* no point even trying */
 		continue;
-	    r=sendto(socks->socks[i].fd, buf->start, buf->size, 0,
+	    r=sendto(us->fd, buf->start, buf->size, 0,
 		     &dest->ia.sa, iaddr_socklen(&dest->ia));
 	    if (r>=0) return True;
 	    if (!(errno==EAFNOSUPPORT || errno==ENETUNREACH))
