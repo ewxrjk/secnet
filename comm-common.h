@@ -3,6 +3,7 @@
 #define COMM_COMMON_H
 
 #include "secnet.h"
+#include "util.h"
 
 /*----- for all comms -----*/
 
@@ -62,9 +63,12 @@ void comm_apply(struct commcommon *cc, void *st);
 
 #define UDP_MAX_SOCKETS 3 /* 2 ought to do really */
 
+#define MAX_AF MAX_RAW(AF_INET6,AF_INET)
+
 struct udpsock {
     union iaddr addr;
     int fd;
+    bool_t experienced[/*0=recv,1=send*/2][MAX_AF+1][/*success?*/2];
 };
 
 struct udpsocks {
@@ -89,6 +93,12 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 
 void udp_destroy_socket(struct udpcommon *uc, struct udpsock *us);
   /* Idempotent.  No errors are possible. */
+
+const char *af_name(int af);
+void udp_sock_experienced(struct log_if *lg, struct udpcommon *uc,
+			  const char *socksdesc, struct udpsock *us,
+			  bool_t recvsend, int af /* 0 means any */,
+			  int r, int errnoval);
 
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks);
 void udp_socks_deregister(struct udpcommon *uc, struct udpsocks *socks);

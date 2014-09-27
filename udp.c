@@ -72,6 +72,34 @@ static int udp_socks_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
     return 0;
 }
 
+const char *af_name(int af)
+{
+    switch (af) {
+    case AF_INET6: return "IPv6";
+    case AF_INET:  return "IPv4";
+    case 0:        return "(any)";
+    default: abort();
+    }
+}
+
+void udp_sock_experienced(struct log_if *lg, struct udpcommon *uc,
+			  const char *socksdesc, struct udpsock *us,
+			  bool_t recvsend, int af,
+			  int r, int errnoval)
+{
+    bool_t success=r>=0;
+    if (us->experienced[recvsend][af][success]++)
+	return;
+    lg_perror(lg, uc->cc.cl.description, &uc->cc.loc,
+	      success ? M_INFO : M_WARNING,
+	      success ? 0 : errnoval,
+	      "%s %s experiencing some %s %s%s%s",
+	      socksdesc,iaddr_to_string(&us->addr),
+	      success?"success":"trouble",
+	      recvsend?"transmitting":"receiving",
+	      af?" ":"", af?af_name(af):"");
+}
+
 static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 {
     struct udpsocks *socks=state;
@@ -136,6 +164,8 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 		}
 		BUF_ASSERT_FREE(cc->rbuf);
 	    } else { /* rv<=0 */
+		if (errno!=EINTR && !iswouldblock(errno))
+		    udp_sock_experienced(0,uc, "socket",us, 0,0, rv,errno);
 		BUF_FREE(cc->rbuf);
 	    }
 	} while (rv>=0);
@@ -162,8 +192,9 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 	memcpy(sa,&dest->ia.sin.sin_addr,4);
 	memset(sa+4,0,4);
 	memcpy(sa+6,&dest->ia.sin.sin_port,2);
-	sendto(us->fd,sa,buf->size+8,0,&uc->proxy.sa,
+	int r=sendto(us->fd,sa,buf->size+8,0,&uc->proxy.sa,
 	       iaddr_socklen(&uc->proxy));
+	udp_sock_experienced(0,uc, "proxy",us, 1,0, r,errno);
 	buf_unprepend(buf,8);
     } else {
 	int i,r;
@@ -176,6 +207,7 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 		continue;
 	    r=sendto(us->fd, buf->start, buf->size, 0,
 		     &dest->ia.sa, iaddr_socklen(&dest->ia));
+	    udp_sock_experienced(0,uc, "socket",us, 1,af, r,errno);
 	    if (r>=0) return True;
 	    if (!(errno==EAFNOSUPPORT || errno==ENETUNREACH))
 		/* who knows what that error means? */
@@ -208,6 +240,7 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 	goto failed;						\
     }while(0)
 
+    FILLZERO(us->experienced);
     us->fd=socket(addr->sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
     if (us->fd<0) FAIL("socket");
     setnonblock(us->fd);
