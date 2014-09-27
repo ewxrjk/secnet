@@ -169,6 +169,13 @@ void setcloexec(int fd) {
     if (r<0) fatal_perror("fcntl(,F_SETFD,|FD_CLOEXEC) failed");
 }
 
+void pipe_cloexec(int fd[2]) {
+    int r=pipe(fd);
+    if (r) fatal_perror("pipe");
+    setcloexec(fd[0]);
+    setcloexec(fd[1]);
+}
+
 static const char *phases[NR_PHASES]={
     "PHASE_INIT",
     "PHASE_GETOPTS",

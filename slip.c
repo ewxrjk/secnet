@@ -262,7 +262,6 @@ static void userv_entry(void *sst)
     dup2(st->in,0);
     dup2(st->out,1);
 
-    /* XXX close all other fds */
     setsid();
     /* XXX We really should strdup() all of argv[] but because we'll just
        exit anyway if execvp() fails it doesn't seem worth bothering. */
@@ -326,12 +325,8 @@ static void userv_invoke_userv(struct userv *st)
     st->slip.pending_esc=False;
 
     /* Invoke userv */
-    if (pipe(c_stdin)!=0) {
-	fatal_perror("userv_invoke_userv: pipe(c_stdin)");
-    }
-    if (pipe(c_stdout)!=0) {
-	fatal_perror("userv_invoke_userv: pipe(c_stdout)");
-    }
+    pipe_cloexec(c_stdin);
+    pipe_cloexec(c_stdout);
     st->txfd=c_stdin[1];
     st->rxfd=c_stdout[0];
 

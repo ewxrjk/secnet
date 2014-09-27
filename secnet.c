@@ -403,9 +403,7 @@ static void become_daemon(void)
     }
     if (secnet_is_daemon) {
 	/* stderr etc are redirected to the system/log facility */
-	if (pipe(errfds)!=0) {
-	    fatal_perror("can't create pipe for stderr");
-	}
+	pipe_cloexec(errfds);
 	if (dup2(errfds[1],0) < 0
 	    || dup2(errfds[1],1) < 0
 	    || dup2(errfds[1],2) < 0)

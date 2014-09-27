@@ -139,6 +139,7 @@ extern void *safe_malloc(size_t size, const char *message);
 extern void *safe_malloc_ary(size_t size, size_t count, const char *message);
 
 void setcloexec(int fd); /* cannot fail */
+void pipe_cloexec(int fd[2]); /* pipe(), setcloexec() twice; cannot fail */
 
 extern int sys_cmd(const char *file, const char *argc, ...);
 

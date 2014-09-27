@@ -310,9 +310,7 @@ void start_signal_handling(void)
     sigemptyset(&registered);
     sigemptyset(&pending);
 
-    if (pipe(p)!=0) {
-	fatal_perror("start_signal_handling: pipe");
-    }
+    pipe_cloexec(p);
     spw=p[1];
     spr=p[0];
     if (fcntl(spw, F_SETFL, fcntl(spw, F_GETFL)|O_NONBLOCK)==-1) {
