@@ -18,21 +18,25 @@
 /* Required key length in bytes */
 #define REQUIRED_KEYLEN ((512+64+32)/8)
 
+struct transform_params {
+    uint32_t max_seq_skew;
+};
+
 struct transform {
     closure_t cl;
     struct transform_if ops;
-    uint32_t max_seq_skew;
+    struct transform_params p;
 };
 
 struct transform_inst {
     struct transform_inst_if ops;
+    struct transform_params p;
     struct keyInstance cryptkey;
     struct keyInstance mackey;
     uint32_t cryptiv;
     uint32_t maciv;
     uint32_t sendseq;
     uint32_t lastrecvseq;
-    uint32_t max_skew;
     bool_t keyed;
 };
 
@@ -230,7 +234,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     /* Sequence number must be within max_skew of lastrecvseq; lastrecvseq
        is only allowed to increase. */
     seqnum=buf_unprepend_uint32(buf);
-    SEQNUM_CHECK(seqnum, ti->max_skew);
+    SEQNUM_CHECK(seqnum, ti->p.max_seq_skew);
     
     return 0;
 }
@@ -243,7 +247,7 @@ static struct transform_inst_if *transform_create(void *sst)
 
     TRANSFORM_CREATE_CORE;
 
-    ti->max_skew=st->max_seq_skew;
+    ti->p=st->p;
 
     return &ti->ops;
 }
@@ -275,8 +279,8 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
 	cfgfatal(loc,"userv-ipif","parameter must be a dictionary\n");
     
     dict=item->data.dict;
-    st->max_seq_skew=dict_read_number(dict, "max-sequence-skew",
-				      False, "serpent-cbc256", loc, 10);
+    st->p.max_seq_skew=dict_read_number(dict, "max-sequence-skew",
+					False, "serpent-cbc256", loc, 10);
 
     SET_CAPAB_TRANSFORMNUM(CAPAB_TRANSFORMNUM_SERPENT256CBC);
 
