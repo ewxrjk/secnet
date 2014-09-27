@@ -206,8 +206,7 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 
     us->fd=socket(addr->sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
     if (us->fd<0) FAIL("socket");
-    if (fcntl(us->fd, F_SETFL, fcntl(us->fd, F_GETFL)|O_NONBLOCK)==-1)
-	FAIL("fcntl(set O_NONBLOCK)");
+    setnonblock(us->fd);
     setcloexec(us->fd);
 #ifdef CONFIG_IPV6
     if (addr->sa.sa_family==AF_INET6) {

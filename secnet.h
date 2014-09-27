@@ -174,6 +174,7 @@ extern void *safe_realloc_ary(void *p, size_t size, size_t count,
 			      const char *message);
 
 void setcloexec(int fd); /* cannot fail */
+void setnonblock(int fd); /* cannot fail */
 void pipe_cloexec(int fd[2]); /* pipe(), setcloexec() twice; cannot fail */
 
 extern int sys_cmd(const char *file, const char *argc, ...);

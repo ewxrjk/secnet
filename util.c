@@ -177,12 +177,16 @@ int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen)
     return i;
 }
 
-void setcloexec(int fd) {
-    int r=fcntl(fd, F_GETFD);
-    if (r<0) fatal_perror("fcntl(,F_GETFD) failed");
-    r=fcntl(fd, F_SETFD, r|FD_CLOEXEC);
-    if (r<0) fatal_perror("fcntl(,F_SETFD,|FD_CLOEXEC) failed");
+#define DEFINE_SETFDFLAG(fn,FL,FLAG)					\
+void fn(int fd) {							\
+    int r=fcntl(fd, F_GET##FL);						\
+    if (r<0) fatal_perror("fcntl(,F_GET" #FL ") failed");		\
+    r=fcntl(fd, F_SET##FL, r|FLAG);					\
+    if (r<0) fatal_perror("fcntl(,F_SET" #FL ",|" #FLAG ") failed");	\
 }
+
+DEFINE_SETFDFLAG(setcloexec,FD,FD_CLOEXEC);
+DEFINE_SETFDFLAG(setnonblock,FL,O_NONBLOCK);
 
 void pipe_cloexec(int fd[2]) {
     int r=pipe(fd);

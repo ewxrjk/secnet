@@ -301,9 +301,7 @@ void start_signal_handling(void)
     pipe_cloexec(p);
     spw=p[1];
     spr=p[0];
-    if (fcntl(spw, F_SETFL, fcntl(spw, F_GETFL)|O_NONBLOCK)==-1) {
-	fatal_perror("start_signal_handling: fcntl(O_NONBLOCK)");
-    }
+    setnonblock(spw);
 
     register_for_poll(NULL,signal_beforepoll,signal_afterpoll,"signal");
     signal_handling=True;
