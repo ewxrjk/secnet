@@ -241,7 +241,7 @@ static bool_t tun_set_route(void *sst, struct netlink_client *routes)
 	    break;
 	}
     }
-    if (st->route_type==TUN_CONFIG_IOCTL) {
+    if (fd >= 0) {
 	close(fd);
     }
     routes->kup=up;
