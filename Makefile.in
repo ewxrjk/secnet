@@ -31,6 +31,13 @@ CC:=@CC@
 INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 
+prefix:=@prefix@
+exec_prefix:=@exec_prefix@
+sbindir:=@sbindir@
+sysconfdir:=@sysconfdir@
+transform:=@program_transform_name@
+mandir:=@mandir@
+
 CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
 	-W -Wno-unused -Wno-unused-parameter \
 	-Wno-pointer-sign -Wstrict-prototypes -Wmissing-prototypes \
@@ -43,13 +50,6 @@ ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS) $(EXTRA_CFLAGS)
 CPPFLAGS:=@CPPFLAGS@ $(EXTRA_CPPFLAGS)
 LDFLAGS:=@LDFLAGS@ $(EXTRA_LDFLAGS)
 LDLIBS:=@LIBS@ $(EXTRA_LDLIBS)
-
-prefix:=@prefix@
-exec_prefix:=@exec_prefix@
-sbindir:=@sbindir@
-sysconfdir:=@sysconfdir@
-transform:=@program_transform_name@
-mandir:=@mandir@
 
 TARGETS:=secnet
 
