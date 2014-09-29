@@ -272,7 +272,8 @@ site: dict argument
   resolver (resolver closure)
   random (randomsrc closure)
   local-key (rsaprivkey closure)
-  address (string): optional, DNS name used to find our peer
+  address (string list): optional, DNS name(s) used to find our peer;
+    address literals are supported too if enclosed in `[' `]'.
   port (integer): mandatory if 'address' is specified: the port used
     to contact our peer
   key (rsapubkey closure): our peer's public key
@@ -319,7 +320,7 @@ site: dict argument
     their contact addresses might both change at once. [false]
   mobile-peers-max (integer): Maximum number of peer port/addr pairs we
     remember and send to.  Must be at least 1 and no more than 5.
-    [4 if an address is configured, otherwise 3]
+    [4 if any address is configured, otherwise 3]
   static-peers-max (integer): Maximum number of peer port/addr pairs
     we can try for a static site.  Must be at least 1 and no more
     than 5.  [4 or 3, as above]

@@ -280,7 +280,7 @@ struct site {
     bool_t local_mobile, peer_mobile; /* Mobile client support */
     int32_t transport_peers_max;
     string_t tunname; /* localname<->remotename by default, used in logs */
-    string_t address; /* DNS name for bootstrapping, optional */
+    cstring_t *addresses; /* DNS name or address(es) for bootstrapping, optional */
     int remoteport; /* Port for bootstrapping, optional */
     uint32_t mtu_target;
     struct netlink_if *netlink;
@@ -315,7 +315,10 @@ struct site {
     uint32_t state;
     uint64_t now; /* Most recently seen time */
     bool_t allow_send_prod;
-    bool_t resolving;
+    int resolving_count;
+    int resolving_n_results_all;
+    int resolving_n_results_stored;
+    struct comm_addr resolving_results[MAX_PEER_ADDRS];
 
     /* The currently established session */
     struct data_key current;
@@ -430,6 +433,7 @@ static bool_t initiate_key_setup(struct site *st, cstring_t reason,
 				 const struct comm_addr *prod_hint);
 static void enter_state_run(struct site *st);
 static bool_t enter_state_resolve(struct site *st);
+static void decrement_resolving_count(struct site *st, int by);
 static bool_t enter_new_state(struct site *st,uint32_t next);
 static void enter_state_wait(struct site *st);
 static void activate_new_key(struct site *st);
@@ -1191,23 +1195,51 @@ static bool_t send_msg(struct site *st)
 }
 
 static void site_resolve_callback(void *sst, const struct comm_addr *addrs,
-				  int naddrs, int was_naddrs,
+				  int stored_naddrs, int all_naddrs,
 				  const char *address, const char *failwhy)
 {
     struct site *st=sst;
 
-    st->resolving=False;
+    if (!stored_naddrs) {
+	slog(st,LOG_ERROR,"resolution of %s failed: %s",address,failwhy);
+    } else {
+	slog(st,LOG_PEER_ADDRS,"resolution of %s completed, %d addrs, eg: %s",
+	     address, all_naddrs, comm_addr_to_string(&addrs[0]));;
+
+	int space=st->transport_peers_max-st->resolving_n_results_stored;
+	int n_tocopy=MIN(stored_naddrs,space);
+	COPY_ARRAY(st->resolving_results + st->resolving_n_results_stored,
+		   addrs,
+		   n_tocopy);
+	st->resolving_n_results_stored += n_tocopy;
+	st->resolving_n_results_all += all_naddrs;
+    }
+
+    decrement_resolving_count(st,1);
+}
+
+static void decrement_resolving_count(struct site *st, int by)
+{
+    assert(st->resolving_count>0);
+    st->resolving_count-=by;
+
+    if (st->resolving_count)
+	return;
+
+    /* OK, we are done with them all.  Handle combined results. */
+
+    const struct comm_addr *addrs=st->resolving_results;
+    int naddrs=st->resolving_n_results_stored;
+    assert(naddrs<=st->transport_peers_max);
 
     if (naddrs) {
-	slog(st,LOG_STATE,"resolution of %s completed, %d addrs, eg: %s",
-	     st->address, was_naddrs, comm_addr_to_string(&addrs[0]));;
-	if (naddrs != was_naddrs) {
+ 	if (naddrs != st->resolving_n_results_all) {
 	    slog(st,LOG_SETUP_INIT,"resolution of supplied addresses/names"
 		 " yielded too many results (%d > %d), some ignored",
-		 was_naddrs, naddrs);
+		 st->resolving_n_results_all, naddrs);
 	}
-    } else {
-	slog(st,LOG_ERROR,"resolution of %s failed: %s",st->address,failwhy);
+	slog(st,LOG_STATE,"resolution completed, %d addrs, eg: %s",
+	     naddrs, comm_addr_to_string(&addrs[0]));;
     }
 
     switch (st->state) {
@@ -1233,29 +1265,27 @@ static void site_resolve_callback(void *sst, const struct comm_addr *addrs,
 	} else if (st->local_mobile) {
 	    /* We can't let this rest because we may have a peer
 	     * address which will break in the future. */
-	    slog(st,LOG_SETUP_INIT,"resolution of %s failed: "
-		 "abandoning key exchange",st->address);
+	    slog(st,LOG_SETUP_INIT,"resolution failed: "
+		 "abandoning key exchange");
 	    enter_state_wait(st);
 	} else {
-	    slog(st,LOG_SETUP_INIT,"resolution of %s failed: "
+	    slog(st,LOG_SETUP_INIT,"resolution failed: "
 		 " continuing to use source address of peer's packets"
-		 " for key exchange and ultimately data",
-		 st->address);
+		 " for key exchange and ultimately data");
 	}
 	break;
     case SITE_RUN:
 	if (naddrs) {
-	    slog(st,LOG_SETUP_INIT,"resolution of %s completed tardily,"
-		 " updating peer address(es)",st->address);
+	    slog(st,LOG_SETUP_INIT,"resolution completed tardily,"
+		 " updating peer address(es)");
 	    transport_resolve_complete_tardy(st,addrs,naddrs);
 	} else if (st->local_mobile) {
 	    /* Not very good.  We should queue (another) renegotiation
 	     * so that we can update the peer address. */
 	    st->key_renegotiate_time=st->now+st->wait_timeout;
 	} else {
-	    slog(st,LOG_SETUP_INIT,"resolution of %s failed: "
-		 " continuing to use source address of peer's packets",
-		 st->address);
+	    slog(st,LOG_SETUP_INIT,"resolution failed: "
+		 " continuing to use source address of peer's packets");
 	}
 	break;
     case SITE_WAIT:
@@ -1271,8 +1301,8 @@ static bool_t initiate_key_setup(struct site *st, cstring_t reason,
     /* Reentrancy hazard: can call enter_new_state/enter_state_* */
     if (st->state!=SITE_RUN) return False;
     slog(st,LOG_SETUP_INIT,"initiating key exchange (%s)",reason);
-    if (st->address) {
-	slog(st,LOG_SETUP_INIT,"resolving peer address");
+    if (st->addresses) {
+	slog(st,LOG_SETUP_INIT,"resolving peer address(es)");
 	return enter_state_resolve(st);
     } else if (transport_compute_setupinit_peers(st,0,0,prod_hint)) {
 	return enter_new_state(st,SITE_SENTMSG1);
@@ -1353,7 +1383,7 @@ static void set_link_quality(struct site *st)
 	quality=LINK_QUALITY_UP;
     else if (st->state==SITE_WAIT || st->state==SITE_STOP)
 	quality=LINK_QUALITY_DOWN;
-    else if (st->address)
+    else if (st->addresses)
 	quality=LINK_QUALITY_DOWN_CURRENT_ADDRESS;
     else if (transport_peers_valid(&st->peers))
 	quality=LINK_QUALITY_DOWN_STALE_ADDRESS;
@@ -1383,23 +1413,37 @@ static bool_t ensure_resolving(struct site *st)
 {
     /* Reentrancy hazard: may call site_resolve_callback and hence
      * enter_new_state, enter_state_* and generate_msg*. */
-    if (st->resolving)
+    if (st->resolving_count)
         return True;
 
-    assert(st->address);
+    assert(st->addresses);
 
     /* resolver->request might reentrantly call site_resolve_callback
-     * which will clear st->resolving, so we need to set it beforehand
-     * rather than afterwards; also, it might return False, in which
-     * case we have to clear ->resolving again. */
-    st->resolving=True;
-    bool_t ok = st->resolver->request(st->resolver->st,st->address,
-				      st->remoteport,st->comms[0],
-				      site_resolve_callback,st);
-    if (!ok)
-	st->resolving=False;
-
-    return ok;
+     * which will decrement st->resolving, so we need to increment it
+     * twice beforehand to prevent decrement from thinking we're
+     * finished, and decrement it ourselves.  Alternatively if
+     * everything fails then there are no callbacks due and we simply
+     * set it to 0 and return false.. */
+    st->resolving_n_results_stored=0;
+    st->resolving_n_results_all=0;
+    st->resolving_count+=2;
+    const char **addrp=st->addresses;
+    const char *address;
+    bool_t anyok=False;
+    for (; (address=*addrp++); ) {
+	bool_t ok = st->resolver->request(st->resolver->st,address,
+					  st->remoteport,st->comms[0],
+					  site_resolve_callback,st);
+	if (ok)
+	    st->resolving_count++;
+	anyok|=ok;
+    }
+    if (!anyok) {
+	st->resolving_count=0;
+	return False;
+    }
+    decrement_resolving_count(st,2);
+    return True;
 }
 
 static bool_t enter_state_resolve(struct site *st)
@@ -1678,7 +1722,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    if (process_msg1(st,buf,source,&named_msg)) {
 		slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
 		bool_t entered=enter_new_state(st,SITE_SENTMSG2);
-		if (entered && st->address && st->local_mobile)
+		if (entered && st->addresses && st->local_mobile)
 		    /* We must do this as the very last thing, because
 		       the resolver callback might reenter us. */
 		    ensure_resolving(st);
@@ -1938,8 +1982,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
     st->privkey=find_cl_if(dict,"local-key",CL_RSAPRIVKEY,True,"site",loc);
-    st->address=dict_read_string(dict, "address", False, "site", loc);
-    if (st->address)
+    st->addresses=dict_read_string_array(dict,"address",False,"site",loc,0);
+    if (st->addresses)
 	st->remoteport=dict_read_number(dict,"port",True,"site",loc,0);
     else st->remoteport=0;
     st->pubkey=find_cl_if(dict,"key",CL_RSAPUBKEY,True,"site",loc);
@@ -1965,7 +2009,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     const char *peerskey= st->peer_mobile
 	? "mobile-peers-max" : "static-peers-max";
     st->transport_peers_max= dict_read_number(
-	dict,peerskey,False,"site",loc, st->address ? 4 : 3);
+	dict,peerskey,False,"site",loc, st->addresses ? 4 : 3);
     if (st->transport_peers_max<1 ||
 	st->transport_peers_max>MAX_PEER_ADDRS) {
 	cfgfatal(loc,"site", "%s must be in range 1.."
@@ -1986,7 +2030,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
 				       log_event_table,"site");
 
-    st->resolving=False;
+    st->resolving_count=0;
     st->allow_send_prod=0;
 
     st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
