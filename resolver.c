@@ -20,6 +20,7 @@ struct adns {
 
 struct query {
     void *cst;
+    const char *name;
     int port;
     struct comm_if *comm;
     resolve_answer_fn *answer;
@@ -59,17 +60,17 @@ static bool_t resolve_request(void *sst, cstring_t name,
 	    snprintf(msg,sizeof(msg),"invalid address literal: %s",
 		     strerror(rv));
 	    msg[sizeof(msg)-1]=0;
-	    cb(cst,0,0,0,msg);
+	    cb(cst,0,0,0,name,msg);
 	} else {
-	    cb(cst,&ca,1,1,0);
+	    cb(cst,&ca,1,1,name,0);
 	}
 #else
 	ca.ia.sin.sin_family=AF_INET;
 	ca.ia.sin.sin_port=htons(port);
 	if (inet_aton(trimmed,&ca.ia.sin.sin_addr))
-	    cb(cst,&ca,1,1,0);
+	    cb(cst,&ca,1,1,name,0);
 	else
-	    cb(cst,0,0,0,"invalid IP address");
+	    cb(cst,0,0,0,name,"invalid IP address");
 #endif
 	return True;
     }
@@ -78,6 +79,7 @@ static bool_t resolve_request(void *sst, cstring_t name,
     q->cst=cst;
     q->comm=comm;
     q->port=port;
+    q->name=name;
     q->answer=cb;
 
     rv=adns_submit(st->ast, name, adns_r_addr, 0, q, &q->query);
@@ -116,7 +118,7 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 	if (rv==0) {
 	    q=qp;
 	    if (ans->status!=adns_s_ok) {
-		q->answer(q->cst,NULL,0,0,adns_strerror(ans->status));
+		q->answer(q->cst,NULL,0,0,q->name,adns_strerror(ans->status));
 		free(q);
 		free(ans);
 	    } else {
@@ -148,7 +150,7 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		    memcpy(&ca->ia,&ra->addr,ra->len);
 		    wslot++;
 		}
-		q->answer(q->cst,ca_buf,wslot,total,0);
+		q->answer(q->cst,ca_buf,wslot,total,q->name,0);
 		free(q);
 		free(ans);
 	    }

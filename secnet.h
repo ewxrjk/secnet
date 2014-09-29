@@ -298,7 +298,9 @@ struct buffer_if;
    to MAX_PEER_ADDRS (ie there were too many). */
 typedef void resolve_answer_fn(void *st, const struct comm_addr *addrs,
 			       int naddrs, int was_naddrs,
-			       const char *failwhy);
+			       const char *name, const char *failwhy);
+  /* name is the same ptr as passed to request, so its lifetime must
+   * be suitable*/
 typedef bool_t resolve_request_fn(void *st, cstring_t name,
 				  int remoteport, struct comm_if *comm,
 				  resolve_answer_fn *cb, void *cst);

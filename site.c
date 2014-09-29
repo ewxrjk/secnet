@@ -1192,7 +1192,7 @@ static bool_t send_msg(struct site *st)
 
 static void site_resolve_callback(void *sst, const struct comm_addr *addrs,
 				  int naddrs, int was_naddrs,
-				  const char *failwhy)
+				  const char *address, const char *failwhy)
 {
     struct site *st=sst;
 
