@@ -43,7 +43,11 @@ static const char *const default_ifname_pats[] = {
 };
 
 static const char *const default_monitor_command[] = {
+#if __linux__
+    DATAROOTDIR "/secnet/" "polypath-interface-monitor-linux", 0
+#else
     0
+#endif
 };
 
 static const char *polypath_addr_to_string(void *commst,

@@ -30,11 +30,13 @@ RM:=@RM@
 CC:=@CC@
 INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
+INSTALL_SCRIPT:=@INSTALL_SCRIPT@
 
 prefix:=@prefix@
 exec_prefix:=@exec_prefix@
 sbindir:=@sbindir@
 sysconfdir:=@sysconfdir@
+datarootdir:=@datarootdir@
 transform:=@program_transform_name@
 mandir:=@mandir@
 
@@ -47,7 +49,7 @@ CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
 	-Wno-strict-aliasing -fno-strict-aliasing \
 	-MMD
 ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS) $(EXTRA_CFLAGS)
-CPPFLAGS:=@CPPFLAGS@ $(EXTRA_CPPFLAGS)
+CPPFLAGS:=@CPPFLAGS@ -DDATAROOTDIR='"$(datarootdir)"' $(EXTRA_CPPFLAGS)
 LDFLAGS:=@LDFLAGS@ $(EXTRA_LDFLAGS)
 LDLIBS:=@LIBS@ $(EXTRA_LDLIBS)
 
@@ -166,6 +168,7 @@ check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 installdirs:
 	$(INSTALL) -d $(prefix)/share/secnet $(sbindir)
 	$(INSTALL) -d $(mandir)/man8
+	$(INSTALL) -d $(datarootdir)/secnet
 
 install: installdirs
 	set -e; ok=true; for f in $(STALE_PYTHON_FILES); do \
@@ -179,6 +182,8 @@ install: installdirs
 	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
 	$(INSTALL) ${srcdir}/ipaddrset.py $(prefix)/share/secnet/ipaddrset.py
+	$(INSTALL_SCRIPT) ${srcdir}/polypath-interface-monitor-linux \
+		$(datarootdir)/secnet/.
 	$(INSTALL) secnet.8 $(mandir)/man8/secnet.8
 
 install-force:

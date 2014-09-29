@@ -1,0 +1,82 @@
+#!/usr/bin/perl -w
+use strict;
+use IO::Handle;
+
+my $us = $0;
+$us =~ s{.*/}{};
+
+die "$us: no arguments permitted\n" if @ARGV;
+
+our ($monh,$monchild);
+
+our %reported;
+#  no entry: not reported, does not exist
+#  /ry+/: reported, entry exists
+# during processing only:
+#  /r/: reported, may not still exist
+#  /y+/: not reported, entry exists
+
+sub killmonitor () {
+    return unless $monchild;
+    kill 9, $monchild
+	or warn "$us: cannot kill monitor child [$monchild]: $!\n";
+    $monchild=undef;
+    close $monh;
+}
+
+END { killmonitor(); }
+
+my $restart;
+
+for (;;) {
+    my $o;
+    eval {
+	if (!$monh) {
+	    killmonitor();
+	    $monh = new IO::File;
+	    $monchild = open $monh, "-|", qw(ip -o monitor addr)
+		or die "spawn monitor: $!\n";
+	    sleep(1) if $restart++;
+	} else {
+	    my $discard;
+	    my $got = sysread $monh, $discard, 4096;
+	    die "read monitor: $!\n" unless defined $got;
+	    die "monitor failed\n" unless $got;
+	}
+	$_='r' foreach values %reported;
+	foreach my $ip (qw(4 6)) {
+	    my $addrh = new IO::File;
+	    open $addrh, "-|", qw(ip -o), "-$ip", qw(addr show)
+		or die "spawn addr $ip show: $!\n";
+	    my $afstr = $ip==4 ? 'inet' : $ip==6 ? 'inet6' : die;
+	    while (<$addrh>) {
+		if (m{^\d+\:\s*(\S+)\s+$afstr\s+([0-9a-z.:]+)(?:/\d+)?\s}) {
+		    my $outline = "$ip $1 $2";
+		    $reported{$outline} .= "y";
+		} else {
+		    chomp;
+		    warn "unexpected output from addr $ip show: $_\n";
+		}
+	    }
+	    my $r = close $addrh;
+	    die "addr $ip show failed $!\n" unless $r;
+	    $o = '';
+	}
+	foreach my $k (keys %reported) {
+	    local $_ = $reported{$k};
+	    if (m/^r$/) {
+		$o .= "-$k\n";
+		delete $reported{$k};
+	    } elsif (m/^y/) {
+		$o .= "+$k\n";
+	    }
+	}
+    };
+    if ($@) {
+	print STDERR "$us: $@";
+	sleep 5;
+	next;
+    }
+    print $o or die $!;
+    STDOUT->flush or die $!;
+}
