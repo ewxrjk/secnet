@@ -108,36 +108,6 @@ static int polypath_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
     return 0;
 }
 
-static void dump_ppml(struct polypath *st, const char *orgl)
-{
-#ifdef POLYPATH_DEBUG
-    struct interf *interf;
-    if (orgl)
-	lg_perror(LG,M_DEBUG,0, "polypath monitor line `%s'",orgl);
-    LIST_FOREACH(interf, &st->interfs, entry) {
-	lg_perror(LG,M_DEBUG,0, "  polypath interface `%s', nsocks=%d",
-		  interf->name, interf->socks.n_socks);
-	int i;
-	for (i=0; i<interf->socks.n_socks; i++) {
-	    struct udpsock *us=&interf->socks.socks[i];
-	    lg_perror(LG,M_DEBUG,0, "    polypath sock fd=%d addr=%s",
-		      us->fd, iaddr_to_string(&us->addr));
-	}
-    }
-#endif
-}
-
-static void bad(struct polypath *st, char *l, char *undospace,
-		const char *m, int ev)
-{
-    if (undospace)
-	*undospace=' ';
-    lg_perror(LG,M_WARNING,ev,
-	       "error processing polypath state change: %s"
-	       " (while processing `%s')",
-	       m,l);
-}
-
 static inline bool_t matches32(uint32_t word, uint32_t prefix, int prefixlen)
 {
     assert(prefixlen>0);
@@ -147,18 +117,49 @@ static inline bool_t matches32(uint32_t word, uint32_t prefix, int prefixlen)
     return (word & mask) == prefix;
 }
 
-static void polypath_process_monitor_line(struct polypath *st, char *orgl)
+/* These macros expect
+ *    bad_fn_type *const bad;
+ *    void *badctx;
+ * and
+ *   out:
+ */
+#define BAD(m)     do{ bad(st,badctx,m,0);  goto out; }while(0)
+#define BADE(m,ev) do{ bad(st,badctx,m,ev); goto out; }while(0)
+typedef void bad_fn_type(struct polypath *st, void *badctx,
+			 const char* m, int ev);
+
+typedef void polypath_ppml_callback_type(struct polypath *st,
+          bad_fn_type *bad, void *badctx,
+          bool_t add, const char *ifname, const char *ifaddr,
+          const union iaddr *ia, int fd /* -1 if none yet */);
+
+struct ppml_bad_ctx {
+    const char *orgl;
+    char *undospace;
+};
+
+static void ppml_bad(struct polypath *st, void *badctx, const char *m, int ev)
 {
-    struct interf *interf=0;
+    struct ppml_bad_ctx *bc=badctx;
+    if (bc->undospace)
+	*(bc->undospace)=' ';
+    lg_perror(LG,M_WARNING,ev,
+	      "error processing polypath state change: %s"
+	      " (while processing `%s')",
+	      m,bc->orgl);
+}
+
+static void polypath_process_monitor_line(struct polypath *st, char *orgl,
+                                      polypath_ppml_callback_type *callback)
+    /* always calls callback with fd==-1 */
+{
     struct udpcommon *uc=&st->uc;
-    char *undospace=0;
     char *l=orgl;
-    struct udpsock *us=0;
-
-    dump_ppml(st,orgl);
-
-#define BAD(m)     do{ bad(st,orgl,undospace,m,0);  goto out; }while(0)
-#define BADE(m,ev) do{ bad(st,orgl,undospace,m,ev); goto out; }while(0)
+    bad_fn_type (*const bad)=ppml_bad;
+    struct ppml_bad_ctx badctx[1]={{
+	    .orgl=orgl,
+	    .undospace=0
+	}};
 
     bool_t add;
     int c=*l++;
@@ -180,7 +181,7 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl)
     if (!space) BAD("no second space");
     const char *ifaddr=space+1;
     *space=0;
-    undospace=space;
+    badctx->undospace=space;
 
     union iaddr ia;
     FILLZERO(ia);
@@ -245,7 +246,63 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl)
 	abort();
     }
 
+#undef DONT
+
     /* OK, process it */
+    callback(st, bad,badctx, add,ifname,ifaddr,&ia,-1);
+
+ out:;
+}
+
+static void dump_pria(struct polypath *st, const char *ifname)
+{
+#ifdef POLYPATH_DEBUG
+    struct interf *interf;
+    if (ifname)
+	lg_perror(LG,M_DEBUG,0, "polypath record ifaddr `%s'",ifname);
+    LIST_FOREACH(interf, &st->interfs, entry) {
+	lg_perror(LG,M_DEBUG,0, "  polypath interface `%s', nsocks=%d",
+		  interf->name, interf->socks.n_socks);
+	int i;
+	for (i=0; i<interf->socks.n_socks; i++) {
+	    struct udpsock *us=&interf->socks.socks[i];
+	    lg_perror(LG,M_DEBUG,0, "    polypath sock fd=%d addr=%s",
+		      us->fd, iaddr_to_string(&us->addr));
+	}
+    }
+#endif
+}
+
+static bool_t polypath_make_socket(struct polypath *st,
+				   bad_fn_type *bad, void *badctx,
+				   struct udpsock *us, const char *ifname)
+    /* on error exit has called bad; might leave us->fd as -1 */
+{
+    assert(us->fd==-1);
+
+    bool_t ok=udp_make_socket(&st->uc,us,M_WARNING);
+    if (!ok) BAD("unable to set up socket");
+    int r=setsockopt(us->fd,SOL_SOCKET,SO_BINDTODEVICE,
+		     ifname,strlen(ifname)+1);
+    if (r) BADE("setsockopt(,,SO_BINDTODEVICE,)",errno);
+    return True;
+
+ out:
+    return False;
+}
+
+static void polypath_record_ifaddr(struct polypath *st,
+				   bad_fn_type *bad, void *badctx,
+				   bool_t add, const char *ifname,
+				   const char *ifaddr,
+				   const union iaddr *ia, int fd)
+{
+    struct udpcommon *uc=&st->uc;
+    struct interf *interf=0;
+    struct udpsock *us=0;
+
+    dump_pria(st,ifname);
+
     int n_ifs=0;
     LIST_FOREACH(interf,&st->interfs,entry) {
 	if (!strcmp(interf->name,ifname))
@@ -270,19 +327,22 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl)
 	    BAD("too many addresses on this interface");
 	struct udpsock *us=&interf->socks.socks[interf->socks.n_socks];
 	us->fd=-1;
-	COPY_OBJ(us->addr,ia);
-	bool_t ok=udp_make_socket(&st->uc,us,M_WARNING);
-	if (!ok) BAD("unable to set up socket");
-	r=setsockopt(us->fd,SOL_SOCKET,SO_BINDTODEVICE,
-		     ifname,strlen(ifname)+1);
-	if (r) BADE("setsockopt(,,SO_BINDTODEVICE,)",errno);
+	COPY_OBJ(us->addr,*ia);
+	if (fd<0) {
+	    bool_t ok=polypath_make_socket(st,bad,badctx, us,ifname);
+	    if (!ok) goto out;
+	} else {
+	    FILLZERO(us->experienced);
+	    us->fd=fd;
+	    fd=-1;
+	}
 	interf->socks.n_socks++;
 	us=0; /* do not destroy this socket during `out' */
 	lg_perror(LG,M_INFO,0,"using %s %s",ifname,ifaddr);
     } else {
 	int i;
 	for (i=0; i<interf->socks.n_socks; i++)
-	    if (!memcmp(&interf->socks.socks[i].addr,&ia,sizeof(ia)))
+	    if (!memcmp(&interf->socks.socks[i].addr,ia,sizeof(*ia)))
 		goto address_remove_found;
 	BAD("address to remove not found");
     address_remove_found:
@@ -295,6 +355,8 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl)
  out:
     if (us)
 	udp_destroy_socket(uc,us);
+    if (fd>=0)
+	close(fd);
     if (interf && !interf->socks.n_socks) {
 	udp_socks_deregister(&st->uc,&interf->socks);
 	LIST_REMOVE(interf,entry);
@@ -302,11 +364,7 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl)
 	free(interf);
     }
 
-    dump_ppml(st,0);
-
-#undef BAD
-#undef BADE
-#undef DONT
+    dump_pria(st,0);
 }
 
 static void polypath_afterpoll(void *state, struct pollfd *fds, int nfds)
@@ -319,7 +377,8 @@ static void polypath_afterpoll(void *state, struct pollfd *fds, int nfds)
     if (nfds<1) return;
 
     while ((alr=async_linebuf_read(fds,&st->lbuf,&emsg)) == async_linebuf_ok)
-	polypath_process_monitor_line(st,st->lbuf.base);
+	polypath_process_monitor_line(st,st->lbuf.base,
+				      polypath_record_ifaddr);
 
     if (alr==async_linebuf_nothing)
 	return;
@@ -423,6 +482,9 @@ static void polypath_phase_shutdown(void *sst, uint32_t newphase)
 	kill(st->monitor_pid,SIGTERM);
     }
 }
+
+#undef BAD
+#undef BADE
 
 static list_t *polypath_apply(closure_t *self, struct cloc loc,
 			      dict_t *context, list_t *args)
