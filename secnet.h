@@ -270,6 +270,7 @@ extern uint32_t current_phase;
 extern void enter_phase(uint32_t new_phase);
 
 void phase_hooks_init(void); /* for main() only */
+void clear_phase_hooks(uint32_t phase); /* for afterfork() */
 
 /* Some features (like netlink 'soft' routes) require that secnet
    retain root privileges.  They should indicate that here when

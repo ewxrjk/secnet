@@ -218,6 +218,10 @@ void afterfork(void)
     sigset_t done;
     struct sigaction sa;
 
+    clear_phase_hooks(PHASE_SHUTDOWN);
+    /* Prevents calls to fatal() etc. in the child from running off
+       and doing a lot of unhelpful things */
+
     sigemptyset(&done);
     for (n=sigs; n; n=n->next)
 	if (!sigismember(&done,n->signum)) {

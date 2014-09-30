@@ -227,6 +227,14 @@ void phase_hooks_init(void)
 	LIST_INIT(&hooks[i]);
 }
 
+void clear_phase_hooks(uint32_t phase)
+{
+    struct phase_hook *h, *htmp;
+    LIST_FOREACH_SAFE(h, &hooks[phase], entry, htmp)
+	free(h);
+    LIST_INIT(&hooks[phase]);
+}
+
 bool_t add_hook(uint32_t phase, hook_fn *fn, void *state)
 {
     struct phase_hook *h;
