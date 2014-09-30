@@ -383,6 +383,12 @@ static void run(void)
     free(fds);
 }
 
+bool_t will_droppriv(void)
+{
+    assert(current_phase >= PHASE_SETUP);
+    return !!uid;
+}
+
 /* Surrender privileges, if necessary */
 static void droppriv(void)
 {

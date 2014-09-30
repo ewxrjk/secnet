@@ -274,6 +274,11 @@ extern void enter_phase(uint32_t new_phase);
 extern bool_t require_root_privileges;
 extern cstring_t require_root_privileges_explanation;
 
+/* Some modules may want to know whether secnet is going to drop
+   privilege, so that they know whether to do privsep.  Call only
+   in phases SETUP and later. */
+bool_t will_droppriv(void);
+
 /***** END of program lifetime support *****/
 
 /***** MODULE support *****/
