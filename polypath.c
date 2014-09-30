@@ -367,22 +367,10 @@ static void polypath_record_ifaddr(struct polypath *st,
     dump_pria(st,0);
 }
 
-static void polypath_afterpoll(void *state, struct pollfd *fds, int nfds)
+static void subproc_problem(struct polypath *st,
+			    enum async_linebuf_result alr, const char *emsg)
 {
-    struct polypath *st=state;
-    enum async_linebuf_result alr;
-    const char *emsg;
     int status;
-
-    if (nfds<1) return;
-
-    while ((alr=async_linebuf_read(fds,&st->lbuf,&emsg)) == async_linebuf_ok)
-	polypath_process_monitor_line(st,st->lbuf.base,
-				      polypath_record_ifaddr);
-
-    if (alr==async_linebuf_nothing)
-	return;
-
     assert(st->monitor_pid);
 
     pid_t gotpid=waitpid(st->monitor_pid,&status,WNOHANG);
@@ -398,8 +386,30 @@ static void polypath_afterpoll(void *state, struct pollfd *fds, int nfds)
 	lg_perror(LG,M_FATAL,0,"unexpected EOF from interface monitor");
     else
 	lg_perror(LG,M_FATAL,0,"bad output from interface monitor: %s",emsg);
-
     assert(!"not reached");
+}
+
+static void afterpoll_monitor(struct polypath *st, struct pollfd *fd,
+			      polypath_ppml_callback_type *callback)
+{
+    enum async_linebuf_result alr;
+    const char *emsg;
+    
+    while ((alr=async_linebuf_read(fd,&st->lbuf,&emsg)) == async_linebuf_ok)
+	polypath_process_monitor_line(st,st->lbuf.base,callback);
+
+    if (alr==async_linebuf_nothing)
+	return;
+
+    subproc_problem(st,alr,emsg);
+}
+
+static void polypath_afterpoll_monitor(void *state, struct pollfd *fds,
+				       int nfds)
+{
+    struct polypath *st=state;
+    if (nfds<1) return;
+    afterpoll_monitor(st,fds,polypath_record_ifaddr);
 }
 
 /* Actual udp packet sending work */
@@ -443,35 +453,47 @@ static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
     return allreasonable;
 }
 
-static void polypath_phase_startmonitor(void *sst, uint32_t newphase)
+static void child_monitor(struct polypath *st, int childfd)
 {
-    struct polypath *st=sst;
+    dup2(childfd,1);
+    execvp(st->monitor_command[0],(char**)st->monitor_command);
+    fprintf(stderr,"secnet: cannot execute %s: %s\n",
+	    st->monitor_command[0], strerror(errno));
+    exit(-1);
+}
+
+static void start_subproc(struct polypath *st, void (*make_fdpair)(int[2]),
+			  void (*child)(struct polypath *st, int childfd))
+{
     int pfds[2];
 
     assert(!st->monitor_pid);
     assert(st->monitor_fd<0);
 
-    pipe_cloexec(pfds);
+    make_fdpair(pfds);
 
     pid_t pid=fork();
     if (!pid) {
 	afterfork();
-	dup2(pfds[1],1);
-	execvp(st->monitor_command[0],(char**)st->monitor_command);
-	fprintf(stderr,"secnet: cannot execute %s: %s\n",
-		st->monitor_command[0], strerror(errno));
-	exit(-1);
+	child(st,pfds[1]);
+	abort();
     }
     if (pid<0)
-	fatal_perror("%s: failed to fork for interface monitor",
+	fatal_perror("%s: failed to fork for interface monitoring",
 		     st->uc.cc.cl.description);
 
     close(pfds[1]);
     st->monitor_pid=pid;
     st->monitor_fd=pfds[0];
     setnonblock(st->monitor_fd);
+}
 
-    register_for_poll(st,polypath_beforepoll,polypath_afterpoll,"polypath");
+static void polypath_phase_startmonitor(void *sst, uint32_t newphase)
+{
+    struct polypath *st=sst;
+    start_subproc(st,pipe_cloexec,child_monitor);
+    register_for_poll(st,polypath_beforepoll,
+		      polypath_afterpoll_monitor,"polypath");
 }
 
 static void polypath_phase_shutdown(void *sst, uint32_t newphase)
