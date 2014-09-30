@@ -475,6 +475,8 @@ int main(int argc, char **argv)
 {
     dict_t *config;
 
+    phase_hooks_init();
+
     enter_phase(PHASE_GETOPTS);
     parse_options(argc,argv);
 

@@ -53,10 +53,10 @@ uint32_t current_phase=0;
 struct phase_hook {
     hook_fn *fn;
     void *state;
-    struct phase_hook *next;
+    LIST_ENTRY(phase_hook) entry;
 };
 
-static struct phase_hook *hooks[NR_PHASES]={NULL,};
+static LIST_HEAD(, phase_hook) hooks[NR_PHASES];
 
 char *safe_strdup(const char *s, const char *message)
 {
@@ -211,13 +211,20 @@ void enter_phase(uint32_t new_phase)
 {
     struct phase_hook *i;
 
-    if (hooks[new_phase])
+    if (!LIST_EMPTY(&hooks[new_phase]))
 	Message(M_DEBUG_PHASE,"Running hooks for %s...\n", phases[new_phase]);
     current_phase=new_phase;
 
-    for (i=hooks[new_phase]; i; i=i->next)
+    LIST_FOREACH(i, &hooks[new_phase], entry)
 	i->fn(i->state, new_phase);
     Message(M_DEBUG_PHASE,"Now in %s\n",phases[new_phase]);
+}
+
+void phase_hooks_init(void)
+{
+    int i;
+    for (i=0; i<NR_PHASES; i++)
+	LIST_INIT(&hooks[i]);
 }
 
 bool_t add_hook(uint32_t phase, hook_fn *fn, void *state)
@@ -227,8 +234,7 @@ bool_t add_hook(uint32_t phase, hook_fn *fn, void *state)
     h=safe_malloc(sizeof(*h),"add_hook");
     h->fn=fn;
     h->state=state;
-    h->next=hooks[phase];
-    hooks[phase]=h;
+    LIST_INSERT_HEAD(&hooks[phase],h,entry);
     return True;
 }
 

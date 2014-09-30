@@ -268,6 +268,8 @@ bool_t remove_hook(uint32_t phase, hook_fn *f, void *state);
 extern uint32_t current_phase;
 extern void enter_phase(uint32_t new_phase);
 
+void phase_hooks_init(void); /* for main() only */
+
 /* Some features (like netlink 'soft' routes) require that secnet
    retain root privileges.  They should indicate that here when
    appropriate. */
