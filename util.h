@@ -23,6 +23,7 @@ extern void buffer_assert_used(struct buffer_if *buffer, cstring_t file,
 			       int line);
 extern void buffer_new(struct buffer_if *buffer, int32_t len);
 extern void buffer_init(struct buffer_if *buffer, int32_t max_start_pad);
+extern void buffer_destroy(struct buffer_if *buffer);
 extern void buffer_copy(struct buffer_if *dst, const struct buffer_if *src);
 extern void *buf_append(struct buffer_if *buf, int32_t amount);
 extern void *buf_prepend(struct buffer_if *buf, int32_t amount);

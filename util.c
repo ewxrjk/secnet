@@ -291,6 +291,14 @@ void buffer_init(struct buffer_if *buffer, int32_t max_start_pad)
     buffer->size=0;
 }
 
+void buffer_destroy(struct buffer_if *buf)
+{
+    BUF_ASSERT_FREE(buf);
+    free(buf->base);
+    buf->start=buf->base=0;
+    buf->size=buf->alloclen=0;
+}
+
 void *buf_append(struct buffer_if *buf, int32_t amount) {
     void *p;
     assert(amount <= buf_remaining_space(buf));
