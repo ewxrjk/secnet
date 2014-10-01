@@ -442,6 +442,8 @@ static void tun_phase_hook(void *sst, uint32_t newphase)
 	tun_set_route(st,r);
     }
 
+    add_hook(PHASE_CHILDPERSIST,childpersist_closefd_hook,&st->fd);
+
     /* Register for poll() */
     register_for_poll(st, tun_beforepoll, tun_afterpoll, st->nl.name);
 }

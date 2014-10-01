@@ -102,6 +102,7 @@ void udp_sock_experienced(struct log_if *lg, struct udpcommon *uc,
 
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks);
 void udp_socks_deregister(struct udpcommon *uc, struct udpsocks *socks);
+void udp_socks_childpersist(struct udpcommon *uc, struct udpsocks *socks);
 
 #define UDP_APPLY_STANDARD(st,uc,desc)					\
     (uc)->use_proxy=False;						\

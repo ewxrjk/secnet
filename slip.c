@@ -383,6 +383,9 @@ static void userv_invoke_userv(struct userv *st)
     }
     setnonblock(st->txfd);
     setnonblock(st->rxfd);
+
+    add_hook(PHASE_CHILDPERSIST,childpersist_closefd_hook,&st->txfd);
+    add_hook(PHASE_CHILDPERSIST,childpersist_closefd_hook,&st->rxfd);
 }
 
 static void userv_kill_userv(struct userv *st)

@@ -204,7 +204,8 @@ static const char *phases[NR_PHASES]={
     "PHASE_GETRESOURCES",
     "PHASE_DROPPRIV",
     "PHASE_RUN",
-    "PHASE_SHUTDOWN"
+    "PHASE_SHUTDOWN",
+    "PHASE_CHILDPERSIST"
 };
 
 void enter_phase(uint32_t new_phase)

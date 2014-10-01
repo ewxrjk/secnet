@@ -1901,6 +1901,23 @@ static void site_phase_hook(void *sst, uint32_t newphase)
     send_msg7(st,"shutting down");
 }
 
+static void site_childpersist_clearkeys(void *sst, uint32_t newphase)
+{
+    struct site *st=sst;
+    dispose_transform(&st->current.transform);
+    dispose_transform(&st->auxiliary_key.transform);
+    dispose_transform(&st->new_transform);
+    /* Not much point overwiting the signing key, since we loaded it
+       from disk, and it is only valid prospectively if at all,
+       anyway. */
+    /* XXX it would be best to overwrite the DH state, because that
+       _is_ relevant to forward secrecy.  However we have no
+       convenient interface for doing that and in practice gmp has
+       probably dribbled droppings all over the malloc arena.  A good
+       way to fix this would be to have a privsep child for asymmetric
+       crypto operations, but that's a task for another day. */
+}
+
 static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 			  list_t *args)
 {
@@ -2090,6 +2107,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     enter_state_stop(st);
 
     add_hook(PHASE_SHUTDOWN,site_phase_hook,st);
+    add_hook(PHASE_CHILDPERSIST,site_childpersist_clearkeys,st);
 
     return new_closure(&st->cl);
 }

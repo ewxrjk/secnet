@@ -506,6 +506,15 @@ static void polypath_phase_shutdown(void *sst, uint32_t newphase)
     }
 }
 
+static void polypath_phase_childpersist(void *sst, uint32_t newphase)
+{
+    struct polypath *st=sst;
+    struct interf *interf;
+
+    LIST_FOREACH(interf,&st->interfs,entry)
+	udp_socks_childpersist(&st->uc,&interf->socks);
+}
+
 #undef BAD
 #undef BADE
 
@@ -546,6 +555,7 @@ static list_t *polypath_apply(closure_t *self, struct cloc loc,
 
     add_hook(PHASE_RUN,         polypath_phase_startmonitor,st);
     add_hook(PHASE_SHUTDOWN,    polypath_phase_shutdown,    st);
+    add_hook(PHASE_CHILDPERSIST,polypath_phase_childpersist,st);
 
     return new_closure(&cc->cl);
 }

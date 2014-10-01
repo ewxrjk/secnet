@@ -340,6 +340,19 @@ void udp_socks_deregister(struct udpcommon *uc, struct udpsocks *socks)
     deregister_for_poll(socks->interest);
 }
 
+void udp_socks_childpersist(struct udpcommon *uc, struct udpsocks *socks)
+{
+    int i;
+    for (i=0; i<socks->n_socks; i++)
+	udp_destroy_socket(uc,&socks->socks[i]);
+}
+
+static void udp_childpersist_hook(void *sst, uint32_t new_phase)
+{
+    struct udp *st=sst;
+    udp_socks_childpersist(&st->uc,&st->socks);
+}
+
 static void udp_phase_hook(void *sst, uint32_t new_phase)
 {
     struct udp *st=sst;
@@ -350,6 +363,8 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 	udp_make_socket(uc,&socks->socks[i],M_FATAL);
 
     udp_socks_register(uc,socks);
+
+    add_hook(PHASE_CHILDPERSIST,udp_childpersist_hook,st);
 }
 
 static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,

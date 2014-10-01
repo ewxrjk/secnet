@@ -236,6 +236,16 @@ void afterfork(void)
     sigprocmask(SIG_SETMASK,&emptyset,NULL);
 }
 
+void childpersist_closefd_hook(void *fd_vp, uint32_t newphase)
+{
+    int *fd_p=fd_vp;
+    int fd=*fd_p;
+    if (fd<0) return;
+    *fd_p=-1;
+    setnonblock(fd); /* in case close() might block */
+    close(fd); /* discard errors - we don't care, in the child */
+}
+
 static void signal_handler(int signum)
 {
     int saved_errno;

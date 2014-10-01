@@ -64,6 +64,12 @@ void afterfork(void);
 /* Must be called before exec in every child made after
    start_signal_handling.  Safe to call in earlier children too. */
 
+void childpersist_closefd_hook(void *fd_p, uint32_t newphase);
+/* Convenience hook function for use with add_hook PHASE_CHILDPERSIST.
+   With `int fd' in your state struct, pass fd_p=&fd.  The hook checks
+   whether fd>=0, so you can use it for an fd which is only sometimes
+   open.  This function will set fd to -1, so it is idempotent. */
+
 /***** CONFIGURATION support *****/
 
 extern bool_t just_check_config; /* If True then we're going to exit after
@@ -258,9 +264,17 @@ enum phase {
     PHASE_DROPPRIV,            /* Last chance for privileged operations */
     PHASE_RUN,
     PHASE_SHUTDOWN,            /* About to die; delete key material, etc. */
+    PHASE_CHILDPERSIST,        /* Forked long-term child: close fds, etc. */
     /* Keep this last: */
     NR_PHASES,
 };
+
+/* Each module should, in its CHILDPERSIST hooks, close all fds which
+   constitute ownership of important operating system resources, or
+   which are used for IPC with other processes who want to get the
+   usual disconnection effects if the main secnet process dies.
+   CHILDPERSIST hooks are not run if the child is going to exec;
+   so fds such as described above should be CLOEXEC too. */
 
 typedef void hook_fn(void *self, uint32_t newphase);
 bool_t add_hook(uint32_t phase, hook_fn *f, void *state);
