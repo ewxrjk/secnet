@@ -288,6 +288,7 @@ struct logfile {
     string_t logfile;
     uint32_t level;
     FILE *f;
+    bool_t forked;
 };
 
 static cstring_t months[]={
@@ -299,19 +300,29 @@ static void logfile_vlog(void *sst, int class, const char *message,
     struct logfile *st=sst;
     time_t t;
     struct tm *tm;
+    char pidbuf[20];
+
+    if (st->forked) {
+	pid_t us=getpid();
+	snprintf(pidbuf,sizeof(pidbuf),"[%ld] ",(long)us);
+    } else {
+	pidbuf[0]=0;
+    }
 
     if (secnet_is_daemon && st->f) {
 	if (class&st->level) {
 	    t=time(NULL);
 	    tm=localtime(&t);
-	    fprintf(st->f,"%s %2d %02d:%02d:%02d ",
+	    fprintf(st->f,"%s %2d %02d:%02d:%02d %s",
 		    months[tm->tm_mon],tm->tm_mday,tm->tm_hour,tm->tm_min,
-		    tm->tm_sec);
+		    tm->tm_sec,
+		    pidbuf);
 	    vfprintf(st->f,message,args);
 	    fprintf(st->f,"\n");
 	    fflush(st->f);
 	}
     } else {
+	if (pidbuf[0]) MessageFallback(class,"%s",pidbuf);
 	vMessageFallback(class,message,args);
 	MessageFallback(class,"\n");
     }
@@ -357,6 +368,12 @@ static void logfile_phase_hook(void *sst, uint32_t new_phase)
     }
 }
 
+static void logfile_childpersist_hook(void *sst, uint32_t new_phase)
+{
+    struct logfile *st=sst;
+    st->forked=1;
+}
+
 static struct flagstr message_class_table[]={
     { "debug-config", M_DEBUG_CONFIG },
     { "debug-phase", M_DEBUG_PHASE },
@@ -395,6 +412,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.buff[0]=0;
     st->loc=loc;
     st->f=NULL;
+    st->forked=0;
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict) {
@@ -407,6 +425,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
 				       message_class_table,"logfile");
 
     add_hook(PHASE_GETRESOURCES,logfile_phase_hook,st);
+    add_hook(PHASE_CHILDPERSIST,logfile_childpersist_hook,st);
 
     return new_closure(&st->cl);
 }
@@ -483,7 +502,9 @@ static void syslog_phase_hook(void *sst, uint32_t newphase)
     struct syslog *st=sst;
 
     if (background) {
-	openlog(st->ident,0,st->facility);
+	openlog(st->ident,
+		newphase==PHASE_CHILDPERSIST ? LOG_PID : 0,
+		st->facility);
 	st->open=True;
     }
 }
@@ -516,6 +537,7 @@ static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
 				syslog_facility_table,"syslog");
     st->open=False;
     add_hook(PHASE_GETRESOURCES,syslog_phase_hook,st);
+    add_hook(PHASE_CHILDPERSIST,syslog_phase_hook,st);
 
     return new_closure(&st->cl);
 }    
