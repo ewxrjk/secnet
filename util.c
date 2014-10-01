@@ -591,19 +591,22 @@ const char *iaddr_to_string(const union iaddr *ia)
     return bufs[b];
 }
 
-bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib)
+bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib,
+		   bool_t ignoreport)
 {
     if (ia->sa.sa_family != ib->sa.sa_family)
 	return 0;
     switch (ia->sa.sa_family) {
     case AF_INET:
 	return ia->sin.sin_addr.s_addr == ib->sin.sin_addr.s_addr
-	    && ia->sin.sin_port        == ib->sin.sin_port;
+           && (ignoreport ||
+	       ia->sin.sin_port        == ib->sin.sin_port);
 #ifdef CONFIG_IPV6
     case AF_INET6:
 	return !memcmp(&ia->sin6.sin6_addr, &ib->sin6.sin6_addr, 16)
-	    && ia->sin6.sin6_scope_id  == ib->sin6.sin6_scope_id
-	    && ia->sin6.sin6_port      == ib->sin6.sin6_port
+	   &&  ia->sin6.sin6_scope_id  == ib->sin6.sin6_scope_id
+           && (ignoreport ||
+	       ia->sin6.sin6_port      == ib->sin6.sin6_port)
 	    /* we ignore the flowinfo field */;
 #endif /* CONFIG_IPV6 */
     default:

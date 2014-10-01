@@ -336,21 +336,23 @@ static void polypath_record_ifaddr(struct polypath *st,
 	    bool_t ok=polypath_make_socket(st,bad,badctx, us,ifname);
 	    if (!ok) goto out;
 	} else {
-	    FILLZERO(us->experienced);
-	    us->fd=fd;
+	    bool_t ok=udp_import_socket(uc,us,M_WARNING,fd);
+	    if (!ok) goto out;
 	    fd=-1;
 	}
 	interf->socks.n_socks++;
+	lg_perror(LG,M_INFO,0,"using %s %s",ifname,
+		  iaddr_to_string(&us->addr));
 	us=0; /* do not destroy this socket during `out' */
-	lg_perror(LG,M_INFO,0,"using %s %s",ifname,ifaddr);
     } else {
 	int i;
 	for (i=0; i<interf->socks.n_socks; i++)
-	    if (!memcmp(&interf->socks.socks[i].addr,ia,sizeof(*ia)))
+	    if (iaddr_equal(&interf->socks.socks[i].addr,ia,True))
 		goto address_remove_found;
 	BAD("address to remove not found");
     address_remove_found:
-	lg_perror(LG,M_INFO,0,"removed %s %s",ifname,ifaddr);
+	lg_perror(LG,M_INFO,0,"removed %s %s",ifname,
+		  iaddr_to_string(&interf->socks.socks[i].addr));
 	udp_destroy_socket(&st->uc,&interf->socks.socks[i]);
 	interf->socks.socks[i]=
 	    interf->socks.socks[--interf->socks.n_socks];

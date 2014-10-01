@@ -132,7 +132,7 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 		    /* Check that the packet came from our poxy server;
 		       we shouldn't be contacted directly by anybody else
 		       (since they can trivially forge source addresses) */
-		    if (!iaddr_equal(&from,&uc->proxy)) {
+		    if (!iaddr_equal(&from,&uc->proxy,False)) {
 			Message(M_INFO,"udp: received packet that's not "
 				"from the proxy\n");
 			BUF_FREE(cc->rbuf);
@@ -227,18 +227,40 @@ void udp_destroy_socket(struct udpcommon *uc, struct udpsock *us)
     }
 }
 
+#define FAIL_LG 0, cc->cl.description, &cc->loc, failmsgclass
+#define FAIL(...) do{						\
+        lg_perror(FAIL_LG,errno,__VA_ARGS__);	\
+	goto failed;						\
+    }while(0)
+
+static bool_t record_socket_gotaddr(struct udpcommon *uc, struct udpsock *us,
+				    int failmsgclass)
+{
+    struct commcommon *cc=&uc->cc;
+    socklen_t salen=sizeof(us->addr);
+    int r=getsockname(us->fd,&us->addr.sa,&salen);
+    if (r) FAIL("getsockname()");
+    if (salen>sizeof(us->addr)) { errno=0; FAIL("getsockname() length"); }
+    return True;
+
+ failed:
+    return False;
+}
+
+bool_t udp_import_socket(struct udpcommon *uc, struct udpsock *us,
+			 int failmsgclass, int fd)
+{
+    FILLZERO(us->experienced);
+    us->fd=fd;
+    return record_socket_gotaddr(uc,us,failmsgclass);
+}
+
 bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 		       int failmsgclass)
 {
     const union iaddr *addr=&us->addr;
     struct commcommon *cc=&uc->cc;
     us->fd=-1;
-
-#define FAIL_LG 0, cc->cl.description, &cc->loc, failmsgclass
-#define FAIL(...) do{						\
-        lg_perror(FAIL_LG,errno,__VA_ARGS__);	\
-	goto failed;						\
-    }while(0)
 
     FILLZERO(us->experienced);
     us->fd=socket(addr->sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
@@ -318,14 +340,18 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 	if (bind(us->fd, &addr->sa, iaddr_socklen(addr))!=0)
 	    FAIL("bind (%s)",iaddr_to_string(addr));
     }
+
+    bool_t ok=record_socket_gotaddr(uc,us,failmsgclass);
+    if (!ok) goto failed;
+
     return True;
 
 failed:
     udp_destroy_socket(uc,us);
     return False;
+}
 
 #undef FAIL
-}
 
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks)
 {

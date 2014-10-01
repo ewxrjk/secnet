@@ -89,7 +89,12 @@ struct udpcommon {
 
 bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 		       int failmsgclass);
-  /* Fills in us->fd.  Logs any errors with lg_[v]perror. */
+  /* Caller should have filled in ->addr.  Fills in us->fd,
+     ->experienced; updates ->addr.  Logs any errors with lg_[v]perror. */
+bool_t udp_import_socket(struct udpcommon *uc, struct udpsock *us,
+			 int failmsgclass, int fd);
+  /* Like udp_make_socket, but caller provides fd.  fd is not closed
+     on error */
 
 void udp_destroy_socket(struct udpcommon *uc, struct udpsock *us);
   /* Idempotent.  No errors are possible. */
@@ -107,7 +112,7 @@ void udp_socks_childpersist(struct udpcommon *uc, struct udpsocks *socks);
 #define UDP_APPLY_STANDARD(st,uc,desc)					\
     (uc)->use_proxy=False;						\
     (uc)->authbind=dict_read_string(d,"authbind",False,"udp",(uc)->cc.loc); \
-    (uc)->port=dict_read_number(d,"port",True,"udp",(uc)->cc.loc,0)
+    (uc)->port=dict_read_number(d,"port",False,"udp",(uc)->cc.loc,0)
     /* void UDP_APPLY_STANDARD(SOMETHING *st, struct udpcommon *uc,
      *                         const char *desc);
      *   // Expects in scope:  dict_t *d=...;   as from COMM_APPLY_STANDARD

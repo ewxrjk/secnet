@@ -431,7 +431,8 @@ struct comm_if {
     comm_addr_to_string_fn *addr_to_string;
 };
 
-bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib);
+bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib,
+		   bool_t ignoreport);
 
 static inline const char *comm_addr_to_string(const struct comm_addr *ca)
 {
@@ -441,7 +442,7 @@ static inline const char *comm_addr_to_string(const struct comm_addr *ca)
 static inline bool_t comm_addr_equal(const struct comm_addr *a,
 				     const struct comm_addr *b)
 {
-    return a->comm==b->comm && iaddr_equal(&a->ia,&b->ia);
+    return a->comm==b->comm && iaddr_equal(&a->ia,&b->ia,False);
 }
 
 /* LOG interface */
