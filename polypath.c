@@ -321,8 +321,8 @@ static void polypath_record_ifaddr(struct polypath *st,
     interf->socks.n_socks=0;
     FILLZERO(interf->experienced_xmit_noaf);
     LIST_INSERT_HEAD(&st->interfs,interf,entry);
-    udp_socks_register(&st->uc,&interf->socks);
     interf->name=strdup(ifname);
+    udp_socks_register(&st->uc,&interf->socks,interf->name);
     if (!interf->name) BADE("strdup interface name",errno);
  found_interf:
 
@@ -439,7 +439,7 @@ static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
 	    attempted=True;
 	    int r=sendto(us->fd,buf->start,buf->size,
 			 0,&dest->ia.sa,iaddr_socklen(&dest->ia));
-	    udp_sock_experienced(0,&st->uc, interf->name,us,
+	    udp_sock_experienced(0,&st->uc,&interf->socks,us,
 				 1,af, r,errno);
 	    if (r>=0) {
 		reasonable=True;

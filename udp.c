@@ -83,7 +83,7 @@ const char *af_name(int af)
 }
 
 void udp_sock_experienced(struct log_if *lg, struct udpcommon *uc,
-			  const char *socksdesc, struct udpsock *us,
+			  struct udpsocks *socks, struct udpsock *us,
 			  bool_t recvsend, int af,
 			  int r, int errnoval)
 {
@@ -94,7 +94,7 @@ void udp_sock_experienced(struct log_if *lg, struct udpcommon *uc,
 	      success ? M_INFO : M_WARNING,
 	      success ? 0 : errnoval,
 	      "%s %s experiencing some %s %s%s%s",
-	      socksdesc,iaddr_to_string(&us->addr),
+	      socks->desc,iaddr_to_string(&us->addr),
 	      success?"success":"trouble",
 	      recvsend?"transmitting":"receiving",
 	      af?" ":"", af?af_name(af):"");
@@ -149,7 +149,10 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 		ca.ia=from;
 		ca.ix=i;
 		done=comm_notify(&cc->notify, cc->rbuf, &ca);
-		if (!done) {
+		if (done) {
+		    udp_sock_experienced(0,uc,socks,us,0,
+					 from.sa.sa_family,0,0);
+		} else {
 		    uint32_t msgtype;
 		    if (cc->rbuf->size>12 /* prevents traffic amplification */
 			&& ((msgtype=get_uint32(cc->rbuf->start+8))
@@ -165,7 +168,7 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 		BUF_ASSERT_FREE(cc->rbuf);
 	    } else { /* rv<=0 */
 		if (errno!=EINTR && !iswouldblock(errno))
-		    udp_sock_experienced(0,uc, "socket",us, 0,0, rv,errno);
+		    udp_sock_experienced(0,uc,socks,us, 0,0, rv,errno);
 		BUF_FREE(cc->rbuf);
 	    }
 	} while (rv>=0);
@@ -194,7 +197,7 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 	memcpy(sa+6,&dest->ia.sin.sin_port,2);
 	int r=sendto(us->fd,sa,buf->size+8,0,&uc->proxy.sa,
 	       iaddr_socklen(&uc->proxy));
-	udp_sock_experienced(0,uc, "proxy",us, 1,0, r,errno);
+	udp_sock_experienced(0,uc,socks,us, 1,0, r,errno);
 	buf_unprepend(buf,8);
     } else {
 	int i,r;
@@ -207,7 +210,7 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 		continue;
 	    r=sendto(us->fd, buf->start, buf->size, 0,
 		     &dest->ia.sa, iaddr_socklen(&dest->ia));
-	    udp_sock_experienced(0,uc, "socket",us, 1,af, r,errno);
+	    udp_sock_experienced(0,uc,socks,us, 1,af, r,errno);
 	    if (r>=0) return True;
 	    if (!(errno==EAFNOSUPPORT || errno==ENETUNREACH))
 		/* who knows what that error means? */
@@ -353,9 +356,11 @@ failed:
 
 #undef FAIL
 
-void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks)
+void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks,
+			const char *desc)
 {
     socks->uc=uc;
+    socks->desc=desc;
     socks->interest=
 	register_for_poll(socks,udp_socks_beforepoll,udp_socks_afterpoll,"udp");
 }
@@ -388,7 +393,7 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
     for (i=0; i<socks->n_socks; i++)
 	udp_make_socket(uc,&socks->socks[i],M_FATAL);
 
-    udp_socks_register(uc,socks);
+    udp_socks_register(uc,socks, uc->use_proxy ? "proxy" : "socket");
 
     add_hook(PHASE_CHILDPERSIST,udp_childpersist_hook,st);
 }

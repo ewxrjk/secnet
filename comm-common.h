@@ -77,6 +77,7 @@ struct udpsocks {
     /* private for udp_socks_* */
     struct udpcommon *uc; /* link to parent, for cfg, notify list, etc. */
     struct poll_interest *interest;
+    const char *desc;
 };
 
 struct udpcommon {
@@ -101,11 +102,12 @@ void udp_destroy_socket(struct udpcommon *uc, struct udpsock *us);
 
 const char *af_name(int af);
 void udp_sock_experienced(struct log_if *lg, struct udpcommon *uc,
-			  const char *socksdesc, struct udpsock *us,
+			  struct udpsocks *socks, struct udpsock *us,
 			  bool_t recvsend, int af /* 0 means any */,
 			  int r, int errnoval);
 
-void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks);
+void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks,
+			const char *desc);
 void udp_socks_deregister(struct udpcommon *uc, struct udpsocks *socks);
 void udp_socks_childpersist(struct udpcommon *uc, struct udpsocks *socks);
 
