@@ -613,6 +613,17 @@ int iaddr_socklen(const union iaddr *ia)
     }
 }
 
+const char *pollbadbit(int revents)
+{
+#define BADBIT(b) \
+    if ((revents & b)) return #b
+    BADBIT(POLLERR);
+    BADBIT(POLLHUP);
+    /* POLLNVAL is handled by the event loop - see afterpoll_fn comment */
+#undef BADBIT
+    return 0;
+}
+
 enum async_linebuf_result
 async_linebuf_read(struct pollfd *pfd, struct buffer_if *buf,
 		   const char **emsg_out)
@@ -620,12 +631,9 @@ async_linebuf_read(struct pollfd *pfd, struct buffer_if *buf,
     int revents=pfd->revents;
 
 #define BAD(m) do{ *emsg_out=(m); return async_linebuf_broken; }while(0)
-#define BADBIT(b) \
-    if (!(revents & b)) ; else BAD(#b)
-    BADBIT(POLLERR);
-    BADBIT(POLLHUP);
-    /* POLLNVAL is handled by the event loop - see afterpoll_fn comment */
-#undef BADBIT
+
+    const char *badbit=pollbadbit(revents);
+    if (badbit) BAD(badbit);
 
     if (!(revents & POLLIN))
 	return async_linebuf_nothing;

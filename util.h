@@ -98,6 +98,8 @@ enum async_linebuf_result {
     async_linebuf_broken,
 };
 
+const char *pollbadbit(int revents); /* returns 0, or bad bit description */
+
 enum async_linebuf_result
 async_linebuf_read(struct pollfd *pfd, struct buffer_if *buf,
 		   const char **emsg_out);
