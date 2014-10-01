@@ -475,6 +475,7 @@ static void start_subproc(struct polypath *st, void (*make_fdpair)(int[2]),
     pid_t pid=fork();
     if (!pid) {
 	afterfork();
+	close(pfds[0]);
 	child(st,pfds[1]);
 	abort();
     }
