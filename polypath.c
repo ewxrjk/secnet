@@ -463,7 +463,8 @@ static void child_monitor(struct polypath *st, int childfd)
 }
 
 static void start_subproc(struct polypath *st, void (*make_fdpair)(int[2]),
-			  void (*child)(struct polypath *st, int childfd))
+			  void (*child)(struct polypath *st, int childfd),
+			  const char *desc)
 {
     int pfds[2];
 
@@ -487,12 +488,15 @@ static void start_subproc(struct polypath *st, void (*make_fdpair)(int[2]),
     st->monitor_pid=pid;
     st->monitor_fd=pfds[0];
     setnonblock(st->monitor_fd);
+
+    lg_perror(LG,M_NOTICE,0, "%s: spawning %s [pid %ld]",
+	      st->uc.cc.cl.description, desc, (long)st->monitor_pid);
 }
 
 static void polypath_phase_startmonitor(void *sst, uint32_t newphase)
 {
     struct polypath *st=sst;
-    start_subproc(st,pipe_cloexec,child_monitor);
+    start_subproc(st,pipe_cloexec,child_monitor,"interface monitor");
     register_for_poll(st,polypath_beforepoll,
 		      polypath_afterpoll_monitor,"polypath");
 }
