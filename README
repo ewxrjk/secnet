@@ -258,8 +258,12 @@ is one.  network-manager always sets up a default route.  The result
 is that the wifi always has a default route (so is useable); ppp
 (being a point-to-point link) does not need one.
 
-The use of polypath currently requires that secnet have root
-privilege, to make the setsockopt(,,SO_BINDTODEVICE,) call.
+The use of polypath requires that secnet be started with root
+privilege, to make the setsockopt(,,SO_BINDTODEVICE,) calls.  If the
+configuration specifies that secnet should drop privilege (see
+`userid' above), secnet will keep a special process around for this
+purpose; that process will handle local network interface changes but
+does not deal with any packets, key exchange, etc.
 
 polypath support is only available when secnet is built against an
 IPv6-capable version of adns (because it wants features in the newer

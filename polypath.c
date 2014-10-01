@@ -31,7 +31,11 @@ struct polypath {
     struct buffer_if lbuf;
     int monitor_fd;
     pid_t monitor_pid;
+    int privsep_incoming_fd;
+    int privsep_ipcsock_fd;
 };
+
+static void polypath_phase_shutdown(void *sst, uint32_t newphase);
 
 #define LG 0, st->uc.cc.cl.description, &st->uc.cc.loc
 
@@ -389,6 +393,7 @@ static void subproc_problem(struct polypath *st,
     assert(!"not reached");
 }
 
+/* Used in non-privsep case, and in privsep child */
 static void afterpoll_monitor(struct polypath *st, struct pollfd *fd,
 			      polypath_ppml_callback_type *callback)
 {
@@ -404,6 +409,7 @@ static void afterpoll_monitor(struct polypath *st, struct pollfd *fd,
     subproc_problem(st,alr,emsg);
 }
 
+/* Used in non-privsep case only - glue for secnet main loop */
 static void polypath_afterpoll_monitor(void *state, struct pollfd *fds,
 				       int nfds)
 {
@@ -453,6 +459,7 @@ static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
     return allreasonable;
 }
 
+/* Non-privsep: called in (sole) child.  Privsep: in grandchild. */
 static void child_monitor(struct polypath *st, int childfd)
 {
     dup2(childfd,1);
@@ -462,6 +469,7 @@ static void child_monitor(struct polypath *st, int childfd)
     exit(-1);
 }
 
+/* General utility function. */
 static void start_subproc(struct polypath *st, void (*make_fdpair)(int[2]),
 			  void (*child)(struct polypath *st, int childfd),
 			  const char *desc)
@@ -493,12 +501,273 @@ static void start_subproc(struct polypath *st, void (*make_fdpair)(int[2]),
 	      st->uc.cc.cl.description, desc, (long)st->monitor_pid);
 }
 
+/* Non-privsep only: glue for forking the monitor, from the main loop */
 static void polypath_phase_startmonitor(void *sst, uint32_t newphase)
 {
     struct polypath *st=sst;
-    start_subproc(st,pipe_cloexec,child_monitor,"interface monitor");
+    start_subproc(st,pipe_cloexec,child_monitor,
+		  "interface monitor (no privsep)");
     register_for_poll(st,polypath_beforepoll,
 		      polypath_afterpoll_monitor,"polypath");
+}
+
+/*----- Privsep-only: -----*/
+
+/*
+ * We use two subprocesses, a child and a grandchild.  These are
+ * forked before secnet drops privilege.
+ *
+ * The grandchild is the same interface monitor helper script as used
+ * in the non-privsep case.  But its lines are read by the child
+ * instead of by the main secnet.  The child is responsible for
+ * creating the actual socket (binding it, etc.).  Each socket is
+ * passed to secnet proper via fd passing, along with a data message
+ * describing the interface name and address.  The child does not
+ * retain a list of current interfaces and addresses - it trusts the
+ * interface monitor to get that right.  secnet proper still maintains
+ * that data structure.
+ *
+ * The result is that much of the non-privsep code can be reused, but
+ * just plumbed together differently.
+ *
+ * The child does not retain the socket after passing it on.
+ * Interface removals are handled similarly but without any fd.
+ *
+ * The result is that the configuration's limits on which interfaces
+ * and ports secnet may use are enforced by the privileged child.
+ */
+
+struct privsep_mdata {
+    bool_t add;
+    char ifname[100];
+    union iaddr ia;
+};
+
+static void papp_bad(struct polypath *st, void *badctx, const char *m, int ev)
+{
+    const struct privsep_mdata *mdata=(const void*)st->lbuf.start;
+    const char *addr_str=badctx;
+
+    lg_perror(LG,M_WARNING,ev,
+	      "error processing polypath address change %s %s [%s]: %s",
+	      mdata->add ? "+" : "-",
+	      mdata->ifname, addr_str, m);
+}
+
+static void polypath_afterpoll_privsep(void *state, struct pollfd *fds,
+				       int nfds)
+/* In secnet proper; receives messages from child. */
+{
+    struct polypath *st=state;
+
+    if (nfds<1) return;
+
+    int revents=fds[0].revents;
+
+    const char *badbit=pollbadbit(revents);
+    if (badbit) subproc_problem(st,async_linebuf_broken,badbit);
+
+    if (!(revents & POLLIN)) return;
+
+    for (;;) {
+	if (st->lbuf.size==sizeof(struct privsep_mdata)) {
+	    const struct privsep_mdata *mdata=(const void*)st->lbuf.start;
+	    if (mdata->add && st->privsep_incoming_fd<0)
+		fatal("polypath (privsep): got add message data but no fd");
+	    if (!mdata->add && st->privsep_incoming_fd>=0)
+		fatal("polypath (privsep): got remove message data with fd");
+	    if (!memchr(mdata->ifname,0,sizeof(mdata->ifname)))
+		fatal("polypath (privsep): got ifname with no terminating nul");
+	    int af=mdata->ia.sa.sa_family;
+	    if (!(af==AF_INET6 || af==AF_INET))
+		fatal("polypath (privsep): got message data but bad AF %d",af);
+	    const char *addr_str=iaddr_to_string(&mdata->ia);
+	    polypath_record_ifaddr(st,papp_bad,(void*)addr_str,
+				   mdata->add,mdata->ifname,addr_str,
+				   &mdata->ia, st->privsep_incoming_fd);
+	    st->privsep_incoming_fd=-1;
+	    st->lbuf.size=0;
+	}
+	struct msghdr msg;
+	int fd;
+	size_t cmsgdatalen=sizeof(fd);
+	char cmsg_control_buf[CMSG_SPACE(cmsgdatalen)];
+	struct iovec iov;
+
+	FILLZERO(msg);
+	msg.msg_iov=&iov;
+	msg.msg_iovlen=1;
+
+	iov.iov_base=st->lbuf.start+st->lbuf.size;
+	iov.iov_len=sizeof(struct privsep_mdata)-st->lbuf.size;
+
+	if (st->privsep_incoming_fd<0) {
+	    msg.msg_control=cmsg_control_buf;
+	    msg.msg_controllen=sizeof(cmsg_control_buf);
+	}
+
+	ssize_t got=recvmsg(st->monitor_fd,&msg,0);
+	if (got<0) {
+	    if (errno==EINTR) continue;
+	    if (iswouldblock(errno)) break;
+	    fatal_perror("polypath (privsep): recvmsg failed");
+	}
+	if (got==0)
+	    subproc_problem(st,async_linebuf_eof,0);
+
+	st->lbuf.size+=got;
+
+	if (msg.msg_controllen) {
+	    size_t cmsgdatalen=sizeof(st->privsep_incoming_fd);
+	    struct cmsghdr *h=CMSG_FIRSTHDR(&msg);
+	    if (!(st->privsep_incoming_fd==-1 &&
+		  h &&
+		  h->cmsg_level==SOL_SOCKET &&
+		  h->cmsg_type==SCM_RIGHTS &&
+		  h->cmsg_len==CMSG_LEN(cmsgdatalen) &&
+		  !CMSG_NXTHDR(&msg,h)))
+		subproc_problem(st,async_linebuf_broken,"bad cmsg");
+	    memcpy(&st->privsep_incoming_fd,CMSG_DATA(h),cmsgdatalen);
+	    assert(st->privsep_incoming_fd>=0);
+	}
+
+    }
+}
+
+static void privsep_handle_ifaddr(struct polypath *st,
+				   bad_fn_type *bad, void *badctx,
+				   bool_t add, const char *ifname,
+				   const char *ifaddr,
+				   const union iaddr *ia, int fd_dummy)
+/* In child: handles discovered wanted interfaces, making sockets
+   and sending them to secnet proper. */
+{
+    struct msghdr msg;
+    struct iovec iov;
+    struct udpsock us={ .fd=-1 };
+    size_t cmsgdatalen=sizeof(us.fd);
+    char cmsg_control_buf[CMSG_SPACE(cmsgdatalen)];
+
+    assert(fd_dummy==-1);
+
+    struct privsep_mdata mdata;
+    FILLZERO(mdata);
+    mdata.add=add;
+
+    size_t l=strlen(ifname);
+    if (l>=sizeof(mdata.ifname)) BAD("interface name too long");
+    strcpy(mdata.ifname,ifname);
+
+    COPY_OBJ(mdata.ia,*ia);
+
+    iov.iov_base=&mdata;
+    iov.iov_len =sizeof(mdata);
+
+    FILLZERO(msg);
+    msg.msg_iov=&iov;
+    msg.msg_iovlen=1;
+
+    if (add) {
+	COPY_OBJ(us.addr,*ia);
+	bool_t ok=polypath_make_socket(st,bad,badctx,&us,ifname);
+	if (!ok) goto out;
+
+	msg.msg_control=cmsg_control_buf;
+	msg.msg_controllen=sizeof(cmsg_control_buf);
+
+	struct cmsghdr *h=CMSG_FIRSTHDR(&msg);
+	h->cmsg_level=SOL_SOCKET;
+	h->cmsg_type =SCM_RIGHTS;
+	h->cmsg_len  =CMSG_LEN(cmsgdatalen);
+	memcpy(CMSG_DATA(h),&us.fd,cmsgdatalen);
+    }
+
+    while (iov.iov_len) {
+	ssize_t got=sendmsg(st->privsep_ipcsock_fd,&msg,0);
+	if (got<0) {
+	    if (errno!=EINTR) fatal_perror("polypath privsep sendmsg");
+	    got=0;
+	} else {
+	    assert(got>0);
+	    assert((size_t)got<=iov.iov_len);
+	}
+	iov.iov_base=(char*)iov.iov_base+got;
+	iov.iov_len-=got;
+	msg.msg_control=0;
+	msg.msg_controllen=0;
+    }
+
+ out:
+    if (us.fd>=0) close(us.fd);
+}
+
+static void child_privsep(struct polypath *st, int ipcsockfd)
+/* Privsep child main loop. */
+{
+    struct pollfd fds[2];
+
+    enter_phase(PHASE_CHILDPERSIST);
+
+    st->privsep_ipcsock_fd=ipcsockfd;
+    start_subproc(st,pipe_cloexec,child_monitor,
+		  "interface monitor (grandchild)");
+    for (;;) {
+	int nfds=1;
+	int r=polypath_beforepoll(st,fds,&nfds,0);
+	assert(nfds==1);
+	assert(!r);
+
+	fds[1].fd=st->privsep_ipcsock_fd;
+	fds[1].events=POLLIN;
+
+	r=poll(fds,ARRAY_SIZE(fds),-1);
+
+	if (r<0) {
+	    if (errno==EINTR) continue;
+	    fatal_perror("polypath privsep poll");
+	}
+	if (fds[1].revents) {
+	    if (fds[1].revents & (POLLHUP|POLLIN)) {
+		polypath_phase_shutdown(st,PHASE_SHUTDOWN);
+		exit(0);
+	    }
+	    fatal("polypath privsep poll parent socket revents=%#x",
+		  fds[1].revents);
+	}
+	if (fds[0].revents & POLLNVAL)
+	    fatal("polypath privsep poll child socket POLLNVAL");
+	afterpoll_monitor(st,fds,privsep_handle_ifaddr);
+    }
+}
+
+static void privsep_socketpair(int *fd)
+{
+    int r=socketpair(AF_UNIX,SOCK_STREAM,0,fd);
+    if (r) fatal_perror("socketpair(AF_UNIX,SOCK_STREAM,,)");
+    setcloexec(fd[0]);
+    setcloexec(fd[1]);
+}
+
+static void polypath_phase_startprivsep(void *sst, uint32_t newphase)
+{
+    struct polypath *st=sst;
+
+    if (!will_droppriv()) {
+	add_hook(PHASE_RUN,          polypath_phase_startmonitor,st);
+	return;
+    }
+
+    start_subproc(st,privsep_socketpair,child_privsep,
+		  "socket generator (privsep interface handler)");
+
+    BUF_FREE(&st->lbuf);
+    buffer_destroy(&st->lbuf);
+    buffer_new(&st->lbuf,sizeof(struct privsep_mdata));
+    BUF_ALLOC(&st->lbuf,"polypath mdata buf");
+    st->privsep_incoming_fd=-1;
+
+    register_for_poll(st,polypath_beforepoll,
+		      polypath_afterpoll_privsep,"polypath");
 }
 
 static void polypath_phase_shutdown(void *sst, uint32_t newphase)
@@ -521,6 +790,8 @@ static void polypath_phase_childpersist(void *sst, uint32_t newphase)
 
 #undef BAD
 #undef BADE
+
+/*----- generic closure and module setup -----*/
 
 static list_t *polypath_apply(closure_t *self, struct cloc loc,
 			      dict_t *context, list_t *args)
@@ -557,7 +828,8 @@ static list_t *polypath_apply(closure_t *self, struct cloc loc,
     st->monitor_fd=-1;
     st->monitor_pid=0;
 
-    add_hook(PHASE_RUN,         polypath_phase_startmonitor,st);
+    add_hook(PHASE_GETRESOURCES, polypath_phase_startprivsep,st);
+
     add_hook(PHASE_SHUTDOWN,    polypath_phase_shutdown,    st);
     add_hook(PHASE_CHILDPERSIST,polypath_phase_childpersist,st);
 
