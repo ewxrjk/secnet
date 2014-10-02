@@ -551,4 +551,17 @@ extern void log_from_fd(int fd, cstring_t prefix, struct log_if *log);
 
 #define FILLZERO(obj) (memset(&(obj),0,sizeof((obj))))
 
+/*
+ * void COPY_OBJ(  OBJECT& dst, const OBJECT& src);
+ * void COPY_ARRAY(OBJECT *dst, const OBJECT *src, INTEGER count);
+ *   // Typesafe: we check that the type OBJECT is the same in both cases.
+ *   // It is OK to use COPY_OBJ on an array object, provided it's
+ *   // _actually_ the whole array object and not decayed into a
+ *   // pointer (e.g. a formal parameter).
+ */
+#define COPY_OBJ(dst,src) \
+    (&(dst)==&(src), memcpy(&(dst),&(src),sizeof((dst))))
+#define COPY_ARRAY(dst,src,count) \
+    (&(dst)[0]==&(src)[0], memcpy((dst),(src),sizeof((dst)[0])*(count)))
+
 #endif /* secnet_h */

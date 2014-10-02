@@ -29,6 +29,31 @@ extern void *buf_prepend(struct buffer_if *buf, int32_t amount);
 extern void *buf_unappend(struct buffer_if *buf, int32_t amount);
 extern void *buf_unprepend(struct buffer_if *buf, int32_t amount);
 
+/*
+ * void BUF_ADD_BYTES(append,    struct buffer_if*, const void*, int32_t size);
+ * void BUF_ADD_BYTES(prepend,   struct buffer_if*, const void*, int32_t size);
+ * void BUF_GET_BYTES(unappend,  struct buffer_if*,       void*, int32_t size);
+ * void BUF_GET_BYTES(unprepend, struct buffer_if*,       void*, int32_t size);
+ *     // all of these evaluate size twice
+ *
+ * void BUF_ADD_OBJ(append,    struct_buffer_if*, const OBJECT& something);
+ * void BUF_ADD_OBJ(prepend,   struct_buffer_if*, const OBJECT& something);
+ * void BUF_GET_OBJ(unappend,  struct_buffer_if*,       OBJECT& something);
+ * void BUF_GET_OBJ(unprepend, struct_buffer_if*,       OBJECT& something);
+ */
+#define BUF_ADD_BYTES(appendprepend, bufp, datap, size)			\
+    (buf_un##appendprepend /* ensures we have correct direction */,	\
+     memcpy(buf_##appendprepend((bufp),(size)),(datap),(size)))
+#define BUF_ADD_OBJ(appendprepend, bufp, obj) \
+    BUF_ADD_BYTES(appendprepend,(bufp),&(obj),sizeof((obj)))
+#define BUF_GET_BYTES(unappendunprepend, bufp, datap, size)		\
+    (BUF_GET__DOESNOTEXIST__buf_un##unappendunprepend,			\
+     memcpy((datap),buf_##unappendunprepend((bufp),(size)),(size)))
+#define BUF_GET_OBJ(unappendunprepend, bufp, obj) \
+    BUF_ADD_BYTES(unappendunprepend,&(obj),(bufp),sizeof((obj)))
+#define BUF_GET__DOESNOTEXIST__buf_ununappend  0
+#define BUF_GET__DOESNOTEXIST__buf_ununprepend 0
+
 static inline int32_t buf_remaining_space(const struct buffer_if *buf)
 {
     return (buf->base + buf->alloclen) - (buf->start + buf->size);
