@@ -37,7 +37,8 @@ CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
 	-Wmissing-declarations -Wnested-externs -Wredundant-decls \
 	-Wpointer-arith -Wformat=2 -Winit-self \
 	-Wswitch-enum -Wunused-variable -Wunused-function -Wbad-function-cast \
-	-Wno-strict-aliasing -fno-strict-aliasing
+	-Wno-strict-aliasing -fno-strict-aliasing \
+	-MMD
 ALL_CFLAGS:=@DEFS@ -I$(srcdir) -I. $(CFLAGS) $(EXTRA_CFLAGS)
 CPPFLAGS:=@CPPFLAGS@ $(EXTRA_CPPFLAGS)
 LDFLAGS:=@LDFLAGS@ $(EXTRA_LDFLAGS)
@@ -106,12 +107,7 @@ config.status: configure
 SOURCES:=$(OBJECTS:.o=.c) $(TEST_OBJECTS:.o=.c)
 DEPENDS:=$(OBJECTS:.o=.d) $(TEST_OBJECTS:.o=.d)
 
-$(DEPENDS): ${srcdir}/depend.sh
-
-%.d: %.c
-	${srcdir}/depend.sh $(srcdir) $(CPPFLAGS) $(ALL_CFLAGS) $< > $@
-
--include $(DEPENDS)
+-include *.d
 
 # Manual dependencies section
 conffile.yy.c:	conffile.fl conffile.tab.c
