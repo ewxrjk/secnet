@@ -336,7 +336,7 @@ void transform_cbcmac_module(dict_t *dict)
 	const char *errmsg;
 	int i;
 
-	tr = malloc(sizeof(struct transform));
+	tr = safe_malloc(sizeof(struct transform),"test transform");
 	tr->max_seq_skew = 20;
 	ti = transform_create(tr);
 

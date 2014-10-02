@@ -520,9 +520,10 @@ static void set_new_transform(struct site *st, char *pk)
     assert(st->sharedsecretlen);
     if (st->sharedsecretlen > st->sharedsecretallocd) {
 	st->sharedsecretallocd=st->sharedsecretlen;
-	st->sharedsecret=realloc(st->sharedsecret,st->sharedsecretallocd);
+	st->sharedsecret=safe_realloc_ary(st->sharedsecret,1,
+					  st->sharedsecretallocd,
+					  "site:sharedsecret");
     }
-    if (!st->sharedsecret) fatal_perror("site:sharedsecret");
 
     /* Generate the shared key */
     st->dh->makeshared(st->dh->st,st->dhsecret,st->dh->len,pk,

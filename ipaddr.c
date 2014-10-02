@@ -35,10 +35,7 @@ static void subnet_list_set_len(struct subnet_list *a, int32_t l)
     if (l>a->alloc) {
 	assert(a->alloc < (int)(INT_MAX/sizeof(*nd))-EXTEND_ALLOC_BY);
 	na=a->alloc+EXTEND_ALLOC_BY;
-	nd=realloc(a->list,sizeof(*nd)*na);
-	if (!nd) {
-	    fatal_perror("subnet_list_set_len: realloc");
-	}
+	nd=safe_realloc_ary(a->list,sizeof(*nd),na,"subnet_list_set_len");
 	a->alloc=na;
 	a->list=nd;
     }
@@ -120,10 +117,7 @@ static void ipset_set_len(struct ipset *a, int32_t l)
     if (l>a->a) {
 	assert(a->a < INT_MAX-EXTEND_ALLOC_BY);
 	na=a->a+EXTEND_ALLOC_BY;
-	nd=realloc(a->d,sizeof(*nd)*na);
-	if (!nd) {
-	    fatal_perror("ipset_set_len: realloc");
-	}
+	nd=safe_realloc_ary(a->d,sizeof(*nd),na,"ipset_set_len");
 	a->a=na;
 	a->d=nd;
     }
