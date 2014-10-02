@@ -179,7 +179,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
 
     TEAX_DEBUG(buf->start,buf->size);
 
-    memcpy(buf_append(buf,SEQLEN), nonce, SEQLEN);
+    BUF_ADD_BYTES(append,buf,nonce,SEQLEN);
 
     TEAX_DEBUG(nonce,SEQLEN);
 

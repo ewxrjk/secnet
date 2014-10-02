@@ -549,9 +549,9 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     append_string_xinfo_done(&st->buffer,&xia);
 
     buf_append_string(&st->buffer,st->remotename);
-    memcpy(buf_append(&st->buffer,NONCELEN),st->localN,NONCELEN);
+    BUF_ADD_OBJ(append,&st->buffer,st->localN);
     if (type==LABEL_MSG1) return True;
-    memcpy(buf_append(&st->buffer,NONCELEN),st->remoteN,NONCELEN);
+    BUF_ADD_OBJ(append,&st->buffer,st->remoteN);
     if (type==LABEL_MSG2) return True;
 
     if (hacky_par_mid_failnow()) return False;
@@ -1328,8 +1328,8 @@ static void enter_state_run(struct site *st)
 
     st->setup_session_id=0;
     transport_peers_clear(st,&st->setup_peers);
-    memset(st->localN,0,NONCELEN);
-    memset(st->remoteN,0,NONCELEN);
+    FILLZERO(st->localN);
+    FILLZERO(st->remoteN);
     dispose_transform(&st->new_transform);
     memset(st->dhsecret,0,st->dh->len);
     memset(st->sharedsecret,0,st->sharedsecretlen);
@@ -2144,7 +2144,7 @@ static void transport_peers_clear(struct site *st, transport_peers *peers) {
 static void transport_peers_copy(struct site *st, transport_peers *dst,
 				 const transport_peers *src) {
     dst->npeers=src->npeers;
-    memcpy(dst->peers, src->peers, sizeof(*dst->peers) * dst->npeers);
+    COPY_ARRAY(dst->peers, src->peers, dst->npeers);
     transport_peers_debug(st,dst,"copy",
 			  src->npeers, &src->peers->addr, sizeof(*src->peers));
 }

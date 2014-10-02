@@ -303,7 +303,7 @@ void buf_append_string(struct buffer_if *buf, cstring_t s)
     len=strlen(s);
     /* fixme: if string is longer than 65535, result is a corrupted packet */
     buf_append_uint16(buf,len);
-    memcpy(buf_append(buf,len),s,len);
+    BUF_ADD_BYTES(append,buf,s,len);
 }
 
 void buffer_new(struct buffer_if *buf, int32_t len)

@@ -430,7 +430,7 @@ static void netlink_icmp_simple(struct netlink *st,
 	len=netlink_icmp_reply_len(buf);
 	h=netlink_icmp_tmpl(st,icmpsource,icmpdest,len);
 	h->type=type; h->code=code; h->d=info;
-	memcpy(buf_append(&st->icmp,len),buf->start,len);
+	BUF_ADD_BYTES(append,&st->icmp,buf->start,len);
 	netlink_icmp_csum(h);
 
 	if (!st->ptp) {
@@ -591,7 +591,7 @@ static void netlink_maybe_fragment(struct netlink *st,
 	long avail = mtu - hl;
 	long remain = endindata - indata;
 	long use = avail < remain ? (avail & ~(long)7) : remain;
-	memcpy(buf_append(buf, use), indata, use);
+	BUF_ADD_BYTES(append, buf, indata, use);
 	indata += use;
 
 	_Bool last_frag = indata >= endindata;

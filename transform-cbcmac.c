@@ -114,7 +114,7 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
        bother sending the IV - it's the same each time. (If we wanted to send
        it we've have to add 16 bytes to each message, not 4, so that the
        message stays a multiple of 16 bytes long.) */
-    memset(iv,0,16);
+    FILLZERO(iv);
     put_uint32(iv, ti->maciv);
     serpentbe_encrypt(&ti->mackey,iv,macacc);
 
@@ -127,11 +127,11 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
 	serpentbe_encrypt(&ti->mackey,macplain,macacc);
     }
     serpentbe_encrypt(&ti->mackey,macacc,macacc);
-    memcpy(buf_append(buf,16),macacc,16);
+    BUF_ADD_BYTES(append,buf,macacc,16);
 
     /* Serpent-CBC. We expand the ID as for CBCMAC, do the encryption,
        and prepend the IV before increasing it. */
-    memset(iv,0,16);
+    FILLZERO(iv);
     put_uint32(iv, ti->cryptiv);
     serpentbe_encrypt(&ti->cryptkey,iv,iv);
 
@@ -175,7 +175,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     }
 
     /* CBC */
-    memset(iv,0,16);
+    FILLZERO(iv);
     {
 	uint32_t ivword = buf_unprepend_uint32(buf);
 	put_uint32(iv, ivword);
@@ -193,12 +193,12 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 	serpentbe_decrypt(&ti->cryptkey,n,n);
 	for (i = 0; i < 16; i++)
 	    n[i] ^= iv[i];
-	memcpy(iv, pct, 16);
+	COPY_OBJ(iv, pct);
     }
 
     /* CBCMAC */
     macexpected=buf_unappend(buf,16);
-    memset(iv,0,16);
+    FILLZERO(iv);
     put_uint32(iv, ti->maciv);
     serpentbe_encrypt(&ti->mackey,iv,macacc);
 
@@ -344,7 +344,7 @@ void transform_cbcmac_module(dict_t *dict)
 
         buf.base = malloc(4096);
 	buffer_init(&buf, 2048);
-	memcpy(buf_append(&buf, sizeof(text)), text, sizeof(text));
+	BUF_ADD_OBJ(append, buf, text, sizeof(text));
 	if (transform_forward(ti, &buf, &errmsg)) {
 	    fatal("transform_forward test: %s", errmsg);
 	}
