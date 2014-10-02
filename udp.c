@@ -137,9 +137,9 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 		    }
 		    /* proxy protocol supports ipv4 transport only */
 		    from.sa.sa_family=AF_INET;
-		    memcpy(&from.sin.sin_addr,buf_unprepend(cc->rbuf,4),4);
+		    BUF_GET_BYTES(unprepend,cc->rbuf,&from.sin.sin_addr,4);
 		    buf_unprepend(cc->rbuf,2);
-		    memcpy(&from.sin.sin_port,buf_unprepend(cc->rbuf,2),2);
+		    BUF_GET_BYTES(unprepend,cc->rbuf,&from.sin.sin_port,2);
 		}
 		struct comm_addr ca;
 		ca.comm=&cc->ops;
