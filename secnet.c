@@ -291,7 +291,7 @@ uint64_t now_global;
 static void run(void)
 {
     struct poll_interest *i;
-    int rv, nfds, remain, idx;
+    int rv, nfds, idx;
     int timeout;
     struct pollfd *fds=0;
     int allocdfds=0, shortfall=0;
@@ -320,11 +320,11 @@ static void run(void)
 	    allocdfds += shortfall;
 	    fds=safe_realloc_ary(fds,sizeof(*fds),allocdfds, "run");
 	}
-	remain=allocdfds;
 	shortfall=0;
 	idx=0;
 	timeout=-1;
 	LIST_FOREACH(i, &reg, entry) {
+	    int remain=allocdfds-idx;
 	    nfds=remain;
 	    rv=i->before(i->state, fds+idx, &nfds, &timeout);
 	    if (rv!=0) {
@@ -340,7 +340,6 @@ static void run(void)
 		      i->desc,timeout);
 	    }
 	    idx+=nfds;
-	    remain-=nfds;
 	    i->nfds=nfds;
 	}
 	do {
