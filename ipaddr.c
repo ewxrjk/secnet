@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "ipaddr.h"
+#include "util.h"
 
 #define DEFAULT_ALLOC 2
 #define EXTEND_ALLOC_BY 4
@@ -130,7 +131,6 @@ static void ipset_append_range(struct ipset *a, struct iprange r)
     a->d[a->l-1]=r;
 }
 
-#define max(a,b) (a>b?a:b)
 struct ipset *ipset_union(struct ipset *a, struct ipset *b)
 {
     struct ipset *c;
@@ -155,7 +155,7 @@ struct ipset *ipset_union(struct ipset *a, struct ipset *b)
 	    ipset_append_range(c,r);
 	else if (r.a <= c->d[c->l-1].b+1)
 	    /* Extends (or is consumed by) the last range */
-	    c->d[c->l-1].b=max(c->d[c->l-1].b, r.b);
+	    c->d[c->l-1].b=MAX(c->d[c->l-1].b, r.b);
 	else
 	    ipset_append_range(c,r);
     }

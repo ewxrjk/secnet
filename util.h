@@ -161,6 +161,9 @@ async_linebuf_read(struct pollfd *pfd, struct buffer_if *buf,
 #define MAX(a,b) MINMAX((a),(b),>)
 #define MIN(a,b) MINMAX((a),(b),<)
 
+#define MAX_RAW(a,b) ((a)>(b)?(a):(b))
+#define MIN_RAW(a,b) ((a)<(b)?(a):(b))
+
 static inline bool_t iswouldblock(int e)
     { return e==EWOULDBLOCK || e==EAGAIN; }
 
