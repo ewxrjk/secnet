@@ -1921,7 +1921,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->transport_peers_max= !st->peer_mobile ? 1 : dict_read_number(
 	dict,"mobile-peers-max",False,"site",loc,DEFAULT_MOBILE_PEERS_MAX);
     if (st->transport_peers_max<1 ||
-	st->transport_peers_max>=MAX_MOBILE_PEERS_MAX) {
+	st->transport_peers_max>MAX_MOBILE_PEERS_MAX) {
 	cfgfatal(loc,"site","mobile-peers-max must be in range 1.."
 		 STRING(MAX_MOBILE_PEERS_MAX) "\n");
     }
