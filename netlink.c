@@ -386,7 +386,7 @@ static uint16_t netlink_icmp_reply_len(struct buffer_if *buf)
     /* We include the first 8 bytes of the packet data, provided they exist */
     hlen+=8;
     plen=ntohs(iph->tot_len);
-    return (hlen>plen?plen:hlen);
+    return MIN(hlen,plen);
 }
 
 /* client indicates where the packet we're constructing a response to
