@@ -40,7 +40,6 @@
 #define DEFAULT_MOBILE_WAIT_TIME                (10*1000) /* [ms] */
 
 #define DEFAULT_MOBILE_PEER_EXPIRY            (2*60)      /* [s] */
-#define DEFAULT_PEERS_MAX 3 /* send at most this many copies (default) */
 
 /* Each site can be in one of several possible states. */
 
@@ -1968,7 +1967,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     const char *peerskey= st->peer_mobile
 	? "mobile-peers-max" : "static-peers-max";
     st->transport_peers_max= dict_read_number(
-	dict,peerskey,False,"site",loc,DEFAULT_PEERS_MAX);
+	dict,peerskey,False,"site",loc, st->address ? 4 : 3);
     if (st->transport_peers_max<1 ||
 	st->transport_peers_max>MAX_PEER_ADDRS) {
 	cfgfatal(loc,"site", "%s must be in range 1.."
