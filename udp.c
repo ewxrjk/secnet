@@ -259,7 +259,14 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 	    FAIL("waitpid for authbind");
 	}
 	if (status) {
-	    lg_exitstatus(FAIL_LG,status,"authbind");
+	    if (WIFEXITED(status) && WEXITSTATUS(status)<127) {
+		int es=WEXITSTATUS(status);
+		lg_perror(FAIL_LG,es,
+			  "authbind exited with error exit status %d;"
+			  " indicates error",es);
+	    } else {
+		lg_exitstatus(FAIL_LG,status,"authbind");
+	    }
 	    goto failed;
 	}
     } else {
