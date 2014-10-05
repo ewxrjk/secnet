@@ -334,11 +334,6 @@ struct rsaprivkey_if {
 struct comm_addr {
     /* This struct is pure data; in particular comm's clients may
        freely copy it. */
-    /* Everyone is also guaranteed that all padding is set to zero, ie
-       that comm_addrs referring to semantically identical peers will
-       compare equal with memcmp.  Anyone who constructs a comm_addr
-       must start by memsetting it with FILLZERO, or some
-       equivalent. */
     struct comm_if *comm;
     union iaddr ia;
 };
@@ -367,9 +362,17 @@ struct comm_if {
     comm_addr_to_string_fn *addr_to_string;
 };
 
+bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib);
+
 static inline const char *comm_addr_to_string(const struct comm_addr *ca)
 {
     return ca->comm->addr_to_string(ca->comm->st, ca);
+}
+
+static inline bool_t comm_addr_equal(const struct comm_addr *a,
+				     const struct comm_addr *b)
+{
+    return a->comm==b->comm && iaddr_equal(&a->ia,&b->ia);
 }
 
 /* LOG interface */

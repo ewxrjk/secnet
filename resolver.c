@@ -42,7 +42,6 @@ static bool_t resolve_request(void *sst, cstring_t name,
 	memcpy(trimmed,name+1,l-2);
 	trimmed[l-2]=0;
 	struct comm_addr ca;
-	FILLZERO(ca);
 	ca.comm=comm;
 	ca.ia.sin.sin_family=AF_INET;
 	ca.ia.sin.sin_port=htons(port);
@@ -102,7 +101,6 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		int rslot, wslot, total;
 		int ca_len=MIN(ans->nrrs,MAX_PEER_ADDRS);
 		struct comm_addr ca_buf[ca_len];
-		FILLZERO(ca_buf);
 		for (rslot=0, wslot=0, total=0;
 		     rslot<ans->nrrs;
 		     rslot++) {
@@ -111,18 +109,16 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		    adns_rr_addr *ra=&ans->rrs.addr[rslot];
 		    struct comm_addr *ca=&ca_buf[wslot];
 		    ca->comm=q->comm;
-		    /* copy fields individually so we leave holes zeroed: */
 		    switch (ra->addr.sa.sa_family) {
 		    case AF_INET:
 			assert(ra->len == sizeof(ca->ia.sin));
-			ca->ia.sin.sin_family=ra->addr.inet.sin_family;
-			ca->ia.sin.sin_addr=  ra->addr.inet.sin_addr;
-			ca->ia.sin.sin_port=  htons(q->port);
-			wslot++;
 			break;
 		    default:
-			break;
+			/* silently skip unexpected AFs from adns */
+			continue;
 		    }
+		    memcpy(&ca->ia,&ra->addr,ra->len);
+		    wslot++;
 		}
 		q->answer(q->cst,ca_buf,wslot,total);
 		free(q);

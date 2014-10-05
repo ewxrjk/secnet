@@ -82,7 +82,6 @@ extern void send_nak(const struct comm_addr *dest, uint32_t our_index,
 extern int consttime_memeq(const void *s1, const void *s2, size_t n);
 
 const char *iaddr_to_string(const union iaddr *ia);
-bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib);
 int iaddr_socklen(const union iaddr *ia);
 
 #define MINMAX(ae,be,op) ({			\

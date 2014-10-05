@@ -2088,11 +2088,6 @@ static void transport_peers_debug(struct site *st, transport_peers *dst,
     }
 }
 
-static bool_t transport_addrs_equal(const struct comm_addr *a,
-				    const struct comm_addr *b) {
-    return !memcmp(a,b,sizeof(*a));
-}
-
 static void transport_peers_expire(struct site *st, transport_peers *peers) {
     /* peers must be sorted first */
     int previous_peers=peers->npeers;
@@ -2116,7 +2111,7 @@ static bool_t transport_peer_record_one(struct site *st, transport_peers *peers,
 	return 0;
 
     for (search=0; search<peers->npeers; search++)
-	if (transport_addrs_equal(&peers->peers[search].addr, ca))
+	if (comm_addr_equal(&peers->peers[search].addr, ca))
 	    return 1;
 
     peers->peers[peers->npeers].addr = *ca;
@@ -2135,7 +2130,7 @@ static void transport_record_peers(struct site *st, transport_peers *peers,
      * Caller must first call transport_peers_expire. */
 
     if (naddrs==1 && peers->npeers>=1 &&
-	transport_addrs_equal(&addrs[0], &peers->peers[0].addr)) {
+	comm_addr_equal(&addrs[0], &peers->peers[0].addr)) {
 	/* optimisation, also avoids debug for trivial updates */
 	peers->peers[0].last = *tv_now;
 	return;

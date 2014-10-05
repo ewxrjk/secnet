@@ -83,7 +83,6 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 
     if (nfds && (fds->revents & POLLIN)) {
 	do {
-	    FILLZERO(from);
 	    fromlen=sizeof(from);
 	    BUF_ASSERT_FREE(st->rbuf);
 	    BUF_ALLOC(st->rbuf,"udp_afterpoll");
@@ -110,7 +109,6 @@ static void udp_afterpoll(void *state, struct pollfd *fds, int nfds)
 		    memcpy(&from.sin.sin_port,buf_unprepend(st->rbuf,2),2);
 		}
 		struct comm_addr ca;
-		FILLZERO(ca);
 		ca.comm=&st->ops;
 		ca.ia=from;
 		done=False;
@@ -288,7 +286,6 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.release_notify=release_notify;
     st->ops.sendmsg=udp_sendmsg;
     st->ops.addr_to_string=addr_to_string;
-    FILLZERO(st->addr);
     st->use_proxy=False;
 
     i=list_elem(args,0);
@@ -306,7 +303,6 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     l=dict_lookup(d,"proxy");
     if (l) {
 	st->use_proxy=True;
-	FILLZERO(st->proxy);
 	st->proxy.sa.sa_family=AF_INET;
 	i=list_elem(l,0);
 	if (!i || i->type!=t_string) {
