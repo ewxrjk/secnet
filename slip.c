@@ -230,7 +230,9 @@ static void userv_userv_callback(void *sst, pid_t pid, int status)
 		"(expected %d)\n",pid,st->pid);
 	return;
     }
-    if (!st->expecting_userv_exit) {
+    if (!(st->expecting_userv_exit &&
+	  (!status ||
+	   (WIFSIGNALED(status) && WTERMSIG(status)==SIGTERM)))) {
 	lg_exitstatus(0,st->slip.nl.name,0,
 		      st->expecting_userv_exit ? M_WARNING : M_FATAL,
 		      status,"userv");
