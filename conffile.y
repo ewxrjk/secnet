@@ -103,7 +103,7 @@ static struct p_node *node(uint32_t type, struct p_node *l, struct p_node *r)
 {
 	struct p_node *rv;
 
-	rv=safe_malloc(sizeof(*rv),"p_node");
+	NEW(rv);
 	rv->type=type;
 	rv->loc.file=config_file;
 	rv->loc.line=config_lineno;

@@ -7,7 +7,7 @@ void comm_request_notify(void *commst, void *nst, comm_notify_fn *fn)
     struct commcommon *st=commst;
     struct comm_notify_entry *n;
     
-    n=safe_malloc(sizeof(*n),"comm_request_notify");
+    NEW(n);
     n->fn=fn;
     n->state=nst;
     LIST_INSERT_HEAD(&st->notify, n, entry);

@@ -51,7 +51,7 @@ static list_t *random_apply(closure_t *self, struct cloc loc,
     item_t *arg1, *arg2;
     string_t filename=NULL;
 
-    st=safe_malloc(sizeof(*st),"random_apply");
+    NEW(st);
 
     st->cl.description="randomsource";
     st->cl.type=CL_RANDOMSRC;

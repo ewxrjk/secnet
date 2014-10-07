@@ -75,7 +75,7 @@ static void dict_iadd(dict_t *dict, atom_t key, list_t *val)
     if (dict_ilookup_primitive(dict, key)) {
 	fatal("duplicate key \"%s\" in dictionary",key);
     }
-    e=safe_malloc(sizeof(*e),"dict_add");
+    NEW(e);
     e->next=dict->entries;
     e->key=key;
     e->val=val;
@@ -89,7 +89,7 @@ static dict_t *dict_new(dict_t *parent)
 {
     dict_t *d;
 
-    d=safe_malloc(sizeof(*d),"dict_new");
+    NEW(d);
     d->parent=parent;
     d->search=NULL;
     d->entries=NULL;
@@ -100,7 +100,7 @@ static dict_t *dict_new(dict_t *parent)
 static struct p_node *node_copy(struct p_node *n)
 {
     struct p_node *r;
-    r=safe_malloc(sizeof(*r),"node_copy");
+    NEW(r);
     *r=*n;
     return r;
 }
@@ -250,7 +250,7 @@ static item_t *new_item(enum types type, struct cloc loc)
 {
     item_t *i;
 
-    i=safe_malloc(sizeof(*i),"new_item");
+    NEW(i);
     i->type=type;
     i->loc=loc;
     return i;
@@ -518,7 +518,7 @@ atom_t intern(cstring_t s)
 
     if (!i) {
 	/* Did't find it; create a new one */
-	i=safe_malloc(sizeof(*i),"intern: alloc list entry");
+	NEW(i);
 	i->a=safe_strdup(s,"intern: alloc string");
 	i->next=atoms;
 	atoms=i;
@@ -577,7 +577,7 @@ static list_t *list_copy(list_t *a)
     l=NULL;
     r=NULL;
     for (i=a; i; i=i->next) {
-	b=safe_malloc(sizeof(*b),"list_copy");
+	NEW(b);
 	if (l) l->next=b; else r=b;
 	l=b;
 	b->item=i->item;
@@ -601,7 +601,7 @@ list_t *list_append(list_t *list, item_t *item)
 {
     list_t *l;
 
-    l=safe_malloc(sizeof(*l),"list_append");
+    NEW(l);
     l->item=item;
     l->next=NULL;
 
@@ -627,7 +627,7 @@ list_t *new_closure(closure_t *cl)
 void add_closure(dict_t *dict, cstring_t name, apply_fn apply)
 {
     closure_t *c;
-    c=safe_malloc(sizeof(*c),"add_closure");
+    NEW(c);
     c->description=name;
     c->type=CL_PURE;
     c->apply=apply;

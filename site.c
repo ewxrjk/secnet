@@ -1927,7 +1927,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     dict_t *dict;
     int i;
 
-    st=safe_malloc(sizeof(*st),"site_apply");
+    NEW(st);
 
     st->cl.description="site";
     st->cl.type=CL_SITE;

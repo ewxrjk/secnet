@@ -45,7 +45,7 @@ pid_t makesubproc(process_entry_fn *entry, process_callback_fn *cb,
     struct child *c;
     pid_t p;
 
-    c=safe_malloc(sizeof(*c),"makesubproc");
+    NEW(c);
     c->desc=desc;
     c->cb=cb;
     c->cst=cst;
@@ -92,7 +92,7 @@ static void sigchld_handler(void *st, int signum)
 	if (rv==i->pid) {
 	    i->finished=True;
 	    
-	    nw=safe_malloc(sizeof(*nw),"sigchld_handler");
+	    NEW(nw);
 	    nw->pid=i->pid;
 	    nw->cb=i->cb;
 	    nw->cst=i->cst;
@@ -291,7 +291,7 @@ void request_signal_notification(int signum, signal_notify_fn *notify,
     struct signotify *s;
     sigset_t old;
 
-    s=safe_malloc(sizeof(*s),"request_signal_notification");
+    NEW(s);
     s->signum=signum;
     s->notify=notify;
     s->cst=cst;

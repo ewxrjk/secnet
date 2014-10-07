@@ -15,7 +15,7 @@
 struct subnet_list *subnet_list_new(void)
 {
     struct subnet_list *r;
-    r=safe_malloc(sizeof(*r),"subnet_list_new:list");
+    NEW(r);
     r->entries=0;
     r->alloc=DEFAULT_ALLOC;
     r->list=safe_malloc_ary(sizeof(*r->list),r->alloc,"subnet_list_new:data");
@@ -57,7 +57,7 @@ void subnet_list_append(struct subnet_list *a, uint32_t prefix, int len)
 struct ipset *ipset_new(void)
 {
     struct ipset *r;
-    r=safe_malloc(sizeof(*r),"ipset_new:set");
+    NEW(r);
     r->l=0;
     r->a=DEFAULT_ALLOC;
     r->d=safe_malloc(sizeof(*r->d)*r->a,"ipset_new:data");

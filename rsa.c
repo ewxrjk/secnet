@@ -177,7 +177,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *i;
     string_t e,n;
 
-    st=safe_malloc(sizeof(*st),"rsapub_apply");
+    NEW(st);
     st->cl.description="rsapub";
     st->cl.type=CL_RSAPUBKEY;
     st->cl.apply=NULL;
@@ -255,7 +255,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     MP_INT e,d,iqmp,tmp,tmp2,tmp3;
     bool_t valid;
 
-    st=safe_malloc(sizeof(*st),"rsapriv_apply");
+    NEW(st);
     st->cl.description="rsapriv";
     st->cl.type=CL_RSAPRIVKEY;
     st->cl.apply=NULL;

@@ -173,7 +173,7 @@ static list_t *adnsresolver_apply(closure_t *self, struct cloc loc,
     item_t *i;
     string_t conf;
 
-    st=safe_malloc(sizeof(*st),"adnsresolver_apply");
+    NEW(st);
     st->cl.description="adns";
     st->cl.type=CL_RESOLVER;
     st->cl.apply=NULL;

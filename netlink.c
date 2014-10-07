@@ -1138,7 +1138,7 @@ static closure_t *netlink_inst_create(struct netlink *st,
 	return NULL;
     }
 
-    c=safe_malloc(sizeof(*c),"netlink_inst_create");
+    NEW(c);
     c->cl.description=name;
     c->cl.type=CL_NETLINK;
     c->cl.apply=NULL;
@@ -1307,7 +1307,7 @@ static list_t *null_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *item;
     dict_t *dict;
 
-    st=safe_malloc(sizeof(*st),"null_apply");
+    NEW(st);
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict)

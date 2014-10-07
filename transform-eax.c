@@ -258,7 +258,7 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
     item_t *item;
     dict_t *dict;
 
-    st=safe_malloc(sizeof(*st),"eax-serpent");
+    NEW(st);
     st->cl.description="eax-serpent";
     st->cl.type=CL_TRANSFORM;
     st->cl.apply=NULL;

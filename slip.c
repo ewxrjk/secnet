@@ -419,7 +419,7 @@ static list_t *userv_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *item;
     dict_t *dict;
 
-    st=safe_malloc(sizeof(*st),"userv_apply");
+    NEW(st);
 
     /* First parameter must be a dict */
     item=list_elem(args,0);

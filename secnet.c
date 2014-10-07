@@ -235,7 +235,7 @@ struct poll_interest *register_for_poll(void *st, beforepoll_fn *before,
 {
     struct poll_interest *i;
 
-    i=safe_malloc(sizeof(*i),"register_for_poll");
+    NEW(i);
     i->before=before;
     i->after=after;
     i->state=st;
