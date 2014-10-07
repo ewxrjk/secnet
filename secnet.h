@@ -180,6 +180,16 @@ extern void *safe_malloc_ary(size_t size, size_t count, const char *message);
 extern void *safe_realloc_ary(void *p, size_t size, size_t count,
 			      const char *message);
 
+#define NEW(p)					\
+    ((p)=safe_malloc(sizeof(*(p)),		\
+		     __FILE__ ":" #p))
+#define NEW_ARY(p,count)					\
+    ((p)=safe_malloc_ary(sizeof(*(p)),(count),			\
+			 __FILE__ ":" #p "[" #count "]"))
+#define REALLOC_ARY(p,count)					\
+    ((p)=safe_realloc_ary((p),sizeof(*(p)),(count),		\
+			  __FILE__ ":" #p "[" #count "]"))
+
 void setcloexec(int fd); /* cannot fail */
 void setnonblock(int fd); /* cannot fail */
 void pipe_cloexec(int fd[2]); /* pipe(), setcloexec() twice; cannot fail */
