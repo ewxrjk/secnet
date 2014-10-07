@@ -1980,7 +1980,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (!things##_cfg)							\
 	cfgfatal(loc,"site","closure list \"%s\" not found\n",dictkey);	\
     st->nthings=list_length(things##_cfg);				\
-    st->things=safe_malloc_ary(sizeof(*st->things),st->nthings,dictkey "s"); \
+    NEW_ARY(st->things,st->nthings);					\
     assert(st->nthings);						\
     for (i=0; i<st->nthings; i++) {					\
 	item_t *item=list_elem(things##_cfg,i);				\

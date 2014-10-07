@@ -705,7 +705,7 @@ const char **dict_read_string_array(dict_t *dict, cstring_t key,
     }
 
     int32_t ll=list_length(l);
-    ra=safe_malloc_ary(sizeof(*ra), ll+1, "dict_read_string_array");
+    NEW_ARY(ra, ll+1);
     for (rap=ra; l; l=l->next,rap++) {
 	item_t *it=l->item;
 	if (it->type!=t_string)
