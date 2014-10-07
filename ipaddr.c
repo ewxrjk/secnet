@@ -30,15 +30,13 @@ void subnet_list_free(struct subnet_list *a)
 
 static void subnet_list_set_len(struct subnet_list *a, int32_t l)
 {
-    struct subnet *nd;
     int32_t na;
 
     if (l>a->alloc) {
-	assert(a->alloc < (int)(INT_MAX/sizeof(*nd))-EXTEND_ALLOC_BY);
+	assert(a->alloc < INT_MAX-EXTEND_ALLOC_BY);
 	na=a->alloc+EXTEND_ALLOC_BY;
-	nd=safe_realloc_ary(a->list,sizeof(*nd),na,"subnet_list_set_len");
+	REALLOC_ARY(a->list,na);
 	a->alloc=na;
-	a->list=nd;
     }
     a->entries=l;
 }
@@ -112,15 +110,13 @@ struct ipset *ipset_from_subnet_list(struct subnet_list *l)
 
 static void ipset_set_len(struct ipset *a, int32_t l)
 {
-    struct iprange *nd;
     int32_t na;
 
     if (l>a->a) {
 	assert(a->a < INT_MAX-EXTEND_ALLOC_BY);
 	na=a->a+EXTEND_ALLOC_BY;
-	nd=safe_realloc_ary(a->d,sizeof(*nd),na,"ipset_set_len");
+	REALLOC_ARY(a->d,na);
 	a->a=na;
-	a->d=nd;
     }
     a->l=l;
 }

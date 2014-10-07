@@ -331,7 +331,7 @@ static void run(void)
 	if (shortfall) {
 	    allocdfds *= 2;
 	    allocdfds += shortfall;
-	    fds=safe_realloc_ary(fds,sizeof(*fds),allocdfds, "run");
+	    REALLOC_ARY(fds,allocdfds);
 	}
 	shortfall=0;
 	idx=0;
