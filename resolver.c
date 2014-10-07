@@ -75,7 +75,7 @@ static bool_t resolve_request(void *sst, cstring_t name,
 	return True;
     }
 
-    q=safe_malloc(sizeof *q,"resolve_request");
+    NEW(q);
     q->cst=cst;
     q->comm=comm;
     q->port=port;

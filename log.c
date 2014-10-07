@@ -274,7 +274,7 @@ struct log_if *init_log(list_t *ll)
     if (!l) {
 	fatal("init_log: no log");
     }
-    r=safe_malloc(sizeof(*r), "init_log");
+    NEW(r);
     r->st=l;
     r->vlogfn=log_vmulti;
     r->buff[0]=0;

@@ -545,7 +545,7 @@ cstring_t *dict_keys(dict_t *dict)
 {
     atom_t *r, *j;
     struct entry *i;
-    r=safe_malloc(sizeof(*r)*(dict->size+1),"dict_keys");
+    NEW_ARY(r,dict->size+1);
     for (i=dict->entries, j=r; i; i=i->next, j++) {
 	*j=i->key;
     }

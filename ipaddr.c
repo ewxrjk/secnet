@@ -58,7 +58,7 @@ struct ipset *ipset_new(void)
     NEW(r);
     r->l=0;
     r->a=DEFAULT_ALLOC;
-    r->d=safe_malloc(sizeof(*r->d)*r->a,"ipset_new:data");
+    NEW_ARY(r->d,r->a);
     return r;
 }
 

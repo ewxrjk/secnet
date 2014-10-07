@@ -34,7 +34,7 @@ bool_t comm_notify(struct comm_notify_list *notify, struct buffer_if *buf,
 void comm_apply(struct commcommon *cc, void *st);
 
 #define COMM_APPLY(st,cc,prefix,desc,loc)		\
-    (st)=safe_malloc(sizeof(*(st)), desc "_apply");	\
+    NEW(st);						\
     (cc)->loc=loc;					\
     (cc)->cl.description=desc;				\
     (cc)->ops.sendmsg=prefix##sendmsg;			\

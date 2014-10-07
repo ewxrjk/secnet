@@ -80,7 +80,7 @@ typedef uint32_t recvbitmap_type;
 
 #define TRANSFORM_CREATE_CORE				\
 	struct transform_inst *ti;			\
-	ti=safe_malloc(sizeof(*ti),"transform_create");	\
+	NEW(ti);					\
 	/* mlock XXX */					\
 	ti->ops.st=ti;					\
 	ti->ops.setkey=transform_setkey;		\
