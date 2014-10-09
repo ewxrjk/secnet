@@ -1,3 +1,11 @@
+secnet (0.4.0~~iwj~) UNRELEASED; urgency=low
+
+  * wip.fuzz-slip-decoder branch
+  * wip.ipv6-3 branch
+  * wip.polypath branch
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 09 Oct 2014 19:19:05 +0100
+
 secnet (0.3.4) unstable; urgency=low
 
   SECURITY FIX:
