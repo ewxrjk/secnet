@@ -86,7 +86,7 @@ STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 %.tab.c %.tab.h:	%.y
 	bison -d -o $@ $<
 
-%.o: %.c
+%.o: %.c conffile.yy.h
 	$(CC) $(CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
 
 all:	$(TARGETS) check
@@ -191,7 +191,7 @@ install-force:
 	$(MAKE) install
 
 clean:
-	$(RM) -f *.o *.yy.c *.tab.[ch] $(TARGETS) core version.c
+	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
 	$(RM) -f *.d *~ eax-*-test.confirm eax-*-test
 
 realclean:	clean
