@@ -192,7 +192,7 @@ install-force:
 
 clean:
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
-	$(RM) -f *.d *~ eax-*-test.confirm eax-*-test
+	$(RM) -f *.d *.pyc *~ eax-*-test.confirm eax-*-test
 
 realclean:	clean
 	$(RM) -f *~ Makefile config.h  *.d \
