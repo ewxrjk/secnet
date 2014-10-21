@@ -1,8 +1,38 @@
 secnet (0.4.0~~iwj~) UNRELEASED; urgency=low
 
-  * wip.fuzz-slip-decoder branch
-  * wip.ipv6-3 branch
-  * wip.polypath branch
+  New features:
+  * Support transport over IPv6.  (We do not yet carry IPv6 in the private
+    network.)  IPv6 support depends on IPv6-capable adns (adns 1.5.x).
+  * New polypath comm, which can duplicate packets so as to send them via
+    multiple routes over the public network, for increased
+    reliability/performance (but increased cost).  Currently Linux-only
+    but should be fairly easy to port.
+  * Support multiple public addresses for peers.
+  * Discard previously-received packets (by default).
+
+  Logging improvements:
+  * Report (each first) transmission and reception success and failure.
+  * Log reason for DNS reolution failure.
+  * Log unexpected kinds of death from userv.
+  * Log authbind exit status as errno value (if appropriate).
+
+  Configuration adjustments:
+  * Adjust default number of mobile peer addresses to store when a peer
+    public address is also configured.
+  * Make specifying peer public port optional.  This avoids making special
+    arrangements to bind to a port for in mobile sites with no public
+    stable address.
+
+  Bugfixes:
+  * Hackypar children will die if they get a terminating signal.
+  * Fix signal dispositions inherited by secnet's child processes.
+  * Fix off-by-one error which prevented setting transport-peers-max to 5.
+
+  Test, build and internal improvements:
+  * Use conventional IP address handling library ipaddr.py.
+  * Provide a fuzzer for the slip decoder.
+  * Build system improvements.
+  * Many source code cleanups.
 
  -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 09 Oct 2014 19:19:05 +0100
 
