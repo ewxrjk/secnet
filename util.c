@@ -526,6 +526,7 @@ void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
 
     ia->sin.sin_family=AF_INET;
     ia->sin.sin_addr.s_addr=string_item_to_ipaddr(item,desc);
+    ia->sin.sin_port=htons(port);
 
 #else /* CONFIG_IPV6 => we have adns_text2addr */
 
