@@ -54,7 +54,7 @@ static const char *udp_addr_to_string(void *commst, const struct comm_addr *ca)
     assert(ix>=0 && ix<socks->n_socks);
     snprintf(sbuf, sizeof(sbuf), "udp:%s%s-%s",
 	     iaddr_to_string(&socks->socks[ix].addr),
-	     ca->ix<0 ? "&" : "",
+	     ca->ix<0 && socks->n_socks>1 ? "&" : "",
 	     iaddr_to_string(&ca->ia));
     return sbuf;
 }
