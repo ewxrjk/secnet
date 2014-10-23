@@ -134,20 +134,23 @@ static void resolver_afterpoll(void *sst, struct pollfd *fds, int nfds)
 		    struct comm_addr *ca=&ca_buf[wslot];
 		    ca->comm=q->comm;
 		    ca->ix=-1;
+		    assert(ra->len <= (int)sizeof(ca->ia));
+		    memcpy(&ca->ia,&ra->addr,ra->len);
 		    switch (ra->addr.sa.sa_family) {
 		    case AF_INET:
 			assert(ra->len == sizeof(ca->ia.sin));
+			ca->ia.sin.sin_port=htons(q->port);
 			break;
 #ifdef CONFIG_IPV6
 		    case AF_INET6:
 			assert(ra->len == sizeof(ca->ia.sin6));
+			ca->ia.sin6.sin6_port=htons(q->port);
 			break;
 #endif /*CONFIG_IPV6*/
 		    default:
 			/* silently skip unexpected AFs from adns */
 			continue;
 		    }
-		    memcpy(&ca->ia,&ra->addr,ra->len);
 		    wslot++;
 		}
 		q->answer(q->cst,ca_buf,wslot,total,q->name,0);
