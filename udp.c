@@ -397,8 +397,14 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
     struct udpsocks *socks=&st->socks;
     struct udpcommon *uc=&st->uc;
     int i;
-    for (i=0; i<socks->n_socks; i++)
-	udp_make_socket(uc,&socks->socks[i],M_FATAL);
+    bool_t anydone=0;
+
+    for (i=0; i<socks->n_socks; i++) {
+	bool_t required=st->addr_configured
+	    || (!anydone && i==socks->n_socks-1);
+	anydone += udp_make_socket(uc,&socks->socks[i],
+				   required ? M_FATAL : M_WARNING);
+    }
 
     udp_socks_register(uc,socks, uc->use_proxy ? "proxy" : "socket");
 
