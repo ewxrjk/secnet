@@ -283,6 +283,9 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
     if (uc->authbind) {
 	pid_t c;
 	int status;
+	char desc[200];
+	snprintf(desc,sizeof(desc),"authbind for %s: %s",
+		 iaddr_to_string(addr), uc->authbind);
 
 	/* XXX this fork() and waitpid() business needs to be hidden
 	   in some system-specific library functions. */
@@ -332,10 +335,10 @@ bool_t udp_make_socket(struct udpcommon *uc, struct udpsock *us,
 	    if (WIFEXITED(status) && WEXITSTATUS(status)<127) {
 		int es=WEXITSTATUS(status);
 		lg_perror(FAIL_LG,es,
-			  "authbind exited with error exit status %d;"
-			  " indicates error",es);
+			  "%s exited with error exit status %d;"
+			  " indicates error",desc,es);
 	    } else {
-		lg_exitstatus(FAIL_LG,status,"authbind");
+		lg_exitstatus(FAIL_LG,status,desc);
 	    }
 	    goto failed;
 	}
