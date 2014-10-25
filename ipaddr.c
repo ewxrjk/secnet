@@ -319,12 +319,12 @@ struct subnet_list *ipset_to_subnet_list(struct ipset *is)
 
 static char *ipaddr_getbuf(void)
 {
-    static int ipaddr_bufnum;
-    static char ipaddr_bufs[IPADDR_NBUFS][IPADDR_BUFLEN];
+    static int b;
+    static char bufs[IPADDR_NBUFS][IPADDR_BUFLEN];
 
-    ipaddr_bufnum++;
-    ipaddr_bufnum &= IPADDR_NBUFS-1;
-    return ipaddr_bufs[ipaddr_bufnum];
+    b++;
+    b &= IPADDR_NBUFS-1;
+    return bufs[b];
 }
 
 /* The string buffer must be at least 16 bytes long */
