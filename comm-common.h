@@ -103,7 +103,7 @@ void udp_destroy_socket(struct udpcommon *uc, struct udpsock *us);
 const char *af_name(int af);
 void udp_sock_experienced(struct log_if *lg, struct udpcommon *uc,
 			  struct udpsocks *socks, struct udpsock *us,
-			  bool_t recvsend, int af /* 0 means any */,
+			  const union iaddr *dest, int af /* 0 means any */,
 			  int r, int errnoval);
 
 void udp_socks_register(struct udpcommon *uc, struct udpsocks *socks,

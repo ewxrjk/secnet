@@ -440,7 +440,7 @@ static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
 	    int r=sendto(us->fd,buf->start,buf->size,
 			 0,&dest->ia.sa,iaddr_socklen(&dest->ia));
 	    udp_sock_experienced(0,&st->uc,&interf->socks,us,
-				 1,af, r,errno);
+				 &dest->ia,af, r,errno);
 	    if (r>=0) {
 		reasonable=True;
 		break;

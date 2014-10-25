@@ -84,20 +84,23 @@ const char *af_name(int af)
 
 void udp_sock_experienced(struct log_if *lg, struct udpcommon *uc,
 			  struct udpsocks *socks, struct udpsock *us,
-			  bool_t recvsend, int af,
+			  const union iaddr *dest, int af,
 			  int r, int errnoval)
 {
     bool_t success=r>=0;
-    if (us->experienced[recvsend][af][success]++)
+    if (us->experienced[!!dest][af][success]++)
 	return;
     lg_perror(lg, uc->cc.cl.description, &uc->cc.loc,
 	      success ? M_INFO : M_WARNING,
 	      success ? 0 : errnoval,
-	      "%s %s experiencing some %s %s%s%s",
+	      "%s %s experiencing some %s %s%s%s%s%s%s",
 	      socks->desc,iaddr_to_string(&us->addr),
 	      success?"success":"trouble",
-	      recvsend?"transmitting":"receiving",
-	      af?" ":"", af?af_name(af):"");
+	      dest?"transmitting":"receiving",
+	      af?" ":"", af?af_name(af):"",
+	      dest?" (to ":"",
+	      dest?iaddr_to_string(dest):"",
+	      dest?")":"");
 }
 
 static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
@@ -197,7 +200,7 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 	memcpy(sa+6,&dest->ia.sin.sin_port,2);
 	int r=sendto(us->fd,sa,buf->size+8,0,&uc->proxy.sa,
 	       iaddr_socklen(&uc->proxy));
-	udp_sock_experienced(0,uc,socks,us, 1,0, r,errno);
+	udp_sock_experienced(0,uc,socks,us, &dest->ia,0, r,errno);
 	buf_unprepend(buf,8);
     } else {
 	int i,r;
@@ -210,7 +213,7 @@ static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
 		continue;
 	    r=sendto(us->fd, buf->start, buf->size, 0,
 		     &dest->ia.sa, iaddr_socklen(&dest->ia));
-	    udp_sock_experienced(0,uc,socks,us, 1,af, r,errno);
+	    udp_sock_experienced(0,uc,socks,us, &dest->ia,af, r,errno);
 	    if (r>=0) return True;
 	    if (!(errno==EAFNOSUPPORT || errno==ENETUNREACH))
 		/* who knows what that error means? */
