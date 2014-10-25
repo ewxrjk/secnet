@@ -30,6 +30,7 @@ static comm_sendmsg_fn udp_sendmsg;
 struct udp {
     struct udpcommon uc;
     struct udpsocks socks;
+    bool_t addr_configured;
 };
 
 /*
@@ -433,14 +434,16 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     };
 
     caddrl=dict_lookup(d,"address");
-    socks->n_socks=caddrl ? list_length(caddrl) : (int)ARRAY_SIZE(defaultaddrs);
+    st->addr_configured=!!caddrl;
+    socks->n_socks=st->addr_configured ? list_length(caddrl)
+	: (int)ARRAY_SIZE(defaultaddrs);
     if (socks->n_socks<=0 || socks->n_socks>UDP_MAX_SOCKETS)
 	cfgfatal(cc->loc,"udp","`address' must be 1..%d addresses",
 		 UDP_MAX_SOCKETS);
 
     for (i=0; i<socks->n_socks; i++) {
 	struct udpsock *us=&socks->socks[i];
-	if (!list_length(caddrl)) {
+	if (!st->addr_configured) {
 	    us->addr=defaultaddrs[i];
 	} else {
 	    string_item_to_iaddr(list_elem(caddrl,i),uc->port,&us->addr,"udp");
