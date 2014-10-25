@@ -559,7 +559,7 @@ const char *iaddr_to_string(const union iaddr *ia)
 
     assert(ia->sa.sa_family == AF_INET);
 
-    snprintf(bufs[b], sizeof(bufs[b]), "[%s]:%d",
+    snprintf(SBUF, sizeof(SBUF), "[%s]:%d",
 	     inet_ntoa(ia->sin.sin_addr),
 	     ntohs(ia->sin.sin_port));
 
@@ -569,7 +569,7 @@ const char *iaddr_to_string(const union iaddr *ia)
 
     int port;
 
-    char *addrbuf = bufs[b];
+    char *addrbuf = SBUF;
     *addrbuf++ = '[';
     int addrbuflen = ADNS_ADDR2TEXT_BUFLEN;
 
@@ -585,11 +585,11 @@ const char *iaddr_to_string(const union iaddr *ia)
     int addrl = strlen(addrbuf);
     portbuf += addrl;
 
-    snprintf(portbuf, sizeof(bufs[b])-addrl, "]:%d", port);
+    snprintf(portbuf, sizeof(SBUF)-addrl, "]:%d", port);
 
 #endif /* CONFIG_IPV6 */
 
-    return bufs[b];
+    return SBUF;
 }
 
 bool_t iaddr_equal(const union iaddr *ia, const union iaddr *ib,

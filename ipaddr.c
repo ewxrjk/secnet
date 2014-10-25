@@ -324,7 +324,7 @@ static char *ipaddr_getbuf(void)
 
     b++;
     b &= IPADDR_NBUFS-1;
-    return bufs[b];
+    return SBUF;
 }
 
 /* The string buffer must be at least 16 bytes long */

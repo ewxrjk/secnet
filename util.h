@@ -89,6 +89,8 @@ void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
 			  const char *desc);
 
 
+#define SBUF (bufs[b]) /* temporary macro */
+
 /*----- line-buffered asynch input -----*/
 
 enum async_linebuf_result {
