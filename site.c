@@ -1240,7 +1240,7 @@ static void decrement_resolving_count(struct site *st, int by)
 		 st->resolving_n_results_all, naddrs);
 	}
 	slog(st,LOG_STATE,"resolution completed, %d addrs, eg: %s",
-	     naddrs, comm_addr_to_string(&addrs[0]));;
+	     naddrs, iaddr_to_string(&addrs[0].ia));;
     }
 
     switch (st->state) {
