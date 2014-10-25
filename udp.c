@@ -31,6 +31,7 @@ struct udp {
     struct udpcommon uc;
     struct udpsocks socks;
     bool_t addr_configured;
+    unsigned counter;
 };
 
 /*
@@ -53,7 +54,8 @@ static const char *udp_addr_to_string(void *commst, const struct comm_addr *ca)
     int ix=ca->ix>=0 ? ca->ix : 0;
 
     assert(ix>=0 && ix<socks->n_socks);
-    snprintf(sbuf, sizeof(sbuf), "udp:%s%s-%s",
+    snprintf(sbuf, sizeof(sbuf), "udp#%u@l%d:%s%s-%s",
+	     st->counter, st->uc.cc.loc.line,
 	     iaddr_to_string(&socks->socks[ix].addr),
 	     ca->ix<0 && socks->n_socks>1 ? "&" : "",
 	     iaddr_to_string(&ca->ia));
@@ -414,6 +416,8 @@ static void udp_phase_hook(void *sst, uint32_t new_phase)
 static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
 			 list_t *args)
 {
+    static unsigned counter;
+
     struct udp *st;
     list_t *caddrl;
     list_t *l;
@@ -427,6 +431,8 @@ static list_t *udp_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct udpcommon *uc=&st->uc;
     struct udpsocks *socks=&st->socks;
     struct commcommon *cc=&uc->cc;
+
+    st->counter=counter++;
 
     union iaddr defaultaddrs[] = {
 #ifdef CONFIG_IPV6
