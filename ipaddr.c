@@ -313,17 +313,11 @@ struct subnet_list *ipset_to_subnet_list(struct ipset *is)
     return r;
 }
 
-#define IPADDR_NBUFS_SHIFT 4
-#define IPADDR_NBUFS (1 << IPADDR_NBUFS_SHIFT)
 #define IPADDR_BUFLEN 20
 
 static char *ipaddr_getbuf(void)
 {
-    static int b;
-    static char bufs[IPADDR_NBUFS][IPADDR_BUFLEN];
-
-    b++;
-    b &= IPADDR_NBUFS-1;
+    SBUF_DEFINE(16, IPADDR_BUFLEN);
     return SBUF;
 }
 

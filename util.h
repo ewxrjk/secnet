@@ -89,7 +89,20 @@ void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
 			  const char *desc);
 
 
-#define SBUF (bufs[b]) /* temporary macro */
+/*
+ * SBUF_DEFINE(int nbufs, size_t size);
+ *   // Generates a number of definitions and statements organising
+ *   // nbufs rotating char[size] buffers such that subsequent code
+ *   // may refer to:
+ * char *const SBUF;
+ */
+#define SBUF_DEFINE(nbufs, size)			\
+    static int static_bufs__bufnum;			\
+    static char static_bufs__bufs[(nbufs)][(size)];	\
+    static_bufs__bufnum++;				\
+    static_bufs__bufnum %= (nbufs);			\
+    static_bufs__bufs[static_bufs__bufnum]
+#define SBUF (static_bufs__bufs[static_bufs__bufnum])
 
 /*----- line-buffered asynch input -----*/
 

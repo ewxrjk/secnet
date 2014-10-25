@@ -543,19 +543,13 @@ void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
 #endif /* CONFIG_IPV6 */
 }
 
-#define IADDR_NBUFS_SHIFT 3
-#define IADDR_NBUFS (1 << IADDR_NBUFS_SHIFT)
+#define IADDR_NBUFS 8
 
 const char *iaddr_to_string(const union iaddr *ia)
 {
-    static int b;
-
-    b++;
-    b &= IADDR_NBUFS-1;
-
 #ifndef CONFIG_IPV6
 
-    static char bufs[IADDR_NBUFS][100];
+    SBUF_DEFINE(IADDR_NBUFS, 100);
 
     assert(ia->sa.sa_family == AF_INET);
 
@@ -565,7 +559,7 @@ const char *iaddr_to_string(const union iaddr *ia)
 
 #else /* CONFIG_IPV6 => we have adns_addr2text */
 
-    static char bufs[IADDR_NBUFS][1+ADNS_ADDR2TEXT_BUFLEN+20];
+    SBUF_DEFINE(IADDR_NBUFS, 1+ADNS_ADDR2TEXT_BUFLEN+20);
 
     int port;
 
