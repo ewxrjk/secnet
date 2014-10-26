@@ -61,7 +61,19 @@ for (;;) {
 	    while (<$addrh>) {
 		print DEBUG "#$_";
 		if (m{^\d+\:\s*(\S+)\s+$afstr\s+([0-9a-z.:]+)(?:/\d+)?\s}) {
+		    my $rhs=$'; #';
 		    my $outline = "$ip $1 $2";
+		    # "ip -o addr show" has a ridiculous output format.  In
+		    # particular, it mixes output keywords which introduce
+		    # values with ones which don't, and there seems to be
+		    # no way to tell without knowing all the possible
+		    # keywords.  We hope that before the \ there is nothing
+		    # which contains arbitrary text (specifically, which
+		    # might be `tentative' other than to specify IPv6
+		    # tentativeness).  We have to do this for IPv6 only
+		    # because in the IPv4 output, the interface name
+		    # appears here!
+		    next if $ip==6 && $rhs=~m{[^\\]* tentative\s};
 		    $reported{$outline} .= "y";
 		} else {
 		    chomp;
