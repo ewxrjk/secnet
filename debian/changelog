@@ -1,4 +1,4 @@
-secnet (0.4.0~~iwj~) UNRELEASED; urgency=low
+secnet (0.4.0~beta1) unstable; urgency=low
 
   New features:
   * Support transport over IPv6.  (We do not yet carry IPv6 in the private
@@ -34,7 +34,7 @@ secnet (0.4.0~~iwj~) UNRELEASED; urgency=low
   * Build system improvements.
   * Many source code cleanups.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 09 Oct 2014 19:19:05 +0100
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 26 Oct 2014 15:28:31 +0000
 
 secnet (0.3.4) unstable; urgency=low
 

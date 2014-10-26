@@ -18,7 +18,7 @@
 .PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION:=0.4.0~~iwj~
+VERSION:=0.4.0~beta1
 
 @SET_MAKE@
 
