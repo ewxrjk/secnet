@@ -225,6 +225,7 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl,
 	    DONT("IPv6 address is " m)
         DONTMASK( 100,   0,  8, "Discard-Only (RFC6666)");
 	DONTMASK(2001,   0, 23, "in IETF protocol block (RFC2928)");
+	DONTMASK(fc00,   0,  7, "Uniqe Local unicast (RFC4193)");
 #undef DONTMASK
 	break;
     }
