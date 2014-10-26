@@ -5,6 +5,13 @@ use IO::Handle;
 my $us = $0;
 $us =~ s{.*/}{};
 
+open DEBUG, ">/dev/null" or die $!;
+
+if (@ARGV && $ARGV[0] eq '-D') {
+    shift @ARGV;
+    open DEBUG, ">&STDERR" or die $!;
+}
+
 die "$us: no arguments permitted\n" if @ARGV;
 
 our ($monh,$monchild);
@@ -44,12 +51,15 @@ for (;;) {
 	    die "monitor failed\n" unless $got;
 	}
 	$_='r' foreach values %reported;
+	print DEBUG "#########################################\n";
 	foreach my $ip (qw(4 6)) {
+	    print DEBUG "###### $ip:\n";
 	    my $addrh = new IO::File;
 	    open $addrh, "-|", qw(ip -o), "-$ip", qw(addr show)
 		or die "spawn addr $ip show: $!\n";
 	    my $afstr = $ip==4 ? 'inet' : $ip==6 ? 'inet6' : die;
 	    while (<$addrh>) {
+		print DEBUG "#$_";
 		if (m{^\d+\:\s*(\S+)\s+$afstr\s+([0-9a-z.:]+)(?:/\d+)?\s}) {
 		    my $outline = "$ip $1 $2";
 		    $reported{$outline} .= "y";
