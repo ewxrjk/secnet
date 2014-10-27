@@ -571,7 +571,7 @@ const char *iaddr_to_string(const union iaddr *ia)
     if (r) {
 	const char fmt[]= "scoped IPv6 addr, error: %.*s";
 	sprintf(addrbuf, fmt,
-		ADNS_ADDR2TEXT_BUFLEN - sizeof(fmt) /* underestimate */,
+		(int)(ADNS_ADDR2TEXT_BUFLEN - sizeof(fmt)) /* underestimate */,
 		strerror(r));
     }
 
