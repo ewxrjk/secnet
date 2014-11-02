@@ -351,7 +351,8 @@ static void polypath_record_ifaddr(struct polypath *st,
 	for (i=0; i<interf->socks.n_socks; i++)
 	    if (iaddr_equal(&interf->socks.socks[i].addr,ia,True))
 		goto address_remove_found;
-	BAD("address to remove not found");
+	bad(st,badctx,M_DEBUG,"address to remove not found",0);
+	goto out;
     address_remove_found:
 	lg_perror(LG,M_INFO,0,"removed %s %s",ifname,
 		  iaddr_to_string(&interf->socks.socks[i].addr));
