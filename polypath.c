@@ -127,10 +127,10 @@ static inline bool_t matches32(uint32_t word, uint32_t prefix, int prefixlen)
  * and
  *   out:
  */
-#define BAD(m)     do{ bad(st,badctx,m,0);  goto out; }while(0)
-#define BADE(m,ev) do{ bad(st,badctx,m,ev); goto out; }while(0)
+#define BAD(m)     do{ bad(st,badctx,M_WARNING,m,0);  goto out; }while(0)
+#define BADE(m,ev) do{ bad(st,badctx,M_WARNING,m,ev); goto out; }while(0)
 typedef void bad_fn_type(struct polypath *st, void *badctx,
-			 const char* m, int ev);
+			 int mclass, const char* m, int ev);
 
 typedef void polypath_ppml_callback_type(struct polypath *st,
           bad_fn_type *bad, void *badctx,
@@ -142,12 +142,13 @@ struct ppml_bad_ctx {
     char *undospace;
 };
 
-static void ppml_bad(struct polypath *st, void *badctx, const char *m, int ev)
+static void ppml_bad(struct polypath *st, void *badctx,
+		     int mclass, const char *m, int ev)
 {
     struct ppml_bad_ctx *bc=badctx;
     if (bc->undospace)
 	*(bc->undospace)=' ';
-    lg_perror(LG,M_WARNING,ev,
+    lg_perror(LG,mclass,ev,
 	      "error processing polypath state change: %s"
 	      " (while processing `%s')",
 	      m,bc->orgl);
@@ -546,12 +547,13 @@ struct privsep_mdata {
     union iaddr ia;
 };
 
-static void papp_bad(struct polypath *st, void *badctx, const char *m, int ev)
+static void papp_bad(struct polypath *st, void *badctx,
+		     int mclass, const char *m, int ev)
 {
     const struct privsep_mdata *mdata=(const void*)st->lbuf.start;
     const char *addr_str=badctx;
 
-    lg_perror(LG,M_WARNING,ev,
+    lg_perror(LG,mclass,ev,
 	      "error processing polypath address change %s %s [%s]: %s",
 	      mdata->add ? "+" : "-",
 	      mdata->ifname, addr_str, m);
