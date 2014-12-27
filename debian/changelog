@@ -4,8 +4,9 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * polypath: Skip "tentative" IPv6 local addresses.
   * polypath: Improve logging and debug output.
   * Portability fix: Build where size_t is not compatible with int.
+  * Makefile: support DESTDIR.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 27 Dec 2014 21:28:25 +0000
+ --
 
 secnet (0.4.0~beta1) unstable; urgency=low
 

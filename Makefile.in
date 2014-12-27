@@ -32,10 +32,10 @@ INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 INSTALL_SCRIPT:=@INSTALL_SCRIPT@
 
-prefix:=@prefix@
+prefix:=$(DESTDIR)@prefix@
 exec_prefix:=@exec_prefix@
 sbindir:=@sbindir@
-sysconfdir:=@sysconfdir@
+sysconfdir:=$(DESTDIR)@sysconfdir@
 datarootdir:=@datarootdir@
 transform:=@program_transform_name@
 mandir:=@mandir@
@@ -75,7 +75,7 @@ endif
 STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 			$(foreach p, /usr /usr/local, \
 			$(foreach l, ipaddr, \
-			$p/share/secnet/$l.$e \
+			$(DESTDIR)$p/share/secnet/$l.$e \
 			)))
 
 %.c:	%.y
