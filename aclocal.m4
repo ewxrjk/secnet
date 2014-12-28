@@ -26,3 +26,10 @@ define(ADNS_C_GETFUNC,[
   ])
  ])
 ])
+
+define(SECNET_C_GETFUNC,[
+ ADNS_C_GETFUNC($1,$2,[
+  LIBS="-l$2 $LIBS";
+  AC_MSG_WARN([$1 is in lib$2, urgh.  Must use -l$2.])
+ ])
+])

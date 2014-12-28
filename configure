@@ -4613,6 +4613,7 @@ _ACEOF
 fi
 
 
+
  ac_fn_c_check_func "$LINENO" "inet_aton" "ac_cv_func_inet_aton"
 if test "x$ac_cv_func_inet_aton" = xyes; then :
 
@@ -4656,8 +4657,8 @@ fi
 $as_echo "$ac_cv_lib_resolv_inet_aton" >&6; }
 if test "x$ac_cv_lib_resolv_inet_aton" = xyes; then :
 
- LIBS="-lresolv $LIBS";
- { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: inet_aton is in libresolv, urgh.  Must use -lresolv." >&5
+  LIBS="-lresolv $LIBS";
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: inet_aton is in libresolv, urgh.  Must use -lresolv." >&5
 $as_echo "$as_me: WARNING: inet_aton is in libresolv, urgh.  Must use -lresolv." >&2;}
 
 else
@@ -4668,6 +4669,7 @@ fi
 
 
 fi
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for adns_init in -ladns" >&5
