@@ -9,6 +9,12 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * Do not install ipaddrset.py and secnet.8 executable.
   * Fix check for <linux/if_tun.h>.
 
+  Copyright updates:
+  * Update to GPLv3.  Add missing copyright notices and credits.
+  * Get rid of old FSF street address; use URL instead.
+  * Remove obsolete LICENCE.txt (which was for snprintf reimplementation).
+  * Remove obsolete references to Cendio (for old ipaddr.py).
+
  --
 
 secnet (0.4.0~beta1) unstable; urgency=low

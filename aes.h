@@ -1,8 +1,32 @@
 /*
-  * aes.h
-  *
-  * Header file declaring AES functions.
-  *
+ * aes.h - Header file declaring AES functions.
+ */
+/*
+ * This file is Free Software.  It has been modified to as part of its
+ * incorporation into secnet.
+ *
+ * Copyright 2000 Vincent Rijmen, Antoon Bosselaers, Paulo Barreto
+ * Copyright 2004 Fabrice Bellard
+ * Copyright 2013 Ian Jackson
+ *
+ * You may redistribute this file and/or modify it under the terms of
+ * the permissive licence shown below.
+ *
+ * You may redistribute secnet as a whole and/or modify it under the
+ * terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see
+ * https://www.gnu.org/licenses/gpl.html.
+ */
+/*
   * Copied from the upstream qemu git tree revision
   *   55616505876d6683130076b810a27c7889321560
   * but was introduced there by Fabrice Bellard in

@@ -1,13 +1,15 @@
 Stephen Early <steve@greenend.org.uk> - original author
+Ian Jackson <ijackson@chiark.greenend.org.uk> - current maintainer
 Ross Anderson, Eli Biham, Lars Knudsen - serpent
 Colin Plumb, Ian Jackson - MD5 implementation
-Ian Jackson - hacky parallelism, serpent keying and endianness bugfixes
-Steve Reid <sreid@sea-to-sky.net>, James H. Brown <jbrown@burgoyne.com> - 
-  SHA1 implementation
-Cendio Systems AB - ipaddr.py
-Mark Martinec <mark.martinec@ijs.si> - portable snprintf
+Steve Reid, James H. Brown, Saul Kravitz - SHA1 implementation
+Vincent Rijmen, Antoon Bosselaers, Paulo Barreto - Rijndael (AES) implementation
+Guido Draheim - ac_prog_cc_no_writeable_strings.m4
+Free Software Foundation and Scott G. Miller - SHA-512 implementation
+Free Software Foundation and Paul Eggert - u64.h
+Massachusetts Institute of Technology - install-sh
 
 Simon Tatham, Jonathan Amery, Ian Jackson - testing and debugging
 Simon Tatham - RSA signatures using Chinese Remainder Theorem
 Simon Tatham - endianness cleanups in transform.c
-Richard Kettlewell, Peter Benie - assorted bugfixes
+Richard Kettlewell, Matthew Vernon, Peter Benie - assorted bugfixes

@@ -1,5 +1,34 @@
 #!/usr/bin/python
 
+# This file is Free Software.  It was originally written for secnet.
+#
+# Copyright 2014 Ian Jackson
+#
+# You may redistribute secnet as a whole and/or modify it under the
+# terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any
+# later version.
+#
+# You may redistribute this fileand/or modify it under the terms of
+# the GNU General Public License as published by the Free Software
+# Foundation; either version 2, or (at your option) any later version.
+# Note however that this version of ipaddrset.py uses the Python
+# ipaddr library from Google, which is licenced only under the Apache
+# Licence, version 2.0, which is only compatible with the GNU GPL v3
+# (or perhaps later versions), and not with the GNU GPL v2.
+#
+# This software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this software; if not, see
+# https://www.gnu.org/licenses/gpl.html.
+#
+# The corresponding test vector file ise ipaddrset-test.expected.  I
+# don't believe it is a creative work that attracts copyright.  -iwj.
+
 import ipaddr
 from ipaddr import IPNetwork, IPAddress
 

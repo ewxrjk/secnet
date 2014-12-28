@@ -2,6 +2,7 @@
 SHA-1 in C
 By Steve Reid <sreid@sea-to-sky.net>
 100% Public Domain
+[I interpet this as a blanket permision -iwj.]
 
 Note: parts of this file have been removed or modified to work in secnet.
 Instead of using this file in new projects, I suggest you use the
@@ -59,7 +60,9 @@ By Saul Kravitz <Saul.Kravitz@celera.com>
 Still 100% PD
 Modified to run on Compaq Alpha hardware.  
 
-
+-----------------
+(Further modifications as part of secnet.  See git history for full details.
+ - Ian Jackson et al)
 */
 
 /*

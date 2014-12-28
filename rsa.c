@@ -1,10 +1,34 @@
-/* This file is part of secnet, and is distributed under the terms of
-   the GNU General Public License version 2 or later.
+/*
+ * rsa.c: implementation of RSA with PKCS#1 padding
+ */
+/*
+ * This file is Free Software.  It was originally written for secnet.
+ *
+ * Copyright 1995-2003 Stephen Early
+ * Copyright 2002-2014 Ian Jackson
+ * Copyright 2001      Simon Tatham
+ * Copyright 2013      Mark Wooding
+ *
+ * You may redistribute secnet as a whole and/or modify it under the
+ * terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3, or (at your option) any
+ * later version.
+ *
+ * You may redistribute this file and/or modify it under the terms of
+ * the GNU General Public License as published by the Free Software
+ * Foundation; either version 2, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software; if not, see
+ * https://www.gnu.org/licenses/gpl.html.
+ */
 
-   Copyright (C) 1995-2002 Stephen Early
-   Copyright (C) 2001 Simon Tatham
-   Copyright (C) 2002 Ian Jackson
-   */
 
 #include <stdio.h>
 #include <string.h>

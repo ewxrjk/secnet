@@ -3,6 +3,7 @@
  * The algorithm is due to Ron Rivest.  This code was
  * written by Colin Plumb in 1993, no copyright is claimed.
  * This code is in the public domain; do with it what you wish.
+ * [I interpet this as a blanket permision -iwj.]
  *
  * Equivalent code is available from RSA Data Security, Inc.
  * This code has been tested against that, and is equivalent,

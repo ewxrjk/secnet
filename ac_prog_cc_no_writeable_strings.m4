@@ -16,7 +16,37 @@ dnl and IRIX C compiler.
 dnl
 dnl @version $Id: ac_prog_cc_no_writeable_strings.m4,v 1.1 2002/02/20 16:18:18 steve Exp $
 dnl @author Guido Draheim <guidod@gmx.de>
+
+dnl [This appears to be a previous version of
+dnl  ax_cflags_no_writable_strings.m4 which is nowadays to be found in
+dnl  the Autoconf Archive.  It was imported there on 2007-02-14
+dnl  in commit 16aee45643e593e2833e4dff19df7b5f14267a79 where the file
+dnl  has a GPLv2 permission notice.  Therefore I feel justified in
+dnl  adding the copyright permission notice below: -iwj]
 dnl
+dnl  This file is Free Software.  It has been copied into secnet.
+dnl
+dnl  Copyright 2002 Guido Draheim
+dnl
+dnl  You may redistribute secnet as a whole and/or modify it under the
+dnl  terms of the GNU General Public License as published by the Free
+dnl  Software Foundation; either version 3, or (at your option) any
+dnl  later version.
+dnl
+dnl  You may redistribute this file and/or modify it under the terms of
+dnl  the GNU General Public License as published by the Free Software
+dnl  Foundation; either version 2, or (at your option) any later
+dnl  version.
+dnl
+dnl  This software is distributed in the hope that it will be useful,
+dnl  but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl  GNU General Public License for more details.
+dnl
+dnl  You should have received a copy of the GNU General Public License
+dnl  along with this software; if not, see
+dnl  https://www.gnu.org/licenses/gpl.html.
+
 AC_DEFUN([AC_PROG_CC_NO_WRITEABLE_STRINGS], [
   pushdef([CV],ac_cv_prog_cc_no_writeable_strings)dnl
   hard=$2

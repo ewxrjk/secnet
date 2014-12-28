@@ -1,23 +1,35 @@
 /*
- * This file is
- *   Copyright (C) 1998 Ross Anderson, Eli Biham, Lars Knudsen
+ * serpentsboxes.h: S-boxes; internal to Serpent implementation.
+ */
+/*
+ * This file is Free Software.  It is now being distributed with
+ * secnet.
  *
- * For more information see http://www.cl.cam.ac.uk/users/rja14/serpent.html
+ * Copyright 1998      Ross Anderson, Eli Biham, Lars Knudsen
+ * Copyright 1995-2001 Stephen Early <steve@greenend.org.uk>
+ * Copyright 2011-2013 Ian Jackson
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *  
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *  
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
+ * For more information about Serpent see
+ * http://www.cl.cam.ac.uk/users/rja14/serpent.html
  *
+ * You may redistribute secnet as a whole and/or modify it under the
+ * terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3, or (at your option) any
+ * later version.
+ *
+ * You may redistribute this file and/or modify it under the terms of
+ * the GNU General Public License as published by the Free Software
+ * Foundation; either version 2, or (at your option) any later
+ * version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software; if not, see
+ * https://www.gnu.org/licenses/gpl.html.
  */
 
 

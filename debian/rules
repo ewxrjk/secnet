@@ -6,6 +6,30 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+#  This file is Free Software.  It has been incorporated into, and
+#  extensively modified, for secnet.
+#
+#  Copyright 2001      Joey Hess
+#  Copyright 2011-2014 Ian Jackson
+#
+#  You may redistribute this file (and the other source files in the
+#  debian/ subdirectory) freely - the copyrightholders declare that
+#  they wish these files to be in the public domain.
+#
+#  You may redistribute secnet as a whole and/or modify it under the
+#  terms of the GNU General Public License as published by the Free
+#  Software Foundation; either version 3, or (at your option) any
+#  later version.
+#
+#  This software is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this software; if not, see
+#  https://www.gnu.org/licenses/gpl.html.
+
 build: build-stamp
 build-stamp:
 	dh_testdir

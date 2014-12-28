@@ -1,10 +1,43 @@
-/**
+/*
+ * aes.c - implementation of Rijndael
+ */
+/*
+ * This file is Free Software.  It has been modified to as part of its
+ * incorporation into secnet.
  *
- * aes.c - integrated in QEMU by Fabrice Bellard from the OpenSSL project.
+ * Copyright 2000 Vincent Rijmen, Antoon Bosselaers, Paulo Barreto
+ * Copyright 2004 Fabrice Bellard
+ * Copyright 2013 Ian Jackson
+ *
+ * You may redistribute this file and/or modify it under the terms of
+ * the permissive licence shown below.
+ *
+ * You may redistribute secnet as a whole and/or modify it under the
+ * terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 3, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see
+ * https://www.gnu.org/licenses/gpl.html.
+ */
+/*
+ * Integrated in QEMU by Fabrice Bellard from the OpenSSL project.
  *
  * Copied to the secnet tree by Ian Jackson from the upstream qemu git
  * tree revision 55616505876d6683130076b810a27c7889321560
  * and modified only to remove the include of qemu-common.h.
+ *
+ * (The changes by various qemu contributors between
+ * e4d4fe3c34cdd6e26f9b9975efec7d1e81ad00b6, where this file appeared
+ * in qemu in a commit by Fabrice Bellard, and 55616505 are too
+ * trivial to attract copyright, which is just as well because some of
+ * the commits are lacking a S-o-b.)
  */
 /*
  * rijndael-alg-fst.c
