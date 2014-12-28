@@ -9,6 +9,7 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * Do not install ipaddrset.py and secnet.8 executable.
   * Fix check for <linux/if_tun.h>.
   * debian/rules: Support dpkg-buildflags.
+  * Build system: Use -lresolv only if inet_aton is not found otherwise.
 
   Copyright updates:
   * Update to GPLv3.  Add missing copyright notices and credits.

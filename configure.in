@@ -83,7 +83,10 @@ if test "$ac_cv_lib_fl_yywrap" != yes; then
 fi
 AC_CHECK_LIB(nsl,inet_ntoa)
 AC_CHECK_LIB(socket,socket)
-AC_CHECK_LIB(resolv,inet_aton)
+ADNS_C_GETFUNC(inet_aton,resolv,[
+ LIBS="-lresolv $LIBS";
+ AC_MSG_WARN([inet_aton is in libresolv, urgh.  Must use -lresolv.])
+])
 AC_CHECK_LIB(adns,adns_init)
 REQUIRE_HEADER([adns.h])
 
