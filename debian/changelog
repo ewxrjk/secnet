@@ -15,6 +15,7 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * Get rid of old FSF street address; use URL instead.
   * Remove obsolete LICENCE.txt (which was for snprintf reimplementation).
   * Remove obsolete references to Cendio (for old ipaddr.py).
+  * Build system: debian/rules: Provide build-arch and build-indep targets.
 
  --
 

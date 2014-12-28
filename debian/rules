@@ -34,7 +34,7 @@ export EXTRA_CFLAGS= $(shell dpkg-buildflags --get CPPFLAGS) \
 		     $(shell dpkg-buildflags --get CFLAGS)
 export EXTRA_LDFLAGS=$(shell dpkg-buildflags --get LDFLAGS)
 
-build: build-stamp
+build build-arch: build-stamp
 build-stamp:
 	dh_testdir
 
@@ -63,7 +63,7 @@ install: build
 	$(MAKE) DESTDIR=`pwd`/debian/`dh_listpackages` install
 
 # Build architecture-independent files here.
-binary-indep: build install
+build-indep binary-indep: build install
 # We have nothing to do by default.
 
 # Build architecture-dependent files here.
