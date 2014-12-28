@@ -1,4 +1,4 @@
-secnet (0.4.0~beta2~) unstable; urgency=low
+secnet (0.4.0~beta2) unstable; urgency=low
 
   Polypath bugfixes:
   * Ignore IPv6 Unique Local unicast addresses.
@@ -26,7 +26,7 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * Remove obsolete LICENCE.txt (which was for snprintf reimplementation).
   * Remove obsolete references to Cendio (for old ipaddr.py).
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 28 Dec 2014 17:11:26 +0000
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 28 Dec 2014 17:14:10 +0000
 
 secnet (0.4.0~beta1) unstable; urgency=low
 
