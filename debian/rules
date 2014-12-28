@@ -63,7 +63,7 @@ install: build
 	$(MAKE) DESTDIR=`pwd`/debian/`dh_listpackages` install
 
 # Build architecture-independent files here.
-build-indep binary-indep: build install
+build-indep binary-indep:
 # We have nothing to do by default.
 
 # Build architecture-dependent files here.

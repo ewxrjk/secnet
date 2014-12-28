@@ -16,6 +16,7 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * Remove obsolete LICENCE.txt (which was for snprintf reimplementation).
   * Remove obsolete references to Cendio (for old ipaddr.py).
   * Build system: debian/rules: Provide build-arch and build-indep targets.
+  * Build system: debian/rules: Do not run build for *-indep (!)
 
  --
 
