@@ -237,12 +237,19 @@ dist:
 #  8. rsync -v ../secnet-$VERSION.tar.gz* \
 #        chiark:/home/ianmdlvl/public-html/secnet/download/
 #
-#  9. On chiark:
+#  9. In zealot's squeeze chroot:
+#       rm -rf ../d; mkdir ../d; cd ../d
+#       tar zxf ../secnet-$VERSION.tar.gz
+#       cd secnet-$VERSION
+#       dpkg-buildpackage -a -uc -us -rfakeroot
+#       rsync -vP ../secnet_${VERSION}_i386.deb ianmdlvl@chiark:public-html/secnet/download/
+#
+#  9a. On chiark as ianmdlvl:
+#       cd ~ianmdlvl/secnet-build/
 #       tar zxf ~ianmdlvl/public-html/secnet/download/secnet-$VERSION.tar.gz
 #       cd secnet-$VERSION
-#       debian/rules build
-#       fakeroot debian/rules binary
-#       mv ../secnet_${VERSION}_i386.deb ~ianmdlvl/public-html/secnet/download/
+#       dpkg-buildpackage -a -uc -us -rfakeroot
+#       mv ../secnet_${VERSION}_i386.deb ~ianmdlvl/public-html/secnet/download/backport/
 #
 #  10. On chiark as user secnet:
 #       cd ~secnet/public-html/release/

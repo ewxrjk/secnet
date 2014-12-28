@@ -18,6 +18,7 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * Use -lnsl only if inet_ntoa is not found otherwise.
   * debian/rules: Provide build-arch and build-indep targets.
   * debian/rules: Do not run build for *-indep (!)
+  * Makefile.in: Putative dual (backport and not) release build process doc.
 
   Copyright updates:
   * Update to GPLv3.  Add missing copyright notices and credits.
