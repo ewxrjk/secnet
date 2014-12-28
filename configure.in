@@ -81,7 +81,7 @@ AC_CHECK_LIB(fl,yywrap)
 if test "$ac_cv_lib_fl_yywrap" != yes; then
   AC_MSG_ERROR([A compatible libfl is required])
 fi
-AC_CHECK_LIB(nsl,inet_ntoa)
+SECNET_C_GETFUNC(inet_ntoa,nsl)
 AC_CHECK_LIB(socket,socket)
 SECNET_C_GETFUNC(inet_aton,resolv)
 AC_CHECK_LIB(adns,adns_init)

@@ -26,9 +26,6 @@
 /* Define to 1 if you have the `gmp2' library (-lgmp2). */
 #undef HAVE_LIBGMP2
 
-/* Define to 1 if you have the `nsl' library (-lnsl). */
-#undef HAVE_LIBNSL
-
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 
