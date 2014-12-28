@@ -31,6 +31,7 @@ CC:=@CC@
 INSTALL:=@INSTALL@
 INSTALL_PROGRAM:=@INSTALL_PROGRAM@
 INSTALL_SCRIPT:=@INSTALL_SCRIPT@
+INSTALL_DATA:=@INSTALL_DATA@
 
 prefix:=$(DESTDIR)@prefix@
 exec_prefix:=@exec_prefix@
@@ -181,10 +182,10 @@ install: installdirs
 	$$ok
 	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
-	$(INSTALL) ${srcdir}/ipaddrset.py $(prefix)/share/secnet/ipaddrset.py
+	$(INSTALL_DATA) ${srcdir}/ipaddrset.py $(prefix)/share/secnet/ipaddrset.py
 	$(INSTALL_SCRIPT) ${srcdir}/polypath-interface-monitor-linux \
 		$(datarootdir)/secnet/.
-	$(INSTALL) secnet.8 $(mandir)/man8/secnet.8
+	$(INSTALL_DATA) secnet.8 $(mandir)/man8/secnet.8
 
 install-force:
 	rm -f $(STALE_PYTHON_FILES)

@@ -6,6 +6,7 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * Portability fix: Build where size_t is not compatible with int.
   * Makefile: support DESTDIR.
   * debian/rules: set DESTDIR (not prefix).
+  * Do not install ipaddrset.py and secnet.8 executable.
 
  --
 
