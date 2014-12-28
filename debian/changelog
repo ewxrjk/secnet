@@ -7,6 +7,7 @@ secnet (0.4.0~beta2~) unstable; urgency=low
   * Makefile: support DESTDIR.
   * debian/rules: set DESTDIR (not prefix).
   * Do not install ipaddrset.py and secnet.8 executable.
+  * Fix check for <linux/if_tun.h>.
 
  --
 

@@ -12,7 +12,7 @@
 
 #ifdef HAVE_NET_IF_H
 #include <net/if.h>
-#ifdef HAVE_LINUX_IF_H
+#ifdef HAVE_LINUX_IF_TUN_H
 #include <linux/if_tun.h>
 #define LINUX_TUN_SUPPORTED
 #endif

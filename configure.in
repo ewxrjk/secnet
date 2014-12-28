@@ -27,7 +27,7 @@ AC_STDC_HEADERS
 AC_CHECK_HEADERS([stdint.h inttypes.h])
 AC_CHECK_HEADERS([net/if.h net/route.h])
 AC_CHECK_HEADERS([sys/socket.h])
-AC_CHECK_HEADERS([linux/if.h], [], [], 
+AC_CHECK_HEADERS([linux/if_tun.h], [], [], 
 [#if HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif

@@ -3806,16 +3806,16 @@ fi
 
 done
 
-for ac_header in linux/if.h
+for ac_header in linux/if_tun.h
 do :
-  ac_fn_c_check_header_compile "$LINENO" "linux/if.h" "ac_cv_header_linux_if_h" "#if HAVE_SYS_SOCKET_H
+  ac_fn_c_check_header_compile "$LINENO" "linux/if_tun.h" "ac_cv_header_linux_if_tun_h" "#if HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
 
 "
-if test "x$ac_cv_header_linux_if_h" = xyes; then :
+if test "x$ac_cv_header_linux_if_tun_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LINUX_IF_H 1
+#define HAVE_LINUX_IF_TUN_H 1
 _ACEOF
 
 fi
