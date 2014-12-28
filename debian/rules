@@ -30,6 +30,10 @@
 #  along with this software; if not, see
 #  https://www.gnu.org/licenses/gpl.html.
 
+export EXTRA_CFLAGS= $(shell dpkg-buildflags --get CPPFLAGS) \
+		     $(shell dpkg-buildflags --get CFLAGS)
+export EXTRA_LDFLAGS=$(shell dpkg-buildflags --get LDFLAGS)
+
 build: build-stamp
 build-stamp:
 	dh_testdir
