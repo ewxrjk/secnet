@@ -225,9 +225,9 @@ dist:
 #
 #  3. Commit the updates to VERSION (above) and debian/changelog
 #
-#  4. git-tag -m "secnet $VERSION" -s v$VERSION
+#  4. git-tag -m "secnet $VERSION" -s v${VERSION//\~/_}
 #
-#  5. git-push origin v$VERSION v${VERSION}~0:master
+#  5. git-push origin v${VERSION//\~/_} v${VERSION//\~/_}~0:master
 #
 #  6. Run, again,
 #       make dist
@@ -256,5 +256,9 @@ dist:
 #       mkdir $VERSION
 #       cd $VERSION
 #       ln -s /home/ianmdlvl/public-html/secnet/download/secnet?$VERSION* .
+#       mkdir polypath-backport
+#       ln -s /home/ianmdlvl/public-html/secnet/download/backport/secnet?$VERSION* polypath-backport/.
+#       ln -s /home/ianmdlvl/public-html/secnet/download/backport/*adns* polypath-backport/.
 #
 #  11. write and post a release announcement
+#       find -type l | sort | xargs sha256sum
