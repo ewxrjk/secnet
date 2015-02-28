@@ -1164,16 +1164,18 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 }
 
 static void dump_packet(struct site *st, struct buffer_if *buf,
-			const struct comm_addr *addr, bool_t incoming)
+			const struct comm_addr *addr, bool_t incoming,
+			bool_t ok)
 {
     uint32_t dest=get_uint32(buf->start);
     uint32_t source=get_uint32(buf->start+4);
     uint32_t msgtype=get_uint32(buf->start+8);
 
     if (st->log_events & LOG_DUMP)
-	slilog(st->log,M_DEBUG,"%s: %s: %08x<-%08x: %08x:",
+	slilog(st->log,M_DEBUG,"%s: %s: %08x<-%08x: %08x: %s%s",
 	       st->tunname,incoming?"incoming":"outgoing",
-	       dest,source,msgtype);
+	       dest,source,msgtype,comm_addr_to_string(addr),
+	       ok?"":" - fail");
 }
 
 static uint32_t site_status(void *st)
@@ -1600,8 +1602,8 @@ static void generate_send_prod(struct site *st,
     slog(st,LOG_SETUP_INIT,"prodding peer for key exchange");
     st->allow_send_prod=0;
     generate_prod(st,&st->scratch);
-    dump_packet(st,&st->scratch,source,False);
-    source->comm->sendmsg(source->comm->st, &st->scratch, source);
+    bool_t ok = source->comm->sendmsg(source->comm->st, &st->scratch, source);
+    dump_packet(st,&st->scratch,source,False,ok);
 }
 
 static inline void site_settimeout(uint64_t timeout, int *timeout_io)
@@ -1734,7 +1736,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	if (!named_for_us(st,buf,msgtype,&named_msg))
 	    return False;
 	/* It's a MSG1 addressed to us. Decide what to do about it. */
-	dump_packet(st,buf,source,True);
+	dump_packet(st,buf,source,True,True);
 	if (st->state==SITE_RUN || st->state==SITE_RESOLVE ||
 	    st->state==SITE_WAIT) {
 	    /* We should definitely process it */
@@ -1784,7 +1786,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
     if (msgtype==LABEL_PROD) {
 	if (!named_for_us(st,buf,msgtype,&named_msg))
 	    return False;
-	dump_packet(st,buf,source,True);
+	dump_packet(st,buf,source,True,True);
 	if (st->state!=SITE_RUN) {
 	    slog(st,LOG_DROP,"ignoring PROD when not in state RUN");
 	} else if (current_valid(st)) {
@@ -1797,7 +1799,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
     }
     if (dest==st->index) {
 	/* Explicitly addressed to us */
-	if (msgtype!=LABEL_MSG0) dump_packet(st,buf,source,True);
+	if (msgtype!=LABEL_MSG0) dump_packet(st,buf,source,True,True);
 	switch (msgtype) {
 	case LABEL_NAK:
 	    /* If the source is our current peer then initiate a key setup,
@@ -2347,10 +2349,10 @@ void transport_xmit(struct site *st, transport_peers *peers,
     int nfailed=0;
     for (slot=0; slot<peers->npeers; slot++) {
 	transport_peer *peer=&peers->peers[slot];
-	if (candebug)
-	    dump_packet(st, buf, &peer->addr, False);
 	bool_t ok =
 	    peer->addr.comm->sendmsg(peer->addr.comm->st, buf, &peer->addr);
+	if (candebug)
+	    dump_packet(st, buf, &peer->addr, False, ok);
 	if (!ok) {
 	    failed |= 1U << slot;
 	    nfailed++;

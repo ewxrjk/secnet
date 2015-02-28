@@ -1,3 +1,10 @@
+secnet (0.4.0~beta3) unstable; urgency=low
+
+  Debugging improvements:
+  * Packet-level debugging from site notes errors from transmit.
+
+ --
+
 secnet (0.4.0~beta2) unstable; urgency=low
 
   Polypath bugfixes:
