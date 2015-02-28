@@ -2,6 +2,7 @@ secnet (0.4.0~beta3) unstable; urgency=low
 
   Debugging improvements:
   * Packet-level debugging from site notes errors from transmit.
+  * Report when transport peers updated as a result of transmit.
 
  --
 

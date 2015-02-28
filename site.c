@@ -2374,12 +2374,14 @@ void transport_xmit(struct site *st, transport_peers *peers,
 	    transport_peers__copy_by_mask(peers->peers,&wslot,~failed,peers);
 	    assert(wslot+nfailed == peers->npeers);
 	    COPY_ARRAY(peers->peers+wslot, failedpeers, nfailed);
+	    transport_peers_debug(st,peers,"mobile failure reorder",0,0,0);
 	}
     } else {
 	if (failed && peers->npeers > 1) {
 	    int wslot=0;
 	    transport_peers__copy_by_mask(peers->peers,&wslot,~failed,peers);
 	    peers->npeers=wslot;
+	    transport_peers_debug(st,peers,"non-mobile failure cleanup",0,0,0);
 	}
     }
 }
