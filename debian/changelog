@@ -1,10 +1,10 @@
-secnet (0.4.0~beta3) unstable; urgency=low
+secnet (0.4.0) unstable; urgency=low
 
   Debugging improvements:
   * Packet-level debugging from site notes errors from transmit.
   * Report when transport peers updated as a result of transmit.
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 28 Feb 2015 15:03:00 +0000
 
 secnet (0.4.0~beta2) unstable; urgency=low
 
