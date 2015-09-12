@@ -296,6 +296,7 @@ struct site {
 /* configuration information */
     string_t localname;
     string_t remotename;
+    bool_t keepalive;
     bool_t local_mobile, peer_mobile; /* Mobile client support */
     int32_t transport_peers_max;
     string_t tunname; /* localname<->remotename by default, used in logs */
@@ -1429,6 +1430,9 @@ static void enter_state_run(struct site *st)
     memset(st->dhsecret,0,st->dh->len);
     memset(st->sharedsecret,0,st->sharedsecretlen);
     set_link_quality(st);
+
+    if (st->keepalive && !current_valid(st))
+	initiate_key_setup(st, "keepalive", 0);
 }
 
 static bool_t ensure_resolving(struct site *st)
@@ -1966,6 +1970,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     dict=item->data.dict;
     st->localname=dict_read_string(dict, "local-name", True, "site", loc);
     st->remotename=dict_read_string(dict, "name", True, "site", loc);
+
+    st->keepalive=dict_read_bool(dict,"keepalive",False,"site",loc,False);
 
     st->peer_mobile=dict_read_bool(dict,"mobile",False,"site",loc,False);
     st->local_mobile=

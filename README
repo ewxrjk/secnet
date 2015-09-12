@@ -390,7 +390,7 @@ site: dict argument
     [half key-lifetime, or key-lifetime minus 5 mins (mobile: 12 hours),
      whichever is longer].
   keepalive (bool): if True then attempt always to keep a valid session key.
-    Not actually currently implemented. [false]
+    [false]
   log-events (string list): types of events to log for this site
     unexpected: unexpected key setup packets (may be late retransmissions)
     setup-init: start of attempt to setup a session key
