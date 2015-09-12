@@ -1147,6 +1147,10 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
     case LABEL_MSG7:
 	/* We must forget about the current session. */
 	delete_keys(st,"request from peer",LOG_SEC);
+	/* probably, the peer is shutting down, and this is going to fail,
+	 * but we need to be trying to bring the link up again */
+	if (st->keepalive)
+	    initiate_key_setup(st,"peer requested key teardown",0);
 	return True;
     case LABEL_MSG9:
 	/* Deliver to netlink layer */
