@@ -127,6 +127,8 @@ conffile.yy.h:	conffile.yy.c
 conffile.tab.c:	conffile.y
 # End of manual dependencies section
 
+conffile.yy.o: ALL_CFLAGS += -Wno-sign-compare
+
 secnet:	$(OBJECTS)
 	$(MAKE) version.o # *.o $(filter-out %.o, $^)
 	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $(OBJECTS) version.o $(LDLIBS)
