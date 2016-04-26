@@ -114,6 +114,9 @@ If installing for the first time, do
 # cd /etc/secnet
 # ssh-keygen -f key -t rsa1 -N ""
 
+(You may need ssh-keygen1, instead, which might be found in
+openssh-client-ssh1.)
+
 [On BSD use
 $ LDFLAGS="-L/usr/local/lib" ./configure
 $ gmake CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib"
