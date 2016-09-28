@@ -148,8 +148,8 @@ static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
     mpz_init(&u);
     mpz_init(&v);
 
-    mpz_powm(&u, &a, &st->dp, &st->p);
-    mpz_powm(&v, &a, &st->dq, &st->q);
+    mpz_powm_sec(&u, &a, &st->dp, &st->p);
+    mpz_powm_sec(&v, &a, &st->dq, &st->q);
     mpz_sub(&tmp, &u, &v);
     mpz_mul(&tmp2, &tmp, &st->w);
     mpz_add(&tmp, &tmp2, &v);
