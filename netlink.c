@@ -487,8 +487,8 @@ static bool_t netlink_check(struct netlink *st, struct buffer_if *buf,
     struct iphdr *iph=(struct iphdr *)buf->start;
     int32_t len;
 
-    if (iph->ihl < 5) BAD("ihl %u",iph->ihl);
     if (iph->version != 4) BAD("version %u",iph->version);
+    if (iph->ihl < 5) BAD("ihl %u",iph->ihl);
     if (buf->size < iph->ihl*4) BAD("size %"PRId32"<%u*4",buf->size,iph->ihl);
     if (ip_fast_csum((uint8_t *)iph, iph->ihl)!=0) BAD("csum");
     len=ntohs(iph->tot_len);
