@@ -444,6 +444,9 @@ site: dict argument
     should be reflected in the local private interface MTU, ie the mtu
     parameter to netlink).  If this parameter is not set, or is set
     to 0, the default is to use the local private link mtu.
+  comm-info (dict): Information for the comm, used when this site
+    wants to transmit.  If the comm does not support this, it is
+    ignored.  (Currently nothing uses this.)
 
 Links involving mobile peers have some different tuning parameter
 default values, which are generally more aggressive about retrying key

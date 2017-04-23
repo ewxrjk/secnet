@@ -305,6 +305,7 @@ struct site {
     uint32_t mtu_target;
     struct netlink_if *netlink;
     struct comm_if **comms;
+    struct comm_clientinfo **commclientinfos;
     int ncomms;
     struct resolver_if *resolver;
     struct log_if *log;
@@ -1187,7 +1188,16 @@ static bool_t comm_addr_sendmsg(struct site *st,
 				const struct comm_addr *dest,
 				struct buffer_if *buf)
 {
-    return dest->comm->sendmsg(dest->comm->st, buf, dest, 0);
+    int i;
+    struct comm_clientinfo *commclientinfo = 0;
+
+    for (i=0; i < st->ncomms; i++) {
+	if (st->comms[i] == dest->comm) {
+	    commclientinfo = st->commclientinfos[i];
+	    break;
+	}
+    }
+    return dest->comm->sendmsg(dest->comm->st, buf, dest, commclientinfo);
 }
 
 static uint32_t site_status(void *st)
@@ -2032,6 +2042,14 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 }while(0)
 
     GET_CLOSURE_LIST("comm",comms,ncomms,CL_COMM);
+
+    NEW_ARY(st->commclientinfos, st->ncomms);
+    dict_t *comminfo = dict_read_dict(dict,"comm-info",False,"site",loc);
+    for (i=0; i<st->ncomms; i++) {
+	st->commclientinfos[i] =
+	    !comminfo ? 0 :
+	    st->comms[i]->clientinfo(st->comms[i],comminfo,loc);
+    }
 
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
     st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
