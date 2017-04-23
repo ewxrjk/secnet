@@ -45,7 +45,7 @@ struct polypath {
     const char *const *ifname_pats;
     const char *const *monitor_command;
     bool_t permit_loopback;
-    LIST_HEAD(,interf) interfs;
+    LIST_HEAD(interf_list, interf) interfs;
     struct buffer_if lbuf;
     int monitor_fd;
     pid_t monitor_pid;
@@ -151,7 +151,8 @@ typedef void bad_fn_type(struct polypath *st, void *badctx,
 
 typedef void polypath_ppml_callback_type(struct polypath *st,
           bad_fn_type *bad, void *badctx,
-          bool_t add, const char *ifname, const char *ifaddr,
+          bool_t add, char want,
+          const char *ifname, const char *ifaddr,
           const union iaddr *ia, int fd /* -1 if none yet */);
 
 struct ppml_bad_ctx {
@@ -222,7 +223,6 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl,
 
     char want=ifname_wanted(st,st->uc.cc.loc,ifname);
     if (want=='!') DONT("unwanted interface name");
-    assert(want=='+');
 
     switch (ia.sa.sa_family) {
     case AF_INET6: {
@@ -273,18 +273,20 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl,
 #undef DONT
 
     /* OK, process it */
-    callback(st, bad,badctx, add,ifname,ifaddr,&ia,-1);
+    callback(st, bad,badctx, add,want, ifname,ifaddr,&ia,-1);
 
  out:;
 }
 
-static void dump_pria(struct polypath *st, const char *ifname)
+static void dump_pria(struct polypath *st, struct interf_list *interfs,
+		      const char *ifname, char want)
 {
 #ifdef POLYPATH_DEBUG
     struct interf *interf;
     if (ifname)
-	lg_perror(LG,M_DEBUG,0, "polypath record ifaddr `%s'",ifname);
-    LIST_FOREACH(interf, &st->interfs, entry) {
+	lg_perror(LG,M_DEBUG,0, "polypath record ifaddr `%s' (%c)",
+		  ifname, want);
+    LIST_FOREACH(interf, interfs, entry) {
 	lg_perror(LG,M_DEBUG,0, "  polypath interface `%s', nsocks=%d",
 		  interf->name, interf->socks.n_socks);
 	int i;
@@ -317,30 +319,38 @@ static bool_t polypath_make_socket(struct polypath *st,
 
 static void polypath_record_ifaddr(struct polypath *st,
 				   bad_fn_type *bad, void *badctx,
-				   bool_t add, const char *ifname,
+				   bool_t add, char want,
+				   const char *ifname,
 				   const char *ifaddr,
 				   const union iaddr *ia, int fd)
 {
     struct udpcommon *uc=&st->uc;
     struct interf *interf=0;
+    int max_interfs;
     struct udpsock *us=0;
 
-    dump_pria(st,ifname);
+    struct interf_list *interfs;
+    switch (want) {
+    case '+':  interfs=&st->interfs;            max_interfs=st->max_interfs;
+    default:   fatal("polypath: got bad want (%#x, %s)", want, ifname);
+    }
+
+    dump_pria(st,interfs,ifname,want);
 
     int n_ifs=0;
-    LIST_FOREACH(interf,&st->interfs,entry) {
+    LIST_FOREACH(interf,interfs,entry) {
 	if (!strcmp(interf->name,ifname))
 	    goto found_interf;
 	n_ifs++;
     }
     /* not found */
-    if (n_ifs==st->max_interfs) BAD("too many interfaces");
+    if (n_ifs==max_interfs) BAD("too many interfaces");
     interf=malloc(sizeof(*interf));
     if (!interf) BADE("malloc for new interface",errno);
     interf->name=0;
     interf->socks.n_socks=0;
     FILLZERO(interf->experienced_xmit_noaf);
-    LIST_INSERT_HEAD(&st->interfs,interf,entry);
+    LIST_INSERT_HEAD(interfs,interf,entry);
     interf->name=strdup(ifname);
     udp_socks_register(&st->uc,&interf->socks,interf->name);
     if (!interf->name) BADE("strdup interface name",errno);
@@ -391,7 +401,7 @@ static void polypath_record_ifaddr(struct polypath *st,
 	free(interf);
     }
 
-    dump_pria(st,0);
+    dump_pria(st,interfs,0,0);
 }
 
 static void subproc_problem(struct polypath *st,
@@ -565,6 +575,7 @@ struct privsep_mdata {
     bool_t add;
     char ifname[100];
     union iaddr ia;
+    char want; /* `+', for now */
 };
 
 static void papp_bad(struct polypath *st, void *badctx,
@@ -608,7 +619,8 @@ static void polypath_afterpoll_privsep(void *state, struct pollfd *fds,
 		fatal("polypath (privsep): got message data but bad AF %d",af);
 	    const char *addr_str=iaddr_to_string(&mdata->ia);
 	    polypath_record_ifaddr(st,papp_bad,(void*)addr_str,
-				   mdata->add,mdata->ifname,addr_str,
+				   mdata->add,mdata->want,
+				   mdata->ifname,addr_str,
 				   &mdata->ia, st->privsep_incoming_fd);
 	    st->privsep_incoming_fd=-1;
 	    st->lbuf.size=0;
@@ -661,7 +673,8 @@ static void polypath_afterpoll_privsep(void *state, struct pollfd *fds,
 
 static void privsep_handle_ifaddr(struct polypath *st,
 				   bad_fn_type *bad, void *badctx,
-				   bool_t add, const char *ifname,
+				   bool_t add, char want,
+				   const char *ifname,
 				   const char *ifaddr,
 				   const union iaddr *ia, int fd_dummy)
 /* In child: handles discovered wanted interfaces, making sockets
@@ -682,6 +695,7 @@ static void privsep_handle_ifaddr(struct polypath *st,
     size_t l=strlen(ifname);
     if (l>=sizeof(mdata.ifname)) BAD("interface name too long");
     strcpy(mdata.ifname,ifname);
+    mdata.want=want;
 
     COPY_OBJ(mdata.ia,*ia);
 
