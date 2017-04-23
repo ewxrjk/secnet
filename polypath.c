@@ -98,7 +98,7 @@ static bool_t ifname_search_pats(struct polypath *st, struct cloc loc,
     const char *const *pati;
     for (pati=pats; *pati; pati++) {
 	const char *pat=*pati;
-	if (*pat=='!' || *pat=='+') { *want_io=*pat; pat++; }
+	if (*pat=='!' || *pat=='+' || *pat=='@') { *want_io=*pat; pat++; }
 	else if (*pat=='*' || isalnum((unsigned char)*pat)) { *want_io='+'; }
 	else cfgfatal(loc,"polypath","invalid interface name pattern `%s'",pat);
 	int match=fnmatch(pat,ifname,0);
