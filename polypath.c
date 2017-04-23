@@ -83,7 +83,7 @@ static const char *polypath_addr_to_string(void *commst,
 }
 
 static bool_t ifname_search_pats(struct polypath *st, struct cloc loc,
-				 const char *ifname, bool_t *want_io,
+				 const char *ifname, char *want_io,
 				 const char *const *pats) {
     /* Returns True iff we found a list entry, in which case *want_io
      * is set to the sense of that entry.  Otherwise *want_io is set
@@ -93,9 +93,8 @@ static bool_t ifname_search_pats(struct polypath *st, struct cloc loc,
     const char *const *pati;
     for (pati=pats; *pati; pati++) {
 	const char *pat=*pati;
-	if (*pat=='!') { *want_io=False; pat++; }
-	else if (*pat=='+') { *want_io=True; pat++; }
-	else if (*pat=='*' || isalnum((unsigned char)*pat)) { *want_io=True; }
+	if (*pat=='!' || *pat=='+') { *want_io=*pat; pat++; }
+	else if (*pat=='*' || isalnum((unsigned char)*pat)) { *want_io='+'; }
 	else cfgfatal(loc,"polypath","invalid interface name pattern `%s'",pat);
 	int match=fnmatch(pat,ifname,0);
 	if (match==0) return True;
@@ -105,13 +104,13 @@ static bool_t ifname_search_pats(struct polypath *st, struct cloc loc,
     return False;
 }
 
-static bool_t ifname_wanted(struct polypath *st, struct cloc loc,
-			    const char *ifname) {
-    bool_t want=False; /* pretend an empty cfg ends with !<doesn'tmatch> */
+static char ifname_wanted(struct polypath *st, struct cloc loc,
+			  const char *ifname) {
+    char want='!'; /* pretend an empty cfg ends with !<doesn'tmatch> */
     if (ifname_search_pats(st,loc,ifname,&want, st->ifname_pats))
 	return want;
-    if (want) /* last pattern was positive, do not search default */
-	return False;
+    if (want!='!') /* last pattern was positive, do not search default */
+	return '!';
     if (!st->permit_loopback &&
 	ifname_search_pats(st,loc,ifname,&want, default_loopback_ifname_pats))
 	return want;
@@ -221,8 +220,9 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl,
 	goto out;							\
     }while(0)
 
-    if (!ifname_wanted(st,st->uc.cc.loc,ifname))
-	DONT("unwanted interface name");
+    char want=ifname_wanted(st,st->uc.cc.loc,ifname);
+    if (want=='!') DONT("unwanted interface name");
+    assert(want=='+');
 
     switch (ia.sa.sa_family) {
     case AF_INET6: {
