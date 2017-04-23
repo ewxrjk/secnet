@@ -437,6 +437,15 @@ struct comm_addr {
     int ix; /* see comment `Re comm_addr.ix' in udp.c */
 };
 
+struct comm_clientinfo; /* private for comm */
+
+typedef struct comm_clientinfo *comm_clientinfo_fn(void *state, dict_t*,
+						   struct cloc cloc);
+/* A comm client may call this during configuration, and then pass
+ * the resulting comm_clientinfo* to some or all sendmsg calls.
+ * The semantics depend on the dict and defined by the comm, and
+ * should be documented in README. */
+
 /* Return True if the packet was processed, and shouldn't be passed to
    any other potential receivers. (buf is freed iff True returned.) */
 typedef bool_t comm_notify_fn(void *state, struct buffer_if *buf,
@@ -446,7 +455,8 @@ typedef void comm_request_notify_fn(void *commst, void *nst,
 typedef void comm_release_notify_fn(void *commst, void *nst,
 				    comm_notify_fn *fn);
 typedef bool_t comm_sendmsg_fn(void *commst, struct buffer_if *buf,
-			       const struct comm_addr *dest);
+			       const struct comm_addr *dest,
+			       struct comm_clientinfo* /* 0 OK */);
   /* Only returns false if (we know that) the local network
    * environment is such that this address cannot work; transient
    * or unknown/unexpected failures return true. */
@@ -455,6 +465,7 @@ typedef const char *comm_addr_to_string_fn(void *commst,
         /* Returned string is in a static buffer. */
 struct comm_if {
     void *st;
+    comm_clientinfo_fn *clientinfo;
     comm_request_notify_fn *request_notify;
     comm_release_notify_fn *release_notify;
     comm_sendmsg_fn *sendmsg;

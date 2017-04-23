@@ -201,7 +201,8 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 }
 
 static bool_t udp_sendmsg(void *commst, struct buffer_if *buf,
-			  const struct comm_addr *dest)
+			  const struct comm_addr *dest,
+			  struct comm_clientinfo *clientinfo)
 {
     struct udp *st=commst;
     struct udpcommon *uc=&st->uc;

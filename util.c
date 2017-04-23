@@ -448,7 +448,7 @@ void send_nak(const struct comm_addr *dest, uint32_t our_index,
 		" %s; sending NAK\n",
 		comm_addr_to_string(dest),
 		our_index, their_index, msgtype, logwhy);
-    dest->comm->sendmsg(dest->comm->st, buf, dest);
+    dest->comm->sendmsg(dest->comm->st, buf, dest, 0);
 }
 
 int consttime_memeq(const void *s1in, const void *s2in, size_t n)

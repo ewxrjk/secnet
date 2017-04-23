@@ -1187,7 +1187,7 @@ static bool_t comm_addr_sendmsg(struct site *st,
 				const struct comm_addr *dest,
 				struct buffer_if *buf)
 {
-    return dest->comm->sendmsg(dest->comm->st, buf, dest);
+    return dest->comm->sendmsg(dest->comm->st, buf, dest, 0);
 }
 
 static uint32_t site_status(void *st)

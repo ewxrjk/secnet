@@ -20,6 +20,12 @@
 #include "secnet.h"
 #include "comm-common.h"
 
+struct comm_clientinfo *comm_clientinfo_ignore(void *state, dict_t *dict,
+					       struct cloc cloc)
+{
+    return 0;
+}
+
 void comm_request_notify(void *commst, void *nst, comm_notify_fn *fn)
 {
     struct commcommon *st=commst;

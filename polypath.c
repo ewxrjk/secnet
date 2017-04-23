@@ -443,7 +443,8 @@ static void polypath_afterpoll_monitor(void *state, struct pollfd *fds,
 
 /* Actual udp packet sending work */
 static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
-			  const struct comm_addr *dest)
+			  const struct comm_addr *dest,
+			  struct comm_clientinfo *clientinfo)
 {
     struct polypath *st=commst;
     struct interf *interf;

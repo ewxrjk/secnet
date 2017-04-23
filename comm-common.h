@@ -40,6 +40,8 @@ struct commcommon { /* must be first so that void* is comm_common* */
     struct buffer_if *rbuf;
 };
 
+struct comm_clientinfo *comm_clientinfo_ignore(void *state, dict_t*,
+					       struct cloc cloc);
 void comm_request_notify(void *commst, void *nst, comm_notify_fn *fn);
 void comm_release_notify(void *commst, void *nst, comm_notify_fn *fn);
 
@@ -55,6 +57,7 @@ void comm_apply(struct commcommon *cc, void *st);
     NEW(st);						\
     (cc)->loc=loc;					\
     (cc)->cl.description=desc;				\
+    (cc)->ops.clientinfo=comm_clientinfo_ignore;	\
     (cc)->ops.sendmsg=prefix##sendmsg;			\
     (cc)->ops.addr_to_string=prefix##addr_to_string;	\
     comm_apply((cc),(st))
