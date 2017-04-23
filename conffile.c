@@ -767,6 +767,21 @@ bool_t dict_read_bool(dict_t *dict, cstring_t key, bool_t required,
     return r;
 }
 
+dict_t *dict_read_dict(dict_t *dict, cstring_t key, bool_t required,
+		       cstring_t desc, struct cloc loc)
+{
+    item_t *i;
+    dict_t *r;
+
+    i=dict_find_item(dict,key,required,desc,loc);
+    if (!i) return NULL;
+    if (i->type!=t_dict) {
+	cfgfatal(loc,desc,"\"%s\" must be a dictionary\n",key);
+    }
+    r=i->data.dict;
+    return r;
+}
+
 uint32_t string_to_word(cstring_t s, struct cloc loc,
 			struct flagstr *f, cstring_t desc)
 {
