@@ -127,6 +127,9 @@ static void parse_options(int argc, char **argv)
 	    exit(0);
 	    break;
 
+	case 'd':
+	    message_level|=M_DEBUG_CONFIG|M_DEBUG_PHASE|M_DEBUG;
+	    /* fall through */
 	case 'v':
 	    message_level|=M_INFO|M_NOTICE|M_WARNING|M_ERR|M_SECURITY|
 		M_FATAL;
@@ -134,10 +137,6 @@ static void parse_options(int argc, char **argv)
 
 	case 'w':
 	    message_level&=(~M_WARNING);
-	    break;
-
-	case 'd':
-	    message_level|=M_DEBUG_CONFIG|M_DEBUG_PHASE|M_DEBUG;
 	    break;
 
 	case 'f':

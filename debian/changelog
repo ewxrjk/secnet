@@ -5,6 +5,7 @@ secnet (0.4.1~~) unstable; urgency=medium
   * Implement `keepalive' site option, to try to keep link always up.
   * When printing messages about dropping IPv6, do not print anything
     about ihl.  (Check the IP version field first!)
+  * When turning on debug, turn on verbose too.
 
  --
 
