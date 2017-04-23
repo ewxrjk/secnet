@@ -352,7 +352,7 @@ static void polypath_record_ifaddr(struct polypath *st,
     struct interf_list *interfs;
     switch (want) {
     case '+': interfs=&st->interfs_general; max_interfs=st->max_interfs; break;
-    case '@':  interfs=&st->interfs_dedicated;  max_interfs=INT_MAX;
+    case '@': interfs=&st->interfs_dedicated; max_interfs=INT_MAX; break;
     default:   fatal("polypath: got bad want (%#x, %s)", want, ifname);
     }
 
