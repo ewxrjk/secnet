@@ -1,5 +1,7 @@
 secnet (0.4.1~~) unstable; urgency=medium
 
+  * Implement comm-info and dedicated-interface-addr feature, for
+    benefit of hippotat.
   * Implement `keepalive' site option, to try to keep link always up.
 
  --
