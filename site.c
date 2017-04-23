@@ -1183,6 +1183,13 @@ static void dump_packet(struct site *st, struct buffer_if *buf,
 	       ok?"":" - fail");
 }
 
+static bool_t comm_addr_sendmsg(struct site *st,
+				const struct comm_addr *dest,
+				struct buffer_if *buf)
+{
+    return dest->comm->sendmsg(dest->comm->st, buf, dest);
+}
+
 static uint32_t site_status(void *st)
 {
     return 0;
@@ -1610,7 +1617,7 @@ static void generate_send_prod(struct site *st,
     slog(st,LOG_SETUP_INIT,"prodding peer for key exchange");
     st->allow_send_prod=0;
     generate_prod(st,&st->scratch);
-    bool_t ok = source->comm->sendmsg(source->comm->st, &st->scratch, source);
+    bool_t ok = comm_addr_sendmsg(st, source, &st->scratch);
     dump_packet(st,&st->scratch,source,False,ok);
 }
 
@@ -2359,8 +2366,7 @@ void transport_xmit(struct site *st, transport_peers *peers,
     int nfailed=0;
     for (slot=0; slot<peers->npeers; slot++) {
 	transport_peer *peer=&peers->peers[slot];
-	bool_t ok =
-	    peer->addr.comm->sendmsg(peer->addr.comm->st, buf, &peer->addr);
+	bool_t ok = comm_addr_sendmsg(st, &peer->addr, buf);
 	if (candebug)
 	    dump_packet(st, buf, &peer->addr, False, ok);
 	if (!ok) {
