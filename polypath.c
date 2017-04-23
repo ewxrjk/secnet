@@ -452,6 +452,45 @@ static void polypath_afterpoll_monitor(void *state, struct pollfd *fds,
 }
 
 /* Actual udp packet sending work */
+
+static void polypath_sendmsg_interf(struct polypath *st,
+				    struct interf *interf,
+				    struct buffer_if *buf,
+				    const struct comm_addr *dest,
+				    bool_t *allreasonable)
+{
+    int i;
+    int af=dest->ia.sa.sa_family;
+    bool_t attempted=False, reasonable=False;
+
+    for (i=0; i<interf->socks.n_socks; i++) {
+	struct udpsock *us=&interf->socks.socks[i];
+	if (af != us->addr.sa.sa_family)
+	    continue;
+	attempted=True;
+	int r=sendto(us->fd,buf->start,buf->size,
+		     0,&dest->ia.sa,iaddr_socklen(&dest->ia));
+	udp_sock_experienced(0,&st->uc,&interf->socks,us,
+			     &dest->ia,af, r,errno);
+	if (r>=0) {
+	    reasonable=True;
+	    break;
+	}
+	if (!(errno==EAFNOSUPPORT || errno==ENETUNREACH))
+	    reasonable=True;
+	lg_perror(LG,M_DEBUG,errno,"%s [%s] xmit %"PRIu32" bytes to %s",
+		  interf->name,iaddr_to_string(&us->addr),
+		  buf->size,iaddr_to_string(&dest->ia));
+    }
+    if (!attempted)
+	if (!interf->experienced_xmit_noaf[af]++)
+	    lg_perror(LG,M_WARNING,0,
+		      "%s has no suitable address to transmit %s",
+		      interf->name, af_name(af));
+
+    *allreasonable *= reasonable;
+}
+
 static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
 			  const struct comm_addr *dest,
 			  struct comm_clientinfo *clientinfo)
@@ -459,36 +498,10 @@ static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
     struct polypath *st=commst;
     struct interf *interf;
     bool_t allreasonable=True;
-    int af=dest->ia.sa.sa_family;
 
     LIST_FOREACH(interf,&st->interfs,entry) {
-	int i;
-	bool_t attempted=False, reasonable=False;
-	for (i=0; i<interf->socks.n_socks; i++) {
-	    struct udpsock *us=&interf->socks.socks[i];
-	    if (af != us->addr.sa.sa_family)
-		continue;
-	    attempted=True;
-	    int r=sendto(us->fd,buf->start,buf->size,
-			 0,&dest->ia.sa,iaddr_socklen(&dest->ia));
-	    udp_sock_experienced(0,&st->uc,&interf->socks,us,
-				 &dest->ia,af, r,errno);
-	    if (r>=0) {
-		reasonable=True;
-		break;
-	    }
-	    if (!(errno==EAFNOSUPPORT || errno==ENETUNREACH))
-		reasonable=True;
-	    lg_perror(LG,M_DEBUG,errno,"%s [%s] xmit %"PRIu32" bytes to %s",
-		      interf->name,iaddr_to_string(&us->addr),
-		      buf->size,iaddr_to_string(&dest->ia));
-	}
-	if (!attempted)
-	    if (!interf->experienced_xmit_noaf[af]++)
-		lg_perror(LG,M_WARNING,0,
-			  "%s has no suitable address to transmit %s",
-			  interf->name, af_name(af));
-	allreasonable *= reasonable;
+	polypath_sendmsg_interf(st,interf,buf,dest,
+				&allreasonable);
     }
     return allreasonable;
 }
