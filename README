@@ -236,14 +236,18 @@ polypath: dict argument
   buffer (buffer closure): buffer for incoming packets
   authbind (string): optional, path to authbind-helper program
   max-interfaces (number): optional, max number of different interfaces to
-   use (also, maximum steady-state amount of packet multiplication)
+   use (also, maximum steady-state amount of packet multiplication);
+   interfaces marked with `@' do not count.
   interfaces (string list): which interfaces to process; each entry is
-   optionally `!' or `+' followed by a glob pattern (which is applied to a
-   prospective interface using fnmatch with no flags).  If no list is
-   specified, or the list ends with a `!' entry, a default list is
-   used/appended: "!tun*","!tap*","!sl*","!userv*","!lo","*".  Patterns
-   which do not start with `*' or an alphanumeric need to be preceded
-   by `!' or `+'.
+   optionally `!' or `+' or `@' followed by a glob pattern (which is
+   applied to a prospective interface using fnmatch with no flags).
+   `+' or nothing means to process normally. `!' means to ignore;
+   `@' means to use only in conjunction with dedicated-interface-addr.
+   If no list is specified, or the list ends with a `!' entry, a
+   default list is used/appended:
+   "!tun*","!tap*","!sl*","!userv*","!lo","@hippo*","*".
+   Patterns which do not start with `*' or an alphanumeric need to be
+   preceded by `!' or `+' or `@'.
   monitor-command (string list): Program to use to monitor appearance
    and disappearance of addresses on local network interfaces.  Should
    produce lines of the form `+|-<ifname> 4|6 <addr>' where <addr> is
@@ -271,6 +275,14 @@ site closures used with this comm should all have the `local-mobile'
 parameter set to `true'.  When the local site site is not marked
 mobile the address selection machinery might fixate on an unsuitable
 address.
+
+polypath takes site-specific informtion as passed to the `comm-info'
+site closure parameter.  The entries understood in the dictionary
+are:
+  dedicated-interface-addr (string): IPv4 or IPv6 address
+   literal.  Interfaces specified with `@' in `interfaces' will be
+   used for the corresponding site iff the interface local address
+   is this address.
 
 For an interface to work with polypath, it must either have a suitable
 default route, or be a point-to-point interface.  In the general case
@@ -446,7 +458,7 @@ site: dict argument
     to 0, the default is to use the local private link mtu.
   comm-info (dict): Information for the comm, used when this site
     wants to transmit.  If the comm does not support this, it is
-    ignored.  (Currently nothing uses this.)
+    ignored.
 
 Links involving mobile peers have some different tuning parameter
 default values, which are generally more aggressive about retrying key

@@ -45,12 +45,17 @@ struct polypath {
     const char *const *ifname_pats;
     const char *const *monitor_command;
     bool_t permit_loopback;
-    LIST_HEAD(interf_list, interf) interfs;
+    LIST_HEAD(interf_list, interf) interfs_general;
+    struct interf_list interfs_dedicated;
     struct buffer_if lbuf;
     int monitor_fd;
     pid_t monitor_pid;
     int privsep_incoming_fd;
     int privsep_ipcsock_fd;
+};
+
+struct comm_clientinfo {
+    union iaddr dedicated; /* might be AF_UNSPEC */
 };
 
 static void polypath_phase_shutdown(void *sst, uint32_t newphase);
@@ -61,7 +66,7 @@ static const char *const default_loopback_ifname_pats[] = {
     "!lo", 0
 };
 static const char *const default_ifname_pats[] = {
-    "!tun*","!tap*","!sl*","!userv*", "*", 0
+    "!tun*","!tap*","!sl*","!userv*", "@hippo*", "*", 0
 };
 
 static const char *const default_monitor_command[] = {
@@ -119,6 +124,21 @@ static char ifname_wanted(struct polypath *st, struct cloc loc,
     abort();
 }
 
+static struct comm_clientinfo *polypath_clientinfo(void *state,
+                                    dict_t *dict, struct cloc cloc) {
+    struct comm_clientinfo *clientinfo;
+
+    NEW(clientinfo);
+    FILLZERO(*clientinfo);
+    clientinfo->dedicated.sa.sa_family=AF_UNSPEC;
+
+    item_t *item = dict_find_item(dict,"dedicated-interface-addr",
+				  False,"polypath",cloc);
+    if (item) string_item_to_iaddr(item,0,&clientinfo->dedicated,
+				   "polypath");
+    return clientinfo;
+}
+    
 static int polypath_beforepoll(void *state, struct pollfd *fds, int *nfds_io,
 			       int *timeout_io)
 {
@@ -331,7 +351,8 @@ static void polypath_record_ifaddr(struct polypath *st,
 
     struct interf_list *interfs;
     switch (want) {
-    case '+':  interfs=&st->interfs;            max_interfs=st->max_interfs;
+    case '+':  interfs=&st->interfs_general;    max_interfs=st->max_interfs;
+    case '@':  interfs=&st->interfs_dedicated;  max_interfs=INT_MAX;
     default:   fatal("polypath: got bad want (%#x, %s)", want, ifname);
     }
 
@@ -457,14 +478,18 @@ static void polypath_sendmsg_interf(struct polypath *st,
 				    struct interf *interf,
 				    struct buffer_if *buf,
 				    const struct comm_addr *dest,
+				    const union iaddr *dedicated,
 				    bool_t *allreasonable)
 {
     int i;
     int af=dest->ia.sa.sa_family;
-    bool_t attempted=False, reasonable=False;
+    bool_t wanted=False, attempted=False, reasonable=False;
 
     for (i=0; i<interf->socks.n_socks; i++) {
 	struct udpsock *us=&interf->socks.socks[i];
+	if (dedicated && !iaddr_equal(dedicated, &us->addr, True))
+	    continue;
+	wanted=True;
 	if (af != us->addr.sa.sa_family)
 	    continue;
 	attempted=True;
@@ -482,6 +507,9 @@ static void polypath_sendmsg_interf(struct polypath *st,
 		  interf->name,iaddr_to_string(&us->addr),
 		  buf->size,iaddr_to_string(&dest->ia));
     }
+    if (!wanted)
+	return;
+
     if (!attempted)
 	if (!interf->experienced_xmit_noaf[af]++)
 	    lg_perror(LG,M_WARNING,0,
@@ -499,9 +527,15 @@ static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
     struct interf *interf;
     bool_t allreasonable=True;
 
-    LIST_FOREACH(interf,&st->interfs,entry) {
+    LIST_FOREACH(interf,&st->interfs_general,entry) {
 	polypath_sendmsg_interf(st,interf,buf,dest,
-				&allreasonable);
+				0, &allreasonable);
+    }
+    if (clientinfo && clientinfo->dedicated.sa.sa_family != AF_UNSPEC) {
+	LIST_FOREACH(interf,&st->interfs_dedicated,entry) {
+	    polypath_sendmsg_interf(st,interf,buf,dest,
+				    &clientinfo->dedicated, &allreasonable);
+	}
     }
     return allreasonable;
 }
@@ -588,7 +622,7 @@ struct privsep_mdata {
     bool_t add;
     char ifname[100];
     union iaddr ia;
-    char want; /* `+', for now */
+    char want; /* `+' or `@' */
 };
 
 static void papp_bad(struct polypath *st, void *badctx,
@@ -836,7 +870,9 @@ static void polypath_phase_childpersist(void *sst, uint32_t newphase)
     struct polypath *st=sst;
     struct interf *interf;
 
-    LIST_FOREACH(interf,&st->interfs,entry)
+    LIST_FOREACH(interf,&st->interfs_general,entry)
+	udp_socks_childpersist(&st->uc,&interf->socks);
+    LIST_FOREACH(interf,&st->interfs_dedicated,entry)
 	udp_socks_childpersist(&st->uc,&interf->socks);
 }
 
@@ -853,6 +889,8 @@ static list_t *polypath_apply(closure_t *self, struct cloc loc,
     COMM_APPLY(st,&st->uc.cc,polypath_,"polypath",loc);
     COMM_APPLY_STANDARD(st,&st->uc.cc,"polypath",args);
     UDP_APPLY_STANDARD(st,&st->uc,"polypath");
+
+    st->uc.cc.ops.clientinfo = polypath_clientinfo;
 
     struct udpcommon *uc=&st->uc;
     struct commcommon *cc=&uc->cc;
@@ -873,7 +911,8 @@ static list_t *polypath_apply(closure_t *self, struct cloc loc,
     st->permit_loopback=dict_read_bool(d,"permit-loopback",False,
 				       "polypath",cc->loc,False);
 
-    LIST_INIT(&st->interfs);
+    LIST_INIT(&st->interfs_general);
+    LIST_INIT(&st->interfs_dedicated);
     buffer_new(&st->lbuf,ADNS_ADDR2TEXT_BUFLEN+100);
     BUF_ALLOC(&st->lbuf,"polypath lbuf");
 
