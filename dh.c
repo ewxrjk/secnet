@@ -52,7 +52,7 @@ static string_t dh_makepublic(void *sst, uint8_t *secret, int32_t secretlen)
 
     read_mpbin(&a, secret, secretlen);
 
-    mpz_powm(&b, &st->g, &a, &st->p);
+    mpz_powm_sec(&b, &st->g, &a, &st->p);
 
     r=write_mpstring(&b);
 
@@ -76,7 +76,7 @@ static void dh_makeshared(void *sst, uint8_t *secret, int32_t secretlen,
     read_mpbin(&a, secret, secretlen);
     mpz_set_str(&b, rempublic, 16);
 
-    mpz_powm(&c, &b, &a, &st->p);
+    mpz_powm_sec(&c, &b, &a, &st->p);
 
     write_mpbin(&c,sharedsecret,buflen);
 

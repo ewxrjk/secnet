@@ -166,7 +166,7 @@ eax-%-test.confirm: eax-%-test eax-%-test.vectors
 
 check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 	$(srcdir)/ipaddrset-test.py >ipaddrset-test.new
-	diff -u ipaddrset-test.expected ipaddrset-test.new
+	diff -u $(srcdir)/ipaddrset-test.expected ipaddrset-test.new
 
 .PRECIOUS: eax-%-test
 
