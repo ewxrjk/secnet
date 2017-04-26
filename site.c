@@ -534,8 +534,10 @@ struct msg {
     char *sig;
 };
 
-static void set_new_transform(struct site *st, char *pk)
+static _Bool set_new_transform(struct site *st, char *pk)
 {
+    _Bool ok;
+
     /* Make room for the shared key */
     st->sharedsecretlen=st->chosen_transform->keylen?:st->dh->ceil_len;
     assert(st->sharedsecretlen);
@@ -553,15 +555,18 @@ static void set_new_transform(struct site *st, char *pk)
     /* Set up the transform */
     struct transform_if *generator=st->chosen_transform;
     struct transform_inst_if *generated=generator->create(generator->st);
-    generated->setkey(generated->st,st->sharedsecret,
-		      st->sharedsecretlen,st->setup_priority);
+    ok = generated->setkey(generated->st,st->sharedsecret,
+			   st->sharedsecretlen,st->setup_priority);
+
     dispose_transform(&st->new_transform);
+    if (!ok) return False;
     st->new_transform=generated;
 
     slog(st,LOG_SETUP_INIT,"key exchange negotiated transform"
 	 " %d (capabilities ours=%#"PRIx32" theirs=%#"PRIx32")",
 	 st->chosen_transform->capab_transformnum,
 	 st->local_capabilities, st->remote_capabilities);
+    return True;
 }
 
 struct xinfoadd {
@@ -912,7 +917,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     st->random->generate(st->random->st,st->dh->len,st->dhsecret);
 
     /* Generate the shared key and set up the transform */
-    set_new_transform(st,m.pk);
+    if (!set_new_transform(st,m.pk)) return False;
 
     return True;
 }
@@ -943,7 +948,7 @@ static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
     m.pk[m.pklen]=0;
 
     /* Generate the shared key and set up the transform */
-    set_new_transform(st,m.pk);
+    if (!set_new_transform(st,m.pk)) return False;
 
     return True;
 }
