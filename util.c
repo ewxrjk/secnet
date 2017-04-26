@@ -93,31 +93,19 @@ void *safe_malloc_ary(size_t size, size_t count, const char *message) {
     return safe_realloc_ary(0,size,count,message);
 }
 
-/* Convert a buffer into its MP_INT representation */
-void read_mpbin(MP_INT *a, uint8_t *bin, int binsize)
+/* Hex-encode a buffer, and return the hex in a freshly allocated string. */
+string_t hex_encode(const uint8_t *bin, int binsize)
 {
     char *buff;
     int i;
 
-    buff=safe_malloc(binsize*2 + 1,"read_mpbin");
+    buff=safe_malloc(binsize*2 + 1,"hex_encode");
 
     for (i=0; i<binsize; i++) {
 	buff[i*2]=hexdigits[(bin[i] & 0xf0) >> 4];
 	buff[i*2+1]=hexdigits[(bin[i] & 0xf)];
     }
     buff[binsize*2]=0;
-
-    mpz_set_str(a, buff, 16);
-    free(buff);
-}
-
-/* Convert a MP_INT into a hex string */
-char *write_mpstring(MP_INT *a)
-{
-    char *buff;
-
-    buff=safe_malloc(mpz_sizeinbase(a,16)+2,"write_mpstring");
-    mpz_get_str(buff, 16, a);
     return buff;
 }
 
@@ -150,27 +138,57 @@ static uint8_t hexval(uint8_t c)
     return -1;
 }
 
+bool_t hex_decode(uint8_t *buffer, int32_t buflen, int32_t *outlen,
+		  cstring_t hb, bool_t allow_odd_nibble)
+{
+    int i = 0, j = 0, l = strlen(hb), hi, lo;
+    bool_t ok = False;
+
+    if (!l || !buflen) { ok = !l; goto done; }
+    if (l&1) {
+	/* The number starts with a half-byte */
+	if (!allow_odd_nibble) goto done;
+	lo = hexval(hb[j++]); if (lo < 0) goto done;
+	buffer[i++] = lo;
+    }
+    for (; hb[j] && i < buflen; i++) {
+	hi = hexval(hb[j++]);
+	lo = hexval(hb[j++]);
+	if (hi < 0 || lo < 0) goto done;
+	buffer[i] = (hi << 4) | lo;
+    }
+    ok = !hb[j];
+done:
+    *outlen = i;
+    return ok;
+}
+
+/* Convert a buffer into its MP_INT representation */
+void read_mpbin(MP_INT *a, uint8_t *bin, int binsize)
+{
+    char *buff = hex_encode(bin, binsize);
+    mpz_set_str(a, buff, 16);
+    free(buff);
+}
+
+/* Convert a MP_INT into a hex string */
+char *write_mpstring(MP_INT *a)
+{
+    char *buff;
+
+    buff=safe_malloc(mpz_sizeinbase(a,16)+2,"write_mpstring");
+    mpz_get_str(buff, 16, a);
+    return buff;
+}
+
 /* Convert a MP_INT into a buffer; return length; truncate if necessary */
 int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen)
 {
-    char *hb;
-    int i,j,l;
-    
-    if (buflen==0) return 0;
-    hb=write_mpstring(a);
-    
-    l=strlen(hb);
-    i=0; j=0;
-    if (l&1) {
-	/* The number starts with a half-byte */
-	buffer[i++]=hexval(hb[j++]);
-    }
-    for (; hb[j] && i<buflen; i++) {
-	buffer[i]=(hexval(hb[j])<<4)|hexval(hb[j+1]);
-	j+=2;
-    }
+    char *hb = write_mpstring(a);
+    int32_t len;
+    hex_decode(buffer, buflen, &len, hb, True);
     free(hb);
-    return i;
+    return len;
 }
 
 #define DEFINE_SETFDFLAG(fn,FL,FLAG)					\

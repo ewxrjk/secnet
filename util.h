@@ -87,6 +87,24 @@ extern void buffer_readonly_clone(struct buffer_if *n, const struct buffer_if*);
 
 extern void buf_append_string(struct buffer_if *buf, cstring_t s);
 
+extern string_t hex_encode(const uint8_t *bin, int binsize);
+  /* Convert a byte array to hex, returning the result in a freshly allocated
+   * string.
+   */
+
+extern bool_t hex_decode(uint8_t *buffer, int32_t buflen, int32_t *outlen,
+			 cstring_t hb, bool_t allow_odd_nibble);
+  /* Convert a hex string to binary, storing the result in buffer.  If
+   * allow_odd_nibble then it is acceptable if the input is an odd number of
+   * digits, and an additional leading zero digit is assumed; otherwise, this
+   * is not acceptable and the conversion fails.
+   *
+   * The input is processed left to right until it is consumed, the buffer is
+   * full, or an error is encountered in the input.  The length of output
+   * produced is stored in *outlen.  Returns true if the entire input was
+   * processed without error; otherwise false.
+   */
+
 extern void read_mpbin(MP_INT *a, uint8_t *bin, int binsize);
 
 extern char *write_mpstring(MP_INT *a);
