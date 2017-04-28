@@ -27,6 +27,7 @@
 
 #include <adns.h>
 #include <ctype.h>
+#include <limits.h>
 
 #ifdef CONFIG_IPV6
 
