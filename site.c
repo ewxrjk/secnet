@@ -713,6 +713,13 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     CHECK_AVAIL(msg,m->siglen);
     m->sig=buf_unprepend(msg,m->siglen);
     CHECK_EMPTY(msg);
+
+    /* In `process_msg3_msg4' below, we assume that we can write a nul
+     * terminator following the signature.  Make sure there's enough space.
+     */
+    if (msg->start >= msg->base + msg->alloclen)
+	return False;
+
     return True;
 }
 
@@ -846,7 +853,7 @@ static bool_t process_msg3_msg4(struct site *st, struct msg *m)
     hst=st->hash->init();
     st->hash->update(hst,m->hashstart,m->hashlen);
     st->hash->final(hst,hash);
-    /* Terminate signature with a '0' - cheating, but should be ok */
+    /* Terminate signature with a '0' - already checked that this will fit */
     m->sig[m->siglen]=0;
     if (!st->pubkey->check(st->pubkey->st,hash,st->hash->len,m->sig)) {
 	slog(st,LOG_SEC,"msg3/msg4 signature failed check!");
