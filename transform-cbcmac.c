@@ -292,7 +292,7 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
     /* First parameter must be a dict */
     item=list_elem(args,0);
     if (!item || item->type!=t_dict)
-	cfgfatal(loc,"userv-ipif","parameter must be a dictionary\n");
+	cfgfatal(loc,"serpent256-cbc","parameter must be a dictionary\n");
     
     dict=item->data.dict;
 

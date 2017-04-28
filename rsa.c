@@ -292,7 +292,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     i=list_elem(args,0);
     if (i) {
 	if (i->type!=t_string) {
-	    cfgfatal(i->loc,"rsa-public","first argument must be a string\n");
+	    cfgfatal(i->loc,"rsa-private","first argument must be a string\n");
 	}
 	filename=i->data.string;
     } else {
