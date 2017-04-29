@@ -1456,7 +1456,7 @@ static void enter_state_run(struct site *st)
     FILLZERO(st->remoteN);
     dispose_transform(&st->new_transform);
     memset(st->dhsecret,0,st->dh->len);
-    memset(st->sharedsecret,0,st->sharedsecretlen);
+    if (st->sharedsecret) memset(st->sharedsecret,0,st->sharedsecretlen);
     set_link_quality(st);
 
     if (st->keepalive && !current_valid(st))
