@@ -2,4 +2,7 @@
 ;;; See Info node `(emacs) Directory Variables' for more information.
 
 ((c-mode
-  (c-basic-offset . 4)))
+  (c-basic-offset . 4))
+ (python-mode
+  (indent-tabs-mode . t)
+  (python-indent . 8)))
