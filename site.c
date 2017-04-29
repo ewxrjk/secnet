@@ -829,20 +829,27 @@ static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
 	/* old secnets only had this one transform */
 	remote_crypto_caps = 1UL << CAPAB_BIT_ANCIENTTRANSFORM;
 
-    struct transform_if *ti;
-    int i;
-    for (i=0; i<st->ntransforms; i++) {
-	ti=st->transforms[i];
-	if ((1UL << ti->capab_bit) & remote_crypto_caps)
-	    goto transform_found;
-    }
-    slog(st,LOG_ERROR,"no transforms in common"
-	 " (us %#"PRIx32"; them: %#"PRIx32")",
-	 st->local_capabilities & CAPAB_TRANSFORM_MASK,
-	 remote_crypto_caps);
-    return False;
- transform_found:
-    st->chosen_transform=ti;
+#define CHOOSE_CRYPTO(kind, whats) do {					\
+    struct kind##_if *iface;						\
+    uint32_t bit, ours = 0;						\
+    int i;								\
+    for (i= 0; i < st->n##kind##s; i++) {				\
+	iface=st->kind##s[i];						\
+	bit = 1UL << iface->capab_bit;					\
+	if (bit & remote_crypto_caps) goto kind##_found;		\
+	ours |= bit;							\
+    }									\
+    slog(st,LOG_ERROR,"no " whats " in common"				\
+	 " (us %#"PRIx32"; them: %#"PRIx32")",				\
+	 st->local_capabilities & ours, remote_crypto_caps);		\
+    return False;							\
+kind##_found:								\
+    st->chosen_##kind = iface;						\
+} while (0)
+
+    CHOOSE_CRYPTO(transform, "transforms");
+
+#undef CHOOSE_CRYPTO
 
     memcpy(st->remoteN,m.nR,NONCELEN);
     return True;
@@ -906,18 +913,24 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     }
     st->remote_capabilities|=m.remote_capabilities;
 
-    struct transform_if *ti;
-    int i;
-    for (i=0; i<st->ntransforms; i++) {
-	ti=st->transforms[i];
-	if (ti->capab_bit == m.capab_transformnum)
-	    goto transform_found;
-    }
-    slog(st,LOG_SEC,"peer chose unknown-to-us transform %d!",
-	 m.capab_transformnum);
-    return False;
- transform_found:
-    st->chosen_transform=ti;
+#define CHOSE_CRYPTO(kind, what) do {					\
+    struct kind##_if *iface;						\
+    int i;								\
+    for (i=0; i<st->n##kind##s; i++) {					\
+	iface=st->kind##s[i];						\
+	if (iface->capab_bit == m.capab_##kind##num)			\
+	    goto kind##_found;						\
+    }									\
+    slog(st,LOG_SEC,"peer chose unknown-to-us " what " %d!",		\
+	 m.capab_##kind##num);							\
+    return False;							\
+kind##_found:								\
+    st->chosen_##kind=iface;						\
+} while (0)
+
+    CHOSE_CRYPTO(transform, "transform");
+
+#undef CHOSE_CRYPTO
 
     if (!process_msg3_msg4(st,&m))
 	return False;
@@ -2228,14 +2241,18 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->sharedsecretlen=st->sharedsecretallocd=0;
     st->sharedsecret=0;
 
-    for (i=0; i<st->ntransforms; i++) {
-	struct transform_if *ti=st->transforms[i];
-	uint32_t capbit = 1UL << ti->capab_bit;
-	if (st->local_capabilities & capbit)
-	    slog(st,LOG_ERROR,"bit capability bit"
-		 " %d (%#"PRIx32") reused", ti->capab_bit, capbit);
-	st->local_capabilities |= capbit;
-    }
+#define SET_CAPBIT(bit) do {						\
+    uint32_t capflag = 1UL << (bit);					\
+    if (st->local_capabilities & capflag)				\
+	slog(st,LOG_ERROR,"capability bit"				\
+	     " %d (%#"PRIx32") reused", (bit), capflag);		\
+    st->local_capabilities |= capflag;					\
+} while (0)
+
+    for (i=0; i<st->ntransforms; i++)
+	SET_CAPBIT(st->transforms[i]->capab_bit);
+
+#undef SET_CAPBIT
 
     if (st->local_mobile || st->peer_mobile)
 	st->local_capabilities |= CAPAB_PRIORITY_MOBILE;
