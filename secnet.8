@@ -63,6 +63,36 @@ Check configuration and exit.
 Configuration file key defining active sites.
 The default is \fBsites\fR.
 
+.SH "CAPABILITY NEGOTIATION"
+Sites negotiate with each other during key exchange
+in order to determine which cryptographic algorithms and other features
+\(en termed
+.I capabilities
+\(en
+they each support.
+Capabilities are assigned small integer numbers.
+In many cases,
+capability numbers can be assigned in the configuration file,
+as described below;
+but secnet's default assignments will often be satisfactory.
+.PP
+Capability numbers between 0 and 7 inclusive
+are reserved for local use:
+secnet will never make use of them without explicit configuration.
+This may be useful to migrate from one set of parameters
+for a particular cryptographic algorithm
+to different, incompatible, parameters for the same algorithm.
+Other capability numbers are assigned by default
+by various kinds of closures.
+See the descriptions below for details.
+.PP
+It is essential that a capability number mean the same thing
+to each of a pair of peers.
+It's possible to configure a site
+so that it uses different capability numbers for the same feature
+when it communicates with different peer sites,
+but this is likely to be more confusing than useful.
+
 .SH "CONFIGURATION FILE"
 .SS Overview
 The default configuration file is \fI/etc/secnet/secnet.conf\fR.
@@ -454,14 +484,7 @@ serves to obscure the exact length of messages.  The default is 16,
 .TP
 .B capab-num
 The capability number to use when advertising this
-transform.  Both ends must have the same meaning (or, at least,
-refer to compatible constructions) for each capability number they have
-in common.  The default for serpent-eax is 9.
-.IP
-Capability numbers in the range 8..15 are intended for
-allocation by the implementation, and may be assigned as the default
-for new transforms in the future.  Capability numbers in the
-range 0..7 are reserved for definition by the user.
+transform.  The default for serpent-eax is 9.
 .PP
 A \fItransform closure\fR is a reversible means of transforming
 messages for transmission over a (presumably) insecure network.
