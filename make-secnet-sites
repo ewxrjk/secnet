@@ -68,14 +68,18 @@ VERSION="0.1.18"
 
 # Classes describing possible datatypes in the configuration file
 
-class single_ipaddr:
+class basetype:
+	"Common protocol for configuration types."
+	pass
+
+class single_ipaddr (basetype):
 	"An IP address"
 	def __init__(self,w):
 		self.addr=ipaddr.IPAddress(w[1])
 	def __str__(self):
 		return '"%s"'%self.addr
 
-class networks:
+class networks (basetype):
 	"A set of IP addresses specified as a list of networks"
 	def __init__(self,w):
 		self.set=ipaddrset.IPAddressSet()
@@ -85,7 +89,7 @@ class networks:
 	def __str__(self):
 		return ",".join(map((lambda n: '"%s"'%n), self.set.networks()))
 
-class dhgroup:
+class dhgroup (basetype):
 	"A Diffie-Hellman group"
 	def __init__(self,w):
 		self.mod=w[1]
@@ -93,7 +97,7 @@ class dhgroup:
 	def __str__(self):
 		return 'diffie-hellman("%s","%s")'%(self.mod,self.gen)
 
-class hash:
+class hash (basetype):
 	"A choice of hash function"
 	def __init__(self,w):
 		self.ht=w[1]
@@ -102,14 +106,14 @@ class hash:
 	def __str__(self):
 		return '%s'%(self.ht)
 
-class email:
+class email (basetype):
 	"An email address"
 	def __init__(self,w):
 		self.addr=w[1]
 	def __str__(self):
 		return '<%s>'%(self.addr)
 
-class boolean:
+class boolean (basetype):
 	"A boolean"
 	def __init__(self,w):
 		if re.match('[TtYy1]',w[1]):
@@ -121,14 +125,14 @@ class boolean:
 	def __str__(self):
 		return ['False','True'][self.b]
 
-class num:
+class num (basetype):
 	"A decimal number"
 	def __init__(self,w):
 		self.n=string.atol(w[1])
 	def __str__(self):
 		return '%d'%(self.n)
 
-class address:
+class address (basetype):
 	"A DNS name and UDP port number"
 	def __init__(self,w):
 		self.adr=w[1]
@@ -138,7 +142,7 @@ class address:
 	def __str__(self):
 		return '"%s"; port %d'%(self.adr,self.port)
 
-class rsakey:
+class rsakey (basetype):
 	"An RSA public key"
 	def __init__(self,w):
 		self.l=string.atoi(w[1])
