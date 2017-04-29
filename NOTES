@@ -218,8 +218,17 @@ Capability flag bits must be in one the following two categories:
    applicable.  They may also appear in MSG1, but this is not
    guaranteed.  MSG4 must advertise the same set as MSG2.
 
-No capability flags are currently defined.  Unknown capability flags
-should be treated as late ones.
+Currently, the low 16 bits are allocated for negotiating bulk-crypto
+transforms.  Bits 8 to 15 are used by Secnet as default capability
+numbers for the various kinds of transform closures: bit 8 is for the
+original CBCMAC-based transform, and bit 9 for the new EAX transform;
+bits 10 to 15 are reserved for future expansion.  The the low eight bits
+are reserved for local use, e.g., to allow migration from one set of
+parameters for a particular transform to a different, incompatible set
+of parameters for the same transform.  The high 16 bits have not yet
+been assigned a purpose.
+
+No early capability bits are currently defined.
 
 
 MTU handling
