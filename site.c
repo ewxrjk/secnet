@@ -824,22 +824,22 @@ static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
 
     /* Select the transform to use */
 
-    uint32_t remote_transforms = st->remote_capabilities & CAPAB_TRANSFORM_MASK;
-    if (!remote_transforms)
+    uint32_t remote_crypto_caps = st->remote_capabilities & CAPAB_TRANSFORM_MASK;
+    if (!remote_crypto_caps)
 	/* old secnets only had this one transform */
-	remote_transforms = 1UL << CAPAB_BIT_ANCIENTTRANSFORM;
+	remote_crypto_caps = 1UL << CAPAB_BIT_ANCIENTTRANSFORM;
 
     struct transform_if *ti;
     int i;
     for (i=0; i<st->ntransforms; i++) {
 	ti=st->transforms[i];
-	if ((1UL << ti->capab_bit) & remote_transforms)
+	if ((1UL << ti->capab_bit) & remote_crypto_caps)
 	    goto transform_found;
     }
     slog(st,LOG_ERROR,"no transforms in common"
 	 " (us %#"PRIx32"; them: %#"PRIx32")",
 	 st->local_capabilities & CAPAB_TRANSFORM_MASK,
-	 remote_transforms);
+	 remote_crypto_caps);
     return False;
  transform_found:
     st->chosen_transform=ti;
