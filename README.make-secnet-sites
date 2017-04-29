@@ -1,0 +1,231 @@
+USAGE
+
+	make-secnet-sites [-P PREFIX] [IN [OUT]]
+	make-secnet-sites -u HEADER GRPDIR SITESFILE GROUP
+
+	The `-P' option sets the PREFIX string, mentioned below in
+	`OUTPUT STRUCTURE'; the default is empty.
+
+	In the former mode, `make-secnet-sites' reads a single input
+	file from IN (defaulting to standard input), and writes a Secnet
+	configuration fragment to OUT (defaulting to standard output).
+
+	In the latter, `make-secnet-sites' expects to have been invoked
+	via GNU Userv.  It verifies that GROUP is listed in the
+	`USERV_GROUP' environment variable.  It then processes the
+	HEADER input, which should say `end-defintions' somewhere, to
+	enable restrictions, and then user input on standard input.  If
+	the combination of the two is acceptable, it writes a copy of
+	the user input to the file `GRPDIR/RGROUP' (the `R' is literal)
+	preceded by a comment logging the time and the value of the
+	`USERV_USER' environment variable, and writes a file named
+	SITESFILE consisting of the concatenation of:
+
+	  * a header comment logging the time and the value of the
+	    `USERV_USER' environment variable, and a reminder that this
+	    is `make-secnet-sites' input;
+
+	  * the HEADER, with any `include' lines replaced by the files
+	    they include; and
+
+	  * each of the `GRPDIR/R*' files, in some arbitrary order.
+
+	This SITESFILE can later be processed in the former mode to
+	produce Secnet configuration.
+
+
+INPUT SYNTAX
+
+	The input files have a simple line-based syntax.  Blank lines,
+	and lines beginning with a `#' character, are ignored.  Other
+	lines consist of a keyword followed by arguments, and separated
+	by horizontal whitespace.  There is no quoting, and it is not
+	possible to include horizontal whitespace in an argument.
+
+	An input file describes a number of virtual private networks
+	(`VPNs').  Each VPN consists of a number of locations, and each
+	location consists of a number of sites, thus forming (together
+	with the root) a fixed four-level hierarchy.  The root, VPNs,
+	locations, and sites can each have a number of properties
+	attached to them: each level in the hierarchy has a different
+	set of permissable properties.
+
+	Most keywords define properties on a `current' item in the
+	hierarchy.  Some change which item is current, possibly creating
+	a new item.  A few are special.
+
+	First, the navigation keywords.
+
+	vpn NAME
+		Switch to the VPN called NAME, which is a direct child
+		of the root, creating it if necessary.  Subsequent
+		properties, up until the next navigation keyword, are
+		attached directly to the VPN.
+
+		A VPN item becomes a dictionary named `NAME' within the
+		`PREFIXvpn-data' dictionary in the generated output.
+
+	location NAME [GROUP]
+		Switch to the location called NAME, which is a direct
+		child of the most recently mentioned VPN, creating it if
+		necessary.  The GROUP name may be omitted (and is anyway
+		ignored) if the location already exists.  It is an error
+		if there is no current VPN.  Subsequent properties, up
+		until the next navigation keyword, are attached directly
+		to the location.
+
+		A location item becomes a dictionary named `NAME' within
+		its parent VPN's dictionary in the generated output.
+
+	site NAME
+		Switch to the site called NAME, which is a direct
+		child of the most recently mentioned location, creating
+		it if necessary.  It is an error if there is no current
+		location.  Subsequent properties, up until the next
+		navigation keyword, are attached directly to the site.
+
+		A location item becomes a dictionary named `NAME' within
+		its parent location's dictionary in the generated
+		output.
+
+	Now, the special keywords.
+
+	include FILE
+		Read lines from FILE, as if they'd appeared at this
+		point in the input.  If the FILE name is relative, it is
+		interpreted relative to the directory containing the
+		most recently opened file.  (This seems to be a bug.)
+
+		The `include' keyword is only permitted before the
+		`end-defintions' marker in a HEADER file processed using
+		the `-u' option.
+
+	end-definitions
+		After this keyword, the following restrictions apply.
+
+		  * The `include' keyword can no longer be used.
+
+		  * It is not permitted to define new VPNs and
+		    locations.
+
+		  * It is not permitted to append new items to root,
+		    VPN, and location properties which are already
+		    defined.  (Assigning new properties is permitted.)
+
+	Finally, the properties.
+
+	If a property has already been defined on an item, then it is an
+	error to try to redefine it.
+
+	Mostly, properties are written to corresponding assignments in
+	the generated Secnet configuration file, .  The entries below
+	describe how properties are translated into assignments.
+
+	contact EMAIL
+		Becomes a `Contact address' comment in the output.
+		Acceptable at all levels; required separately at VPN and
+		location levels.
+
+	dh P G
+		Assigns a Diffie--Hellman closure to the `dh' key,
+		constructed as `diffie-hellman(P, G)'. Acceptable at all
+		levels; required at site level.
+
+	hash HASH-NAME
+		Assigns the HASH-NAME to the `hash' key.  The HASH-NAME
+		must be one of `md5' or `sha1', and the corresponding
+		hash closure is used.  Acceptable at all levels;
+		required at site level.
+
+	key-lifetime INT
+	setup-timeout INT
+	setup-retries INT
+	wait-time INT
+	renegotiate-time INT
+		Assign integers to the like-named key.  Acceptable at
+		all levels.
+		
+	restrict-nets NETWORK NETWORK ...
+		This item and its descendents may only define `networks'
+		and `peer' properties with addresses within the listed
+		NETWORKs, each of which has the form IPADDR/MASK, where
+		the IPADDR is an IPv4 address in dotted-quad form, and
+		the MASK is either a netmask in dotted-quad form or a
+		prefix length.  Becomes a comment n the output.
+		Acceptable at all levels.
+
+	networks NETWORK NETWORK ...
+		Assigns a list of NETWORKs to the `routes' key in a
+		netlink application (see below).  See `restrict-nets'
+		for the syntax of a NETWORK.  Acceptable only at site
+		level; required at site level.
+
+	address HOSTNAME PORT
+		Assigns HOSTNAME to the `address' key and PORT (an
+		integer) to the `port' key.  Acceptable only at site
+		level.  May be omitted for mobile sites.
+
+	peer IPADDR
+		Assigns IPADDR to the `ptp-address' key in a netlink
+		application (see below).  IPADDR must be an IPv4 address
+		in dotted-quad form.  Acceptable only at site level;
+		required at site level.
+
+	pubkey HUNOZ E N
+		Assigns a public-key closure to the `key' key,
+		constructed as `rsa-public(E, N)'.  The argument HUNOZ
+		must be an integer, but is otherwise ignored; it's
+		conventionally the length of N in bits.  Acceptable only
+		at site level; required at site level.
+
+	mobile BOOL
+		Assigns BOOL to the `mobile' key.  Acceptable only at
+		site level, but optional.
+
+
+OUTPUT STRUCTURE
+
+	The program produces a Secnet configuration fragment with the
+	structure described below, suitable for inclusion using the
+	`include' keyword.
+
+		PREFIXvpn-data {
+		  VPN {
+		    # Contact email address: EMAIL
+		    [ # restrict-nets: NETWORKS ]
+		    [ VPN-PROPERTIES ]
+		    LOCATION {
+		      # Contact email address: EMAIL
+		      [ # restrict-nets: NETWORKS ]
+		      [ LOCATION-PROPERTIES ]
+		      SITE {
+			[ # Contact email address: EMAIL ]
+			[ # restrict-nets: NETWORKS ]
+			name "VPN/LOCATION/NAME";
+			SITE-PROPERTIES
+			link netlink {
+			  routes NETWORK ...;
+			  ptp-address IPADDR;
+			};
+		      };
+		      [ MORE SITES ... ]
+		    };
+		    [ MORE LOCATIONS ... ]
+		  };
+		  [ MORE VPNS ... ]
+		};
+
+		PREFIXvpn {
+		  VPN {
+		    LOCATION PREFIXvpn-data/VPN/LOCATION/SITE, ...;
+		    [ MORE LOCATIONS ]
+		    all-sites LOCATION, ...;
+		  };
+		};
+
+		PREFIXall-sites PREFIXvpn/VPN/all-sites, ...;
+
+	Note in particular the implicit dependency on a pure closure
+	named `netlink' used to set the `link' key in each site
+	definition.  Usually, this will be constructed by a partial
+	application of the built-in `userv-ipif' or `tun' closures.
