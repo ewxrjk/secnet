@@ -70,7 +70,21 @@ VERSION="0.1.18"
 
 class basetype:
 	"Common protocol for configuration types."
-	pass
+	def add(self,obj,w):
+		complain("%s %s already has property %s defined"%
+			(obj.type,obj.name,w[0]))
+
+class conflist:
+	"A list of some kind of configuration type."
+	def __init__(self,subtype,w):
+		self.subtype=subtype
+		self.list=[subtype(w)]
+	def add(self,obj,w):
+		self.list.append(self.subtype(w))
+	def __str__(self):
+		return ', '.join(map(str, self.list))
+def listof(subtype):
+	return lambda w: conflist(subtype, w)
 
 class single_ipaddr (basetype):
 	"An IP address"
@@ -328,8 +342,7 @@ prefix=''
 def set_property(obj,w):
 	"Set a property on a configuration node"
 	if obj.properties.has_key(w[0]):
-		complain("%s %s already has property %s defined"%
-			(obj.type,obj.name,w[0]))
+		obj.properties[w[0]].add(obj,w)
 	else:
 		obj.properties[w[0]]=keywords[w[0]][0](w)
 

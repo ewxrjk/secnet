@@ -117,8 +117,9 @@ INPUT SYNTAX
 
 	Finally, the properties.
 
-	If a property has already been defined on an item, then it is an
-	error to try to redefine it.
+	Usually, if a property has already been defined on an item, then
+	it is an error to try to redefine it.  But some properties are
+	list-like: the values are accumulated into a single list.
 
 	Mostly, properties are written to corresponding assignments in
 	the generated Secnet configuration file, .  The entries below
