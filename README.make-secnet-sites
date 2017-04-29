@@ -112,6 +112,9 @@ INPUT SYNTAX
 		    VPN, and location properties which are already
 		    defined.  (Assigning new properties is permitted.)
 
+		  * It is not permitted to define new VPN-level
+		    properties.
+
 	Finally, the properties.
 
 	If a property has already been defined on an item, then it is an

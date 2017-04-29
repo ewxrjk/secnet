@@ -380,13 +380,16 @@ def pline(i,allow_include=False):
 			current=nl
 		obstack.append(current)
 		return [i]
-	if current.allow_properties.has_key(keyword):
-		set_property(current,w)
-		return [i]
-	else:
+	if not current.allow_properties.has_key(keyword):
 		complain("Property %s not allowed at %s level"%
 			(keyword,current.type))
 		return []
+	elif current.depth == vpnlevel.depth < allow_defs:
+		complain("Not allowed to set VPN properties here")
+		return []
+	else:
+		set_property(current,w)
+		return [i]
 
 	complain("unknown keyword '%s'"%(keyword))
 
