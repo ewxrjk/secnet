@@ -42,15 +42,15 @@
 /* remaining bits are unused */
 
 /*
- * The transform capability mask is a set of bits, one for each
- * transform supported.  The transform capability numbers are set in
- * the configuration (and should correspond between the two sites),
- * although there are sensible defaults.
+ * The capability mask is a set of bits, one for each optional feature
+ * supported.  The capability numbers for transforms are set in the
+ * configuration (and should correspond between the two sites), although
+ * there are sensible defaults.
  *
- * Advertising a nonzero transform capability mask promises that
- * the receiver understands LABEL_MSG3BIS messages, which
- * contain an additional byte specifying the transform capability
- * number actually chosen by the MSG3 sender.
+ * Advertising a nonzero capability mask promises that the receiver
+ * understands LABEL_MSG3BIS messages, which contain an additional byte
+ * specifying the transform capability number actually chosen by the MSG3
+ * sender.
  *
  * Aside from that, an empty bitmask is treated the same as
  *  1u<<CAPAB_BIT_ANCIENTTRANSFORM
