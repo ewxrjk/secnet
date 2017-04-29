@@ -88,12 +88,12 @@ typedef uint32_t recvbitmap_type;
 	free(st);					\
     }
 
-#define SET_CAPAB_TRANSFORMNUM(def) do{					\
-        st->ops.capab_transformnum=dict_read_number(dict, "capab-num",	\
+#define SET_CAPAB_BIT(def) do{						\
+        st->ops.capab_bit=dict_read_number(dict, "capab-num",		\
                                      False, "transform", loc, (def));	\
-        if (st->ops.capab_transformnum > CAPAB_TRANSFORMNUM_MAX)	\
+        if (st->ops.capab_bit > CAPAB_BIT_MAX)				\
 	    cfgfatal(loc,"transform","capab-num out of range 0..%d\n",	\
-		     CAPAB_TRANSFORMNUM_MAX);				\
+		     CAPAB_BIT_MAX);					\
     }while(0)
 
 #define TRANSFORM_CREATE_CORE				\

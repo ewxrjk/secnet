@@ -574,7 +574,7 @@ struct transform_inst_if {
 
 struct transform_if {
     void *st;
-    int capab_transformnum;
+    int capab_bit;
     int32_t keylen; /* <<< INT_MAX */
     transform_createinstance_fn *create;
 };

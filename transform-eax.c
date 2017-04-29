@@ -290,7 +290,7 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
 	cfgfatal(loc,"eax-serpent","parameter must be a dictionary\n");
     dict=item->data.dict;
 
-    SET_CAPAB_TRANSFORMNUM(CAPAB_TRANSFORMNUM_EAXSERPENT);
+    SET_CAPAB_BIT(CAPAB_BIT_EAXSERPENT);
 
     SEQNUM_PARAMS_INIT(dict,&st->p,"eax-serpent",loc);
 

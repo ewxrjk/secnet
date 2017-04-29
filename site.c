@@ -575,7 +575,7 @@ static _Bool set_new_transform(struct site *st, char *pk)
 
     slog(st,LOG_SETUP_INIT,"key exchange negotiated transform"
 	 " %d (capabilities ours=%#"PRIx32" theirs=%#"PRIx32")",
-	 st->chosen_transform->capab_transformnum,
+	 st->chosen_transform->capab_bit,
 	 st->local_capabilities, st->remote_capabilities);
     return True;
 }
@@ -643,7 +643,7 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     if (hacky_par_mid_failnow()) return False;
 
     if (type==LABEL_MSG3BIS)
-	buf_append_uint8(&st->buffer,st->chosen_transform->capab_transformnum);
+	buf_append_uint8(&st->buffer,st->chosen_transform->capab_bit);
 
     dhpub=st->dh->makepublic(st->dh->st,st->dhsecret,st->dh->len);
     buf_append_string(&st->buffer,dhpub);
@@ -717,7 +717,7 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
 	CHECK_AVAIL(msg,1);
 	m->capab_transformnum = buf_unprepend_uint8(msg);
     } else {
-	m->capab_transformnum = CAPAB_TRANSFORMNUM_ANCIENT;
+	m->capab_transformnum = CAPAB_BIT_ANCIENTTRANSFORM;
     }
     CHECK_AVAIL(msg,2);
     m->pklen=buf_unprepend_uint16(msg);
@@ -827,13 +827,13 @@ static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
     uint32_t remote_transforms = st->remote_capabilities & CAPAB_TRANSFORM_MASK;
     if (!remote_transforms)
 	/* old secnets only had this one transform */
-	remote_transforms = 1UL << CAPAB_TRANSFORMNUM_ANCIENT;
+	remote_transforms = 1UL << CAPAB_BIT_ANCIENTTRANSFORM;
 
     struct transform_if *ti;
     int i;
     for (i=0; i<st->ntransforms; i++) {
 	ti=st->transforms[i];
-	if ((1UL << ti->capab_transformnum) & remote_transforms)
+	if ((1UL << ti->capab_bit) & remote_transforms)
 	    goto transform_found;
     }
     slog(st,LOG_ERROR,"no transforms in common"
@@ -910,7 +910,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     int i;
     for (i=0; i<st->ntransforms; i++) {
 	ti=st->transforms[i];
-	if (ti->capab_transformnum == m.capab_transformnum)
+	if (ti->capab_bit == m.capab_transformnum)
 	    goto transform_found;
     }
     slog(st,LOG_SEC,"peer chose unknown-to-us transform %d!",
@@ -2230,10 +2230,10 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     for (i=0; i<st->ntransforms; i++) {
 	struct transform_if *ti=st->transforms[i];
-	uint32_t capbit = 1UL << ti->capab_transformnum;
+	uint32_t capbit = 1UL << ti->capab_bit;
 	if (st->local_capabilities & capbit)
-	    slog(st,LOG_ERROR,"transformnum capability bit"
-		 " %d (%#"PRIx32") reused", ti->capab_transformnum, capbit);
+	    slog(st,LOG_ERROR,"bit capability bit"
+		 " %d (%#"PRIx32") reused", ti->capab_bit, capbit);
 	st->local_capabilities |= capbit;
     }
 

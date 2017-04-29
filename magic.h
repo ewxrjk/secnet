@@ -53,16 +53,16 @@
  * number actually chosen by the MSG3 sender.
  *
  * Aside from that, an empty bitmask is treated the same as
- *  1u<<CAPAB_TRANSFORMNUM_ANCIENT
+ *  1u<<CAPAB_BIT_ANCIENTTRANSFORM
  */
 
 /* bit indices, 0 is ls bit */
-#define CAPAB_TRANSFORMNUM_USER_MIN              0
-#define CAPAB_TRANSFORMNUM_USER_MAX              7
-#define CAPAB_TRANSFORMNUM_SERPENT256CBC         8
-#define CAPAB_TRANSFORMNUM_EAXSERPENT            9
-#define CAPAB_TRANSFORMNUM_MAX                  15
+#define CAPAB_BIT_USER_MIN              0
+#define CAPAB_BIT_USER_MAX              7
+#define CAPAB_BIT_SERPENT256CBC         8
+#define CAPAB_BIT_EAXSERPENT            9
+#define CAPAB_BIT_MAX                  15
 
-#define CAPAB_TRANSFORMNUM_ANCIENT CAPAB_TRANSFORMNUM_SERPENT256CBC
+#define CAPAB_BIT_ANCIENTTRANSFORM CAPAB_BIT_SERPENT256CBC
 
 #endif /* magic_h */

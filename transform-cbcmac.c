@@ -298,7 +298,7 @@ static list_t *transform_apply(closure_t *self, struct cloc loc,
 
     SEQNUM_PARAMS_INIT(dict,&st->p,"serpent-cbc256",loc);
 
-    SET_CAPAB_TRANSFORMNUM(CAPAB_TRANSFORMNUM_SERPENT256CBC);
+    SET_CAPAB_BIT(CAPAB_BIT_SERPENT256CBC);
 
     return new_closure(&st->cl);
 }
