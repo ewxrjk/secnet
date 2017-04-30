@@ -318,6 +318,7 @@ struct site {
     struct hash_if *hash;
 
     uint32_t index; /* Index of this site */
+    uint32_t early_capabilities;
     uint32_t local_capabilities;
     int32_t setup_retries; /* How many times to send setup packets */
     int32_t setup_retry_interval; /* Initial timeout for setup packets */
@@ -626,7 +627,8 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
 
     struct xinfoadd xia;
     append_string_xinfo_start(&st->buffer,&xia,st->localname);
-    if ((st->local_capabilities & CAPAB_EARLY) || (type != LABEL_MSG1)) {
+    if ((st->local_capabilities & st->early_capabilities) ||
+	(type != LABEL_MSG1)) {
 	buf_append_uint32(&st->buffer,st->local_capabilities);
     }
     if (type_is_msg34(type)) {
@@ -904,7 +906,7 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 	return False;
     }
     uint32_t capab_adv_late = m.remote_capabilities
-	& ~st->remote_capabilities & CAPAB_EARLY;
+	& ~st->remote_capabilities & st->early_capabilities;
     if (capab_adv_late) {
 	slog(st,LOG_SEC,"msg3 impermissibly adds early capability flag(s)"
 	     " %#"PRIx32" (was %#"PRIx32", now %#"PRIx32")",
@@ -2125,6 +2127,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     assert(index_sequence < 0xffffffffUL);
     st->index = ++index_sequence;
     st->local_capabilities = 0;
+    st->early_capabilities = CAPAB_PRIORITY_MOBILE;
     st->netlink=find_cl_if(dict,"link",CL_NETLINK,True,"site",loc);
 
 #define GET_CLOSURE_LIST(dictkey,things,nthings,CL_TYPE) do{		\

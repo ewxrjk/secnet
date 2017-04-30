@@ -99,7 +99,6 @@
  */
 
 /* uses of the 32-bit capability bitmap */
-#define CAPAB_EARLY           CAPAB_PRIORITY_MOBILE
 #define CAPAB_TRANSFORM_MASK  0x0000ffff
 #define CAPAB_PRIORITY_MOBILE 0x80000000 /* mobile site has MSG1 priority */
 /* remaining bits are unused */

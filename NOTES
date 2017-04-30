@@ -229,8 +229,9 @@ of parameters for the same transform.  Bit 31, if advertised by both
 ends, indicates that a mobile end gets priority in case of crossed MSG1.
 The remaining bits have not yet been assigned a purpose.
 
-The mobile-end-gets-priority bit (31) is an `early' capability bit; all
-others currently defined are late.
+Whether a capability number is early depends on its meaning, rather than
+being a static property of its number.  That said, the mobile-end-gets
+priority bit (31) is always sent as an `early' capability bit.
 
 
 MTU handling
