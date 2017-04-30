@@ -107,6 +107,8 @@
 #define SITE_SENTMSG5 7
 #define SITE_WAIT     8
 
+#define CASES_MSG3_KNOWN LABEL_MSG3: case LABEL_MSG3BIS
+
 int32_t site_max_start_pad = 4*4;
 
 static cstring_t state_name(uint32_t state)
@@ -506,10 +508,10 @@ static void dispose_transform(struct transform_inst_if **transform_var)
 
 static _Bool type_is_msg34(uint32_t type)
 {
-    return
-	type == LABEL_MSG3 ||
-	type == LABEL_MSG3BIS ||
-	type == LABEL_MSG4;
+    switch (type) {
+	case CASES_MSG3_KNOWN: case LABEL_MSG4: return True;
+	default: return False;
+    }
 }
 
 struct parsedname {
@@ -616,6 +618,7 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     void *hst;
     uint8_t *hash;
     string_t dhpub, sig;
+    unsigned minor;
 
     st->retries=st->setup_retries;
     BUF_ALLOC(&st->buffer,what);
@@ -644,8 +647,11 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
 
     if (hacky_par_mid_failnow()) return False;
 
-    if (type==LABEL_MSG3BIS)
+    if (MSGMAJOR(type) == 3) do {
+	minor = MSGMINOR(type);
+	if (minor < 1) break;
 	buf_append_uint8(&st->buffer,st->chosen_transform->capab_bit);
+    } while (0);
 
     dhpub=st->dh->makepublic(st->dh->st,st->dhsecret,st->dh->len);
     buf_append_string(&st->buffer,dhpub);
@@ -680,6 +686,8 @@ static bool_t unpick_name(struct buffer_if *msg, struct parsedname *nm)
 static bool_t unpick_msg(struct site *st, uint32_t type,
 			 struct buffer_if *msg, struct msg *m)
 {
+    unsigned minor;
+
     m->capab_transformnum=-1;
     m->hashstart=msg->start;
     CHECK_AVAIL(msg,4);
@@ -715,12 +723,19 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
 	CHECK_EMPTY(msg);
 	return True;
     }
-    if (type==LABEL_MSG3BIS) {
-	CHECK_AVAIL(msg,1);
-	m->capab_transformnum = buf_unprepend_uint8(msg);
-    } else {
-	m->capab_transformnum = CAPAB_BIT_ANCIENTTRANSFORM;
-    }
+    if (MSGMAJOR(type) == 3) do {
+	minor = MSGMINOR(type);
+#define MAYBE_READ_CAP(minminor, kind, dflt) do {			\
+    if (minor < (minminor))						\
+	m->capab_##kind##num = (dflt);					\
+    else {								\
+	CHECK_AVAIL(msg, 1);						\
+	m->capab_##kind##num = buf_unprepend_uint8(msg);		\
+    }									\
+} while (0)
+	MAYBE_READ_CAP(1, transform, CAPAB_BIT_ANCIENTTRANSFORM);
+#undef MAYBE_READ_CAP
+    } while (0);
     CHECK_AVAIL(msg,2);
     m->pklen=buf_unprepend_uint16(msg);
     CHECK_AVAIL(msg,m->pklen);
@@ -775,7 +790,7 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
     }
     /* MSG3 has complicated rules about capabilities, which are
      * handled in process_msg3. */
-    if (type==LABEL_MSG3 || type==LABEL_MSG3BIS) return True;
+    if (MSGMAJOR(type) == 3) return True;
     if (m->remote_capabilities!=st->remote_capabilities) {
 	*error="remote capabilities changed";
 	return False;
@@ -863,8 +878,9 @@ static bool_t generate_msg3(struct site *st)
        and create message number 3. */
     st->random->generate(st->random->st,st->dh->len,st->dhsecret);
     return generate_msg(st,
-			(st->remote_capabilities & CAPAB_TRANSFORM_MASK
-			 ? LABEL_MSG3BIS : LABEL_MSG3),
+			(st->remote_capabilities & CAPAB_TRANSFORM_MASK)
+			? LABEL_MSG3BIS
+			: LABEL_MSG3,
 			"site:MSG3");
 }
 
@@ -898,7 +914,10 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     struct msg m;
     cstring_t err;
 
-    assert(msgtype==LABEL_MSG3 || msgtype==LABEL_MSG3BIS);
+    switch (msgtype) {
+	case CASES_MSG3_KNOWN: break;
+	default: assert(0);
+    }
 
     if (!unpick_msg(st,msgtype,msg3,&m)) return False;
     if (!check_msg(st,msgtype,&m,&err)) {
@@ -1965,8 +1984,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		slog(st,LOG_SEC,"invalid MSG2");
 	    }
 	    break;
-	case LABEL_MSG3:
-	case LABEL_MSG3BIS:
+	case CASES_MSG3_KNOWN:
 	    /* Setup packet: expected only in state SENTMSG2 */
 	    if (st->state!=SITE_SENTMSG2) {
 		if ((st->state==SITE_SENTMSG4) &&
