@@ -35,12 +35,6 @@
 #define LABEL_MSG9    0x09090909
 #define LABEL_PROD    0x0a0a0a0a
 
-/* uses of the 32-bit capability bitmap */
-#define CAPAB_EARLY           CAPAB_PRIORITY_MOBILE
-#define CAPAB_TRANSFORM_MASK  0x0000ffff
-#define CAPAB_PRIORITY_MOBILE 0x80000000 /* mobile site has MSG1 priority */
-/* remaining bits are unused */
-
 /*
  * The capability mask is a set of bits, one for each optional feature
  * supported.  The capability numbers for transforms are set in the
@@ -55,6 +49,12 @@
  * Aside from that, an empty bitmask is treated the same as
  *  1u<<CAPAB_BIT_ANCIENTTRANSFORM
  */
+
+/* uses of the 32-bit capability bitmap */
+#define CAPAB_EARLY           CAPAB_PRIORITY_MOBILE
+#define CAPAB_TRANSFORM_MASK  0x0000ffff
+#define CAPAB_PRIORITY_MOBILE 0x80000000 /* mobile site has MSG1 priority */
+/* remaining bits are unused */
 
 /* bit indices, 0 is ls bit */
 #define CAPAB_BIT_USER_MIN              0
