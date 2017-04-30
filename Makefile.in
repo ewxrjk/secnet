@@ -144,7 +144,8 @@ secnet: $(wildcard .git/packed-refs)
 endif
 
 check: eax-aes-test.confirm eax-serpent-test.confirm \
-	eax-serpentbe-test.confirm check-ipaddrset
+	eax-serpentbe-test.confirm check-ipaddrset \
+	msgcode-test.confirm
 
 version.c: Makefile
 	echo "#include \"secnet.h\"" >$@.new
@@ -163,6 +164,13 @@ eax-%-test: eax-%-test.o eax-test.o %.o
 eax-%-test.confirm: eax-%-test eax-%-test.vectors
 	./$< <$(srcdir)/eax-$*-test.vectors >$@.new
 	mv -f $@.new $@
+
+msgcode-test: msgcode-test.o
+	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $^
+
+msgcode-test.confirm: msgcode-test
+	./msgcode-test
+	touch $@
 
 check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 	$(srcdir)/ipaddrset-test.py >ipaddrset-test.new
@@ -198,6 +206,7 @@ install-force:
 clean:
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
 	$(RM) -f *.d *.pyc *~ eax-*-test.confirm eax-*-test
+	$(RM) -f msgcode-test.confirm msgcode-test
 
 realclean:	clean
 	$(RM) -f *~ Makefile config.h  *.d \

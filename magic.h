@@ -21,19 +21,67 @@
 #ifndef magic_h
 #define magic_h
 
-#define LABEL_NAK     0x00000000
-#define LABEL_MSG0    0x00020200
-#define LABEL_MSG1    0x01010101
-#define LABEL_MSG2    0x02020202
-#define LABEL_MSG3    0x03030303
-#define LABEL_MSG3BIS 0x13030313
-#define LABEL_MSG4    0x04040404
-#define LABEL_MSG5    0x05050505
-#define LABEL_MSG6    0x06060606
-#define LABEL_MSG7    0x07070707
-#define LABEL_MSG8    0x08080808
-#define LABEL_MSG9    0x09090909
-#define LABEL_PROD    0x0a0a0a0a
+/* Encode a pair of 16 bit major and minor codes as a single 32-bit label.
+ * The encoding is strange for historical reasons.  Suppose that the nibbles
+ * of the major number are (from high to low) a, b, c, d, and the minor
+ * number has nibbles w, x, y, z.  (Here, a, b, c, d are variables, not hex
+ * digits.)  We scramble them to form a message label as follows.
+ *
+ *	0 d 0 d 0 d 0 d
+ *	0 0 0 a b c 0 0
+ *	z 0 0 0 0 0 z 0
+ *	w x y 0 0 0 0 0
+ *	---------------
+ *	f g h i j k l m
+ *
+ * and calculate the nibbles f, g, ..., m of the message label (higher
+ * significance on the left) by XORing the columns.  It can be shown that
+ * this is invertible using linear algebra in GF(16), but but it's easier to
+ * notice that d = m, z = l, c = k XOR d, b = j, a = i XOR d, y = h,
+ * x = g XOR d, and w = f XOR z.
+ *
+ * Encoding in the forward direction, from a major/minor pair to a label, is
+ * (almost?) always done on constants, so its performance is fairly
+ * unimportant.  There is a compatibility constraint on the patterns produced
+ * with a = b = c = w = x = y = 0.  Subject to that, I wanted to find an
+ * invertible GF(16)-linear transformation which would let me recover the
+ * major and minor numbers with relatively little calculation.
+ */
+
+#define MSGCODE(major, minor)						\
+	((((uint32_t)(major)&0x0000000fu) <<  0) ^			\
+	 (((uint32_t)(major)&0x0000000fu) <<  8) ^			\
+	 (((uint32_t)(major)&0x0000000fu) << 16) ^			\
+	 (((uint32_t)(major)&0x0000000fu) << 24) ^			\
+	 (((uint32_t)(major)&0x0000fff0u) <<  4) ^			\
+	 (((uint32_t)(minor)&0x0000000fu) <<  4) ^			\
+	 (((uint32_t)(minor)&0x0000000fu) << 28) ^			\
+	 (((uint32_t)(minor)&0x0000fff0u) << 16))
+
+/* Extract major and minor codes from a 32-bit message label. */
+#define MSGMAJOR(label)							\
+	((((uint32_t)(label)&0x0000000fu) <<  0) ^			\
+	 (((uint32_t)(label)&0x0000000fu) <<  4) ^			\
+	 (((uint32_t)(label)&0x0000000fu) << 12) ^			\
+	 (((uint32_t)(label)&0x000fff00u) >>  4))
+#define MSGMINOR(label)							\
+	((((uint32_t)(label)&0x000000ffu) <<  8) ^			\
+	 (((uint32_t)(label)&0x000000f0u) >>  4) ^			\
+	 (((uint32_t)(label)&0xfff00000u) >> 16))
+
+#define LABEL_NAK	MSGCODE(     0, 0)
+#define LABEL_MSG0	MSGCODE(0x2020, 0) /* ! */
+#define LABEL_MSG1	MSGCODE(     1, 0)
+#define LABEL_MSG2	MSGCODE(     2, 0)
+#define LABEL_MSG3	MSGCODE(     3, 0)
+#define LABEL_MSG3BIS	MSGCODE(     3, 1)
+#define LABEL_MSG4	MSGCODE(     4, 0)
+#define LABEL_MSG5	MSGCODE(     5, 0)
+#define LABEL_MSG6	MSGCODE(     6, 0)
+#define LABEL_MSG7	MSGCODE(     7, 0)
+#define LABEL_MSG8	MSGCODE(     8, 0)
+#define LABEL_MSG9	MSGCODE(     9, 0)
+#define LABEL_PROD	MSGCODE(    10, 0)
 
 /*
  * The capability mask is a set of bits, one for each optional feature

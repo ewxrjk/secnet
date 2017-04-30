@@ -262,20 +262,53 @@ end
 local PF = { } -- The table of protocol fields, filled in later.
 local F = { } -- A table of field values, also filled in later.
 
+local function msgcode(major, minor)
+  -- Construct a Secnet message number according to the complicated rules.
+
+  local majlo = bit.band(major, 0x000f)
+  local majhi = bit.band(major, 0xfff0)
+  local minlo = bit.band(minor, 0x000f)
+  local minhi = bit.band(minor, 0xfff0)
+  return bit.bxor(bit.lshift(majlo,  0),
+		  bit.lshift(majlo,  8),
+		  bit.lshift(majlo, 16),
+		  bit.lshift(majlo, 24),
+		  bit.lshift(majhi,  4),
+		  bit.lshift(minlo,  4),
+		  bit.lshift(minlo, 28),
+		  bit.lshift(minhi, 16))
+end
+
+local function msgmajor(label)
+  -- Return the major message number from a LABEL.
+
+  local lo = bit.band(label, 0x000f)
+  local hi = bit.band(bit.rshift(label, 4), 0xfff0)
+  return bit.bxor(lo, bit.lshift(lo, 4), bit.lshift(lo, 12), hi)
+end
+
+local function msgminor(label)
+  -- Return the minor message number from a LABEL.
+
+  return bit.bxor(bit.lshift(bit.band(label, 0x00ff), 8),
+		  bit.band(bit.rshift(label, 4), 0x000f),
+		  bit.band(bit.rshift(label, 16), 0xfff0))
+end
+
 -- Main message-number table.
-local M = { NAK		= 0x00000000
-	    MSG0	= 0x00020200
-	    MSG1	= 0x01010101
-	    MSG2	= 0x02020202
-	    MSG3	= 0x03030303
-	    MSG3BIS	= 0x13030313
-	    MSG4	= 0x04040404
-	    MSG5	= 0x05050505
-	    MSG6	= 0x06060606
-	    MSG7	= 0x07070707
-	    MSG8	= 0x08080808
-	    MSG9	= 0x09090909
-	    PROD	= 0x0a0a0a0a }
+local M = { NAK		= msgcode(     0, 0),
+	    MSG0	= msgcode(0x2020, 0), -- !
+	    MSG1	= msgcode(     1, 0),
+	    MSG2	= msgcode(     2, 0),
+	    MSG3	= msgcode(     3, 0),
+	    MSG3BIS	= msgcode(     3, 1),
+	    MSG4	= msgcode(     4, 0),
+	    MSG5	= msgcode(     5, 0),
+	    MSG6	= msgcode(     6, 0),
+	    MSG7	= msgcode(     7, 0),
+	    MSG8	= msgcode(     8, 0),
+	    MSG9	= msgcode(     9, 0),
+	    PROD	= msgcode(    10, 0)}
 
 -- The `dissect_*' functions follow a common protocol.  They parse a thing
 -- from a packet buffer BUF, of size SZ, starting from POS, and store
