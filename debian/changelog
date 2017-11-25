@@ -1,6 +1,7 @@
 secnet (0.4.4~) unstable; urgency=medium
 
-  * 
+  Administrivia:
+  * Fix erroneous GPL3+ licence notices "version d or later" (!)
 
  --
 

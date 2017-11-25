@@ -5,7 +5,7 @@ dnl See README for full list of copyright holders.
 dnl
 dnl secnet is free software; you can redistribute it and/or modify it
 dnl under the terms of the GNU General Public License as published by
-dnl the Free Software Foundation; either version d of the License, or
+dnl the Free Software Foundation; either version 3 of the License, or
 dnl (at your option) any later version.
 dnl 
 dnl secnet is distributed in the hope that it will be useful, but
