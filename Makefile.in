@@ -148,7 +148,7 @@ check: eax-aes-test.confirm eax-serpent-test.confirm \
 
 version.c: Makefile
 	echo "#include \"secnet.h\"" >$@.new
-	@set -ex; if test -e .git; then \
+	@set -ex; if test -e .git && type -p git >/dev/null; then \
 		v=$$(git describe --match 'v*'); v=$${v#v}; \
 		if ! git diff --quiet HEAD; then v="$$v+"; fi; \
 	else \
