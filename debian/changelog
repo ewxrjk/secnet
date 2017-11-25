@@ -1,16 +1,4 @@
-secnet (0.4.2~) unstable; urgency=low
-
-  Build etc. fixes:
-  * #include <limits.h> (fixes the build on jessie).
-  * Tolerate building from a git checkout, but with git not installed.
-    (This can happen in chroots.)
-  * Retrospectively include in changelog some items missing from
-    0.4.1's description of 0.4.1.
-  * Release checklist fixes.
-
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 25 Nov 2017 14:17:21 +0000
-
-secnet (0.4.1) unstable; urgency=low
+secnet (0.4.3~) unstable; urgency=low
 
   Security improvement:
   * Use `mpz_powm_sec' for modexps.
@@ -21,9 +9,14 @@ secnet (0.4.1) unstable; urgency=low
   * Implement `keepalive' site option, to try to keep link always up.
 
   Build etc. fixes:
+  * #include <limits.h> (fixes the build on jessie).
+  * Tolerate building from a git checkout, but with git not installed.
+    (This can happen in chroots.)
   * Turn off -Wsign-compare for bison output.
   * Makefile.in: Fix `check-ipaddrset' rule to get reference from
     $(srcdir).  (Makes out-of-tree builds work properly.)
+  * Release checklist fixes.
+  * Burn version numbers 0.4.1 and 0.4.2 due to errors in release prep.
 
   Bugfixes:
   * When printing messages about dropping IPv6, do not print anything
