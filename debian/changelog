@@ -1,4 +1,4 @@
-secnet (0.4.1~~) unstable; urgency=medium
+secnet (0.4.1) unstable; urgency=low
 
   * Implement comm-info and dedicated-interface-addr feature, for
     benefit of hippotat.
@@ -7,7 +7,7 @@ secnet (0.4.1~~) unstable; urgency=medium
     about ihl.  (Check the IP version field first!)
   * When turning on debug, turn on verbose too.
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 25 Nov 2017 13:36:41 +0000
 
 secnet (0.4.0) unstable; urgency=low
 
