@@ -1,3 +1,9 @@
+secnet (0.4.2~) unstable; urgency=medium
+
+  * 
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 25 Nov 2017 14:04:42 +0000
+
 secnet (0.4.1) unstable; urgency=low
 
   * Implement comm-info and dedicated-interface-addr feature, for
