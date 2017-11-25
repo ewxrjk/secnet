@@ -214,6 +214,9 @@ dist:
 	gzip -9f $(tarfname)
 
 # Release checklist:
+#
+#  0. Use this checklist from Makefile.in
+#
 #  1. Check that the tree has what you want
 #
 #  2. Update VERSION (above) and debian/changelog
@@ -243,7 +246,7 @@ dist:
 #       rm -rf ../d; mkdir ../d; cd ../d
 #       tar zxf ../secnet-$VERSION.tar.gz
 #       cd secnet-$VERSION
-#       dpkg-buildpackage -a -uc -us -rfakeroot
+#       dpkg-buildpackage -F -uc -us -rfakeroot
 #       rsync -vP ../secnet_${VERSION}_i386.deb ianmdlvl@chiark:public-html/secnet/download/
 #
 #  9a. On chiark as ianmdlvl:

@@ -4,6 +4,7 @@ secnet (0.4.2~) unstable; urgency=medium
   * #include <limits.h> (fixes the build on jessie).
   * Tolerate building from a git checkout, but with git not installed.
     (This can happen in chroots.)
+  * Release checklist fixes.
 
  -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 25 Nov 2017 14:04:42 +0000
 
