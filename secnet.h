@@ -32,6 +32,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <limits.h>
 #include <fnmatch.h>
 #include <sys/poll.h>
 #include <sys/types.h>
