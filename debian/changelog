@@ -1,4 +1,4 @@
-secnet (0.4.3~) unstable; urgency=low
+secnet (0.4.3) unstable; urgency=low
 
   Security improvement:
   * Use `mpz_powm_sec' for modexps.
