@@ -1072,7 +1072,8 @@ static bool_t process_msg6(struct site *st, struct buffer_if *msg6,
     return True;
 }
 
-static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
+static transform_apply_return
+decrypt_msg0(struct site *st, struct buffer_if *msg0,
 			   const struct comm_addr *src)
 {
     cstring_t transform_err, auxkey_err, newkey_err="n/a";
@@ -1090,7 +1091,7 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	if (!st->auxiliary_is_new)
 	    delete_one_key(st,&st->auxiliary_key,
 			   "peer has used new key","auxiliary key",LOG_SEC);
-	return True;
+	return 0;
     }
     if (problem==transform_apply_seqrange)
 	goto skew;
@@ -1115,7 +1116,7 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	    st->auxiliary_is_new=0;
 	    st->renegotiate_key_time=st->auxiliary_renegotiate_key_time;
 	}
-	return True;
+	return 0;
     }
     if (problem==transform_apply_seqrange)
 	goto skew;
@@ -1131,7 +1132,7 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	    BUF_FREE(&st->buffer);
 	    st->timeout=0;
 	    activate_new_key(st);
-	    return True; /* do process the data in this packet */
+	    return 0; /* do process the data in this packet */
 	}
 	if (problem==transform_apply_seqrange)
 	    goto skew;
@@ -1141,7 +1142,8 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	 transform_err,auxkey_err,newkey_err);
     initiate_key_setup(st,"incoming message would not decrypt",0);
     send_nak(src,m.dest,m.source,m.type,msg0,"message would not decrypt");
-    return False;
+    assert(problem);
+    return problem;
 
  skew:
     slog(st,LOG_DROP,"transform: %s (merely skew)",transform_err);
@@ -1153,8 +1155,10 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
 			   const struct comm_addr *src)
 {
     uint32_t type;
+    transform_apply_return problem;
 
-    if (!decrypt_msg0(st,msg0,src))
+    problem = decrypt_msg0(st,msg0,src);
+    if (problem)
 	return False;
 
     CHECK_AVAIL(msg0,4);
