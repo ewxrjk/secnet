@@ -1143,7 +1143,8 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 
  skew:
     slog(st,LOG_DROP,"transform: %s (merely skew)",transform_err);
-    return False;
+    assert(problem);
+    return problem;
 }
 
 static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
