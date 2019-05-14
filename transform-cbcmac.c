@@ -101,8 +101,8 @@ static void transform_delkey(void *sst)
     ti->keyed=False;
 }
 
-static uint32_t transform_forward(void *sst, struct buffer_if *buf,
-				  const char **errmsg)
+static transform_apply_return transform_forward(void *sst,
+            struct buffer_if *buf, const char **errmsg)
 {
     struct transform_inst *ti=sst;
     uint8_t *padp;
@@ -172,8 +172,8 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     return 0;
 }
 
-static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
-				  const char **errmsg)
+static transform_apply_return transform_reverse(void *sst,
+                struct buffer_if *buf, const char **errmsg)
 {
     struct transform_inst *ti=sst;
     uint8_t *padp;
@@ -191,7 +191,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 
     if (buf->size < 4 + 16 + 16) {
 	*errmsg="msg too short";
-	return 1;
+	return transform_apply_err;
     }
 
     /* CBC */
@@ -203,7 +203,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     /* Assert bufsize is multiple of blocksize */
     if (buf->size&0xf) {
 	*errmsg="msg not multiple of cipher blocksize";
-	return 1;
+	return transform_apply_err;
     }
     serpentbe_encrypt(&ti->cryptkey,iv,iv);
     for (n=buf->start; n<buf->start+buf->size; n+=16)
@@ -233,7 +233,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     serpentbe_encrypt(&ti->mackey,macacc,macacc);
     if (!consttime_memeq(macexpected,macacc,16)!=0) {
 	*errmsg="invalid MAC";
-	return 1;
+	return transform_apply_err;
     }
 
     /* PKCS5, stolen from IWJ */
@@ -242,7 +242,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     padlen=*padp;
     if (!padlen || (padlen > PKCS5_MASK+1)) {
 	*errmsg="pkcs5: invalid length";
-	return 1;
+	return transform_apply_err;
     }
 
     buf_unappend(buf,padlen-1);

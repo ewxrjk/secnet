@@ -470,14 +470,15 @@ static bool_t current_valid(struct site *st)
 }
 
 #define DEFINE_CALL_TRANSFORM(fwdrev)					\
-static int call_transform_##fwdrev(struct site *st,			\
+static transform_apply_return                                           \
+call_transform_##fwdrev(struct site *st,				\
 				   struct transform_inst_if *transform,	\
 				   struct buffer_if *buf,		\
 				   const char **errmsg)			\
 {									\
     if (!is_transform_valid(transform)) {				\
 	*errmsg="transform not set up";					\
-	return 1;							\
+	return transform_apply_err;					\
     }									\
     return transform->fwdrev(transform->st,buf,errmsg);			\
 }
@@ -1029,8 +1030,9 @@ static void create_msg6(struct site *st, struct transform_inst_if *transform,
     /* Give the netlink code an opportunity to put its own stuff in the
        message (configuration information, etc.) */
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
-    int problem = call_transform_forwards(st,transform,
-					  &st->buffer,&transform_err);
+    transform_apply_return problem =
+	call_transform_forwards(st,transform,
+				&st->buffer,&transform_err);
     assert(!problem);
     buf_prepend_uint32(&st->buffer,LABEL_MSG6);
     buf_prepend_uint32(&st->buffer,st->index);
@@ -1075,7 +1077,7 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 {
     cstring_t transform_err, auxkey_err, newkey_err="n/a";
     struct msg0 m;
-    uint32_t problem;
+    transform_apply_return problem;
 
     if (!unpick_msg0(st,msg0,&m)) return False;
 
@@ -1090,13 +1092,13 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 			   "peer has used new key","auxiliary key",LOG_SEC);
 	return True;
     }
-    if (problem==2)
+    if (problem==transform_apply_seqrange)
 	goto skew;
 
     buffer_copy(msg0, &st->scratch);
     problem = call_transform_reverse(st,st->auxiliary_key.transform,
 				     msg0,&auxkey_err);
-    if (problem==0) {
+    if (!problem) {
 	slog(st,LOG_DROP,"processing packet which uses auxiliary key");
 	if (st->auxiliary_is_new) {
 	    /* We previously timed out in state SENTMSG5 but it turns
@@ -1115,7 +1117,7 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	}
 	return True;
     }
-    if (problem==2)
+    if (problem==transform_apply_seqrange)
 	goto skew;
 
     if (st->state==SITE_SENTMSG5) {
@@ -1131,7 +1133,7 @@ static bool_t decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	    activate_new_key(st);
 	    return True; /* do process the data in this packet */
 	}
-	if (problem==2)
+	if (problem==transform_apply_seqrange)
 	    goto skew;
     }
 

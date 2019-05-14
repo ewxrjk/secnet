@@ -167,8 +167,8 @@ static void transform_delkey(void *sst)
     ti->keyed=False;
 }
 
-static uint32_t transform_forward(void *sst, struct buffer_if *buf,
-				  const char **errmsg)
+static transform_apply_return transform_forward(void *sst,
+        struct buffer_if *buf, const char **errmsg)
 {
     struct transform_inst *ti=sst;
 
@@ -205,8 +205,8 @@ static uint32_t transform_forward(void *sst, struct buffer_if *buf,
     return 0;
 }
 
-static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
-				  const char **errmsg)
+static transform_apply_return transform_reverse(void *sst,
+        struct buffer_if *buf, const char **errmsg)
 {
     struct transform_inst *ti=sst;
 
@@ -233,7 +233,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
     if (!ok) {
 	TEAX_DEBUG(0,0);
 	*errmsg="EAX decryption failed";
-	return 1;
+	return transform_apply_err;
     }
     assert(buf->size >= (int)ti->p.tag_length);
     buf->size -= ti->p.tag_length;
@@ -256,7 +256,7 @@ static uint32_t transform_reverse(void *sst, struct buffer_if *buf,
 
  too_short:
     *errmsg="ciphertext or plaintext too short";
-    return 1;
+    return transform_apply_err;
 }
 
 static struct transform_inst_if *transform_create(void *sst)

@@ -25,7 +25,7 @@
 #define KEYED_CHECK do{				\
 	if (!ti->keyed) {			\
 	    *errmsg="transform unkeyed";	\
-	    return 1;				\
+	    return transform_apply_err;		\
 	}					\
     }while(0)
 
@@ -47,13 +47,13 @@ typedef uint32_t recvbitmap_type;
 	} else {						\
 	    /* Too much skew */					\
 	    *errmsg="seqnum: too much skew";			\
-	    return 2;						\
+	    return transform_apply_seqrange;			\
 	}							\
 	if ((p)->dedupe) {					\
 	    recvbitmap_type recvbit=(uint32_t)1 << skew;	\
 	    if (ti->recvbitmap & recvbit) {			\
 		*errmsg="seqnum: duplicate";			\
-		return 2;					\
+		return transform_apply_seqrange;		\
 	    }							\
 	    ti->recvbitmap |= recvbit;				\
 	}							\

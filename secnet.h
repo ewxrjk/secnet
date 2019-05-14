@@ -543,13 +543,16 @@ typedef bool_t transform_setkey_fn(void *st, uint8_t *key, int32_t keylen,
 typedef bool_t transform_valid_fn(void *st); /* 0: no key; 1: ok */
 typedef void transform_delkey_fn(void *st);
 typedef void transform_destroyinstance_fn(void *st);
-/* Returns:
- *   0: all is well
- *   1: for any other problem
- *   2: message decrypted but sequence number was out of range
- */
-typedef uint32_t transform_apply_fn(void *st, struct buffer_if *buf,
-				    const char **errmsg);
+
+typedef enum {
+    transform_apply_ok       = 0, /* all is well (everyone may assume==0) */
+    transform_apply_err      = 1, /* any other problem */
+    transform_apply_seqrange = 2,
+        /* message decrypted but sequence number was out of range */
+} transform_apply_return;
+
+typedef transform_apply_return transform_apply_fn(void *st,
+        struct buffer_if *buf, const char **errmsg);
 
 struct transform_inst_if {
     void *st;
