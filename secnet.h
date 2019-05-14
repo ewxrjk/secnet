@@ -551,6 +551,11 @@ typedef enum {
         /* message decrypted but sequence number was out of range */
 } transform_apply_return;
 
+static inline bool_t
+transform_apply_return_badseq(transform_apply_return problem) {
+    return problem == transform_apply_seqrange;
+}
+
 typedef transform_apply_return transform_apply_fn(void *st,
         struct buffer_if *buf, const char **errmsg);
 

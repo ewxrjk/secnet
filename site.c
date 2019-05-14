@@ -1093,8 +1093,8 @@ decrypt_msg0(struct site *st, struct buffer_if *msg0,
 			   "peer has used new key","auxiliary key",LOG_SEC);
 	return 0;
     }
-    if (problem==transform_apply_seqrange)
-	goto skew;
+    if (transform_apply_return_badseq(problem))
+	goto badseq;
 
     buffer_copy(msg0, &st->scratch);
     problem = call_transform_reverse(st,st->auxiliary_key.transform,
@@ -1118,8 +1118,8 @@ decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	}
 	return 0;
     }
-    if (problem==transform_apply_seqrange)
-	goto skew;
+    if (transform_apply_return_badseq(problem))
+	goto badseq;
 
     if (st->state==SITE_SENTMSG5) {
 	buffer_copy(msg0, &st->scratch);
@@ -1134,8 +1134,8 @@ decrypt_msg0(struct site *st, struct buffer_if *msg0,
 	    activate_new_key(st);
 	    return 0; /* do process the data in this packet */
 	}
-	if (problem==transform_apply_seqrange)
-	    goto skew;
+	if (transform_apply_return_badseq(problem))
+	    goto badseq;
     }
 
     slog(st,LOG_SEC,"transform: %s (aux: %s, new: %s)",
@@ -1145,8 +1145,8 @@ decrypt_msg0(struct site *st, struct buffer_if *msg0,
     assert(problem);
     return problem;
 
- skew:
-    slog(st,LOG_DROP,"transform: %s (merely skew)",transform_err);
+ badseq:
+    slog(st,LOG_DROP,"transform: %s (bad seq.)",transform_err);
     assert(problem);
     return problem;
 }
