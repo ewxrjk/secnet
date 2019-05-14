@@ -53,7 +53,7 @@ typedef uint32_t recvbitmap_type;
 	    recvbitmap_type recvbit=(uint32_t)1 << skew;	\
 	    if (ti->recvbitmap & recvbit) {			\
 		*errmsg="seqnum: duplicate";			\
-		return transform_apply_seqrange;		\
+		return transform_apply_seqdupe;			\
 	    }							\
 	    ti->recvbitmap |= recvbit;				\
 	}							\

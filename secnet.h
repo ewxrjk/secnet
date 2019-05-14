@@ -548,12 +548,15 @@ typedef enum {
     transform_apply_ok       = 0, /* all is well (everyone may assume==0) */
     transform_apply_err      = 1, /* any other problem */
     transform_apply_seqrange = 2,
-        /* message decrypted but sequence number was out of range */
+        /* message decrypted but sequence number was out of recent range */
+    transform_apply_seqdupe  = 3,
+        /* message decrypted but was dupe of recent packet */
 } transform_apply_return;
 
 static inline bool_t
 transform_apply_return_badseq(transform_apply_return problem) {
-    return problem == transform_apply_seqrange;
+    return problem == transform_apply_seqrange ||
+	   problem == transform_apply_seqdupe;
 }
 
 typedef transform_apply_return transform_apply_fn(void *st,
