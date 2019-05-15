@@ -328,8 +328,7 @@ struct site {
 				      after this time, initiate a new
 				      key exchange */
 
-    bool_t setup_priority; /* Do we have precedence if both sites emit
-			      message 1 simultaneously? */
+    bool_t our_name_later; /* our name > peer name */
     uint32_t log_events;
 
 /* runtime information */
@@ -557,7 +556,7 @@ static _Bool set_new_transform(struct site *st, char *pk)
     struct transform_if *generator=st->chosen_transform;
     struct transform_inst_if *generated=generator->create(generator->st);
     ok = generated->setkey(generated->st,st->sharedsecret,
-			   st->sharedsecretlen,st->setup_priority);
+			   st->sharedsecretlen,st->our_name_later);
 
     dispose_transform(&st->new_transform);
     if (!ok) return False;
@@ -1797,7 +1796,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* We've just sent a message 1! They may have crossed on
 	       the wire. If we have priority then we ignore the
 	       incoming one, otherwise we process it as usual. */
-	    if (st->setup_priority) {
+	    if (st->our_name_later) {
 		BUF_FREE(buf);
 		if (!st->msg1_crossed_logged++)
 		    slog(st,LOG_SETUP_INIT,"crossed msg1s; we are higher "
@@ -2130,7 +2129,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     /* The information we expect to see in incoming messages of type 1 */
     /* fixme: lots of unchecked overflows here, but the results are only
        corrupted packets rather than undefined behaviour */
-    st->setup_priority=(strcmp(st->localname,st->remotename)>0);
+    st->our_name_later=(strcmp(st->localname,st->remotename)>0);
 
     buffer_new(&st->buffer,SETUP_BUFFER_LEN);
 
