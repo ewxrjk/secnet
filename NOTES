@@ -272,7 +272,7 @@ negotiated or assumed).
 
 Messages:
 
-1) A->B: *,iA,msg1,A+,B+,nA
+1) A->B: i*,iA,msg1,A+,B+,nA
 
 i* must be encoded as 0.  (However, it is permitted for a site to use
 zero as its "index" for another site.)
