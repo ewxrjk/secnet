@@ -1839,9 +1839,21 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		BUF_FREE(buf);
 		return True;
 	    }
+	} else if (st->state==SITE_SENTMSG2 ||
+		   st->state==SITE_SENTMSG4) {
+	    if (consttime_memeq(named_msg.nR,st->remoteN,NONCELEN)) {
+		/* We are ahead in the protocol, but that msg1 had the
+		 * peer's nonce so presumably it is from this key
+		 * exchange run, via a slower route */
+		transport_setup_msgok(st,source);
+	    } else {
+		slog(st,LOG_UNEXPECTED,"competing incoming message 1");
+	    }
+	    BUF_FREE(buf);
+	    return True;
 	}
 	/* The message 1 was received at an unexpected stage of the
-	   key setup. XXX POLICY - what do we do? */
+	   key setup.  Well, they lost the race. */
 	slog(st,LOG_UNEXPECTED,"unexpected incoming message 1");
 	BUF_FREE(buf);
 	return True;
