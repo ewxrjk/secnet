@@ -1778,6 +1778,26 @@ static bool_t we_have_priority(struct site *st, const struct msg *m) {
     return st->our_name_later;
 }
 
+static bool_t setup_late_msg_ok(struct site *st, 
+				const struct buffer_if *buf_in,
+				uint32_t msgtype,
+				const struct comm_addr *source) {
+    /* For setup packets which seem from their type like they are
+     * late.  Maybe they came via a different path.  All we do is make
+     * a note of the sending address, iff they look like they are part
+     * of the current key setup attempt. */
+    struct msg m;
+    if (!named_for_us(st,buf_in,msgtype,&m))
+	/* named_for_us calls unpick_msg which gets the nonces */
+	return False;
+    if (!consttime_memeq(m.nR,st->remoteN,NONCELEN) ||
+	!consttime_memeq(m.nL,st->localN, NONCELEN))
+	/* spoof ?  from stale run ?  who knows */
+	return False;
+    transport_setup_msgok(st,source);
+    return True;
+}
+
 /* This function is called by the communication device to deliver
    packets from our peers.
    It should return True if the packet is recognised as being for
@@ -1898,6 +1918,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	case LABEL_MSG2:
 	    /* Setup packet: expected only in state SENTMSG1 */
 	    if (st->state!=SITE_SENTMSG1) {
+		if ((st->state==SITE_SENTMSG3 ||
+		     st->state==SITE_SENTMSG5) &&
+		    setup_late_msg_ok(st,buf,msgtype,source))
+		    break;
 		slog(st,LOG_UNEXPECTED,"unexpected MSG2");
 	    } else if (process_msg2(st,buf,source)) {
 		transport_setup_msgok(st,source);
@@ -1910,6 +1934,9 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	case LABEL_MSG3BIS:
 	    /* Setup packet: expected only in state SENTMSG2 */
 	    if (st->state!=SITE_SENTMSG2) {
+		if ((st->state==SITE_SENTMSG4) &&
+		    setup_late_msg_ok(st,buf,msgtype,source))
+		    break;
 		slog(st,LOG_UNEXPECTED,"unexpected MSG3");
 	    } else if (process_msg3(st,buf,source,msgtype)) {
 		transport_setup_msgok(st,source);
@@ -1921,6 +1948,9 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	case LABEL_MSG4:
 	    /* Setup packet: expected only in state SENTMSG3 */
 	    if (st->state!=SITE_SENTMSG3) {
+		if ((st->state==SITE_SENTMSG5) &&
+		    setup_late_msg_ok(st,buf,msgtype,source))
+		    break;
 		slog(st,LOG_UNEXPECTED,"unexpected MSG4");
 	    } else if (process_msg4(st,buf,source)) {
 		transport_setup_msgok(st,source);
