@@ -1756,6 +1756,11 @@ static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
 }
 
 static bool_t we_have_priority(struct site *st, const struct msg *m) {
+    if ((st->local_capabilities & m->remote_capabilities)
+	&& CAPAB_PRIORITY_MOBILE) {
+	if (st->local_mobile) return True;
+	if (st-> peer_mobile) return False;
+    }
     return st->our_name_later;
 }
 
@@ -2164,6 +2169,9 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 		 " %d (%#"PRIx32") reused", ti->capab_transformnum, capbit);
 	st->local_capabilities |= capbit;
     }
+
+    if (st->local_mobile || st->peer_mobile)
+	st->local_capabilities |= CAPAB_PRIORITY_MOBILE;
 
     /* We need to register the remote networks with the netlink device */
     uint32_t netlink_mtu; /* local virtual interface mtu */

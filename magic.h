@@ -36,9 +36,10 @@
 #define LABEL_PROD    0x0a0a0a0a
 
 /* uses of the 32-bit capability bitmap */
-#define CAPAB_EARLY           0x00000000 /* no Early flags yet (see NOTES) */
+#define CAPAB_EARLY           CAPAB_PRIORITY_MOBILE
 #define CAPAB_TRANSFORM_MASK  0x0000ffff
-/* remaining 16 bits are unused */
+#define CAPAB_PRIORITY_MOBILE 0x80000000 /* mobile site has MSG1 priority */
+/* remaining bits are unused */
 
 /*
  * The transform capability mask is a set of bits, one for each

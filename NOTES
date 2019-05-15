@@ -225,8 +225,9 @@ original CBCMAC-based transform, and bit 9 for the new EAX transform;
 bits 10 to 15 are reserved for future expansion.  The the low eight bits
 are reserved for local use, e.g., to allow migration from one set of
 parameters for a particular transform to a different, incompatible set
-of parameters for the same transform.  The high 16 bits have not yet
-been assigned a purpose.
+of parameters for the same transform.  Bit 31, if advertised by both
+ends, indicates that a mobile end gets priority in case of crossed MSG1.
+The remaining bits have not yet been assigned a purpose.
 
 No early capability bits are currently defined.
 
