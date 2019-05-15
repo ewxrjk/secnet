@@ -1158,6 +1158,14 @@ static bool_t process_msg0(struct site *st, struct buffer_if *msg0,
     transform_apply_return problem;
 
     problem = decrypt_msg0(st,msg0,src);
+    if (problem==transform_apply_seqdupe) {
+	/* We recently received another copy of this packet, maybe due
+	 * to polypath.  That's not a problem; indeed, for the
+	 * purposes of transport address management it is a success.
+	 * But we don't want to process the packet. */
+	transport_data_msgok(st,src);
+	return False;
+    }
     if (problem)
 	return False;
 
