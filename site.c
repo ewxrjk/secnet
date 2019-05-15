@@ -1755,6 +1755,10 @@ static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
 	&& name_matches(&m->local,st->localname);
 }
 
+static bool_t we_have_priority(struct site *st, const struct msg *m) {
+    return st->our_name_later;
+}
+
 /* This function is called by the communication device to deliver
    packets from our peers.
    It should return True if the packet is recognised as being for
@@ -1796,7 +1800,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* We've just sent a message 1! They may have crossed on
 	       the wire. If we have priority then we ignore the
 	       incoming one, otherwise we process it as usual. */
-	    if (st->our_name_later) {
+	    if (we_have_priority(st,&named_msg)) {
 		BUF_FREE(buf);
 		if (!st->msg1_crossed_logged++)
 		    slog(st,LOG_SETUP_INIT,"crossed msg1s; we are higher "
