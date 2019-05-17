@@ -1800,11 +1800,11 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    if (st->setup_priority) {
 		BUF_FREE(buf);
 		if (!st->msg1_crossed_logged++)
-		    slog(st,LOG_DUMP,"crossed msg1s; we are higher "
+		    slog(st,LOG_SETUP_INIT,"crossed msg1s; we are higher "
 			 "priority => ignore incoming msg1");
 		return True;
 	    } else {
-		slog(st,LOG_DUMP,"crossed msg1s; we are lower "
+		slog(st,LOG_SETUP_INIT,"crossed msg1s; we are lower "
 		     "priority => use incoming msg1");
 		if (process_msg1(st,buf,source,&named_msg)) {
 		    BUF_FREE(&st->buffer); /* Free our old message 1 */
