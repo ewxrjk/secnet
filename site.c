@@ -2262,11 +2262,18 @@ static void transport_record_peers(struct site *st, transport_peers *peers,
      *
      * Caller must first call transport_peers_expire. */
 
-    if (naddrs==1 && peers->npeers>=1 &&
-	comm_addr_equal(&addrs[0], &peers->peers[0].addr)) {
-	/* optimisation, also avoids debug for trivial updates */
-	peers->peers[0].last = *tv_now;
-	return;
+    if (naddrs==1) {
+	/* avoids debug for uninteresting updates */
+	int i;
+	for (i=0; i<peers->npeers; i++) {
+	    if (comm_addr_equal(&addrs[0], &peers->peers[i].addr)) {
+		memmove(peers->peers+1, peers->peers,
+			sizeof(peers->peers[0]) * i);
+		peers->peers[0].addr = addrs[0];
+		peers->peers[0].last = *tv_now;
+		return;
+	    }
+	}
     }
 
     int old_npeers=peers->npeers;
