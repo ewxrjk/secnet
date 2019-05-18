@@ -336,6 +336,7 @@ struct site {
     uint32_t state;
     uint64_t now; /* Most recently seen time */
     bool_t allow_send_prod;
+    bool_t msg1_crossed_logged;
     int resolving_count;
     int resolving_n_results_all;
     int resolving_n_results_stored;
@@ -1525,6 +1526,7 @@ static bool_t enter_new_state(struct site *st, uint32_t next)
     case SITE_SENTMSG1:
 	state_assert(st,st->state==SITE_RUN || st->state==SITE_RESOLVE);
 	gen=generate_msg1;
+	st->msg1_crossed_logged = False;
 	break;
     case SITE_SENTMSG2:
 	state_assert(st,st->state==SITE_RUN || st->state==SITE_RESOLVE ||
@@ -1797,8 +1799,9 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	       incoming one, otherwise we process it as usual. */
 	    if (st->setup_priority) {
 		BUF_FREE(buf);
-		slog(st,LOG_DUMP,"crossed msg1s; we are higher "
-		     "priority => ignore incoming msg1");
+		if (!st->msg1_crossed_logged++)
+		    slog(st,LOG_DUMP,"crossed msg1s; we are higher "
+			 "priority => ignore incoming msg1");
 		return True;
 	    } else {
 		slog(st,LOG_DUMP,"crossed msg1s; we are lower "
