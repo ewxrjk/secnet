@@ -321,7 +321,7 @@ struct site {
     uint32_t local_capabilities;
     int32_t setup_retries; /* How many times to send setup packets */
     int32_t setup_retry_interval; /* Initial timeout for setup packets */
-    int32_t wait_timeout; /* How long to wait if setup unsuccessful */
+    int32_t wait_timeout_mean; /* How long to wait if setup unsuccessful */
     int32_t mobile_peer_expiry; /* How long to remember 2ary addresses */
     int32_t key_lifetime; /* How long a key lasts once set up */
     int32_t key_renegotiate_time; /* If we see traffic (or a keepalive)
@@ -534,6 +534,10 @@ struct msg {
     int32_t siglen;
     char *sig;
 };
+
+static int32_t wait_timeout(struct site *st) {
+    return st->wait_timeout_mean;
+}
 
 static _Bool set_new_transform(struct site *st, char *pk)
 {
@@ -1353,7 +1357,7 @@ static void decrement_resolving_count(struct site *st, int by)
 	} else if (st->local_mobile) {
 	    /* Not very good.  We should queue (another) renegotiation
 	     * so that we can update the peer address. */
-	    st->key_renegotiate_time=st->now+st->wait_timeout;
+	    st->key_renegotiate_time=st->now+wait_timeout(st);
 	} else {
 	    slog(st,LOG_SETUP_INIT,"resolution failed: "
 		 " continuing to use source address of peer's packets");
@@ -1628,7 +1632,7 @@ static bool_t send_msg7(struct site *st, cstring_t reason)
 static void enter_state_wait(struct site *st)
 {
     slog(st,LOG_STATE,"entering state WAIT");
-    st->timeout=st->now+st->wait_timeout;
+    st->timeout=st->now+wait_timeout(st);
     st->state=SITE_WAIT;
     set_link_quality(st);
     BUF_FREE(&st->buffer); /* will have had an outgoing packet in it */
@@ -2154,7 +2158,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->key_lifetime=         CFG_NUMBER("key-lifetime",  KEY_LIFETIME);
     st->setup_retries=        CFG_NUMBER("setup-retries", SETUP_RETRIES);
     st->setup_retry_interval= CFG_NUMBER("setup-timeout", SETUP_RETRY_INTERVAL);
-    st->wait_timeout=         CFG_NUMBER("wait-time",     WAIT_TIME);
+    st->wait_timeout_mean=    CFG_NUMBER("wait-time",     WAIT_TIME);
     st->mtu_target= dict_read_number(dict,"mtu-target",False,"site",loc,0);
 
     st->mobile_peer_expiry= dict_read_number(
