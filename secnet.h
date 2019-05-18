@@ -402,8 +402,8 @@ struct resolver_if {
 
 /* RANDOMSRC interface */
 
-/* Return some random data. Returns TRUE for success. */
-typedef bool_t random_fn(void *st, int32_t bytes, uint8_t *buff);
+/* Return some random data. Cannot fail. */
+typedef void random_fn(void *st, int32_t bytes, uint8_t *buff);
 
 struct random_if {
     void *st;
