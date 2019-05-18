@@ -536,7 +536,13 @@ struct msg {
 };
 
 static int32_t wait_timeout(struct site *st) {
-    return st->wait_timeout_mean;
+    int32_t t = st->wait_timeout_mean;
+    int8_t factor;
+    if (t < INT_MAX/2) {
+	st->random->generate(st->random->st,sizeof(factor),&factor);
+	t += (t / 256) * factor;
+    }
+    return t;
 }
 
 static _Bool set_new_transform(struct site *st, char *pk)

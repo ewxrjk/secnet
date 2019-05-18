@@ -395,8 +395,9 @@ site: dict argument
     packet [5; mobile: 30]
   setup-timeout (integer): time between retransmissions of key negotiation
     packets, in ms [2000; mobile: 1000]
-  wait-time (integer): after failed key setup, wait this long (in ms) before
-    allowing another attempt [20000; mobile: 10000]
+  wait-time (integer): after failed key setup, wait roughly this long
+    (in ms) before allowing another attempt [20000; mobile: 10000]
+    Actual wait time is randomly chosen between ~0.5x and ~1.5x this.
   renegotiate-time (integer): if we see traffic on the link after this time
     then renegotiate another session key immediately (in ms)
     [half key-lifetime, or key-lifetime minus 5 mins (mobile: 12 hours),
