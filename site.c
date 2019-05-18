@@ -1476,7 +1476,8 @@ static void set_link_quality(struct site *st)
 
 static void enter_state_run(struct site *st)
 {
-    slog(st,LOG_STATE,"entering state RUN");
+    slog(st,LOG_STATE,"entering state RUN%s",
+	 current_valid(st) ? " (keyed)" : " (unkeyed)");
     st->state=SITE_RUN;
     st->timeout=0;
 
