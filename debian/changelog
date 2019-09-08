@@ -1,4 +1,4 @@
-secnet (0.4.4~) unstable; urgency=medium
+secnet (0.4.4) unstable; urgency=medium
 
   Security fix:
   * make-secnet-sites: Don't allow setting new VPN-level properties
@@ -34,7 +34,7 @@ secnet (0.4.4~) unstable; urgency=medium
   * Fix erroneous GPL3+ licence notices "version d or later" (!)
   * .dir-locals.el: Settings for Python code.  [Mark Wooding]
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 08 Sep 2019 22:53:14 +0100
 
 secnet (0.4.3) unstable; urgency=low
 
