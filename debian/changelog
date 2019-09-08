@@ -7,7 +7,8 @@ secnet (0.4.4~) unstable; urgency=medium
 
   Bugfixes for poor network environments:
   * polypath: cope properly with asymmetric routing, by correcting
-    the handling of late duplicated packets.
+    the handling of late duplicated packets etc.   Protocol is now
+    incompatible with secnet prior to 0.3.0 when either end is mobile.
   * Randomise key setup retry time.
 
   Other bugfixes:
