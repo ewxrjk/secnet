@@ -1,7 +1,37 @@
 secnet (0.4.4~) unstable; urgency=medium
 
+  Security fix:
+  * make-secnet-sites: Don't allow setting new VPN-level properties
+    when restricted.  This could allow denial of service by
+    users with delegated authorisation.  [Mark Wooding]
+
+  Bugfixes for poor network environments:
+  * polypath: cope properly with asymmetric routing, by correcting
+    the handling of late duplicated packets.
+  * Randomise key setup retry time.
+
+  Other bugfixes:
+  * rsa and cbcmac: Fix configuration error messages.  [Mark Wooding]
+  * Handle IPv4 addresses properly (ie, not foolishly byte-swapped),
+    when IPv6 is not available.  [Mark Wooding]
+  * Better logging (and less foolish debug), especially about whether
+    key is set up, and about crossed key setup attempts.
+  * Internal refactoring and fixes.  [Ian Jackson and Mark Wooding]
+
+  Build system and portability:
+  * configure: rerun autogen.sh with autoconf 2.69-10
+  * Avoid memset(0,0,0) wrt st->sharedsecret.  (Fixes compiler warning;
+    in theory might cause miscompilation.)  [Mark Wooding]
+
+  Documentation:
+  * README.make-secnet-sites: new documentation file.  [Mark Wooding]
+  * NOTES: Describe current allocation of capability bits.  [Mark Wooding]
+  * NOTES: tiny fix tot protocol description.
+  * secnet(8): Delete wrong information about dh groups.  [Mark Wooding]
+
   Administrivia:
   * Fix erroneous GPL3+ licence notices "version d or later" (!)
+  * .dir-locals.el: Settings for Python code.  [Mark Wooding]
 
  --
 
