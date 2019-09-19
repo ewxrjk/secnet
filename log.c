@@ -32,8 +32,7 @@ bool_t secnet_is_daemon=False;
 uint32_t message_level=M_WARNING|M_ERR|M_SECURITY|M_FATAL;
 struct log_if *system_log=NULL;
 
-static void vMessageFallback(uint32_t class, const char *message, va_list args)
-    FORMAT(printf,2,0);
+FORMAT(printf,2,0)
 static void vMessageFallback(uint32_t class, const char *message, va_list args)
 {
     FILE *dest=stdout;
@@ -46,6 +45,7 @@ static void vMessageFallback(uint32_t class, const char *message, va_list args)
     }
 }
 
+FORMAT(printf,2,0)
 static void vMessage(uint32_t class, const char *message, va_list args)
 {
 
@@ -66,8 +66,7 @@ void Message(uint32_t class, const char *message, ...)
     va_end(ap);
 }
 
-static void MessageFallback(uint32_t class, const char *message, ...)
-    FORMAT(printf,2,3);
+FORMAT(printf,2,3)
 static void MessageFallback(uint32_t class, const char *message, ...)
 {
     va_list ap;
@@ -80,6 +79,7 @@ static void MessageFallback(uint32_t class, const char *message, ...)
 static NORETURN(vfatal(int status, bool_t perror, const char *message,
 		       va_list args));
 
+FORMAT(printf,3,0)
 static void vfatal(int status, bool_t perror, const char *message,
 		   va_list args)
 {
@@ -193,6 +193,7 @@ struct loglist {
     struct loglist *next;
 };
 
+FORMAT(printf, 3, 0)
 static void log_vmulti(void *sst, int class, const char *message, va_list args)
 {
     struct loglist *st=sst, *i;
@@ -207,6 +208,7 @@ static void log_vmulti(void *sst, int class, const char *message, va_list args)
     }
 }
 
+FORMAT(printf, 6, 0)
 void lg_vperror(struct log_if *lg, const char *desc, struct cloc *loc,
 		int class, int errnoval, const char *fmt, va_list al)
 {
@@ -312,6 +314,7 @@ struct logfile {
 static cstring_t months[]={
     "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
 
+FORMAT(printf, 3, 0)
 static void logfile_vlog(void *sst, int class, const char *message,
 			 va_list args)
 {
@@ -346,8 +349,7 @@ static void logfile_vlog(void *sst, int class, const char *message,
     }
 }
 
-static void logfile_log(void *state, int class, const char *message, ...)
-    FORMAT(printf,3,4);
+FORMAT(printf,3,4)
 static void logfile_log(void *state, int class, const char *message, ...)
 {
     va_list ap;
