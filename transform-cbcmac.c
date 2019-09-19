@@ -231,7 +231,7 @@ static transform_apply_return transform_reverse(void *sst,
 	serpentbe_encrypt(&ti->mackey,macplain,macacc);
     }
     serpentbe_encrypt(&ti->mackey,macacc,macacc);
-    if (!consttime_memeq(macexpected,macacc,16)!=0) {
+    if (!consttime_memeq(macexpected,macacc,16)) {
 	*errmsg="invalid MAC";
 	return transform_apply_err;
     }
