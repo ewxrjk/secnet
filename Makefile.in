@@ -189,7 +189,7 @@ install: installdirs
 	$(INSTALL_DATA) ${srcdir}/ipaddrset.py $(prefix)/share/secnet/ipaddrset.py
 	$(INSTALL_SCRIPT) ${srcdir}/polypath-interface-monitor-linux \
 		$(datarootdir)/secnet/.
-	$(INSTALL_DATA) secnet.8 $(mandir)/man8/secnet.8
+	$(INSTALL_DATA) ${srcdir}/secnet.8 $(mandir)/man8/secnet.8
 
 install-force:
 	rm -f $(STALE_PYTHON_FILES)
