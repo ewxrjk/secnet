@@ -1781,8 +1781,8 @@ static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
 }
 
 static bool_t we_have_priority(struct site *st, const struct msg *m) {
-    if ((st->local_capabilities & m->remote_capabilities)
-	&& CAPAB_PRIORITY_MOBILE) {
+    if (st->local_capabilities & m->remote_capabilities &
+	CAPAB_PRIORITY_MOBILE) {
 	if (st->local_mobile) return True;
 	if (st-> peer_mobile) return False;
     }
