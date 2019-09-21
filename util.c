@@ -526,10 +526,11 @@ void send_nak(const struct comm_addr *dest, uint32_t our_index,
     buf_append_uint32(buf,our_index);
     buf_append_uint32(buf,LABEL_NAK);
     if (logwhy)
-	Message(M_INFO,"%s: %08"PRIx32"<-%08"PRIx32": %08"PRIx32":"
-		" %s; sending NAK\n",
+	Message(M_INFO,"%s: sending NAK for"
+		" %08"PRIx32" %08"PRIx32"<-%08"PRIx32":"
+		" %s\n",
 		comm_addr_to_string(dest),
-		our_index, their_index, msgtype, logwhy);
+		msgtype, our_index, their_index, logwhy);
     dest->comm->sendmsg(dest->comm->st, buf, dest, 0);
 }
 
