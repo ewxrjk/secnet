@@ -1,4 +1,4 @@
-secnet (0.4.5~) unstable; urgency=medium
+secnet (0.4.5) unstable; urgency=medium
 
   * INSTALL: Mention that rsa key generation might need ssh-keygen1.
   * mobile: Fix negotiation bug with mixed old/new secnets and
@@ -6,7 +6,7 @@ secnet (0.4.5~) unstable; urgency=medium
   * Makefile.in: Support installation from a `VPATH' build.  [Mark Wooding]
   * Portability fixes for clang.  [Mark Wooding]
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 21 Sep 2019 12:04:31 +0100
 
 secnet (0.4.4) unstable; urgency=medium
 
