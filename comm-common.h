@@ -45,7 +45,7 @@ struct comm_clientinfo *comm_clientinfo_ignore(void *state, dict_t*,
 void comm_request_notify(void *commst, void *nst, comm_notify_fn *fn);
 void comm_release_notify(void *commst, void *nst, comm_notify_fn *fn);
 
-bool_t comm_notify(struct comm_notify_list *notify, struct buffer_if *buf,
+bool_t comm_notify(struct commcommon*, struct buffer_if *buf,
 		   const struct comm_addr *ca);
   /* Either: returns True, with message delivered and buffer freed.
    * Or: False, if no-one wanted it - buffer still allocd'd.

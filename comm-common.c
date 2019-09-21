@@ -51,9 +51,10 @@ void comm_release_notify(void *commst, void *nst, comm_notify_fn *fn)
     }
 }
 
-bool_t comm_notify(struct comm_notify_list *notify,
+bool_t comm_notify(struct commcommon *cc,
 		   struct buffer_if *buf, const struct comm_addr *ca)
 {
+    struct comm_notify_list *notify = &cc->notify;
     struct comm_notify_entry *n;
 
     LIST_FOREACH(n, notify, entry) {

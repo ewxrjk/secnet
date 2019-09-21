@@ -173,7 +173,7 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 		ca.comm=&cc->ops;
 		ca.ia=from;
 		ca.ix=i;
-		done=comm_notify(&cc->notify, cc->rbuf, &ca);
+		done=comm_notify(cc, cc->rbuf, &ca);
 		if (done) {
 		    udp_sock_experienced(0,uc,socks,us,0,
 					 from.sa.sa_family,0,0);
