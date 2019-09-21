@@ -17,9 +17,6 @@
 /* Define to 1 if you have the `adns' library (-ladns). */
 #undef HAVE_LIBADNS
 
-/* Define to 1 if you have the `fl' library (-lfl). */
-#undef HAVE_LIBFL
-
 /* Define to 1 if you have the `gmp' library (-lgmp). */
 #undef HAVE_LIBGMP
 
