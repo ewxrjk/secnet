@@ -1828,9 +1828,15 @@ static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
 {
     struct buffer_if buf[1];
     buffer_readonly_clone(buf,buf_in);
+
+#define NAME_MATCHES(lr) \
+    name_matches(&m->lr, st->lr##name)
+
     return unpick_msg(st,type,buf,m)
-	&& name_matches(&m->remote,st->remotename)
-	&& name_matches(&m->local,st->localname);
+	&& NAME_MATCHES(remote)
+	&& NAME_MATCHES(local );
+
+#undef NAME_MATCHES
 }
 
 static bool_t we_have_priority(struct site *st, const struct msg *m) {
