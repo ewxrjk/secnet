@@ -401,6 +401,32 @@ const char *truncmsg_terminate(const struct buffer_if *buf)
     return buf->start;
 }
 
+void priomsg_new(struct priomsg *pm, int32_t maxlen)
+{
+    buffer_new(&pm->m, maxlen);
+    pm->prio = INT_MIN;
+}
+void priomsg_reset(struct priomsg *pm)
+{
+    buffer_init(&pm->m, 0);
+    pm->prio = INT_MIN;
+}
+bool_t priomsg_update_p(struct priomsg *pm, int prio)
+{
+    if (prio <= pm->prio) return False;
+    buffer_init(&pm->m, 0);
+    pm->prio = prio;
+    return True;
+}
+const char *priomsg_getmessage(const struct priomsg *pm, const char *defmsg)
+{
+    if (pm->prio >= INT_MIN)
+	return truncmsg_terminate(&pm->m);
+    else
+	return defmsg;
+}
+
+
 void buffer_new(struct buffer_if *buf, int32_t len)
 {
     buf->free=True;

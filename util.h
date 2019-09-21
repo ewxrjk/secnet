@@ -59,6 +59,27 @@ void truncmsg_add_string(struct buffer_if *buf, cstring_t s);
 void truncmsg_add_packet_string(struct buffer_if*, int32_t, const uint8_t*);
 const char *truncmsg_terminate(const struct buffer_if *buf);
 
+
+struct priomsg {
+    /* U: uninitialised
+     * F: initialised but free (no memory allocated), no leak if discarded
+     * Z: contains no message yet
+     * M: contains some message; you may call truncmsg_add_*
+     */
+    int prio;
+    struct buffer_if m;
+};
+
+void priomsg_new(struct priomsg *pm, int32_t maxlen);          /* UF -> Z */
+void priomsg_destroy(struct priomsg *pm, int32_t maxlen);     /* FZM -> F */
+void priomsg_reset(struct priomsg *pm);                       /* FZM -> Z */
+bool_t priomsg_update_p(struct priomsg *pm, int prio);         /* ZM -> M */
+  /* returns true iff message of priority prio ought to be added,
+   * caller should then call truncmsg_add_*. */
+const char *priomsg_getmessage(const struct priomsg *pm, const char *defmsg);
+  /* return value is null-terminated, valid until next call
+   * or until defmsg is no longer valid                                ZM */
+
 /*
  * void BUF_ADD_BYTES(append,    struct buffer_if*, const void*, int32_t size);
  * void BUF_ADD_BYTES(prepend,   struct buffer_if*, const void*, int32_t size);
