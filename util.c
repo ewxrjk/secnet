@@ -413,6 +413,7 @@ void priomsg_reset(struct priomsg *pm)
 }
 bool_t priomsg_update_p(struct priomsg *pm, int prio)
 {
+    if (!pm) return False;
     if (prio <= pm->prio) return False;
     buffer_init(&pm->m, 0);
     pm->prio = prio;

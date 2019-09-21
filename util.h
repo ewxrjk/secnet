@@ -75,7 +75,8 @@ void priomsg_destroy(struct priomsg *pm, int32_t maxlen);     /* FZM -> F */
 void priomsg_reset(struct priomsg *pm);                       /* FZM -> Z */
 bool_t priomsg_update_p(struct priomsg *pm, int prio);         /* ZM -> M */
   /* returns true iff message of priority prio ought to be added,
-   * caller should then call truncmsg_add_*. */
+   * caller should then call truncmsg_add_*.
+   * pm may be NULL, in which case it just returns false */
 const char *priomsg_getmessage(const struct priomsg *pm, const char *defmsg);
   /* return value is null-terminated, valid until next call
    * or until defmsg is no longer valid                                ZM */
