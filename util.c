@@ -365,7 +365,6 @@ void buffer_new(struct buffer_if *buf, int32_t len)
 {
     buf->free=True;
     buf->owner=NULL;
-    buf->flags=0;
     buf->loc.file=NULL;
     buf->loc.line=0;
     buf->size=0;
@@ -378,7 +377,6 @@ void buffer_readonly_view(struct buffer_if *buf, const void *data, int32_t len)
 {
     buf->free=False;
     buf->owner="READONLY";
-    buf->flags=0;
     buf->loc.file=NULL;
     buf->loc.line=0;
     buf->size=buf->alloclen=len;

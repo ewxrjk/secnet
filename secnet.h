@@ -659,7 +659,6 @@ struct hash_if {
 struct buffer_if {
     bool_t free;
     cstring_t owner; /* Set to constant string */
-    uint32_t flags; /* How paranoid should we be? */
     struct cloc loc; /* Where we were defined */
     uint8_t *base;
     uint8_t *start;
