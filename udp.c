@@ -269,7 +269,8 @@ static bool_t record_socket_gotaddr(struct udpcommon *uc, struct udpsock *us,
     socklen_t salen=sizeof(us->addr);
     int r=getsockname(us->fd,&us->addr.sa,&salen);
     if (r) FAIL("getsockname()");
-    if ((size_t)salen>sizeof(us->addr)) { errno=0; FAIL("getsockname() length"); }
+    if ((size_t)salen>sizeof(us->addr)) /* cast squashes clang warning */
+      { errno=0; FAIL("getsockname() length"); }
     return True;
 
  failed:
