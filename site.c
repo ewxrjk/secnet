@@ -1821,7 +1821,8 @@ static void site_outgoing(void *sst, struct buffer_if *buf)
 }
 
 static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
-			   uint32_t type, struct msg *m)
+			   uint32_t type, struct msg *m,
+			   struct priomsg *whynot)
     /* For packets which are identified by the local and remote names.
      * If it has our name and our peer's name in it it's for us. */
 {
@@ -1850,7 +1851,7 @@ static bool_t setup_late_msg_ok(struct site *st,
      * late.  Maybe they came via a different path.  All we do is make
      * a note of the sending address, iff they look like they are part
      * of the current key setup attempt. */
-    if (!named_for_us(st,buf_in,msgtype,m))
+    if (!named_for_us(st,buf_in,msgtype,m,0))
 	/* named_for_us calls unpick_msg which gets the nonces */
 	return False;
     if (!consttime_memeq(m->nR,st->remoteN,NONCELEN) ||
@@ -1880,7 +1881,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
       /* initialised by named_for_us, or process_msgN for N!=1 */
 
     if (msgtype==LABEL_MSG1) {
-	if (!named_for_us(st,buf,msgtype,&msg))
+	if (!named_for_us(st,buf,msgtype,&msg,whynot))
 	    return False;
 	/* It's a MSG1 addressed to us. Decide what to do about it. */
 	dump_packet(st,buf,source,True,True);
@@ -1944,7 +1945,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	return True;
     }
     if (msgtype==LABEL_PROD) {
-	if (!named_for_us(st,buf,msgtype,&msg))
+	if (!named_for_us(st,buf,msgtype,&msg,whynot))
 	    return False;
 	dump_packet(st,buf,source,True,True);
 	if (st->state!=SITE_RUN) {
