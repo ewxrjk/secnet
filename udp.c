@@ -186,7 +186,9 @@ static void udp_socks_afterpoll(void *state, struct pollfd *fds, int nfds)
 			/* Manufacture and send NAK packet */
 			source=get_uint32(cc->rbuf->start); /* Us */
 			dest=get_uint32(cc->rbuf->start+4); /* Them */
-			send_nak(&ca,source,dest,msgtype,cc->rbuf,"unwanted");
+			send_nak(&ca,source,dest,msgtype,cc->rbuf,
+				 priomsg_getmessage(&cc->why_unwanted,
+						    "unwanted"));
 		    }
 		    BUF_FREE(cc->rbuf);
 		}
