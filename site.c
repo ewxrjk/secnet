@@ -2084,9 +2084,8 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	return True;
     }
 
-    if (priomsg_update_p(whynot, comm_notify_whynot_general))
-	truncmsg_add_string(&whynot->m,
-			    "not MSG1 or PROD; unknown dest index");
+    priomsg_update_fixed(whynot, comm_notify_whynot_general,
+			 "not MSG1 or PROD; unknown dest index");
     return False;
 }
 

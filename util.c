@@ -427,6 +427,11 @@ const char *priomsg_getmessage(const struct priomsg *pm, const char *defmsg)
 	return defmsg;
 }
 
+bool_t priomsg_update_fixed(struct priomsg *pm, int prio, const char *m) {
+    if (!priomsg_update_p(pm, prio)) return False;
+    truncmsg_add_string(&pm->m, m);
+    return True;
+}
 
 void buffer_new(struct buffer_if *buf, int32_t len)
 {

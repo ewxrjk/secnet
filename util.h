@@ -81,6 +81,9 @@ const char *priomsg_getmessage(const struct priomsg *pm, const char *defmsg);
   /* return value is null-terminated, valid until next call
    * or until defmsg is no longer valid                                ZM */
 
+bool_t priomsg_update_fixed(struct priomsg *pm, int prio, const char *m);
+  /* convenience combination of _update_p and truncmsg_add_string */
+
 /*
  * void BUF_ADD_BYTES(append,    struct buffer_if*, const void*, int32_t size);
  * void BUF_ADD_BYTES(prepend,   struct buffer_if*, const void*, int32_t size);
