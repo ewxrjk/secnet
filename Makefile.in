@@ -219,51 +219,42 @@ dist:
 #
 #  1. Check that the tree has what you want
 #
-#  2. Update VERSION (above) and debian/changelog
-#     but DO NOT COMMIT
+#  2. Update changelog:
+#         gbp dch --since=<PREVIOUS VERSION>
+#     and then edit debian/changelog.
 #
-#  3. Run
-#       ./configure
-#       make dist
-#     and check that the resulting tarball looks OK.
-#     Eg, untar it and build it, or have it reviewed.
+#  3. Update VERSION (in this file, above) and
+#     finalise debian/changelog (removing ~ from version) and commit.
 #
-#  3. Commit the updates to VERSION (above) and debian/changelog
+#  4. Build source and binaries:
+#       dgit -wgf sbuild -A -c stretch
 #
-#  4. git-tag -m "secnet $VERSION" -s v${VERSION//\~/_}
+#  5. dpkg -i on zealot just to check
+#       dpkg -i ~ian/things/Fvpn/bpd/secnet_${VERSION}_amd64.deb
 #
-#  5. git-push origin v${VERSION//\~/_} v${VERSION//\~/_}~0:master
+#  6. run it on chiark
+#     check we can still ping davenant and chiark
 #
-#  6. Run, again,
-#       make dist
+#  7. Make git tag and source tarball signature:
+#       git-tag -u general -m "secnet $VERSION" -s v${VERSION//\~/_}
+#       gpg -u general --detach-sign ../bpd/secnet_$VERSION.tar.gz
 #
-#  7. gpg --detach-sign ../secnet-$VERSION.tar.gz
+#  8. Publish the branch and distriubtion files:
+#       git-push origin v${VERSION//\~/_} v${VERSION//\~/_}~0:master
+#       dcmd rsync -v ../bpd/secnet_${VERSION}_multi.changes chiark:/home/ianmdlvl/public-html/secnet/download/
 #
-#  8. rsync -v ../secnet-$VERSION.tar.gz* \
-#        chiark:/home/ianmdlvl/public-html/secnet/download/
-#
-#  9. In zealot's squeeze chroot:
-#       rm -rf ../d; mkdir ../d; cd ../d
-#       tar zxf ../secnet-$VERSION.tar.gz
-#       cd secnet-$VERSION
-#       dpkg-buildpackage -F -uc -us -rfakeroot
-#       rsync -vP ../secnet_${VERSION}_i386.deb ianmdlvl@chiark:public-html/secnet/download/
-#
-#  9a. On chiark as ianmdlvl:
-#       cd ~ianmdlvl/secnet-build/
-#       tar zxf ~ianmdlvl/public-html/secnet/download/secnet-$VERSION.tar.gz
-#       cd secnet-$VERSION
-#       dpkg-buildpackage -a -uc -us -rfakeroot
-#       mv ../secnet_${VERSION}_i386.deb ~ianmdlvl/public-html/secnet/download/backport/
-#
-#  10. On chiark as user secnet:
+#  9. Sort out html.  On chiark as user secnet:
 #       cd ~secnet/public-html/release/
 #       mkdir $VERSION
 #       cd $VERSION
 #       ln -s /home/ianmdlvl/public-html/secnet/download/secnet?$VERSION* .
-#       mkdir polypath-backport
-#       ln -s /home/ianmdlvl/public-html/secnet/download/backport/secnet?$VERSION* polypath-backport/.
-#       ln -s /home/ianmdlvl/public-html/secnet/download/backport/*adns* polypath-backport/.
+#       ln -sfn $VERSION ../current
 #
-#  11. write and post a release announcement
-#       find -type l | sort | xargs sha256sum
+# 10. write and post a release announcement
+#       cd ../bpd
+#       dcmd sha256sum secnet_${VERSION}_multi.changes
+#       ...
+#       gpg --clearsign ../release-announcement
+#       rsync -vP ../release-announcement.asc c:mail/d/
+#
+# 11. bump changelog version in master, to new version with ~
