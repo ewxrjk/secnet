@@ -206,13 +206,6 @@ realclean:	clean
 
 distclean:	realclean
 
-pfname:=$(PACKAGE)-$(VERSION)
-tarfname:=../$(pfname).tar
-dist:
-	$(RM) -rf $(tarfname) $(tarfname).gz
-	git archive --format=tar --prefix=$(pfname)/ HEAD -o $(tarfname)
-	gzip -9f $(tarfname)
-
 # Release checklist:
 #
 #  0. Use this checklist from Makefile.in
