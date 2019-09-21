@@ -49,6 +49,16 @@ extern void *buf_prepend(struct buffer_if *buf, int32_t amount);
 extern void *buf_unappend(struct buffer_if *buf, int32_t amount);
 extern void *buf_unprepend(struct buffer_if *buf, int32_t amount);
 
+/* These construct a message in a buffer, truncating if necessary.
+ * _string is only safe for trusted input and *not* UTF-8 (sorry).
+ * _packet_string is safe for any input, including untrusted.
+ * _terminate arranges for the buffer to be null-terminated (and
+ * maybe for a trailing `...' to indicate truncation), and returns
+ * a pointer to the null-terminated string. */
+void truncmsg_add_string(struct buffer_if *buf, cstring_t s);
+void truncmsg_add_packet_string(struct buffer_if*, int32_t, const uint8_t*);
+const char *truncmsg_terminate(const struct buffer_if *buf);
+
 /*
  * void BUF_ADD_BYTES(append,    struct buffer_if*, const void*, int32_t size);
  * void BUF_ADD_BYTES(prepend,   struct buffer_if*, const void*, int32_t size);

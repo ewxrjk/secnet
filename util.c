@@ -361,6 +361,46 @@ void buf_append_string(struct buffer_if *buf, cstring_t s)
     BUF_ADD_BYTES(append,buf,s,len);
 }
 
+void truncmsg_add_string(struct buffer_if *buf, cstring_t s)
+{
+    int32_t l = MIN((int32_t)strlen(s), buf_remaining_space(buf));
+    BUF_ADD_BYTES(append, buf, s, l);
+}
+void truncmsg_add_packet_string(struct buffer_if *buf, int32_t l,
+				const uint8_t *s)
+{
+    char c;
+    while (l-- > 0) {
+	c = *s++;
+	if (c >= ' ' && c <= 126 && c != '\\' && c != '"' && c != '\'') {
+	    if (!buf_remaining_space(buf)) break;
+	    buf->start[buf->size++] = c;
+	    continue;
+	}
+	char quoted[5];
+	quoted[0] = '\\';
+	quoted[2] = 0;
+	switch (c) {
+	case '\n': quoted[1] = 'n'; break;
+	case '\r': quoted[1] = 'r'; break;
+	case '\t': quoted[1] = 't'; break;
+	case '\\': case '"': case '\'': quoted[1] = c; break;
+	default: sprintf(quoted, "\\x%02x", (unsigned)c);
+	}
+	truncmsg_add_string(buf, quoted);
+    }
+}
+const char *truncmsg_terminate(const struct buffer_if *buf)
+{
+    if (buf_remaining_space(buf)) {
+	buf->start[buf->size] = 0;
+    } else {
+	assert(buf->size >= 4);
+	strcpy(buf->start + buf->size - 4, "...");
+    }
+    return buf->start;
+}
+
 void buffer_new(struct buffer_if *buf, int32_t len)
 {
     buf->free=True;
