@@ -465,6 +465,10 @@ typedef struct comm_clientinfo *comm_clientinfo_fn(void *state, dict_t*,
  * The semantics depend on the dict and defined by the comm, and
  * should be documented in README. */
 
+enum {
+    comm_notify_whynot_general,
+};
+
 /* Return True if the packet was processed, and shouldn't be passed to
    any other potential receivers. (buf is freed iff True returned.) */
 typedef bool_t comm_notify_fn(void *state, struct buffer_if *buf,
