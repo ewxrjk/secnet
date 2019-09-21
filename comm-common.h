@@ -38,6 +38,7 @@ struct commcommon { /* must be first so that void* is comm_common* */
     struct cloc loc;
     struct comm_notify_list notify;
     struct buffer_if *rbuf;
+    struct priomsg why_unwanted;
 };
 
 struct comm_clientinfo *comm_clientinfo_ignore(void *state, dict_t*,
@@ -48,8 +49,9 @@ void comm_release_notify(void *commst, void *nst, comm_notify_fn *fn);
 bool_t comm_notify(struct commcommon*, struct buffer_if *buf,
 		   const struct comm_addr *ca);
   /* Either: returns True, with message delivered and buffer freed.
-   * Or: False, if no-one wanted it - buffer still allocd'd.
-   * Ie, like comm_notify_fn. */
+   * Or: False, if no-one wanted it - buffer still allocd'd;
+   *     in that case, cc->why_unwanted has info
+   * Ie, roughly like comm_notify_fn. */
 
 void comm_apply(struct commcommon *cc, void *st);
 

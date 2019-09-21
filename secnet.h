@@ -46,9 +46,12 @@
 #define MAX_PEER_ADDRS 5
 /* send at most this many copies; honour at most that many addresses */
 
+#define MAX_NAK_MSG 80
+
 struct hash_if;
 struct comm_if;
 struct comm_addr;
+struct priomsg;
 
 typedef char *string_t;
 typedef const char *cstring_t;
@@ -465,7 +468,8 @@ typedef struct comm_clientinfo *comm_clientinfo_fn(void *state, dict_t*,
 /* Return True if the packet was processed, and shouldn't be passed to
    any other potential receivers. (buf is freed iff True returned.) */
 typedef bool_t comm_notify_fn(void *state, struct buffer_if *buf,
-			      const struct comm_addr *source);
+			      const struct comm_addr *source,
+			      struct priomsg *whynot);
 typedef void comm_request_notify_fn(void *commst, void *nst,
 				    comm_notify_fn *fn);
 typedef void comm_release_notify_fn(void *commst, void *nst,

@@ -57,8 +57,10 @@ bool_t comm_notify(struct commcommon *cc,
     struct comm_notify_list *notify = &cc->notify;
     struct comm_notify_entry *n;
 
+    priomsg_reset(&cc->why_unwanted);
+
     LIST_FOREACH(n, notify, entry) {
-	if (n->fn(n->state, buf, ca)) {
+	if (n->fn(n->state, buf, ca, &cc->why_unwanted)) {
 	    return True;
 	}
     }
@@ -76,4 +78,5 @@ void comm_apply(struct commcommon *cc, void *st)
     cc->ops.release_notify=comm_release_notify;
     LIST_INIT(&cc->notify);
     cc->rbuf=NULL;
+    priomsg_new(&cc->why_unwanted, MAX_NAK_MSG);
 }

@@ -1867,7 +1867,8 @@ static bool_t setup_late_msg_ok(struct site *st,
    this current site instance (and should therefore not be processed
    by other sites), even if the packet was otherwise ignored. */
 static bool_t site_incoming(void *sst, struct buffer_if *buf,
-			    const struct comm_addr *source)
+			    const struct comm_addr *source,
+			    struct priomsg *whynot)
 {
     struct site *st=sst;
 
