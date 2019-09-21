@@ -1830,11 +1830,16 @@ static bool_t named_for_us(struct site *st, const struct buffer_if *buf_in,
     buffer_readonly_clone(buf,buf_in);
 
     if (!unpick_msg(st,type,buf,m)) {
+	priomsg_update_fixed(whynot, comm_notify_whynot_unpick, "malformed");
 	return False;
     }
-#define NAME_MATCHES(lr)			\
-    if (!name_matches(&m->lr, st->lr##name)) {	\
-        return False;				\
+#define NAME_MATCHES(lr)						\
+    if (!name_matches(&m->lr, st->lr##name)) {				\
+	if (priomsg_update_fixed(whynot, comm_notify_whynot_name_##lr,	\
+                                 "unknown " #lr " name: ")) {		\
+            truncmsg_add_packet_string(&whynot->m, m->lr.len, m->lr.name); \
+        }								\
+        return False;							\
     }
     NAME_MATCHES(remote);
     NAME_MATCHES(local );

@@ -467,6 +467,9 @@ typedef struct comm_clientinfo *comm_clientinfo_fn(void *state, dict_t*,
 
 enum {
     comm_notify_whynot_general,
+    comm_notify_whynot_unpick,
+    comm_notify_whynot_name_local,
+    comm_notify_whynot_name_remote,
 };
 
 /* Return True if the packet was processed, and shouldn't be passed to
