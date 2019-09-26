@@ -363,8 +363,8 @@ extern init_module log_module;
 #define CL_PURE         0
 #define CL_RESOLVER     1
 #define CL_RANDOMSRC    2
-#define CL_RSAPUBKEY    3
-#define CL_RSAPRIVKEY   4
+#define CL_SIGPUBKEY    3
+#define CL_SIGPRIVKEY   4
 #define CL_COMM         5
 #define CL_IPIF         6
 #define CL_LOG          7
@@ -411,21 +411,21 @@ struct random_if {
     random_fn *generate;
 };
 
-/* RSAPUBKEY interface */
+/* SIGPUBKEY interface */
 
-typedef bool_t rsa_checksig_fn(void *st, uint8_t *data, int32_t datalen,
+typedef bool_t sig_checksig_fn(void *st, uint8_t *data, int32_t datalen,
 			       cstring_t signature);
-struct rsapubkey_if {
+struct sigpubkey_if {
     void *st;
-    rsa_checksig_fn *check;
+    sig_checksig_fn *check;
 };
 
-/* RSAPRIVKEY interface */
+/* SIGPRIVKEY interface */
 
-typedef string_t rsa_makesig_fn(void *st, uint8_t *data, int32_t datalen);
-struct rsaprivkey_if {
+typedef string_t sig_makesig_fn(void *st, uint8_t *data, int32_t datalen);
+struct sigprivkey_if {
     void *st;
-    rsa_makesig_fn *sign;
+    sig_makesig_fn *sign;
 };
 
 /* COMM interface */

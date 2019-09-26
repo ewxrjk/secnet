@@ -42,7 +42,7 @@
 
 struct rsapriv {
     closure_t cl;
-    struct rsaprivkey_if ops;
+    struct sigprivkey_if ops;
     struct cloc loc;
     MP_INT n;
     MP_INT p, dp;
@@ -51,7 +51,7 @@ struct rsapriv {
 };
 struct rsapub {
     closure_t cl;
-    struct rsapubkey_if ops;
+    struct sigpubkey_if ops;
     struct cloc loc;
     MP_INT e;
     MP_INT n;
@@ -167,7 +167,7 @@ static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
     return signature;
 }
 
-static rsa_checksig_fn rsa_sig_check;
+static sig_checksig_fn rsa_sig_check;
 static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
 			    cstring_t signature)
 {
@@ -203,7 +203,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     NEW(st);
     st->cl.description="rsapub";
-    st->cl.type=CL_RSAPUBKEY;
+    st->cl.type=CL_SIGPUBKEY;
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
@@ -281,7 +281,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     NEW(st);
     st->cl.description="rsapriv";
-    st->cl.type=CL_RSAPRIVKEY;
+    st->cl.type=CL_SIGPRIVKEY;
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;

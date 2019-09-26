@@ -312,8 +312,8 @@ struct site {
     struct resolver_if *resolver;
     struct log_if *log;
     struct random_if *random;
-    struct rsaprivkey_if *privkey;
-    struct rsapubkey_if *pubkey;
+    struct sigprivkey_if *privkey;
+    struct sigpubkey_if *pubkey;
     struct transform_if **transforms;
     int ntransforms;
     struct dh_if *dh;
@@ -2189,12 +2189,12 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
-    st->privkey=find_cl_if(dict,"local-key",CL_RSAPRIVKEY,True,"site",loc);
+    st->privkey=find_cl_if(dict,"local-key",CL_SIGPRIVKEY,True,"site",loc);
     st->addresses=dict_read_string_array(dict,"address",False,"site",loc,0);
     if (st->addresses)
 	st->remoteport=dict_read_number(dict,"port",True,"site",loc,0);
     else st->remoteport=0;
-    st->pubkey=find_cl_if(dict,"key",CL_RSAPUBKEY,True,"site",loc);
+    st->pubkey=find_cl_if(dict,"key",CL_SIGPUBKEY,True,"site",loc);
 
     GET_CLOSURE_LIST("transform",transforms,ntransforms,CL_TRANSFORM);
 
