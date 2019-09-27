@@ -46,6 +46,7 @@
 #define MAX_PEER_ADDRS 5
 /* send at most this many copies; honour at most that many addresses */
 
+struct hash_if;
 struct comm_if;
 struct comm_addr;
 
@@ -418,12 +419,14 @@ struct random_if {
 
 /* SIGPUBKEY interface */
 
+typedef void sig_sethash_fn(void *st, struct hash_if *hash);
 typedef bool_t sig_unpick_fn(void *sst, struct buffer_if *msg,
 			     struct alg_msg_data *sig);
 typedef bool_t sig_checksig_fn(void *st, uint8_t *data, int32_t datalen,
 			       const struct alg_msg_data *sig);
 struct sigpubkey_if {
     void *st;
+    sig_sethash_fn *sethash; /* must be called before check, if non-0 */
     sig_unpick_fn *unpick;
     sig_checksig_fn *check;
 };
@@ -436,6 +439,7 @@ typedef bool_t sig_makesig_fn(void *st, uint8_t *data, int32_t datalen,
 			      struct buffer_if *msg);
 struct sigprivkey_if {
     void *st;
+    sig_sethash_fn *sethash; /* must be called before sign, if non-0 */
     sig_makesig_fn *sign;
 };
 

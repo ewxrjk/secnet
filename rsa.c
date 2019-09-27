@@ -41,10 +41,16 @@
 
 #define mpp(s,n) do { char *p = mpz_get_str(NULL,16,n); printf("%s 0x%sL\n", s, p); free(p); } while (0)
 
+struct rsacommon {
+    struct hash_if *hashi;
+    uint8_t *hashbuf;
+};
+
 struct rsapriv {
     closure_t cl;
     struct sigprivkey_if ops;
     struct cloc loc;
+    struct rsacommon common;
     MP_INT n;
     MP_INT p, dp;
     MP_INT q, dq;
@@ -54,6 +60,7 @@ struct rsapub {
     closure_t cl;
     struct sigpubkey_if ops;
     struct cloc loc;
+    struct rsacommon common;
     MP_INT e;
     MP_INT n;
 };
@@ -66,6 +73,29 @@ struct rsapub {
  */
 
 static const char *hexchars="0123456789abcdef";
+
+static void rsa_sethash(struct rsacommon *c, struct hash_if *hash)
+{
+    free(c->hashbuf);
+    c->hashbuf=safe_malloc(hash->len, "generate_msg");
+    c->hashi=hash;
+}
+static void rsa_pub_sethash(void *sst, struct hash_if *hash)
+{
+    struct rsapub *st=sst;
+    rsa_sethash(&st->common, hash);
+}
+static void rsa_priv_sethash(void *sst, struct hash_if *hash)
+{
+    struct rsapriv *st=sst;
+    rsa_sethash(&st->common, hash);
+}
+static void rsa_hash(struct rsacommon *c, const uint8_t *buf, int32_t len)
+{
+    void *hst=c->hashi->init();
+    c->hashi->update(hst,buf,len);
+    c->hashi->final(hst,c->hashbuf);
+}
 
 static void emsa_pkcs1(MP_INT *n, MP_INT *m,
 		       const uint8_t *data, int32_t datalen)
@@ -126,8 +156,9 @@ static bool_t rsa_sign(void *sst, uint8_t *data, int32_t datalen,
     mpz_init(&a);
     mpz_init(&b);
 
+    rsa_hash(&st->common,data,datalen);
     /* Construct the message representative. */
-    emsa_pkcs1(&st->n, &a, data, datalen);
+    emsa_pkcs1(&st->n, &a, st->common.hashbuf, st->common.hashi->len);
 
     /*
      * Produce an RSA signature (a^d mod n) using the Chinese
@@ -213,7 +244,8 @@ static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
     mpz_init(&b);
     mpz_init(&c);
 
-    emsa_pkcs1(&st->n, &a, data, datalen);
+    rsa_hash(&st->common,data,datalen);
+    emsa_pkcs1(&st->n, &a, st->common.hashbuf, st->common.hashi->len);
 
     /* Terminate signature with a '0' - already checked that this will fit */
     int save = sig->sigstart[sig->siglen];
@@ -245,6 +277,8 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
+    st->ops.sethash=rsa_pub_sethash;
+    st->common.hashbuf=NULL;
     st->ops.unpick=rsa_sig_unpick;
     st->ops.check=rsa_sig_check;
     st->loc=loc;
@@ -324,6 +358,8 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
+    st->ops.sethash=rsa_priv_sethash;
+    st->common.hashbuf=NULL;
     st->ops.sign=rsa_sign;
     st->loc=loc;
 

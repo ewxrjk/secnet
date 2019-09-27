@@ -317,7 +317,6 @@ struct site {
     struct transform_if **transforms;
     int ntransforms;
     struct dh_if *dh;
-    struct hash_if *hash;
 
     uint32_t index; /* Index of this site */
     uint32_t early_capabilities;
@@ -614,8 +613,6 @@ static void append_string_xinfo_done(struct buffer_if *buf,
    out using a transform of config data supplied by netlink */
 static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
 {
-    void *hst;
-    uint8_t *hash;
     string_t dhpub;
     unsigned minor;
 
@@ -655,18 +652,15 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     dhpub=st->dh->makepublic(st->dh->st,st->dhsecret,st->dh->len);
     buf_append_string(&st->buffer,dhpub);
     free(dhpub);
-    hash=safe_malloc(st->hash->len, "generate_msg");
-    hst=st->hash->init();
-    st->hash->update(hst,st->buffer.start,st->buffer.size);
-    st->hash->final(hst,hash);
-    bool_t ok=st->privkey->sign(st->privkey->st,hash,st->hash->len,
+
+    bool_t ok=st->privkey->sign(st->privkey->st,
+				st->buffer.start,
+				st->buffer.size,
 				&st->buffer);
     if (!ok) goto fail;
-    free(hash);
     return True;
 
  fail:
-    free(hash);
     return False;
 }
 
@@ -884,22 +878,13 @@ static bool_t generate_msg3(struct site *st)
 
 static bool_t process_msg3_msg4(struct site *st, struct msg *m)
 {
-    uint8_t *hash;
-    void *hst;
-
     /* Check signature and store g^x mod m */
-    hash=safe_malloc(st->hash->len, "process_msg3_msg4");
-    hst=st->hash->init();
-    st->hash->update(hst,m->hashstart,m->hashlen);
-    st->hash->final(hst,hash);
     if (!st->pubkey->check(st->pubkey->st,
-			   hash,st->hash->len,
+			   m->hashstart,m->hashlen,
 			   &m->sig)) {
 	slog(st,LOG_SEC,"msg3/msg4 signature failed check!");
-	free(hash);
 	return False;
     }
-    free(hash);
 
     st->remote_adv_mtu=m->remote_mtu;
 
@@ -2197,7 +2182,12 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     GET_CLOSURE_LIST("transform",transforms,ntransforms,CL_TRANSFORM);
 
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
-    st->hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
+
+    if (st->privkey->sethash || st->pubkey->sethash) {
+	struct hash_if *hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
+	if (st->privkey->sethash) st->privkey->sethash(st->privkey->st,hash);
+	if (st->pubkey->sethash) st->pubkey->sethash(st->pubkey->st,hash);
+    }
 
 #define DEFAULT(D) (st->peer_mobile || st->local_mobile	\
                     ? DEFAULT_MOBILE_##D : DEFAULT_##D)
