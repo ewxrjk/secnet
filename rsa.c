@@ -35,6 +35,7 @@
 #include <gmp.h>
 #include "secnet.h"
 #include "util.h"
+#include "unaligned.h"
 
 #define AUTHFILE_ID_STRING "SSH PRIVATE KEY FILE FORMAT 1.1\n"
 
@@ -114,11 +115,13 @@ static void emsa_pkcs1(MP_INT *n, MP_INT *m,
     mpz_set_str(m, buff, 16);
 }
 
-static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
+static bool_t rsa_sign(void *sst, uint8_t *data, int32_t datalen,
+		       struct buffer_if *msg)
 {
     struct rsapriv *st=sst;
     MP_INT a, b, u, v, tmp, tmp2;
-    string_t signature;
+    string_t signature = 0;
+    bool_t ok;
 
     mpz_init(&a);
     mpz_init(&b);
@@ -162,9 +165,22 @@ static string_t rsa_sign(void *sst, uint8_t *data, int32_t datalen)
 
     signature=write_mpstring(&b);
 
+    uint8_t *op = buf_append(msg,2);
+    if (!op) { ok=False; goto out; }
+    size_t l = strlen(signature);
+    assert(l < 65536);
+    put_uint16(op, l);
+    op = buf_append(msg,l);
+    if (!op) { ok=False; goto out; }
+    memcpy(op, signature, l);
+
+    ok = True;
+
+ out:
+    free(signature);
     mpz_clear(&b);
     mpz_clear(&a);
-    return signature;
+    return ok;
 }
 
 static sig_checksig_fn rsa_sig_check;

@@ -422,7 +422,10 @@ struct sigpubkey_if {
 
 /* SIGPRIVKEY interface */
 
-typedef string_t sig_makesig_fn(void *st, uint8_t *data, int32_t datalen);
+/* Appends the signature to msg.
+ * Can fail and returnn False, eg if the buffer is too small. */
+typedef bool_t sig_makesig_fn(void *st, uint8_t *data, int32_t datalen,
+			      struct buffer_if *msg);
 struct sigprivkey_if {
     void *st;
     sig_makesig_fn *sign;

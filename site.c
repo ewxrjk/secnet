@@ -617,7 +617,7 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
 {
     void *hst;
     uint8_t *hash;
-    string_t dhpub, sig;
+    string_t dhpub;
     unsigned minor;
 
     st->retries=st->setup_retries;
@@ -660,11 +660,15 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
     hst=st->hash->init();
     st->hash->update(hst,st->buffer.start,st->buffer.size);
     st->hash->final(hst,hash);
-    sig=st->privkey->sign(st->privkey->st,hash,st->hash->len);
-    buf_append_string(&st->buffer,sig);
-    free(sig);
+    bool_t ok=st->privkey->sign(st->privkey->st,hash,st->hash->len,
+				&st->buffer);
+    if (!ok) goto fail;
     free(hash);
     return True;
+
+ fail:
+    free(hash);
+    return False;
 }
 
 static bool_t unpick_name(struct buffer_if *msg, struct parsedname *nm)
