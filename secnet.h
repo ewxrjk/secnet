@@ -728,7 +728,7 @@ extern void log_from_fd(int fd, cstring_t prefix, struct log_if *log);
  * void COPY_OBJ(  OBJECT& dst, const OBJECT& src);
  * void COPY_ARRAY(OBJECT *dst, const OBJECT *src, INTEGER count);
  *   // Typesafe: we check that the type OBJECT is the same in both cases.
- *   // It is OK to use COPY_OBJ on an array object, provided it's
+ *   // It is OK to use COPY_OBJ on an array object, provided dst is
  *   // _actually_ the whole array object and not decayed into a
  *   // pointer (e.g. a formal parameter).
  */
