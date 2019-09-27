@@ -183,9 +183,27 @@ static bool_t rsa_sign(void *sst, uint8_t *data, int32_t datalen,
     return ok;
 }
 
+static bool_t rsa_sig_unpick(void *sst, struct buffer_if *msg,
+			     struct alg_msg_data *sig)
+{
+    uint8_t *lp = buf_unprepend(msg, 2);
+    if (!lp) return False;
+    sig->siglen = get_uint16(lp);
+    sig->sigstart = buf_unprepend(msg, sig->siglen);
+    if (!sig->sigstart) return False;
+
+    /* In `rsa_sig_check' below, we assume that we can write a nul
+     * terminator following the signature.  Make sure there's enough space.
+     */
+    if (msg->start >= msg->base + msg->alloclen)
+	return False;
+
+    return True;
+}
+
 static sig_checksig_fn rsa_sig_check;
 static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
-			    cstring_t signature)
+			    const struct alg_msg_data *sig)
 {
     struct rsapub *st=sst;
     MP_INT a, b, c;
@@ -197,7 +215,11 @@ static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
 
     emsa_pkcs1(&st->n, &a, data, datalen);
 
-    mpz_set_str(&b, signature, 16);
+    /* Terminate signature with a '0' - already checked that this will fit */
+    int save = sig->sigstart[sig->siglen];
+    sig->sigstart[sig->siglen] = 0;
+    mpz_set_str(&b, sig->sigstart, 16);
+    sig->sigstart[sig->siglen] = save;
 
     mpz_powm(&c, &b, &st->e, &st->n);
 
@@ -223,6 +245,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
+    st->ops.unpick=rsa_sig_unpick;
     st->ops.check=rsa_sig_check;
     st->loc=loc;
 

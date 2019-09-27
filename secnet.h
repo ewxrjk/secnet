@@ -377,6 +377,11 @@ extern init_module log_module;
 
 struct buffer_if;
 
+struct alg_msg_data {
+    uint8_t *sigstart;
+    int32_t siglen;
+};
+
 /* PURE closure requires no interface */
 
 /* RESOLVER interface */
@@ -413,10 +418,13 @@ struct random_if {
 
 /* SIGPUBKEY interface */
 
+typedef bool_t sig_unpick_fn(void *sst, struct buffer_if *msg,
+			     struct alg_msg_data *sig);
 typedef bool_t sig_checksig_fn(void *st, uint8_t *data, int32_t datalen,
-			       cstring_t signature);
+			       const struct alg_msg_data *sig);
 struct sigpubkey_if {
     void *st;
+    sig_unpick_fn *unpick;
     sig_checksig_fn *check;
 };
 
