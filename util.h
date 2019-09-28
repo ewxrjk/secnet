@@ -86,6 +86,8 @@ extern void buffer_readonly_clone(struct buffer_if *n, const struct buffer_if*);
    * it must NOT be freed. */
 
 extern void buf_append_string(struct buffer_if *buf, cstring_t s);
+  /* Append a two-byte length and the string to the buffer. Length is in
+   * network byte order. */
 
 extern string_t hex_encode(const uint8_t *bin, int binsize);
   /* Convert a byte array to hex, returning the result in a freshly allocated
@@ -104,10 +106,13 @@ extern bool_t hex_decode(uint8_t *buffer, int32_t buflen, int32_t *outlen,
    * processed without error; otherwise false. */
 
 extern void read_mpbin(MP_INT *a, uint8_t *bin, int binsize);
+  /* Convert a buffer into its MP_INT representation */
 
 extern char *write_mpstring(MP_INT *a);
+  /* Convert a MP_INT into a hex string */
 
 extern int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen);
+  /* Convert a MP_INT into a buffer; return length; truncate if necessary */
 
 extern struct log_if *init_log(list_t *loglist);
 

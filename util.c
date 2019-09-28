@@ -93,7 +93,6 @@ void *safe_malloc_ary(size_t size, size_t count, const char *message) {
     return safe_realloc_ary(0,size,count,message);
 }
 
-/* Hex-encode a buffer, and return the hex in a freshly allocated string. */
 string_t hex_encode(const uint8_t *bin, int binsize)
 {
     char *buff;
@@ -163,7 +162,6 @@ done:
     return ok;
 }
 
-/* Convert a buffer into its MP_INT representation */
 void read_mpbin(MP_INT *a, uint8_t *bin, int binsize)
 {
     char *buff = hex_encode(bin, binsize);
@@ -171,7 +169,6 @@ void read_mpbin(MP_INT *a, uint8_t *bin, int binsize)
     free(buff);
 }
 
-/* Convert a MP_INT into a hex string */
 char *write_mpstring(MP_INT *a)
 {
     char *buff;
@@ -181,7 +178,6 @@ char *write_mpstring(MP_INT *a)
     return buff;
 }
 
-/* Convert a MP_INT into a buffer; return length; truncate if necessary */
 int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen)
 {
     char *hb = write_mpstring(a);
@@ -350,8 +346,6 @@ void *buf_unprepend(struct buffer_if *buf, int32_t amount) {
     return p;
 }
 
-/* Append a two-byte length and the string to the buffer. Length is in
-   network byte order. */
 void buf_append_string(struct buffer_if *buf, cstring_t s)
 {
     size_t len;
