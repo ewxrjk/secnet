@@ -15,6 +15,9 @@ conffile.yy.[ch]
 /stamp-h
 /Makefile
 
+msgcode-test
+msgcode-test.confirm
+
 autom4te.cache
 
 *~
