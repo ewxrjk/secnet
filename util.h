@@ -89,9 +89,11 @@ extern void buf_append_string(struct buffer_if *buf, cstring_t s);
   /* Append a two-byte length and the string to the buffer. Length is in
    * network byte order. */
 
-extern string_t hex_encode(const uint8_t *bin, int binsize);
-  /* Convert a byte array to hex, returning the result in a freshly allocated
-   * string. */
+static inline int hex_encode_size(int binsize) { return binsize*2 + 1; }
+extern void hex_encode(const uint8_t *bin, int binsize, char *buf);
+  /* Convert a byte array to hex into a supplied buffer. */
+extern string_t hex_encode_alloc(const uint8_t *bin, int binsize);
+  /* Returns the result in a freshly allocated string. */
 
 extern bool_t hex_decode(uint8_t *buffer, int32_t buflen, int32_t *outlen,
 			 cstring_t hb, bool_t allow_odd_nibble);

@@ -93,18 +93,23 @@ void *safe_malloc_ary(size_t size, size_t count, const char *message) {
     return safe_realloc_ary(0,size,count,message);
 }
 
-string_t hex_encode(const uint8_t *bin, int binsize)
+void hex_encode(const uint8_t *bin, int binsize, char *buff)
 {
-    char *buff;
     int i;
-
-    buff=safe_malloc(binsize*2 + 1,"hex_encode");
 
     for (i=0; i<binsize; i++) {
 	buff[i*2]=hexdigits[(bin[i] & 0xf0) >> 4];
 	buff[i*2+1]=hexdigits[(bin[i] & 0xf)];
     }
     buff[binsize*2]=0;
+}
+
+string_t hex_encode_alloc(const uint8_t *bin, int binsize)
+{
+    char *buff;
+
+    buff=safe_malloc(hex_encode_size(binsize),"hex_encode");
+    hex_encode(bin,binsize,buff);
     return buff;
 }
 
@@ -164,7 +169,7 @@ done:
 
 void read_mpbin(MP_INT *a, uint8_t *bin, int binsize)
 {
-    char *buff = hex_encode(bin, binsize);
+    char *buff = hex_encode_alloc(bin, binsize);
     mpz_set_str(a, buff, 16);
     free(buff);
 }
