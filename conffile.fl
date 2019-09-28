@@ -22,6 +22,7 @@
 %option nounput
 %option noinput
 %option never-interactive
+%option noyywrap
 
 %{
 #include <assert.h>
@@ -169,7 +170,3 @@ include			BEGIN(incl);
 
 	/* Return all unclaimed single characters to the parser */
 .			return *yytext;
-
-%%
-
-int yywrap(void) { return 1; }
