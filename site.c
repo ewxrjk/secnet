@@ -913,7 +913,6 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 	     capab_adv_late, st->remote_capabilities, m.remote_capabilities);
 	return False;
     }
-    st->remote_capabilities|=m.remote_capabilities;
 
 #define CHOSE_CRYPTO(kind, what) do {					\
     struct kind##_if *iface;						\
@@ -936,6 +935,16 @@ kind##_found:								\
 
     if (!process_msg3_msg4(st,&m))
 	return False;
+
+    /* Update our idea of the remote site's capabilities, now that we've
+     * verified that its message was authentic.
+     *
+     * Our previous idea of the remote site's capabilities came from the
+     * unauthenticated MSG1.  We've already checked that this new message
+     * doesn't change any of the bits we relied upon in the past, but it may
+     * also have set additional capability bits.  We simply throw those away
+     * now, and use the authentic capabilities from this MSG3. */
+    st->remote_capabilities=m.remote_capabilities;
 
     /* Terminate their DH public key with a '0' */
     m.pk[m.pklen]=0;
