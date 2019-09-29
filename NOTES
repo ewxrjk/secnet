@@ -269,6 +269,12 @@ initial subset of the following list of items:
    abilities of the sender.
  * In MSG3/MSG4: a 16-bit integer being the sender's MTU, or zero.
    (In other messages: nothing.)  See below.
+ * In MSG2/MSG3: a list of the peer's public keys that the sender will
+   accept: (i) a 1-byte integer count (ii) that many 5-byte key ids.
+   If not present, implicitly only the special key id 0000000000.
+ * In MSG3/MSG4: an 8-bit integer being an index into the
+   receiver's public key acceptance list, with which the message
+   is signed.  If not present, implicitly the key id 00000000000.
  * More data which is yet to be defined and which must be ignored
    by receivers.
 The optional additional data after the receiver's name is not
