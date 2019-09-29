@@ -806,15 +806,17 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
     return False;
 }
 
-static void kex_init(struct site *st)
+static bool_t kex_init(struct site *st)
 {
     st->random->generate(st->random->st,NONCELEN,st->localN);
+    return True;
 }
 
 static bool_t generate_msg1(struct site *st, const struct msg *prompt_maybe_0)
 {
-    kex_init(st);
-    return generate_msg(st,LABEL_MSG1,"site:MSG1",prompt_maybe_0);
+    return
+	kex_init(st) &&
+	generate_msg(st,LABEL_MSG1,"site:MSG1",prompt_maybe_0);
 }
 
 static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
@@ -834,8 +836,9 @@ static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
 static bool_t generate_msg2(struct site *st,
 			    const struct msg *prompt_may_be_null)
 {
-    kex_init(st);
-    return generate_msg(st,LABEL_MSG2,"site:MSG2",prompt_may_be_null);
+    return
+	kex_init(st) &&
+	generate_msg(st,LABEL_MSG2,"site:MSG2",prompt_may_be_null);
 }
 
 static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
