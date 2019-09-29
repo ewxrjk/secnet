@@ -276,6 +276,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.unpick=rsa_sig_unpick;
     st->ops.check=rsa_sig_check;
     st->ops.hash=0;
+    st->ops.dispose=0; /* xxx */
     st->loc=loc;
 
     i=list_elem(args,0);
@@ -357,6 +358,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->common.hashbuf=NULL;
     st->ops.sign=rsa_sign;
     st->ops.hash=0;
+    st->ops.dispose=0; /* xxx */
     st->loc=loc;
 
     /* Argument is filename pointing to SSH1 private key file */

@@ -451,6 +451,8 @@ struct random_if {
 /* SIGPUBKEY interface */
 
 typedef void sig_sethash_fn(void *st, struct hash_if *hash);
+typedef void sig_dispose_fn(void *st);
+
 typedef bool_t sig_unpick_fn(void *sst, struct buffer_if *msg,
 			     struct alg_msg_data *sig);
 typedef bool_t sig_checksig_fn(void *st, uint8_t *data, int32_t datalen,
@@ -461,6 +463,7 @@ struct sigpubkey_if {
     sig_unpick_fn *unpick;
     sig_checksig_fn *check;
     const struct hash_if *hash;
+    sig_dispose_fn *dispose;
 };
 
 /* SIGPRIVKEY interface */
@@ -474,6 +477,7 @@ struct sigprivkey_if {
     sig_sethash_fn *sethash; /* must be called before use, if non-0 */
     sig_makesig_fn *sign;
     const struct hash_if *hash;
+    sig_dispose_fn *dispose;
 };
 
 /* COMM interface */
