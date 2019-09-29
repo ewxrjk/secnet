@@ -546,6 +546,22 @@ tun: dict argument
 I recommend you don't specify the 'interface' option unless you're
 doing something that requires the interface name to be constant.
 
+** privcache
+
+Cache of dynamically loaded private keys.
+
+Defines:
+  priv-cache (closure => privcache closure)
+
+priv-cache: dict argument
+  privkeys (string): path prefix for private keys.  Each key is
+    looked for at this path prefix followed by the 10-character 
+    hex key id.
+  privcache-size (integer): optional, maximum number of private
+    keys to retain at once. [5]
+  privkey-max (integer): optional, maximum size of private key
+    file in bytes. [4095]
+
 ** rsa
 
 Defines:

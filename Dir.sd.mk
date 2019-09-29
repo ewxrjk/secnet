@@ -50,7 +50,7 @@ TARGETS:=secnet
 
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	resolver.o random.o udp.o site.o transform-cbcmac.o transform-eax.o \
-	comm-common.o polypath.o \
+	comm-common.o polypath.o privcache.o \
 	netlink.o rsa.o dh.o serpent.o serpentbe.o \
 	md5.o sha512.o tun.o slip.o sha1.o ipaddr.o log.o \
 	process.o @LIBOBJS@ \

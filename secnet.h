@@ -391,6 +391,7 @@ extern init_module slip_module;
 extern init_module tun_module;
 extern init_module sha1_module;
 extern init_module log_module;
+extern init_module privcache_module;
 
 /***** END of module support *****/
 
@@ -446,6 +447,7 @@ extern const struct sigscheme_info sigschemes[]; /* sentinel has name==0 */
 #define CL_HASH        12
 #define CL_BUFFER      13
 #define CL_NETLINK     14
+#define CL_PRIVCACHE   15
 
 struct buffer_if;
 
@@ -518,6 +520,19 @@ struct sigprivkey_if {
     sig_makesig_fn *sign;
     const struct hash_if *hash;
     sig_dispose_fn *dispose;
+};
+
+/* PRIVCACHE interface */
+
+typedef struct sigprivkey_if *privcache_lookup_fn(void *st,
+					   const struct sigkeyid *id,
+					   struct log_if*);
+  /* Return is valid only until you return from the current event!
+   * You do not need to call ->sethash. */
+
+struct privcache_if {
+    void *st;
+    privcache_lookup_fn *lookup;
 };
 
 /* COMM interface */
