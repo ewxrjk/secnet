@@ -815,7 +815,6 @@ static bool_t kex_init(struct site *st)
 static bool_t generate_msg1(struct site *st, const struct msg *prompt_maybe_0)
 {
     return
-	kex_init(st) &&
 	generate_msg(st,LABEL_MSG1,"site:MSG1",prompt_maybe_0);
 }
 
@@ -837,7 +836,6 @@ static bool_t generate_msg2(struct site *st,
 			    const struct msg *prompt_may_be_null)
 {
     return
-	kex_init(st) &&
 	generate_msg(st,LABEL_MSG2,"site:MSG2",prompt_may_be_null);
 }
 
@@ -1601,12 +1599,14 @@ static bool_t enter_new_state(struct site *st, uint32_t next,
     switch(next) {
     case SITE_SENTMSG1:
 	state_assert(st,st->state==SITE_RUN || st->state==SITE_RESOLVE);
+	if (!kex_init(st)) return False;
 	gen=generate_msg1;
 	st->msg1_crossed_logged = False;
 	break;
     case SITE_SENTMSG2:
 	state_assert(st,st->state==SITE_RUN || st->state==SITE_RESOLVE ||
 		     st->state==SITE_SENTMSG1 || st->state==SITE_WAIT);
+	if (!kex_init(st)) return False;
 	gen=generate_msg2;
 	break;
     case SITE_SENTMSG3:
