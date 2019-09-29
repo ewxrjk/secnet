@@ -109,6 +109,8 @@
 
 #define CASES_MSG3_KNOWN LABEL_MSG3: case LABEL_MSG3BIS
 
+struct msg;
+
 int32_t site_max_start_pad = 4*4;
 
 static cstring_t state_name(uint32_t state)
@@ -457,7 +459,9 @@ static bool_t initiate_key_setup(struct site *st, cstring_t reason,
 static void enter_state_run(struct site *st);
 static bool_t enter_state_resolve(struct site *st);
 static void decrement_resolving_count(struct site *st, int by);
-static bool_t enter_new_state(struct site *st,uint32_t next);
+static bool_t enter_new_state(struct site *st,uint32_t next,
+			      const struct msg *prompt
+			      /* may be 0 for SENTMSG1 */);
 static void enter_state_wait(struct site *st);
 static void activate_new_key(struct site *st);
 
@@ -799,7 +803,8 @@ static bool_t generate_msg1(struct site *st)
 }
 
 static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
-			   const struct comm_addr *src, struct msg *m)
+			   const struct comm_addr *src,
+			   const struct msg *m)
 {
     /* We've already determined we're in an appropriate state to
        process an incoming MSG1, and that the MSG1 has correct values
@@ -1352,7 +1357,7 @@ static void decrement_resolving_count(struct site *st, int by)
     switch (st->state) {
     case SITE_RESOLVE:
         if (transport_compute_setupinit_peers(st,addrs,naddrs,0)) {
-	    enter_new_state(st,SITE_SENTMSG1);
+	    enter_new_state(st,SITE_SENTMSG1,0);
 	} else {
 	    /* Can't figure out who to try to to talk to */
 	    slog(st,LOG_SETUP_INIT,
@@ -1412,7 +1417,7 @@ static bool_t initiate_key_setup(struct site *st, cstring_t reason,
 	slog(st,LOG_SETUP_INIT,"resolving peer address(es)");
 	return enter_state_resolve(st);
     } else if (transport_compute_setupinit_peers(st,0,0,prod_hint)) {
-	return enter_new_state(st,SITE_SENTMSG1);
+	return enter_new_state(st,SITE_SENTMSG1,0);
     }
     slog(st,LOG_SETUP_INIT,"key exchange failed: no address for peer");
     return False;
@@ -1566,9 +1571,11 @@ static bool_t enter_state_resolve(struct site *st)
     return ensure_resolving(st);
 }
 
-static bool_t enter_new_state(struct site *st, uint32_t next)
+static bool_t enter_new_state(struct site *st, uint32_t next,
+			      const struct msg *prompt
+			      /* may be 0 for SENTMSG1 */)
 {
-    bool_t (*gen)(struct site *st);
+    bool_t (*gen)(struct site *st, struct msg *prompt);
     int r;
 
     slog(st,LOG_STATE,"entering state %s",state_name(next));
@@ -1850,6 +1857,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
     uint32_t dest=get_uint32(buf->start);
     uint32_t msgtype=get_uint32(buf->start+8);
     struct msg msg;
+      /* initialised by named_for_us, or process_msgN for N!=1 */
 
     if (msgtype==LABEL_MSG1) {
 	if (!named_for_us(st,buf,msgtype,&msg))
@@ -1862,7 +1870,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    transport_compute_setupinit_peers(st,0,0,source);
 	    if (process_msg1(st,buf,source,&msg)) {
 		slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
-		bool_t entered=enter_new_state(st,SITE_SENTMSG2);
+		bool_t entered=enter_new_state(st,SITE_SENTMSG2,&msg);
 		if (entered && st->addresses && st->local_mobile)
 		    /* We must do this as the very last thing, because
 		       the resolver callback might reenter us. */
@@ -1888,7 +1896,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		if (process_msg1(st,buf,source,&msg)) {
 		    BUF_FREE(&st->buffer); /* Free our old message 1 */
 		    transport_setup_msgok(st,source);
-		    enter_new_state(st,SITE_SENTMSG2);
+		    enter_new_state(st,SITE_SENTMSG2,&msg);
 		} else {
 		    slog(st,LOG_ERROR,"failed to process an incoming "
 			 "crossed msg1 (we have low priority)");
@@ -1962,7 +1970,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		slog(st,LOG_UNEXPECTED,"unexpected MSG2");
 	    } else if (process_msg2(st,buf,source,&msg)) {
 		transport_setup_msgok(st,source);
-		enter_new_state(st,SITE_SENTMSG3);
+		enter_new_state(st,SITE_SENTMSG3,&msg);
 	    } else {
 		slog(st,LOG_SEC,"invalid MSG2");
 	    }
@@ -1976,7 +1984,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		slog(st,LOG_UNEXPECTED,"unexpected MSG3");
 	    } else if (process_msg3(st,buf,source,msgtype,&msg)) {
 		transport_setup_msgok(st,source);
-		enter_new_state(st,SITE_SENTMSG4);
+		enter_new_state(st,SITE_SENTMSG4,&msg);
 	    } else {
 		slog(st,LOG_SEC,"invalid MSG3");
 	    }
@@ -1990,7 +1998,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 		slog(st,LOG_UNEXPECTED,"unexpected MSG4");
 	    } else if (process_msg4(st,buf,source,&msg)) {
 		transport_setup_msgok(st,source);
-		enter_new_state(st,SITE_SENTMSG5);
+		enter_new_state(st,SITE_SENTMSG5,&msg);
 	    } else {
 		slog(st,LOG_SEC,"invalid MSG4");
 	    }
@@ -2005,7 +2013,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    if (st->state==SITE_SENTMSG4) {
 		if (process_msg5(st,buf,source,st->new_transform)) {
 		    transport_setup_msgok(st,source);
-		    enter_new_state(st,SITE_RUN);
+		    enter_new_state(st,SITE_RUN,&msg);
 		} else {
 		    slog(st,LOG_SEC,"invalid MSG5");
 		}
