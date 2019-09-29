@@ -49,6 +49,7 @@
 /* send at most this many copies; honour at most that many addresses */
 
 #define MAX_NAK_MSG 80
+#define MAX_SIG_KEYS 4
 
 struct hash_if;
 struct comm_if;
