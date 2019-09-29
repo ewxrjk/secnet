@@ -484,6 +484,14 @@ int consttime_memeq(const void *s1in, const void *s2in, size_t n)
     return accumulator;
 }
 
+void hash_hash(const struct hash_if *hashi, const void *msg, int32_t len,
+	       uint8_t *digest) {
+    uint8_t hst[hashi->slen];
+    hashi->init(hst);
+    hashi->update(hst,msg,len);
+    hashi->final(hst,digest);
+}
+
 void util_module(dict_t *dict)
 {
     add_closure(dict,"sysbuffer",buffer_apply);

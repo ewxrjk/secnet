@@ -92,10 +92,7 @@ static void rsa_priv_sethash(void *sst, struct hash_if *hash)
 }
 static void rsa_hash(struct rsacommon *c, const uint8_t *buf, int32_t len)
 {
-    uint8_t hst[c->hashi->slen];
-    c->hashi->init(hst);
-    c->hashi->update(hst,buf,len);
-    c->hashi->final(hst,c->hashbuf);
+    hash_hash(c->hashi,buf,len,c->hashbuf);
 }
 
 static void emsa_pkcs1(MP_INT *n, MP_INT *m,

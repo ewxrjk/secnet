@@ -22,6 +22,7 @@
  */
 
 #include "secnet.h"
+#include "util.h"
 #include <string.h>		/* for memcpy() */
 #include "md5.h"
 
@@ -287,10 +288,7 @@ void md5_module(dict_t *dict)
 
     dict_add(dict,"md5",new_closure(&st->cl));
 
-    uint8_t ctx[st->ops.slen];
-    md5_init(ctx);
-    md5_update(ctx,testinput,strlen(testinput));
-    md5_final(ctx,digest);
+    hash_hash(&st->ops,testinput,strlen(testinput),digest);
     for (i=0; i<16; i++) {
 	if (digest[i]!=expected[i]) {
 	    fatal("md5 module failed self-test");

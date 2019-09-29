@@ -78,6 +78,7 @@ A million repetitions of "a"
 /* #define SHA1HANDSOFF  */
 
 #include "secnet.h"
+#include "util.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -340,10 +341,7 @@ void sha1_module(dict_t *dict)
 
     dict_add(dict,"sha1",new_closure(&st->cl));
 
-    uint8_t ctx[st->ops.slen];
-    sha1_init(ctx);
-    sha1_update(ctx,testinput,strlen(testinput));
-    sha1_final(ctx,digest);
+    hash_hash(&st->ops,testinput,strlen(testinput),digest);
     for (i=0; i<20; i++) {
 	if (digest[i]!=expected[i]) {
 	    fatal("sha1 module failed self-test");
