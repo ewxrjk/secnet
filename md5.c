@@ -238,14 +238,11 @@ MD5Transform(uint32_t buf[4], uint32_t const in[16])
 
 #endif
 
-static void *md5_init(void)
+static void md5_init(void *sst)
 {
-    struct MD5Context *ctx;
+    struct MD5Context *ctx=sst;
 
-    NEW(ctx);
     MD5Init(ctx);
-
-    return ctx;
 }
 
 static void md5_update(void *sst, const void *buf, int32_t len)
@@ -260,7 +257,6 @@ static void md5_final(void *sst, uint8_t *digest)
     struct MD5Context *ctx=sst;
 
     MD5Final(digest,ctx);
-    free(ctx);
 }
 
 struct md5 {
@@ -271,7 +267,6 @@ struct md5 {
 void md5_module(dict_t *dict)
 {
     struct md5 *st;
-    void *ctx;
     cstring_t testinput="12345\n";
     uint8_t expected[16]=
 	{0xd5,0x77,0x27,0x3f,0xf8,0x85,0xc3,0xf8,
@@ -284,14 +279,16 @@ void md5_module(dict_t *dict)
     st->cl.type=CL_HASH;
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
-    st->ops.len=16;
+    st->ops.hlen=16;
+    st->ops.slen=sizeof(struct MD5Context);
     st->ops.init=md5_init;
     st->ops.update=md5_update;
     st->ops.final=md5_final;
 
     dict_add(dict,"md5",new_closure(&st->cl));
 
-    ctx=md5_init();
+    uint8_t ctx[st->ops.slen];
+    md5_init(ctx);
     md5_update(ctx,testinput,strlen(testinput));
     md5_final(ctx,digest);
     for (i=0; i<16; i++) {

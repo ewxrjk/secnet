@@ -77,7 +77,7 @@ static const char *hexchars="0123456789abcdef";
 static void rsa_sethash(struct rsacommon *c, struct hash_if *hash)
 {
     free(c->hashbuf);
-    c->hashbuf=safe_malloc(hash->len, "generate_msg");
+    c->hashbuf=safe_malloc(hash->hlen, "generate_msg");
     c->hashi=hash;
 }
 static void rsa_pub_sethash(void *sst, struct hash_if *hash)
@@ -92,7 +92,8 @@ static void rsa_priv_sethash(void *sst, struct hash_if *hash)
 }
 static void rsa_hash(struct rsacommon *c, const uint8_t *buf, int32_t len)
 {
-    void *hst=c->hashi->init();
+    uint8_t hst[c->hashi->slen];
+    c->hashi->init(hst);
     c->hashi->update(hst,buf,len);
     c->hashi->final(hst,c->hashbuf);
 }
@@ -158,7 +159,7 @@ static bool_t rsa_sign(void *sst, uint8_t *data, int32_t datalen,
 
     rsa_hash(&st->common,data,datalen);
     /* Construct the message representative. */
-    emsa_pkcs1(&st->n, &a, st->common.hashbuf, st->common.hashi->len);
+    emsa_pkcs1(&st->n, &a, st->common.hashbuf, st->common.hashi->hlen);
 
     /*
      * Produce an RSA signature (a^d mod n) using the Chinese
@@ -245,7 +246,7 @@ static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
     mpz_init(&c);
 
     rsa_hash(&st->common,data,datalen);
-    emsa_pkcs1(&st->n, &a, st->common.hashbuf, st->common.hashi->len);
+    emsa_pkcs1(&st->n, &a, st->common.hashbuf, st->common.hashi->hlen);
 
     /* Terminate signature with a '0' - already checked that this will fit */
     int save = sig->sigstart[sig->siglen];

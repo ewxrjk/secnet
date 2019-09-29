@@ -643,11 +643,12 @@ struct dh_if {
 
 /* HASH interface */
 
-typedef void *hash_init_fn(void);
+typedef void hash_init_fn(void *st /* slen bytes alloc'd by caller */);
 typedef void hash_update_fn(void *st, const void *buf, int32_t len);
-typedef void hash_final_fn(void *st, uint8_t *digest);
+typedef void hash_final_fn(void *st, uint8_t *digest /* hlen bytes */);
 struct hash_if {
-    int32_t len; /* Hash output length in bytes */
+    int32_t slen; /* State length in bytes */
+    int32_t hlen; /* Hash output length in bytes */
     hash_init_fn *init;
     hash_update_fn *update;
     hash_final_fn *final;

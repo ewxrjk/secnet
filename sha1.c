@@ -287,14 +287,11 @@ unsigned char finalcount[8];
 /*************************************************************/
 
 /* Everything below here is the interface to secnet */
-static void *sha1_init(void)
+static void sha1_init(void *sst)
 {
-    SHA1_CTX *ctx;
+    SHA1_CTX *ctx=sst;
 
-    NEW(ctx);
     SHA1Init(ctx);
-
-    return ctx;
 }
 
 static void sha1_update(void *sst, const void *buf, int32_t len)
@@ -309,7 +306,6 @@ static void sha1_final(void *sst, uint8_t *digest)
     SHA1_CTX *ctx=sst;
 
     SHA1Final(digest,ctx);
-    free(ctx);
 }
 
 struct sha1 {
@@ -320,7 +316,6 @@ struct sha1 {
 void sha1_module(dict_t *dict)
 {
     struct sha1 *st;
-    void *ctx;
     cstring_t testinput="abcdbcdecdefdefgefghfghigh"
 	"ijhijkijkljklmklmnlmnomnopnopq";
     uint8_t expected[20]=
@@ -337,14 +332,16 @@ void sha1_module(dict_t *dict)
     st->cl.type=CL_HASH;
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
-    st->ops.len=20;
+    st->ops.hlen=20;
+    st->ops.slen=sizeof(SHA1_CTX);
     st->ops.init=sha1_init;
     st->ops.update=sha1_update;
     st->ops.final=sha1_final;
 
     dict_add(dict,"sha1",new_closure(&st->cl));
 
-    ctx=sha1_init();
+    uint8_t ctx[st->ops.slen];
+    sha1_init(ctx);
     sha1_update(ctx,testinput,strlen(testinput));
     sha1_final(ctx,digest);
     for (i=0; i<20; i++) {
