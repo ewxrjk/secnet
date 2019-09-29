@@ -70,6 +70,22 @@ union iaddr {
 #endif
 };
 
+#define GRPIDSZ 4
+#define ALGIDSZ 1
+#define KEYIDSZ (GRPIDSZ+ALGIDSZ)
+  /* Changing these is complex: this is the group id plus algo id */
+  /* They are costructed by pubkeys.fl.pl.  Also hardcoded in _PR_ */
+struct sigkeyid { uint8_t b[KEYIDSZ]; };
+
+#define SIGKEYID_PR_FMT "%02x%02x%02x%02x%02x"
+#define SIGKEYID_PR_VAL(id) /* SIGKEYID_PR_VAL(const sigkeyid *id) */	\
+    ((id) == (const struct sigkeyid*)0, (id)->b[0]),			\
+    (id)->b[1],(id)->b[2],(id)->b[3],(id)->b[4]
+static inline bool_t sigkeyid_equal(const struct sigkeyid *a,
+				    const struct sigkeyid *b) {
+    return !memcmp(a->b, b->b, KEYIDSZ);
+}
+
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
 					 __FILE__,__LINE__); } } while(0)
 
