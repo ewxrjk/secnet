@@ -431,6 +431,8 @@ struct sigscheme_info {
 extern const struct sigscheme_info rsa1_sigscheme;
 extern const struct sigscheme_info sigschemes[]; /* sentinel has name==0 */
 
+const struct sigscheme_info *sigscheme_lookup(const char *name);
+
 /***** END of signature schemes *****/
 
 /***** CLOSURE TYPES and interface definitions *****/

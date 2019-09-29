@@ -50,7 +50,7 @@ TARGETS:=secnet
 
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	resolver.o random.o udp.o site.o transform-cbcmac.o transform-eax.o \
-	comm-common.o polypath.o privcache.o \
+	comm-common.o polypath.o privcache.o pubkeys.o pubkeys.yy.o \
 	netlink.o rsa.o dh.o serpent.o serpentbe.o \
 	md5.o sha512.o tun.o slip.o sha1.o ipaddr.o log.o \
 	process.o osdep.o @LIBOBJS@ \
@@ -75,16 +75,20 @@ STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 			$(DESTDIR)$p/share/secnet/$l.$e \
 			)))
 
-%.c:	%.y
-
-%.yy.c:	%.fl
-	flex --header=$*.yy.h -o$@ $<
+%.yy.c %.yy.h:	%.fl
+	flex --header=$*.yy.h -o$*.yy.c $<
 
 %.tab.c %.tab.h:	%.y
 	bison -d -o $@ $<
 
-%.o: %.c conffile.yy.h
+%.o: %.c
 	$(CC) $(CPPFLAGS) $(ALL_CFLAGS) $(CDEPS_CFLAGS) -c $< -o $@
+
+$(OBJECTS): conffile.yy.h pubkeys.yy.h base91s/base91.h
+# ^ we can't write this as a dependency on the %.o %.c rule
+#   because (say) conffile.yy.c isn't mentioned so doesn't "ought
+#   to exist" in make's mind.  But specifying it explicitly like this
+#   works.
 
 all::	$(TARGETS)
 
@@ -96,12 +100,11 @@ MAKEFILE_TEMPLATES += config.h.in
 CONFIG_STATUS_OUTPUTS += config.h
 
 # Manual dependencies section
-conffile.yy.c:	conffile.fl conffile.tab.c
-conffile.yy.h:	conffile.yy.c
-conffile.tab.c:	conffile.y
+conffile.yy.c: conffile.tab.c
+%.tab.c: %.y
 # End of manual dependencies section
 
-conffile.yy.o: ALL_CFLAGS += -Wno-sign-compare
+%.yy.o: ALL_CFLAGS += -Wno-sign-compare -Wno-unused-function
 
 secnet:	$(OBJECTS)
 	$(MAKE) -f main.mk version.o # *.o $(filter-out %.o, $^)
@@ -162,6 +165,11 @@ ipaddrset.confirm: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 	$(srcdir)/ipaddrset-test.py >ipaddrset-test.new
 	diff -u $(srcdir)/ipaddrset-test.expected ipaddrset-test.new
 	touch $@
+
+&CLEAN += & pubkeys.fl
+
+pubkeys.fl: ${srcdir}/pubkeys.fl.pl
+	${srcdir}/pubkeys.fl.pl >$@.tmp && mv -f $@.tmp $@
 
 .PRECIOUS: eax-%-test
 

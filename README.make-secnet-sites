@@ -186,6 +186,28 @@ INPUT SYNTAX
 		Assigns BOOL to the `mobile' key.  Acceptable only at
 		site level, but optional.
 
+	Properties which can also appear in public key files.
+	These are acceptable to make-secnet-sites only at
+	site level.  See also `Site long-term keys' in NOTES.
+
+	pub ALG DATAB91S
+		Defines a public key.  ALG is an algorithm name and
+		DATA91S is the public key data, encoded according to
+		secnet-base91 (see below).
+		Not yet suported in make-secnet-sites.
+
+	serial SETIDHEX
+		Specifies the key set id (8 hex digits representing
+		4 bytes: each pair is the value of the next byte).
+		May appear at most once.  If not present, 00000000.
+		Not yet suported in make-secnet-sites.
+
+	pkg GROUPIDHEX
+		Specifies the key group id for subsequent keys.
+		May be repeated (with different id values).
+		If not specified, 00000000.
+		Not yet suported in make-secnet-sites.
+
 
 OUTPUT STRUCTURE
 

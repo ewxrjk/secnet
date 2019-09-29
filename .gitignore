@@ -3,6 +3,8 @@
 *.pyc
 conffile.tab.[ch]
 conffile.yy.[ch]
+pubkeys.fl
+pubkeys.yy.[ch]
 /version.c
 /secnet
 /eax-*-test
