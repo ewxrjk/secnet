@@ -820,16 +820,16 @@ static bool_t generate_msg2(struct site *st)
 static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
 			   const struct comm_addr *src)
 {
-    struct msg m;
+    struct msg m[1];
     cstring_t err;
 
-    if (!unpick_msg(st,LABEL_MSG2,msg2,&m)) return False;
-    if (!check_msg(st,LABEL_MSG2,&m,&err)) {
+    if (!unpick_msg(st,LABEL_MSG2,msg2,m)) return False;
+    if (!check_msg(st,LABEL_MSG2,m,&err)) {
 	slog(st,LOG_SEC,"msg2: %s",err);
 	return False;
     }
-    st->setup_session_id=m.source;
-    st->remote_capabilities=m.remote_capabilities;
+    st->setup_session_id=m->source;
+    st->remote_capabilities=m->remote_capabilities;
 
     /* Select the transform to use */
 
@@ -860,7 +860,7 @@ kind##_found:								\
 
 #undef CHOOSE_CRYPTO
 
-    memcpy(st->remoteN,m.nR,NONCELEN);
+    memcpy(st->remoteN,m->nR,NONCELEN);
     return True;
 }
 
@@ -894,7 +894,7 @@ static bool_t process_msg3_msg4(struct site *st, struct msg *m)
 static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 			   const struct comm_addr *src, uint32_t msgtype)
 {
-    struct msg m;
+    struct msg m[1];
     cstring_t err;
 
     switch (msgtype) {
@@ -902,17 +902,17 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
 	default: assert(0);
     }
 
-    if (!unpick_msg(st,msgtype,msg3,&m)) return False;
-    if (!check_msg(st,msgtype,&m,&err)) {
+    if (!unpick_msg(st,msgtype,msg3,m)) return False;
+    if (!check_msg(st,msgtype,m,&err)) {
 	slog(st,LOG_SEC,"msg3: %s",err);
 	return False;
     }
-    uint32_t capab_adv_late = m.remote_capabilities
+    uint32_t capab_adv_late = m->remote_capabilities
 	& ~st->remote_capabilities & st->early_capabilities;
     if (capab_adv_late) {
 	slog(st,LOG_SEC,"msg3 impermissibly adds early capability flag(s)"
 	     " %#"PRIx32" (was %#"PRIx32", now %#"PRIx32")",
-	     capab_adv_late, st->remote_capabilities, m.remote_capabilities);
+	     capab_adv_late, st->remote_capabilities, m->remote_capabilities);
 	return False;
     }
 
@@ -921,11 +921,11 @@ static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
     int i;								\
     for (i=0; i<st->n##kind##s; i++) {					\
 	iface=st->kind##s[i];						\
-	if (iface->capab_bit == m.capab_##kind##num)			\
+	if (iface->capab_bit == m->capab_##kind##num)			\
 	    goto kind##_found;						\
     }									\
     slog(st,LOG_SEC,"peer chose unknown-to-us " what " %d!",		\
-	 m.capab_##kind##num);							\
+	 m->capab_##kind##num);							\
     return False;							\
 kind##_found:								\
     st->chosen_##kind=iface;						\
@@ -935,7 +935,7 @@ kind##_found:								\
 
 #undef CHOSE_CRYPTO
 
-    if (!process_msg3_msg4(st,&m))
+    if (!process_msg3_msg4(st,m))
 	return False;
 
     /* Update our idea of the remote site's capabilities, now that we've
@@ -946,15 +946,15 @@ kind##_found:								\
      * doesn't change any of the bits we relied upon in the past, but it may
      * also have set additional capability bits.  We simply throw those away
      * now, and use the authentic capabilities from this MSG3. */
-    st->remote_capabilities=m.remote_capabilities;
+    st->remote_capabilities=m->remote_capabilities;
 
     /* Terminate their DH public key with a '0' */
-    m.pk[m.pklen]=0;
+    m->pk[m->pklen]=0;
     /* Invent our DH secret key */
     st->random->generate(st->random->st,st->dh->len,st->dhsecret);
 
     /* Generate the shared key and set up the transform */
-    if (!set_new_transform(st,m.pk)) return False;
+    if (!set_new_transform(st,m->pk)) return False;
 
     return True;
 }
@@ -969,23 +969,23 @@ static bool_t generate_msg4(struct site *st)
 static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
 			   const struct comm_addr *src)
 {
-    struct msg m;
+    struct msg m[1];
     cstring_t err;
 
-    if (!unpick_msg(st,LABEL_MSG4,msg4,&m)) return False;
-    if (!check_msg(st,LABEL_MSG4,&m,&err)) {
+    if (!unpick_msg(st,LABEL_MSG4,msg4,m)) return False;
+    if (!check_msg(st,LABEL_MSG4,m,&err)) {
 	slog(st,LOG_SEC,"msg4: %s",err);
 	return False;
     }
     
-    if (!process_msg3_msg4(st,&m))
+    if (!process_msg3_msg4(st,m))
 	return False;
 
     /* Terminate their DH public key with a '0' */
-    m.pk[m.pklen]=0;
+    m->pk[m->pklen]=0;
 
     /* Generate the shared key and set up the transform */
-    if (!set_new_transform(st,m.pk)) return False;
+    if (!set_new_transform(st,m->pk)) return False;
 
     return True;
 }
@@ -1823,12 +1823,12 @@ static bool_t setup_late_msg_ok(struct site *st,
      * late.  Maybe they came via a different path.  All we do is make
      * a note of the sending address, iff they look like they are part
      * of the current key setup attempt. */
-    struct msg m;
-    if (!named_for_us(st,buf_in,msgtype,&m))
+    struct msg m[1];
+    if (!named_for_us(st,buf_in,msgtype,m))
 	/* named_for_us calls unpick_msg which gets the nonces */
 	return False;
-    if (!consttime_memeq(m.nR,st->remoteN,NONCELEN) ||
-	!consttime_memeq(m.nL,st->localN, NONCELEN))
+    if (!consttime_memeq(m->nR,st->remoteN,NONCELEN) ||
+	!consttime_memeq(m->nL,st->localN, NONCELEN))
 	/* spoof ?  from stale run ?  who knows */
 	return False;
     transport_setup_msgok(st,source);
