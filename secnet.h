@@ -55,6 +55,10 @@ struct hash_if;
 struct comm_if;
 struct comm_addr;
 struct priomsg;
+struct log_if;
+struct buffer_if;
+struct sigpubkey_if;
+struct sigprivkey_if;
 
 typedef char *string_t;
 typedef const char *cstring_t;
@@ -389,6 +393,42 @@ extern init_module sha1_module;
 extern init_module log_module;
 
 /***** END of module support *****/
+
+/***** SIGNATURE SCHEMES *****/
+
+struct sigscheme_info;
+
+typedef bool_t sigscheme_loadpub(const struct sigscheme_info *algo,
+				 struct buffer_if *pubkeydata,
+				 struct sigpubkey_if **sigpub_r,
+				 struct log_if *log);
+  /* pubkeydata is (supposedly) for this algorithm.
+   * loadpub should log an error if it fails.
+   * pubkeydata may be modified (but not freed) */
+
+typedef bool_t sigscheme_loadpriv(const struct sigscheme_info *algo,
+				  struct buffer_if *privkeydata,
+				  struct sigprivkey_if **sigpriv_r,
+				  struct log_if *log);
+  /* privkeydata may contain data for any algorithm, not necessarily
+   * this one!  If it is not for this algorithm, return False and do
+   * not log anything (other than at M_DEBUG).  If it *is* for this
+   * algorithm but is wrong, log at M_ERROR.
+   * On entry privkeydata->base==start.  loadpriv may modify base and
+   * size, but not anything else.  So it may use unprepend and
+   * unappend. */
+
+struct sigscheme_info {
+    const char *name;
+    const uint8_t algid;
+    sigscheme_loadpub *loadpub;
+    sigscheme_loadpriv *loadpriv;
+};
+
+extern const struct sigscheme_info rsa1_sigscheme;
+extern const struct sigscheme_info sigschemes[]; /* sentinel has name==0 */
+
+/***** END of signature schemes *****/
 
 /***** CLOSURE TYPES and interface definitions *****/
 

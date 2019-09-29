@@ -38,3 +38,7 @@ void init_builtin_modules(dict_t *dict)
     sha1_module(dict);
     log_module(dict);
 }
+
+const struct sigscheme_info sigschemes[]={
+    { 0 }
+};
