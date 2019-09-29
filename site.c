@@ -142,6 +142,7 @@ static cstring_t state_name(uint32_t state)
 #define LOG_DUMP          0x00000100
 #define LOG_ERROR         0x00000400
 #define LOG_PEER_ADDRS    0x00000800
+#define LOG_SIGKEYS       0x00001000
 
 static struct flagstr log_event_table[]={
     { "unexpected", LOG_UNEXPECTED },
@@ -155,8 +156,9 @@ static struct flagstr log_event_table[]={
     { "dump-packets", LOG_DUMP },
     { "errors", LOG_ERROR },
     { "peer-addrs", LOG_PEER_ADDRS },
+    { "sigkeys", LOG_SIGKEYS },
     { "default", LOG_SETUP_INIT|LOG_SETUP_TIMEOUT|
-      LOG_ACTIVATE_KEY|LOG_TIMEOUT_KEY|LOG_SEC|LOG_ERROR },
+      LOG_ACTIVATE_KEY|LOG_TIMEOUT_KEY|LOG_SEC|LOG_ERROR|LOG_SIGKEYS },
     { "all", 0xffffffff },
     { NULL, 0 }
 };
@@ -392,6 +394,7 @@ static uint32_t event_log_priority(struct site *st, uint32_t event)
     case LOG_DUMP:          return M_DEBUG;
     case LOG_ERROR:         return M_ERR;
     case LOG_PEER_ADDRS:    return M_DEBUG;
+    case LOG_SIGKEYS:       return M_INFO;
     default:                return M_ERR;
     }
 }
