@@ -615,7 +615,9 @@ static void append_string_xinfo_done(struct buffer_if *buf,
 
 /* Build any of msg1 to msg4. msg5 and msg6 are built from the inside
    out using a transform of config data supplied by netlink */
-static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what)
+static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what,
+			   const struct msg *prompt
+			   /* may be 0 for MSG1 */)
 {
     string_t dhpub;
     unsigned minor;
@@ -796,10 +798,10 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
     return False;
 }
 
-static bool_t generate_msg1(struct site *st)
+static bool_t generate_msg1(struct site *st, const struct msg *prompt_maybe_0)
 {
     st->random->generate(st->random->st,NONCELEN,st->localN);
-    return generate_msg(st,LABEL_MSG1,"site:MSG1");
+    return generate_msg(st,LABEL_MSG1,"site:MSG1",prompt_maybe_0);
 }
 
 static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
@@ -816,10 +818,11 @@ static bool_t process_msg1(struct site *st, struct buffer_if *msg1,
     return True;
 }
 
-static bool_t generate_msg2(struct site *st)
+static bool_t generate_msg2(struct site *st,
+			    const struct msg *prompt_may_be_null)
 {
     st->random->generate(st->random->st,NONCELEN,st->localN);
-    return generate_msg(st,LABEL_MSG2,"site:MSG2");
+    return generate_msg(st,LABEL_MSG2,"site:MSG2",prompt_may_be_null);
 }
 
 static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
@@ -869,7 +872,7 @@ kind##_found:								\
     return True;
 }
 
-static bool_t generate_msg3(struct site *st)
+static bool_t generate_msg3(struct site *st, const struct msg *prompt)
 {
     /* Now we have our nonce and their nonce. Think of a secret key,
        and create message number 3. */
@@ -878,7 +881,7 @@ static bool_t generate_msg3(struct site *st)
 			(st->remote_capabilities & CAPAB_TRANSFORM_MASK)
 			? LABEL_MSG3BIS
 			: LABEL_MSG3,
-			"site:MSG3");
+			"site:MSG3",prompt);
 }
 
 static bool_t process_msg3_msg4(struct site *st, struct msg *m)
@@ -964,11 +967,11 @@ kind##_found:								\
     return True;
 }
 
-static bool_t generate_msg4(struct site *st)
+static bool_t generate_msg4(struct site *st, const struct msg *prompt)
 {
     /* We have both nonces, their public key and our private key. Generate
        our public key, sign it and send it to them. */
-    return generate_msg(st,LABEL_MSG4,"site:MSG4");
+    return generate_msg(st,LABEL_MSG4,"site:MSG4",prompt);
 }
 
 static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
@@ -1014,7 +1017,7 @@ static bool_t unpick_msg0(struct site *st, struct buffer_if *msg0,
     /* Leaves transformed part of buffer untouched */
 }
 
-static bool_t generate_msg5(struct site *st)
+static bool_t generate_msg5(struct site *st, const struct msg *prompt)
 {
     cstring_t transform_err;
 
@@ -1080,7 +1083,7 @@ static void create_msg6(struct site *st, struct transform_inst_if *transform,
     buf_prepend_uint32(&st->buffer,session_id);
 }
 
-static bool_t generate_msg6(struct site *st)
+static bool_t generate_msg6(struct site *st, const struct msg *prompt)
 {
     if (!is_transform_valid(st->new_transform))
 	return False;
@@ -1575,7 +1578,7 @@ static bool_t enter_new_state(struct site *st, uint32_t next,
 			      const struct msg *prompt
 			      /* may be 0 for SENTMSG1 */)
 {
-    bool_t (*gen)(struct site *st, struct msg *prompt);
+    bool_t (*gen)(struct site *st, const struct msg *prompt);
     int r;
 
     slog(st,LOG_STATE,"entering state %s",state_name(next));
@@ -1618,7 +1621,7 @@ static bool_t enter_new_state(struct site *st, uint32_t next,
 
     if (hacky_par_start_failnow()) return False;
 
-    r= gen(st) && send_msg(st);
+    r= gen(st,prompt) && send_msg(st);
 
     hacky_par_end(&r,
 		  st->setup_retries, st->setup_retry_interval,
