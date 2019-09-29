@@ -818,9 +818,9 @@ static bool_t generate_msg2(struct site *st)
 }
 
 static bool_t process_msg2(struct site *st, struct buffer_if *msg2,
-			   const struct comm_addr *src)
+			   const struct comm_addr *src,
+			   struct msg *m /* returned */)
 {
-    struct msg m[1];
     cstring_t err;
 
     if (!unpick_msg(st,LABEL_MSG2,msg2,m)) return False;
@@ -892,9 +892,9 @@ static bool_t process_msg3_msg4(struct site *st, struct msg *m)
 }
 
 static bool_t process_msg3(struct site *st, struct buffer_if *msg3,
-			   const struct comm_addr *src, uint32_t msgtype)
+			   const struct comm_addr *src, uint32_t msgtype,
+			   struct msg *m /* returned */)
 {
-    struct msg m[1];
     cstring_t err;
 
     switch (msgtype) {
@@ -967,9 +967,9 @@ static bool_t generate_msg4(struct site *st)
 }
 
 static bool_t process_msg4(struct site *st, struct buffer_if *msg4,
-			   const struct comm_addr *src)
+			   const struct comm_addr *src,
+			   struct msg *m /* returned */)
 {
-    struct msg m[1];
     cstring_t err;
 
     if (!unpick_msg(st,LABEL_MSG4,msg4,m)) return False;
@@ -1818,12 +1818,12 @@ static bool_t we_have_priority(struct site *st, const struct msg *m) {
 static bool_t setup_late_msg_ok(struct site *st, 
 				const struct buffer_if *buf_in,
 				uint32_t msgtype,
-				const struct comm_addr *source) {
+				const struct comm_addr *source,
+				struct msg *m /* returned */) {
     /* For setup packets which seem from their type like they are
      * late.  Maybe they came via a different path.  All we do is make
      * a note of the sending address, iff they look like they are part
      * of the current key setup attempt. */
-    struct msg m[1];
     if (!named_for_us(st,buf_in,msgtype,m))
 	/* named_for_us calls unpick_msg which gets the nonces */
 	return False;
@@ -1849,10 +1849,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 
     uint32_t dest=get_uint32(buf->start);
     uint32_t msgtype=get_uint32(buf->start+8);
-    struct msg named_msg;
+    struct msg msg;
 
     if (msgtype==LABEL_MSG1) {
-	if (!named_for_us(st,buf,msgtype,&named_msg))
+	if (!named_for_us(st,buf,msgtype,&msg))
 	    return False;
 	/* It's a MSG1 addressed to us. Decide what to do about it. */
 	dump_packet(st,buf,source,True,True);
@@ -1860,7 +1860,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    st->state==SITE_WAIT) {
 	    /* We should definitely process it */
 	    transport_compute_setupinit_peers(st,0,0,source);
-	    if (process_msg1(st,buf,source,&named_msg)) {
+	    if (process_msg1(st,buf,source,&msg)) {
 		slog(st,LOG_SETUP_INIT,"key setup initiated by peer");
 		bool_t entered=enter_new_state(st,SITE_SENTMSG2);
 		if (entered && st->addresses && st->local_mobile)
@@ -1876,7 +1876,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* We've just sent a message 1! They may have crossed on
 	       the wire. If we have priority then we ignore the
 	       incoming one, otherwise we process it as usual. */
-	    if (we_have_priority(st,&named_msg)) {
+	    if (we_have_priority(st,&msg)) {
 		BUF_FREE(buf);
 		if (!st->msg1_crossed_logged++)
 		    slog(st,LOG_SETUP_INIT,"crossed msg1s; we are higher "
@@ -1885,7 +1885,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    } else {
 		slog(st,LOG_SETUP_INIT,"crossed msg1s; we are lower "
 		     "priority => use incoming msg1");
-		if (process_msg1(st,buf,source,&named_msg)) {
+		if (process_msg1(st,buf,source,&msg)) {
 		    BUF_FREE(&st->buffer); /* Free our old message 1 */
 		    transport_setup_msgok(st,source);
 		    enter_new_state(st,SITE_SENTMSG2);
@@ -1898,7 +1898,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    }
 	} else if (st->state==SITE_SENTMSG2 ||
 		   st->state==SITE_SENTMSG4) {
-	    if (consttime_memeq(named_msg.nR,st->remoteN,NONCELEN)) {
+	    if (consttime_memeq(msg.nR,st->remoteN,NONCELEN)) {
 		/* We are ahead in the protocol, but that msg1 had the
 		 * peer's nonce so presumably it is from this key
 		 * exchange run, via a slower route */
@@ -1916,7 +1916,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	return True;
     }
     if (msgtype==LABEL_PROD) {
-	if (!named_for_us(st,buf,msgtype,&named_msg))
+	if (!named_for_us(st,buf,msgtype,&msg))
 	    return False;
 	dump_packet(st,buf,source,True,True);
 	if (st->state!=SITE_RUN) {
@@ -1957,10 +1957,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    if (st->state!=SITE_SENTMSG1) {
 		if ((st->state==SITE_SENTMSG3 ||
 		     st->state==SITE_SENTMSG5) &&
-		    setup_late_msg_ok(st,buf,msgtype,source))
+		    setup_late_msg_ok(st,buf,msgtype,source,&msg))
 		    break;
 		slog(st,LOG_UNEXPECTED,"unexpected MSG2");
-	    } else if (process_msg2(st,buf,source)) {
+	    } else if (process_msg2(st,buf,source,&msg)) {
 		transport_setup_msgok(st,source);
 		enter_new_state(st,SITE_SENTMSG3);
 	    } else {
@@ -1971,10 +1971,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* Setup packet: expected only in state SENTMSG2 */
 	    if (st->state!=SITE_SENTMSG2) {
 		if ((st->state==SITE_SENTMSG4) &&
-		    setup_late_msg_ok(st,buf,msgtype,source))
+		    setup_late_msg_ok(st,buf,msgtype,source,&msg))
 		    break;
 		slog(st,LOG_UNEXPECTED,"unexpected MSG3");
-	    } else if (process_msg3(st,buf,source,msgtype)) {
+	    } else if (process_msg3(st,buf,source,msgtype,&msg)) {
 		transport_setup_msgok(st,source);
 		enter_new_state(st,SITE_SENTMSG4);
 	    } else {
@@ -1985,10 +1985,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 	    /* Setup packet: expected only in state SENTMSG3 */
 	    if (st->state!=SITE_SENTMSG3) {
 		if ((st->state==SITE_SENTMSG5) &&
-		    setup_late_msg_ok(st,buf,msgtype,source))
+		    setup_late_msg_ok(st,buf,msgtype,source,&msg))
 		    break;
 		slog(st,LOG_UNEXPECTED,"unexpected MSG4");
-	    } else if (process_msg4(st,buf,source)) {
+	    } else if (process_msg4(st,buf,source,&msg)) {
 		transport_setup_msgok(st,source);
 		enter_new_state(st,SITE_SENTMSG5);
 	    } else {
