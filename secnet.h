@@ -457,9 +457,10 @@ typedef bool_t sig_checksig_fn(void *st, uint8_t *data, int32_t datalen,
 			       const struct alg_msg_data *sig);
 struct sigpubkey_if {
     void *st;
-    sig_sethash_fn *sethash; /* must be called before check, if non-0 */
+    sig_sethash_fn *sethash; /* must be called before use, if non-0 */
     sig_unpick_fn *unpick;
     sig_checksig_fn *check;
+    const struct hash_if *hash;
 };
 
 /* SIGPRIVKEY interface */
@@ -470,8 +471,9 @@ typedef bool_t sig_makesig_fn(void *st, uint8_t *data, int32_t datalen,
 			      struct buffer_if *msg);
 struct sigprivkey_if {
     void *st;
-    sig_sethash_fn *sethash; /* must be called before sign, if non-0 */
+    sig_sethash_fn *sethash; /* must be called before use, if non-0 */
     sig_makesig_fn *sign;
+    const struct hash_if *hash;
 };
 
 /* COMM interface */
