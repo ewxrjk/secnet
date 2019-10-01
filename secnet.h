@@ -379,8 +379,8 @@ extern init_module log_module;
 struct buffer_if;
 
 struct alg_msg_data {
-    uint8_t *sigstart;
-    int32_t siglen;
+    uint8_t *start;
+    int32_t len;
 };
 
 /* PURE closure requires no interface */

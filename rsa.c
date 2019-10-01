@@ -217,9 +217,9 @@ static bool_t rsa_sig_unpick(void *sst, struct buffer_if *msg,
 {
     uint8_t *lp = buf_unprepend(msg, 2);
     if (!lp) return False;
-    sig->siglen = get_uint16(lp);
-    sig->sigstart = buf_unprepend(msg, sig->siglen);
-    if (!sig->sigstart) return False;
+    sig->len = get_uint16(lp);
+    sig->start = buf_unprepend(msg, sig->len);
+    if (!sig->start) return False;
 
     /* In `rsa_sig_check' below, we assume that we can write a nul
      * terminator following the signature.  Make sure there's enough space.
@@ -246,10 +246,10 @@ static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
     emsa_pkcs1(&st->n, &a, st->common.hashbuf, st->common.hashi->hlen);
 
     /* Terminate signature with a '0' - already checked that this will fit */
-    int save = sig->sigstart[sig->siglen];
-    sig->sigstart[sig->siglen] = 0;
-    mpz_set_str(&b, sig->sigstart, 16);
-    sig->sigstart[sig->siglen] = save;
+    int save = sig->start[sig->len];
+    sig->start[sig->len] = 0;
+    mpz_set_str(&b, sig->start, 16);
+    sig->start[sig->len] = save;
 
     mpz_powm(&c, &b, &st->e, &st->n);
 
