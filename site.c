@@ -2129,6 +2129,17 @@ static void site_childpersist_clearkeys(void *sst, uint32_t newphase)
        crypto operations, but that's a task for another day. */
 }
 
+static void setup_sethash(struct site *st, dict_t *dict,
+			  struct hash_if **hash, struct cloc loc,
+			  sig_sethash_fn *sethash, void *sigkey_st) {
+    if (!*hash) *hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
+    sethash(sigkey_st,*hash);
+}
+#define SETUP_SETHASH(k) do{						\
+    if ((k)->sethash)							\
+        setup_sethash(st,dict, &hash,loc, (k)->sethash,(k)->st);	\
+}while(0)
+
 static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 			  list_t *args)
 {
@@ -2232,11 +2243,9 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
 
-    if (st->privkey->sethash || st->pubkey->sethash) {
-	struct hash_if *hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
-	if (st->privkey->sethash) st->privkey->sethash(st->privkey->st,hash);
-	if (st->pubkey->sethash) st->pubkey->sethash(st->pubkey->st,hash);
-    }
+    struct hash_if *hash=0;
+    SETUP_SETHASH(st->privkey);
+    SETUP_SETHASH(st->pubkey);
 
 #define DEFAULT(D) (st->peer_mobile || st->local_mobile	\
                     ? DEFAULT_MOBILE_##D : DEFAULT_##D)
