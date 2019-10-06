@@ -352,7 +352,7 @@ static uint16_t keyfile_get_short(struct cloc loc, FILE *f)
 #define LDUNSUP(...)           cfgfatal(loc,"rsa-private",__VA_ARGS__)
 #define LDFATAL_FILE(...) cfgfatal_maybefile(f,loc,"rsa-private",__VA_ARGS__)
 #define LDUNSUP_FILE(...) cfgfatal_maybefile(f,loc,"rsa-private",__VA_ARGS__)
-#define FREE(b)                free(b)
+#define FREE(b)                ({ free((b)); (b)=0; })
 
 static void rsapriv_dispose(void *sst)
 {
@@ -580,6 +580,7 @@ assume_valid:
     mpz_clear(&tmp2);
     mpz_clear(&tmp3);
 
+    FREE(b);
     FREE(c);
     mpz_clear(&e);
     mpz_clear(&d);
