@@ -328,6 +328,23 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
+struct rsapriv_load_ctx {
+    void (*verror)(struct rsapriv_load_ctx *l,
+		   FILE *maybe_f, bool_t unsup,
+		   const char *message, va_list args);
+    union {
+	struct {
+	    struct cloc loc;
+	} apply;
+    } u;
+};
+
+#define LDFATAL(...)      ({ load_error(l,0,0,__VA_ARGS__); goto error_out; })
+#define LDUNSUP(...)      ({ load_error(l,0,1,__VA_ARGS__); goto error_out; })
+#define LDFATAL_FILE(...) ({ load_error(l,f,0,__VA_ARGS__); goto error_out; })
+#define LDUNSUP_FILE(...) ({ load_error(l,f,1,__VA_ARGS__); goto error_out; })
+#define FREE(b)                ({ free((b)); (b)=0; })
+
 static uint32_t keyfile_get_int(struct cloc loc, FILE *f)
 {
     uint32_t r;
@@ -348,11 +365,14 @@ static uint16_t keyfile_get_short(struct cloc loc, FILE *f)
     return r;
 }
 
-#define LDFATAL(...)           cfgfatal(loc,"rsa-private",__VA_ARGS__)
-#define LDUNSUP(...)           cfgfatal(loc,"rsa-private",__VA_ARGS__)
-#define LDFATAL_FILE(...) cfgfatal_maybefile(f,loc,"rsa-private",__VA_ARGS__)
-#define LDUNSUP_FILE(...) cfgfatal_maybefile(f,loc,"rsa-private",__VA_ARGS__)
-#define FREE(b)                ({ free((b)); (b)=0; })
+static void load_error(struct rsapriv_load_ctx *l, FILE *maybe_f,
+		       bool_t unsup, const char *fmt, ...)
+{
+    va_list al;
+    va_start(al,fmt);
+    l->verror(l,maybe_f,unsup,fmt,al);
+    va_end(al);
+}
 
 static void rsapriv_dispose(void *sst)
 {
@@ -365,7 +385,8 @@ static void rsapriv_dispose(void *sst)
     free(st);
 }
 
-static struct rsapriv *rsa_loadpriv_core(FILE *f, struct cloc loc,
+static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
+					 FILE *f, struct cloc loc,
 					 bool_t do_validity_check,
 					 const char *filename)
 {
@@ -576,6 +597,7 @@ done_checks:
     }
 
 assume_valid:
+out:
     mpz_clear(&tmp);
     mpz_clear(&tmp2);
     mpz_clear(&tmp3);
@@ -587,6 +609,18 @@ assume_valid:
     mpz_clear(&iqmp);
 
     return st;
+
+error_out:
+    if (st) rsapriv_dispose(st);
+    st=0;
+    goto out;
+}
+
+static void verror_cfgfatal(struct rsapriv_load_ctx *l,
+			    FILE *maybe_f, bool_t unsup,
+			    const char *message, va_list args)
+{
+    vcfgfatal_maybefile(maybe_f,l->u.apply.loc,"rsa-private",message,args);
 }
 
 static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
@@ -596,6 +630,10 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *i;
     cstring_t filename;
     FILE *f;
+    struct rsapriv_load_ctx l[1];
+
+    l->verror=verror_cfgfatal;
+    l->u.apply.loc=loc;
 
     /* Argument is filename pointing to SSH1 private key file */
     i=list_elem(args,0);
@@ -629,7 +667,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	do_validity_check=False;
     }
 
-    st=rsa_loadpriv_core(f,loc,do_validity_check,filename);
+    st=rsa_loadpriv_core(l,f,loc,do_validity_check,filename);
     fclose(f);
     return new_closure(&st->cl);
 }
