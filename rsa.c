@@ -90,6 +90,10 @@ static void rsa_priv_sethash(void *sst, struct hash_if *hash)
     struct rsapriv *st=sst;
     rsa_sethash(&st->common, hash, &st->ops.hash);
 }
+static void rsacommon_dispose(struct rsacommon *c)
+{
+    free(c->hashbuf);
+}
 
 static void emsa_pkcs1(MP_INT *n, MP_INT *m,
 		       const uint8_t *data, int32_t datalen)
@@ -258,6 +262,15 @@ static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
     return ok;
 }
 
+static void rsapub_dispose(void *sst) {
+    struct rsapub *st=sst;
+
+    mpz_clear(&st->e);
+    mpz_clear(&st->n);
+    rsacommon_dispose(&st->common);
+    free(st);
+}
+
 static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
 			    list_t *args)
 {
@@ -276,7 +289,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.unpick=rsa_sig_unpick;
     st->ops.check=rsa_sig_check;
     st->ops.hash=0;
-    st->ops.dispose=0; /* xxx */
+    st->ops.dispose=rsapub_dispose;
     st->loc=loc;
 
     i=list_elem(args,0);
@@ -341,6 +354,17 @@ static uint16_t keyfile_get_short(struct cloc loc, FILE *f)
 #define LDUNSUP_FILE(...) cfgfatal_maybefile(f,loc,__VA_ARGS__)
 #define FREE(b)           free(b)
 
+static void rsapriv_dispose(void *sst)
+{
+    struct rsapriv *st=sst;
+    mpz_clear(&st->n);
+    mpz_clear(&st->p); mpz_clear(&st->dp);
+    mpz_clear(&st->q); mpz_clear(&st->dq);
+    mpz_clear(&st->w);
+    rsacommon_dispose(&st->common);
+    free(st);
+}
+
 static struct rsapriv *rsa_loadpriv_core(FILE *f, struct cloc loc,
 					 bool_t do_validity_check,
 					 const char *filename)
@@ -369,7 +393,7 @@ static struct rsapriv *rsa_loadpriv_core(FILE *f, struct cloc loc,
     st->common.hashbuf=NULL;
     st->ops.sign=rsa_sign;
     st->ops.hash=0;
-    st->ops.dispose=0; /* xxx */
+    st->ops.dispose=rsapriv_dispose;
     st->loc=loc;
     mpz_init(&st->n);
     mpz_init(&st->q);
