@@ -574,6 +574,8 @@ done_checks:
 	LDFATAL("file \"%s\" does not contain a "
 		 "valid RSA key!\n",filename);
     }
+
+assume_valid:
     mpz_clear(&tmp);
     mpz_clear(&tmp2);
     mpz_clear(&tmp3);
@@ -583,7 +585,6 @@ done_checks:
     mpz_clear(&d);
     mpz_clear(&iqmp);
 
-assume_valid:
     return st;
 }
 
