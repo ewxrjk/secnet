@@ -332,6 +332,7 @@ struct rsapriv_load_ctx {
     void (*verror)(struct rsapriv_load_ctx *l,
 		   FILE *maybe_f, bool_t unsup,
 		   const char *message, va_list args);
+    bool_t (*postreadcheck)(struct rsapriv_load_ctx *l, FILE *f);
     union {
 	struct {
 	    struct cloc loc;
@@ -344,25 +345,27 @@ struct rsapriv_load_ctx {
 #define LDFATAL_FILE(...) ({ load_error(l,f,0,__VA_ARGS__); goto error_out; })
 #define LDUNSUP_FILE(...) ({ load_error(l,f,1,__VA_ARGS__); goto error_out; })
 #define FREE(b)                ({ free((b)); (b)=0; })
-#define KEYFILE_GET(is)   (keyfile_get_##is(loc,f))
+#define KEYFILE_GET(is)   ({					\
+	uint##is##_t keyfile_get_tmp=keyfile_get_##is(l,f);	\
+	if (!l->postreadcheck(l,f)) goto error_out;		\
+	keyfile_get_tmp;					\
+    })
 
-static uint32_t keyfile_get_32(struct cloc loc, FILE *f)
+static uint32_t keyfile_get_32(struct rsapriv_load_ctx *l, FILE *f)
 {
     uint32_t r;
     r=fgetc(f)<<24;
     r|=fgetc(f)<<16;
     r|=fgetc(f)<<8;
     r|=fgetc(f);
-    cfgfile_postreadcheck(loc,f);
     return r;
 }
 
-static uint16_t keyfile_get_16(struct cloc loc, FILE *f)
+static uint16_t keyfile_get_16(struct rsapriv_load_ctx *l, FILE *f)
 {
     uint16_t r;
     r=fgetc(f)<<8;
     r|=fgetc(f);
-    cfgfile_postreadcheck(loc,f);
     return r;
 }
 
@@ -624,6 +627,12 @@ static void verror_cfgfatal(struct rsapriv_load_ctx *l,
     vcfgfatal_maybefile(maybe_f,l->u.apply.loc,"rsa-private",message,args);
 }
 
+static bool_t postreadcheck_apply(struct rsapriv_load_ctx *l, FILE *f)
+{
+    cfgfile_postreadcheck(l->u.apply.loc,f);
+    return True;
+}
+
 static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 			     list_t *args)
 {
@@ -634,6 +643,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     struct rsapriv_load_ctx l[1];
 
     l->verror=verror_cfgfatal;
+    l->postreadcheck=postreadcheck_apply;
     l->u.apply.loc=loc;
 
     /* Argument is filename pointing to SSH1 private key file */
