@@ -341,13 +341,11 @@ static uint16_t keyfile_get_short(struct cloc loc, FILE *f)
 #define LDUNSUP_FILE(...) cfgfatal_maybefile(f,loc,__VA_ARGS__)
 #define FREE(b)           free(b)
 
-static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
-			     list_t *args)
+static struct rsapriv *rsa_loadpriv_core(FILE *f, struct cloc loc,
+					 bool_t do_validity_check,
+					 const char *filename)
 {
-    struct rsapriv *st;
-    FILE *f;
-    cstring_t filename;
-    item_t *i;
+    struct rsapriv *st=0;
     long length;
     uint8_t *b=0, *c=0;
     int cipher_type;
@@ -373,7 +371,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.hash=0;
     st->ops.dispose=0; /* xxx */
     st->loc=loc;
-
     mpz_init(&st->n);
     mpz_init(&st->q);
     mpz_init(&st->p);
@@ -381,29 +378,9 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     mpz_init(&st->dq);
     mpz_init(&st->w);
 
-    /* Argument is filename pointing to SSH1 private key file */
-    i=list_elem(args,0);
-    if (i) {
-	if (i->type!=t_string) {
-	    cfgfatal(i->loc,"rsa-private","first argument must be a string\n");
-	}
-	filename=i->data.string;
-    } else {
-	filename=NULL; /* Make compiler happy */
-	cfgfatal(loc,"rsa-private","you must provide a filename\n");
-    }
-
-    f=fopen(filename,"rb");
     if (!f) {
-	if (just_check_config) {
-	    Message(M_WARNING,"rsa-private (%s:%d): cannot open keyfile "
-		    "\"%s\"; assuming it's valid while we check the "
-		    "rest of the configuration\n",loc.file,loc.line,filename);
-	    goto assume_valid;
-	} else {
-	    fatal_perror("rsa-private (%s:%d): cannot open file \"%s\"",
-			 loc.file,loc.line,filename);
-	}
+	assert(just_check_config);
+	goto assume_valid;
     }
 
     /* Check that the ID string is correct */
@@ -517,8 +494,8 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     read_mpbin(&st->p,b,length);
     FREE(b);
     
-    if (fclose(f)!=0) {
-	fatal_perror("rsa-private (%s:%d): fclose",loc.file,loc.line);
+    if (ferror(f)) {
+	fatal_perror("rsa-private (%s:%d): ferror",loc.file,loc.line);
     }
 
     /*
@@ -526,11 +503,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
      * values for fast CRT signing.
      */
     valid=False;
-    i=list_elem(args,1);
-    if (i && i->type==t_bool && i->data.bool==False) {
-	Message(M_INFO,"rsa-private (%s:%d): skipping RSA key validity "
-		"check\n",loc.file,loc.line);
-    } else {
+    if (do_validity_check) {
 	/* Verify that p*q is equal to n. */
 	mpz_mul(&tmp, &st->p, &st->q);
 	if (mpz_cmp(&tmp, &st->n) != 0)
@@ -591,6 +564,51 @@ done_checks:
     mpz_clear(&iqmp);
 
 assume_valid:
+    return st;
+}
+
+static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
+			     list_t *args)
+{
+    struct rsapriv *st;
+    item_t *i;
+    cstring_t filename;
+    FILE *f;
+
+    /* Argument is filename pointing to SSH1 private key file */
+    i=list_elem(args,0);
+    if (i) {
+	if (i->type!=t_string) {
+	    cfgfatal(i->loc,"rsa-private","first argument must be a string\n");
+	}
+	filename=i->data.string;
+    } else {
+	filename=NULL; /* Make compiler happy */
+	cfgfatal(i->loc,"rsa-private","you must provide a filename\n");
+    }
+
+    f=fopen(filename,"rb");
+    if (!f) {
+	if (just_check_config) {
+	    Message(M_WARNING,"rsa-private (%s:%d): cannot open keyfile "
+		    "\"%s\"; assuming it's valid while we check the "
+		    "rest of the configuration\n",loc.file,loc.line,filename);
+	} else {
+	    fatal_perror("rsa-private (%s:%d): cannot open file \"%s\"",
+			 loc.file,loc.line,filename);
+	}
+    }
+
+    bool_t do_validity_check=True;
+    i=list_elem(args,1);
+    if (i && i->type==t_bool && i->data.bool==False) {
+	Message(M_INFO,"rsa-private (%s:%d): skipping RSA key validity "
+		"check\n",loc.file,loc.line);
+	do_validity_check=False;
+    }
+
+    st=rsa_loadpriv_core(f,loc,do_validity_check,filename);
+    fclose(f);
     return new_closure(&st->cl);
 }
 
