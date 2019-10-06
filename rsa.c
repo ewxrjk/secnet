@@ -374,6 +374,13 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.dispose=0; /* xxx */
     st->loc=loc;
 
+    mpz_init(&st->n);
+    mpz_init(&st->q);
+    mpz_init(&st->p);
+    mpz_init(&st->dp);
+    mpz_init(&st->dq);
+    mpz_init(&st->w);
+
     /* Argument is filename pointing to SSH1 private key file */
     i=list_elem(args,0);
     if (i) {
@@ -426,7 +433,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (fread(b,length,1,f) != 1) {
 	LDFATAL_FILE("rsa-private","error reading modulus\n");
     }
-    mpz_init(&st->n);
     read_mpbin(&st->n,b,length);
     FREE(b);
     length=(keyfile_get_short(loc,f)+7)/8;
@@ -495,7 +501,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	LDFATAL_FILE("rsa-private",
 			   "error reading q value\n");
     }
-    mpz_init(&st->q);
     read_mpbin(&st->q,b,length);
     FREE(b);
     /* Read p (the larger of the two primes) */
@@ -509,7 +514,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	LDFATAL_FILE("rsa-private",
 			   "error reading p value\n");
     }
-    mpz_init(&st->p);
     read_mpbin(&st->p,b,length);
     FREE(b);
     
@@ -566,9 +570,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
      *   dq == d mod (q-1)      similarly mod q
      *   w == iqmp * q          so that w == 0 mod q, and w == 1 mod p
      */
-    mpz_init(&st->dp);
-    mpz_init(&st->dq);
-    mpz_init(&st->w);
     mpz_sub_ui(&tmp, &st->p, 1);
     mpz_mod(&st->dp, &d, &tmp);
     mpz_sub_ui(&tmp, &st->q, 1);
