@@ -349,10 +349,17 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     cstring_t filename;
     item_t *i;
     long length;
-    uint8_t *b, *c;
+    uint8_t *b=0, *c=0;
     int cipher_type;
     MP_INT e,d,iqmp,tmp,tmp2,tmp3;
     bool_t valid;
+
+    mpz_init(&e);
+    mpz_init(&d);
+    mpz_init(&iqmp);
+    mpz_init(&tmp);
+    mpz_init(&tmp2);
+    mpz_init(&tmp3);
 
     NEW(st);
     st->cl.description="rsapriv";
@@ -430,7 +437,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (fread(b,length,1,f)!=1) {
 	LDFATAL_FILE("rsa-private","error reading e\n");
     }
-    mpz_init(&e);
     read_mpbin(&e,b,length);
     FREE(b);
     
@@ -463,7 +469,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	LDFATAL_FILE("rsa-private",
 			   "error reading decryption key\n");
     }
-    mpz_init(&d);
     read_mpbin(&d,b,length);
     FREE(b);
     /* Read iqmp (inverse of q mod p) */
@@ -477,7 +482,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	LDFATAL_FILE("rsa-private",
 			   "error reading decryption key\n");
     }
-    mpz_init(&iqmp);
     read_mpbin(&iqmp,b,length);
     FREE(b);
     /* Read q (the smaller of the two primes) */
@@ -519,9 +523,6 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
      */
     valid=False;
     i=list_elem(args,1);
-    mpz_init(&tmp);
-    mpz_init(&tmp2);
-    mpz_init(&tmp3);
     if (i && i->type==t_bool && i->data.bool==False) {
 	Message(M_INFO,"rsa-private (%s:%d): skipping RSA key validity "
 		"check\n",loc.file,loc.line);
