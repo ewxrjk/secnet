@@ -661,6 +661,7 @@ void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
     closure_t *cl;
 
     i = dict_find_item(dict,name,fail_if_invalid,desc,loc);
+    if (!i) return NULL;
     if (i->type!=t_closure) {
 	if (!fail_if_invalid) return NULL;
 	cfgfatal(loc,desc,"\"%s\" must be a closure\n",name);
