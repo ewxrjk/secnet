@@ -391,8 +391,7 @@ static void rsapriv_dispose(void *sst)
 
 static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
 					 FILE *f, struct cloc loc,
-					 bool_t do_validity_check,
-					 const char *filename)
+					 bool_t do_validity_check)
 {
     struct rsapriv *st=0;
     long length;
@@ -437,8 +436,7 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1 || memcmp(b,AUTHFILE_ID_STRING,length)!=0) {
 	LDUNSUP_FILE("failed to read magic ID"
-			   " string from SSH1 private keyfile \"%s\"\n",
-			   filename);
+		     " string from SSH1 private keyfile\n");
     }
     FREE(b);
 
@@ -596,8 +594,8 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     
 done_checks:
     if (!valid) {
-	LDFATAL("file \"%s\" does not contain a "
-		 "valid RSA key!\n",filename);
+	LDFATAL("file does not contain a "
+		 "valid RSA key!\n");
     }
 
 assume_valid:
@@ -678,7 +676,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 	do_validity_check=False;
     }
 
-    st=rsa_loadpriv_core(l,f,loc,do_validity_check,filename);
+    st=rsa_loadpriv_core(l,f,loc,do_validity_check);
     fclose(f);
     return new_closure(&st->cl);
 }
