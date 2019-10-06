@@ -344,8 +344,9 @@ struct rsapriv_load_ctx {
 #define LDFATAL_FILE(...) ({ load_error(l,f,0,__VA_ARGS__); goto error_out; })
 #define LDUNSUP_FILE(...) ({ load_error(l,f,1,__VA_ARGS__); goto error_out; })
 #define FREE(b)                ({ free((b)); (b)=0; })
+#define KEYFILE_GET(is)   (keyfile_get_##is(loc,f))
 
-static uint32_t keyfile_get_int(struct cloc loc, FILE *f)
+static uint32_t keyfile_get_32(struct cloc loc, FILE *f)
 {
     uint32_t r;
     r=fgetc(f)<<24;
@@ -356,7 +357,7 @@ static uint32_t keyfile_get_int(struct cloc loc, FILE *f)
     return r;
 }
 
-static uint16_t keyfile_get_short(struct cloc loc, FILE *f)
+static uint16_t keyfile_get_16(struct cloc loc, FILE *f)
 {
     uint16_t r;
     r=fgetc(f)<<8;
@@ -439,14 +440,14 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     FREE(b);
 
     cipher_type=fgetc(f);
-    keyfile_get_int(loc,f); /* "Reserved data" */
+    KEYFILE_GET(32); /* "Reserved data" */
     if (cipher_type != 0) {
 	LDUNSUP("we don't support encrypted keyfiles\n");
     }
 
     /* Read the public key */
-    keyfile_get_int(loc,f); /* Not sure what this is */
-    length=(keyfile_get_short(loc,f)+7)/8;
+    KEYFILE_GET(32); /* Not sure what this is */
+    length=(KEYFILE_GET(16)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
 	LDFATAL("implausible length %ld for modulus\n",
 		 length);
@@ -457,7 +458,7 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     }
     read_mpbin(&st->n,b,length);
     FREE(b);
-    length=(keyfile_get_short(loc,f)+7)/8;
+    length=(KEYFILE_GET(16)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
 	LDFATAL("implausible length %ld for e\n",length);
     }
@@ -468,7 +469,7 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     read_mpbin(&e,b,length);
     FREE(b);
     
-    length=keyfile_get_int(loc,f);
+    length=KEYFILE_GET(32);
     if (length>1024) {
 	LDFATAL("implausibly long (%ld) key comment\n",
 		 length);
@@ -482,12 +483,12 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     /* Check that the next two pairs of characters are identical - the
        keyfile is not encrypted, so they should be */
 
-    if (keyfile_get_short(loc,f) != keyfile_get_short(loc,f)) {
+    if (KEYFILE_GET(16) != KEYFILE_GET(16)) {
 	LDFATAL("corrupt keyfile\n");
     }
 
     /* Read d */
-    length=(keyfile_get_short(loc,f)+7)/8;
+    length=(KEYFILE_GET(16)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
 	LDFATAL("implausibly long (%ld) decryption key\n",
 		 length);
@@ -499,7 +500,7 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     read_mpbin(&d,b,length);
     FREE(b);
     /* Read iqmp (inverse of q mod p) */
-    length=(keyfile_get_short(loc,f)+7)/8;
+    length=(KEYFILE_GET(16)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
 	LDFATAL("implausibly long (%ld)"
 		 " iqmp auxiliary value\n", length);
@@ -511,7 +512,7 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     read_mpbin(&iqmp,b,length);
     FREE(b);
     /* Read q (the smaller of the two primes) */
-    length=(keyfile_get_short(loc,f)+7)/8;
+    length=(KEYFILE_GET(16)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
 	LDFATAL("implausibly long (%ld) q value\n",
 		 length);
@@ -523,7 +524,7 @@ static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
     read_mpbin(&st->q,b,length);
     FREE(b);
     /* Read p (the larger of the two primes) */
-    length=(keyfile_get_short(loc,f)+7)/8;
+    length=(KEYFILE_GET(16)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
 	LDFATAL("implausibly long (%ld) p value\n",
 		 length);
