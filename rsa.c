@@ -337,6 +337,9 @@ struct rsapriv_load_ctx {
 	struct {
 	    struct cloc loc;
 	} apply;
+	struct {
+	    struct log_if *log;
+	} tryload;
     } u;
 };
 
@@ -616,6 +619,59 @@ error_out:
     if (st) rsapriv_dispose(st);
     st=0;
     goto out;
+}
+
+FORMAT(printf,4,0)
+static void verror_tryload(struct rsapriv_load_ctx *l,
+			   FILE *maybe_f, bool_t unsup,
+			   const char *message, va_list args)
+{
+    int class=unsup ? M_DEBUG : M_ERR;
+    slilog_part(l->u.tryload.log,class,"rsa1priv load: ");
+    vslilog(l->u.tryload.log,class,message,args);
+}
+
+static bool_t postreadcheck_tryload(struct rsapriv_load_ctx *l, FILE *f)
+{
+    assert(!ferror(f));
+    if (feof(f)) { load_error(l,0,0,"eof mid-integer"); return False; }
+    return True;
+}
+
+bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
+		     struct buffer_if *privkeydata,
+		     struct sigprivkey_if **sigpriv_r,
+		     struct log_if *log)
+{
+    FILE *f=0;
+    struct rsapriv *st=0;
+
+    f=fmemopen(privkeydata->start,privkeydata->size,"r");
+    if (!f) {
+	slilog(log,M_ERR,"failed to fmemopen private key file\n");
+	goto error_out;
+    }
+
+    struct cloc loc;
+    loc.file="dynamically loaded";
+    loc.line=0;
+
+    struct rsapriv_load_ctx l[1];
+    l->verror=verror_tryload;
+    l->postreadcheck=postreadcheck_tryload;
+    l->u.tryload.log=log;
+
+    st=rsa_loadpriv_core(l,f,loc,True);
+    if (!st) goto error_out;
+    goto out;
+
+ error_out:
+    if (st) { free(st); st=0; }
+ out:
+    if (f) fclose(f);
+    if (!st) return False;
+    *sigpriv_r=&st->ops;
+    return True;
 }
 
 static void verror_cfgfatal(struct rsapriv_load_ctx *l,
