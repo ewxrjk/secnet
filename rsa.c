@@ -348,11 +348,11 @@ static uint16_t keyfile_get_short(struct cloc loc, FILE *f)
     return r;
 }
 
-#define LDFATAL(...)      cfgfatal(loc,__VA_ARGS__)
-#define LDUNSUP(...)      cfgfatal(loc,__VA_ARGS__)
-#define LDFATAL_FILE(...) cfgfatal_maybefile(f,loc,__VA_ARGS__)
-#define LDUNSUP_FILE(...) cfgfatal_maybefile(f,loc,__VA_ARGS__)
-#define FREE(b)           free(b)
+#define LDFATAL(...)           cfgfatal(loc,"rsa-private",__VA_ARGS__)
+#define LDUNSUP(...)           cfgfatal(loc,"rsa-private",__VA_ARGS__)
+#define LDFATAL_FILE(...) cfgfatal_maybefile(f,loc,"rsa-private",__VA_ARGS__)
+#define LDUNSUP_FILE(...) cfgfatal_maybefile(f,loc,"rsa-private",__VA_ARGS__)
+#define FREE(b)                free(b)
 
 static void rsapriv_dispose(void *sst)
 {
@@ -411,7 +411,7 @@ static struct rsapriv *rsa_loadpriv_core(FILE *f, struct cloc loc,
     length=strlen(AUTHFILE_ID_STRING)+1;
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1 || memcmp(b,AUTHFILE_ID_STRING,length)!=0) {
-	LDUNSUP_FILE("rsa-private","failed to read magic ID"
+	LDUNSUP_FILE("failed to read magic ID"
 			   " string from SSH1 private keyfile \"%s\"\n",
 			   filename);
     }
@@ -420,41 +420,41 @@ static struct rsapriv *rsa_loadpriv_core(FILE *f, struct cloc loc,
     cipher_type=fgetc(f);
     keyfile_get_int(loc,f); /* "Reserved data" */
     if (cipher_type != 0) {
-	LDUNSUP("rsa-private","we don't support encrypted keyfiles\n");
+	LDUNSUP("we don't support encrypted keyfiles\n");
     }
 
     /* Read the public key */
     keyfile_get_int(loc,f); /* Not sure what this is */
     length=(keyfile_get_short(loc,f)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
-	LDFATAL("rsa-private","implausible length %ld for modulus\n",
+	LDFATAL("implausible length %ld for modulus\n",
 		 length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f) != 1) {
-	LDFATAL_FILE("rsa-private","error reading modulus\n");
+	LDFATAL_FILE("error reading modulus\n");
     }
     read_mpbin(&st->n,b,length);
     FREE(b);
     length=(keyfile_get_short(loc,f)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
-	LDFATAL("rsa-private","implausible length %ld for e\n",length);
+	LDFATAL("implausible length %ld for e\n",length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1) {
-	LDFATAL_FILE("rsa-private","error reading e\n");
+	LDFATAL_FILE("error reading e\n");
     }
     read_mpbin(&e,b,length);
     FREE(b);
     
     length=keyfile_get_int(loc,f);
     if (length>1024) {
-	LDFATAL("rsa-private","implausibly long (%ld) key comment\n",
+	LDFATAL("implausibly long (%ld) key comment\n",
 		 length);
     }
     c=safe_malloc(length+1,"rsapriv_apply");
     if (fread(c,length,1,f)!=1) {
-	LDFATAL_FILE("rsa-private","error reading key comment\n");
+	LDFATAL_FILE("error reading key comment\n");
     }
     c[length]=0;
 
@@ -462,58 +462,54 @@ static struct rsapriv *rsa_loadpriv_core(FILE *f, struct cloc loc,
        keyfile is not encrypted, so they should be */
 
     if (keyfile_get_short(loc,f) != keyfile_get_short(loc,f)) {
-	LDFATAL("rsa-private","corrupt keyfile\n");
+	LDFATAL("corrupt keyfile\n");
     }
 
     /* Read d */
     length=(keyfile_get_short(loc,f)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
-	LDFATAL("rsa-private","implausibly long (%ld) decryption key\n",
+	LDFATAL("implausibly long (%ld) decryption key\n",
 		 length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1) {
-	LDFATAL_FILE("rsa-private",
-			   "error reading decryption key\n");
+	LDFATAL_FILE("error reading decryption key\n");
     }
     read_mpbin(&d,b,length);
     FREE(b);
     /* Read iqmp (inverse of q mod p) */
     length=(keyfile_get_short(loc,f)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
-	LDFATAL("rsa-private","implausibly long (%ld)"
+	LDFATAL("implausibly long (%ld)"
 		 " iqmp auxiliary value\n", length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1) {
-	LDFATAL_FILE("rsa-private",
-			   "error reading decryption key\n");
+	LDFATAL_FILE("error reading decryption key\n");
     }
     read_mpbin(&iqmp,b,length);
     FREE(b);
     /* Read q (the smaller of the two primes) */
     length=(keyfile_get_short(loc,f)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
-	LDFATAL("rsa-private","implausibly long (%ld) q value\n",
+	LDFATAL("implausibly long (%ld) q value\n",
 		 length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1) {
-	LDFATAL_FILE("rsa-private",
-			   "error reading q value\n");
+	LDFATAL_FILE("error reading q value\n");
     }
     read_mpbin(&st->q,b,length);
     FREE(b);
     /* Read p (the larger of the two primes) */
     length=(keyfile_get_short(loc,f)+7)/8;
     if (length>RSA_MAX_MODBYTES) {
-	LDFATAL("rsa-private","implausibly long (%ld) p value\n",
+	LDFATAL("implausibly long (%ld) p value\n",
 		 length);
     }
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1) {
-	LDFATAL_FILE("rsa-private",
-			   "error reading p value\n");
+	LDFATAL_FILE("error reading p value\n");
     }
     read_mpbin(&st->p,b,length);
     FREE(b);
@@ -575,7 +571,7 @@ static struct rsapriv *rsa_loadpriv_core(FILE *f, struct cloc loc,
     
 done_checks:
     if (!valid) {
-	LDFATAL("rsa-private","file \"%s\" does not contain a "
+	LDFATAL("file \"%s\" does not contain a "
 		 "valid RSA key!\n",filename);
     }
     mpz_clear(&tmp);
