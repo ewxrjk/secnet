@@ -723,6 +723,15 @@ const char *pollbadbit(int revents)
     return 0;
 }
 
+void pathprefix_template_init(struct pathprefix_template *out,
+			      const char *prefix, int maxsuffix)
+{
+    size_t l=strlen(prefix);
+    NEW_ARY(out->buffer,l+maxsuffix+1);
+    strcpy(out->buffer,prefix);
+    out->write_here=out->buffer+l;
+}
+
 enum async_linebuf_result
 async_linebuf_read(struct pollfd *pfd, struct buffer_if *buf,
 		   const char **emsg_out)

@@ -169,6 +169,20 @@ void string_item_to_iaddr(const item_t *item, uint16_t port, union iaddr *ia,
 			  const char *desc);
 
 
+/*----- pathprefix_template -----*/
+
+struct pathprefix_template {
+    char *buffer;
+    char *write_here;
+};
+
+void pathprefix_template_init(struct pathprefix_template *out,
+			      const char *prefix, int maxsuffix);
+static inline void pathprefix_template_setsuffix
+   (struct pathprefix_template *upd, const char *suffix)
+   { strcpy(upd->write_here,suffix); }
+
+
 /*
  * SBUF_DEFINE(int nbufs, size_t size);
  *   // Generates a number of definitions and statements organising
