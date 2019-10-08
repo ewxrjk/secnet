@@ -61,6 +61,8 @@
 
 #define DEFAULT_MOBILE_PEER_EXPIRY            (2*60)      /* [s] */
 
+#define PEERKEYS_SUFFIX_MAXLEN (sizeof("~incoming")-1)
+
 /* Each site can be in one of several possible states. */
 
 /* States:
@@ -348,6 +350,7 @@ struct site {
     int resolving_n_results_stored;
     struct comm_addr resolving_results[MAX_PEER_ADDRS];
     const char *peerkeys_path;
+    struct pathprefix_template peerkeys_tmpl;
     struct peer_keyset *peerkeys_current, *peerkeys_kex;
 
     /* The currently established session */
@@ -894,9 +897,95 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
     return False;
 }
 
+static void peerkeys_maybe_incorporate(struct site *st, const char *file,
+				       const char *whatmore,
+				       int logcl_enoent)
+{
+    struct peer_keyset *atsuffix=
+	keyset_load(file,&st->scratch,st->log,logcl_enoent);
+    if (!atsuffix) return;
+
+    if (st->peerkeys_current &&
+	serial_cmp(atsuffix->serial,st->peerkeys_current->serial) <= 0) {
+	slog(st,LOG_SIGKEYS,"keys from %s%s are older, discarding",
+	     file,whatmore);
+	keyset_dispose(&atsuffix);
+	int r=unlink(file);
+	if (r) slog(st,LOG_ERROR,"failed to remove old key update %s: %s\n",
+		    st->peerkeys_tmpl.buffer,strerror(errno));
+	return;
+    } else {
+	slog(st,LOG_SIGKEYS,"keys from %s%s are newer, installing",
+	     file,whatmore);
+	keyset_dispose(&st->peerkeys_current);
+	st->peerkeys_current=atsuffix;
+	int r=rename(file,st->peerkeys_path);
+	if (r) slog(st,LOG_ERROR,"failed to install key update %s as %s: %s\n",
+		    st->peerkeys_tmpl.buffer,st->peerkeys_path,
+		    strerror(errno));
+    }
+}
+
+static void peerkeys_check_for_update(struct site *st)
+{
+    /* peerkeys files
+     *
+     *  <F>            live file, loaded on startup, updated by secnet
+     *                  (only).  * in-memory peerkeys_current is kept
+     *                  synced with this file
+     *
+     *  <F>~update     update file from config manager, checked before
+     *                  every key exchange.  config manager must rename
+     *                  this file into place; it will be renamed and
+     *                  then removed by secnet.
+     *
+     *  <F>~proc       update file being processed by secnet.
+     *                  only secnet may write or remove.
+     *
+     *  <F>~incoming   update file from peer, being received by secnet
+     *                  may be incomplete, unverified, or even malicious
+     *                  only secnet may write or remove.
+     */
+    if (!st->peerkeys_path) return;
+
+    pathprefix_template_setsuffix(&st->peerkeys_tmpl,"~proc");
+    peerkeys_maybe_incorporate(st,st->peerkeys_tmpl.buffer,
+			       " (found old update)",
+			       M_DEBUG);
+
+    pathprefix_template_setsuffix(&st->peerkeys_tmpl,"~update");
+    const char *inputp=st->peerkeys_tmpl.buffer;
+    if (access(inputp,R_OK)) {
+	if (errno!=ENOENT)
+	    slog(st,LOG_ERROR,"cannot access peer key update file %s\n",
+		 inputp);
+	return;
+    }
+
+    buffer_init(&st->scratch,0);
+    BUF_ADD_BYTES(append,&st->scratch,
+		  st->peerkeys_tmpl.buffer,
+		  strlen(st->peerkeys_tmpl.buffer)+1);
+    inputp=st->scratch.start;
+
+    pathprefix_template_setsuffix(&st->peerkeys_tmpl,"~proc");
+    const char *oursp=st->peerkeys_tmpl.buffer;
+
+    int r=rename(inputp,oursp);
+    if (r) {
+	slog(st,LOG_ERROR,"failed to claim key update file %s as %s: %s\n",
+	     inputp,oursp,strerror(errno));
+	return;
+    }
+
+    peerkeys_maybe_incorporate(st,oursp," (update)",M_ERR);
+}
+
+
 static bool_t kex_init(struct site *st)
 {
     keyset_dispose(&st->peerkeys_kex);
+    peerkeys_check_for_update(st);
     if (!st->peerkeys_current) {
 	slog(st,LOG_SETUP_INIT,"no peer public keys, abandoning key setup");
 	return False;
@@ -2269,6 +2358,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.control=site_control;
     st->ops.status=site_status;
     st->peerkeys_path=0;
+    st->peerkeys_tmpl.buffer=0;
     st->peerkeys_current=st->peerkeys_kex=0;
 
     /* First parameter must be a dict */
@@ -2358,6 +2448,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->peerkeys_path=dict_read_string(dict,"peer-keys",fixed_pubkey==0,
 				       "site",loc);
     if (st->peerkeys_path) {
+	pathprefix_template_init(&st->peerkeys_tmpl,st->peerkeys_path,
+				 PEERKEYS_SUFFIX_MAXLEN + 1 /* nul */);
 	st->peerkeys_current=keyset_load(st->peerkeys_path,
 					 &st->scratch,st->log,M_ERR);
 	if (fixed_pubkey) {
