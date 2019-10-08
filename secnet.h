@@ -87,6 +87,15 @@ static inline bool_t sigkeyid_equal(const struct sigkeyid *a,
     return !memcmp(a->b, b->b, KEYIDSZ);
 }
 
+#define SERIALSZ 4
+typedef uint32_t serialt;
+static inline int serial_cmp(serialt a, serialt b) {
+    if (a==b) return 0;
+    if (!a) return -1;
+    if (!b) return +1;
+    return b-a <= (serialt)0x7fffffffUL ? +1 : -1;
+}
+
 #define ASSERT(x) do { if (!(x)) { fatal("assertion failed line %d file " \
 					 __FILE__,__LINE__); } } while(0)
 
