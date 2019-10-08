@@ -171,10 +171,7 @@ static list_t *privcache_apply(closure_t *self, struct cloc loc,
     buffer_new(&st->databuf,buflen+1);
 
     const char *path=dict_read_string(dict,"privkeys",True,"privcache",loc);
-    int l=strlen(path);
-    NEW_ARY(st->path.buffer,l+KEYIDSZ*2+1);
-    strcpy(st->path.buffer,path);
-    st->path.write_here=st->path.buffer+l;
+    pathprefix_template_init(&st->path,path,KEYIDSZ*2);
 
     st->defhash=find_cl_if(dict,"hash",CL_HASH,False,"site",loc);
 
