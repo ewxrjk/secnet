@@ -2232,6 +2232,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
+    struct hash_if *hash=0;
     st->privkey=find_cl_if(dict,"local-key",CL_SIGPRIVKEY,True,"site",loc);
     st->addresses=dict_read_string_array(dict,"address",False,"site",loc,0);
     if (st->addresses)
@@ -2243,7 +2244,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
 
-    struct hash_if *hash=0;
     SETUP_SETHASH(st->privkey);
     SETUP_SETHASH(st->pubkey);
 
