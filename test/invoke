@@ -51,9 +51,22 @@ proc mkconf {which} {
 	local-key rsa-private(\"test-example/$which.key\");
 "
     append cfg $extra($which)
-    append cfg "
-	include test-example/common.conf
-    "
+    append cfg {
+	log logfile {
+	    filename "/dev/tty";
+	    class "info","notice","warning","error","security","fatal";
+	};
+	system {
+	    userid "secnet";
+	};
+	resolver adns {
+	};
+	log-events "all";
+	random randomfile("/dev/urandom",no);
+	transform eax-serpent { }, serpent256-cbc { };
+	include test-example/sites.conf
+	sites map(site,vpn/test-example/all-sites);
+    }
     return $cfg
 }
 
