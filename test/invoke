@@ -2,9 +2,68 @@
 
 package require Tclx
 
+set netlink(inside) {
+    local-address "172.18.232.9";
+    secnet-address "172.18.232.10";
+    remote-networks "172.18.232.0/28";
+}
+set netlink(outside) {
+    local-address "172.18.232.1";
+    secnet-address "172.18.232.2";
+    remote-networks "172.18.232.0/28";
+}
+
+set ports(inside) {16913 16910}
+set ports(outside) 16900
+
+set extra(inside) {
+    local-mobile True;
+    mtu-target 1260;
+}
+set extra(outside) {}
+
+proc mkconf {which} {
+    global netlink
+    global ports
+    global extra
+    set cfg "
+	netlink tun {
+	    name \"netlink-tun\";
+	$netlink($which)
+	    mtu 1400;
+	    buffer sysbuffer(2048);
+	    interface \"secnet-test-[string range $which 0 0]\";
+        };
+        comm
+"
+    set delim {}
+    foreach port $ports($which) {
+	append cfg "$delim
+	    udp {
+                port $port;
+		buffer sysbuffer(4096);
+	    }
+	"
+        set delim ,
+    }
+    append cfg ";
+	local-name \"test-example/$which/$which\";
+	local-key rsa-private(\"test-example/$which.key\");
+"
+    append cfg $extra($which)
+    append cfg "
+	include test-example/common.conf
+    "
+    return $cfg
+}
+
 proc spawn-secnet {which} {
     upvar #0 pids($which) pid
-    set argl [list ./secnet -dvnc test-example/$which.conf]
+    set cf test/$which.conf
+    set ch [open $cf w]
+    puts $ch [mkconf $which]
+    close $ch
+    set argl [list ./secnet -dvnc $cf]
     set pid [fork]
     if {!$pid} {
 	execl really $argl
