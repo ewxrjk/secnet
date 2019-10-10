@@ -1,0 +1,15 @@
+#! /usr/bin/tclsh
+
+package require Tclx
+
+proc spawn-secnet {which} {
+    upvar #0 pids($which) pid
+    set argl [list ./secnet -dvnc test-example/$which.conf]
+    set pid [fork]
+    if {!$pid} {
+	execl really $argl
+    }
+}
+
+spawn-secnet inside
+spawn-secnet outside
