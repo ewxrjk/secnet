@@ -37,3 +37,4 @@ test-example/bogus-setup-request
 build-stamp
 
 test/*.conf
+test/*.fake-userv

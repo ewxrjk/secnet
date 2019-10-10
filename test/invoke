@@ -26,9 +26,29 @@ proc mkconf {which} {
     global netlink
     global ports
     global extra
+    global netlinkfh
+    set pipefp test/$which.netlink
+    foreach tr {t r} {
+	file delete $pipefp.$tr
+	exec mkfifo -m600 $pipefp.$tr
+	set netlinkfh($which.$tr) [set fh [open $pipefp.$tr r+]]
+	fconfigure $fh -blocking 0 -buffering none -translation binary
+    }
+    fileevent $netlinkfh($which.t) readable [list netlink-readable $which]
+    set fakeuf test/$which.fake-userv
+    set fakeuh [open $fakeuf w 0755]
+    puts $fakeuh "#!/bin/sh
+set -e
+cat >$pipefp.t &
+exec 3<>$pipefp.r
+exec <$pipefp.r
+exec 3<&-
+exec cat
+"
     set cfg "
-	netlink tun {
-	    name \"netlink-tun\";
+	netlink userv-ipif {
+	    name \"netlink\";
+            userv-path \"$fakeuf\";
 	$netlink($which)
 	    mtu 1400;
 	    buffer sysbuffer(2048);
@@ -57,7 +77,6 @@ proc mkconf {which} {
 	    class "info","notice","warning","error","security","fatal";
 	};
 	system {
-	    userid "secnet";
 	};
 	resolver adns {
 	};
@@ -76,10 +95,10 @@ proc spawn-secnet {which} {
     set ch [open $cf w]
     puts $ch [mkconf $which]
     close $ch
-    set argl [list ./secnet -dvnc $cf]
+    set argl [list -dvnc $cf]
     set pid [fork]
     if {!$pid} {
-	execl really $argl
+	execl ./secnet $argl
     }
 }
 
