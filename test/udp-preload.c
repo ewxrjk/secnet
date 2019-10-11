@@ -72,7 +72,7 @@ WRAPS(DEF_OLD)
 #define WRAP(fn) int fn(fn##_args)
 
 WRAP(socket) {
-    errno=EMSGSIZE;  return -1;
+    return old_socket(domain,type,protocol);
 }
 
 #if 0
