@@ -19,6 +19,8 @@
  * 
  */
 
+#define _GNU_SOURCE
+
 #include <dlfcn.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -31,13 +33,10 @@
 #include <sys/wait.h>
 #include <netinet/in.h>
 
-#include "authbind.h"
-
-typedef void anyfn_type(void);
-typedef int bindfn_type(int fd, const struct sockaddr *addr, socklen_t addrlen);
-
 #define STDERRSTR_CONST(m) write(2,m,sizeof(m)-1)
 #define STDERRSTR_STRING(m) write(2,m,strlen(m))
+
+typedef void anyfn_type(void);
 
 static anyfn_type *find_any(const char *name) {
   static const char *dlerr;
@@ -54,6 +53,33 @@ static anyfn_type *find_any(const char *name) {
   return 0;
 }
 
+#define socket_args int domain, int type, int protocol
+#define WRAPS(X) X(socket, (domain,type,protocol))
+
+#define DEF_OLD(fn,args)				\
+  typedef int fn##_fn_type(fn##_args);			\
+  static int find_##fn(fn##_args);			\
+  static fn##_fn_type find_##fn, *old_##fn=find_##fn;	\
+  static int find_##fn(fn##_args) {			\
+    anyfn_type *anyfn;					\
+    anyfn= find_any(#fn); if (!anyfn) return -1;	\
+    old_##fn= (fn##_fn_type*)anyfn;			\
+    return old_##fn args;				\
+  }
+
+WRAPS(DEF_OLD)
+
+#define WRAP(fn) int fn(fn##_args)
+
+WRAP(socket) {
+    errno=EMSGSIZE;  return -1;
+}
+
+#if 0
+WRAP(bind, (int fd, const struct sockaddr *addr, socklen_t addrlen), {
+    
+});
+		    
 static bindfn_type find_bind, *old_bind= find_bind;
 
 int find_bind(int fd, const struct sockaddr *addr, socklen_t addrlen) {
@@ -251,3 +277,4 @@ x:
   }
   return r;
 }
+#endif

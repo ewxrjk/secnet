@@ -37,3 +37,4 @@ test-example/bogus-setup-request
 build-stamp
 
 test/tmp
+test/udp-preload.so
