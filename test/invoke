@@ -121,6 +121,21 @@ proc netlink-readable {which} {
     }
 }
 
+proc bgerror {message} {
+    global errorInfo errorCode
+    catch {
+	puts stderr "
+----------------------------------------
+$errorInfo
+
+$errorCode
+$message
+----------------------------------------
+    "
+    }
+    exit 1
+}
+
 spawn-secnet inside
 spawn-secnet outside
 
