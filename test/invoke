@@ -25,11 +25,12 @@ set extra(inside) {
 set extra(outside) {}
 
 proc mkconf {which} {
+    global tmp
     global netlink
     global ports
     global extra
     global netlinkfh
-    set pipefp test/$which.netlink
+    set pipefp $tmp/$which.netlink
     foreach tr {t r} {
 	file delete $pipefp.$tr
 	exec mkfifo -m600 $pipefp.$tr
@@ -37,7 +38,7 @@ proc mkconf {which} {
 	fconfigure $fh -blocking 0 -buffering none -translation binary
     }
     fileevent $netlinkfh($which.r) readable [list netlink-readable $which]
-    set fakeuf test/$which.fake-userv
+    set fakeuf $tmp/$which.fake-userv
     set fakeuh [open $fakeuf w 0755]
     puts $fakeuh "#!/bin/sh
 set -e
@@ -95,8 +96,9 @@ exec cat
 
 proc spawn-secnet {which} {
     global netlinkfh
+    global tmp
     upvar #0 pids($which) pid
-    set cf test/$which.conf
+    set cf $tmp/$which.conf
     set ch [open $cf w]
     puts $ch [mkconf $which]
     close $ch
@@ -152,6 +154,9 @@ proc sendpkt {} {
     puts -nonewline $netlinkfh(inside.t) \
 	[hbytes h2raw c0[join $p ""]c0]
 }
+
+file mkdir test/tmp
+set tmp test/tmp
 
 spawn-secnet inside
 spawn-secnet outside
