@@ -2,6 +2,8 @@
 
 package require Tclx
 
+load chiark_tcl_hbytes-1.so
+
 set netlink(inside) {
     local-address "172.18.232.9";
     secnet-address "172.18.232.10";
@@ -103,7 +105,7 @@ proc spawn-secnet {which} {
     if {!$pid} {
 	execl ./secnet $argl
     }
-    puts -nonewline $netlinkfh($which.t) "\xc0"
+    puts -nonewline $netlinkfh($which.t) [hbytes h2raw c0]
 }
 
 proc netlink-readable {which} {
