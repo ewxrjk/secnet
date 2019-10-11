@@ -113,12 +113,12 @@ proc netlink-readable {which} {
     upvar #0 netlinkfh($which.r) fh
     read $fh; # empty the buffer
     switch -exact $which {
-	outside {
+	inside {
 	    puts OK
 	    set ok 1; # what a bodge
 	    return
 	}
-	inside {
+	outside {
 	    error "inside rx'd!"
 	}
     }
