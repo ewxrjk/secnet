@@ -45,6 +45,7 @@ exec <$pipefp.t
 exec 3<&-
 exec cat
 "
+    close $fakeuh
     set cfg "
 	netlink userv-ipif {
 	    name \"netlink\";
@@ -90,6 +91,7 @@ exec cat
 }
 
 proc spawn-secnet {which} {
+    global netlinkfh
     upvar #0 pids($which) pid
     set cf test/$which.conf
     set ch [open $cf w]
@@ -100,7 +102,26 @@ proc spawn-secnet {which} {
     if {!$pid} {
 	execl ./secnet $argl
     }
+    puts -nonewline $netlinkfh($which.t) "\xc0"
+}
+
+proc netlink-readable {which} {
+    global ok
+    upvar #0 netlinkfh($which.r) fh
+    read $fh; # empty the buffer
+    switch -exact $which {
+	outside {
+	    puts OK
+	    set ok 1; # what a bodge
+	    return
+	}
+	inside {
+	    error "inside rx'd!"
+	}
+    }
 }
 
 spawn-secnet inside
 spawn-secnet outside
+
+vwait ok
