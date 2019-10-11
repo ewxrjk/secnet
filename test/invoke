@@ -39,7 +39,8 @@ proc mkconf {which} {
     set fakeuh [open $fakeuf w 0755]
     puts $fakeuh "#!/bin/sh
 set -e
-cat >$pipefp.r &
+exec 3<&0
+cat <&3 3<&- >$pipefp.r &
 exec 3<>$pipefp.t
 exec <$pipefp.t
 exec 3<&-
