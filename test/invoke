@@ -34,14 +34,14 @@ proc mkconf {which} {
 	set netlinkfh($which.$tr) [set fh [open $pipefp.$tr r+]]
 	fconfigure $fh -blocking 0 -buffering none -translation binary
     }
-    fileevent $netlinkfh($which.t) readable [list netlink-readable $which]
+    fileevent $netlinkfh($which.r) readable [list netlink-readable $which]
     set fakeuf test/$which.fake-userv
     set fakeuh [open $fakeuf w 0755]
     puts $fakeuh "#!/bin/sh
 set -e
-cat >$pipefp.t &
-exec 3<>$pipefp.r
-exec <$pipefp.r
+cat >$pipefp.r &
+exec 3<>$pipefp.t
+exec <$pipefp.t
 exec 3<&-
 exec cat
 "
