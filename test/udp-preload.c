@@ -54,7 +54,10 @@ static anyfn_type *find_any(const char *name) {
 }
 
 #define socket_args int domain, int type, int protocol
-#define WRAPS(X) X(socket, (domain,type,protocol))
+#define bind_args   int fd, const struct sockaddr *addr, socklen_t addrlen
+#define WRAPS(X)				\
+    X(socket, (domain,type,protocol))		\
+    X(bind,   (fd,addr,addrlen))
 
 #define DEF_OLD(fn,args)				\
   typedef int fn##_fn_type(fn##_args);			\
@@ -71,210 +74,63 @@ WRAPS(DEF_OLD)
 
 #define WRAP(fn) int fn(fn##_args)
 
+typedef struct{
+    int af;
+    union {
+	struct sockaddr_in v4;
+	struct sockaddr_in6 v6;
+    } bound;
+} fdinfo;
+static fdinfo **table;
+static int tablesz;
+
+static fdinfo *lookup(int fd) {
+    if (fd>=tablesz) return 0;
+    return table[fd];
+}
+
+static int chkaddr(fdinfo *ent,
+		   const struct sockaddr *addr, socklen_t addrlen) {
+    if (addr->sa_family!=ent->af) { errno=EAFNOSUPPORT; return -1; }
+    socklen_t expectlen;
+    switch (addr->sa_family) {
+    case AF_INET:  expectlen=sizeof(ent->bound.v4); break;
+    case AF_INET6: expectlen=sizeof(ent->bound.v6); break;
+    default: abort();
+    }
+    if (addrlen!=expectlen) { errno=EINVAL; return -1; }
+    return 0;
+}
+
 WRAP(socket) {
-    return old_socket(domain,type,protocol);
-}
-
-#if 0
-WRAP(bind, (int fd, const struct sockaddr *addr, socklen_t addrlen), {
-    
-});
-		    
-static bindfn_type find_bind, *old_bind= find_bind;
-
-int find_bind(int fd, const struct sockaddr *addr, socklen_t addrlen) {
-  anyfn_type *anyfn;
-  anyfn= find_any("bind"); if (!anyfn) return -1;
-  old_bind= (bindfn_type*)anyfn;
-  return old_bind(fd,addr,addrlen);
-}
-
-static int exiterrno(int e) {
-  _exit(e>0 && e<128 ? e : -1);
-}
-
-static void removepreload(void) {
-  const char *myself, *found;
-  char *newval, *preload;
-  int lpreload, lmyself, before, after;
-
-  preload= getenv(PRELOAD_VAR);
-  myself= getenv(AUTHBINDLIB_VAR);
-  if (!myself || !preload) return;
-
-  lpreload= strlen(preload);
-  lmyself= strlen(myself);
-
-  if (lmyself < 1 || lpreload<lmyself) return;
-  if (lpreload==lmyself) {
-    if (!strcmp(preload,myself)) unsetenv(PRELOAD_VAR);
-    return;
-  }
-  if (!memcmp(preload,myself,lmyself) && preload[lmyself]==':') {
-    before= 0; after= lpreload-(lmyself+1);
-  } else if (!memcmp(preload+lpreload-lmyself,myself,lmyself) &&
-	     preload[lpreload-(lmyself+1)]==':') {
-    before= lpreload-(lmyself+1); after= 0;
-  } else {
-    if (lpreload<lmyself+2) return;
-    found= preload+1;
-    for (;;) {
-      found= strstr(found,myself); if (!found) return;
-      if (found > preload+lpreload-(lmyself+1)) return;
-      if (found[-1]==':' && found[lmyself]==':') break;
-      found++;
+    if (!((domain==AF_INET || domain==AF_INET6) &&
+	  type==SOCK_DGRAM))
+	return old_socket(domain,type,protocol);
+    int fd=socket(AF_UNIX,SOCK_DGRAM,0);
+    if (fd<0) return fd;
+    if (fd>=tablesz) {
+	int newsz=(fd+1)*2;
+	table=realloc(table,newsz*sizeof(*table));
+	if (!table) goto fail;
+	while (tablesz<newsz) table[tablesz++]=0;
     }
-    before= found-preload;
-    after= lpreload-(before+lmyself+1);
-  }
-  newval= malloc(before+after+1);
-  if (newval) {
-    memcpy(newval,preload,before);
-    strcpy(newval+before,preload+lpreload-after);
-    if (setenv(PRELOAD_VAR,newval,1)) return;
-    free(newval);
-  }
-  strcpy(preload+before,preload+lpreload-after);
-  return;
+    free(table[fd]);
+    table[fd]=malloc(sizeof(*table[fd]));
+    if (!table[fd]) goto fail;
+    table[fd]->af=domain;
+    table[fd]->bound.v4.sin_family=0;
+    return fd;
+
+ fail:
+    close(fd);
+    return -1;
 }
 
-int _init(void);
-int _init(void) {
-  char *levels;
-  int levelno;
-
-  /* If AUTHBIND_LEVELS is
-   *  unset => always strip from preload
-   *  set and starts with `y' => never strip from preload, keep AUTHBIND_LEVELS
-   *  set to integer > 1 => do not strip now, subtract one from AUTHBIND_LEVELS
-   *  set to integer 1 => do not strip now, unset AUTHBIND_LEVELS
-   *  set to empty string or 0 => strip now, unset AUTHBIND_LEVELS
-   */
-  levels= getenv(AUTHBIND_LEVELS_VAR);
-  if (levels) {
-    if (levels[0]=='y') return 0;
-    levelno= atoi(levels);
-    if (levelno > 0) {
-      levelno--;
-      if (levelno > 0) sprintf(levels,"%d",levelno);
-      else unsetenv(AUTHBIND_LEVELS_VAR);
-      return 0;
-    }
-    unsetenv(AUTHBIND_LEVELS_VAR);
-  }
-  removepreload();
-  return 0;
+WRAP(bind) {
+    fdinfo *ent=lookup(fd);
+    if (!ent) return bind(fd,addr,addrlen);
+    if (chkaddr(ent,addr,addrlen)) return -1;
+    memset(&ent->bound,0,sizeof(ent->bound));
+    memcpy(&ent->bound,addr,addrlen);
+    return 0;
 }
-
-static const int evilsignals[]= { SIGFPE, SIGILL, SIGSEGV, SIGBUS, 0 };
-
-int bind(int fd, const struct sockaddr *addr, socklen_t addrlen) {
-  pid_t child, rchild;
-  char portarg[5], addrarg[33];
-  const char *afarg;
-  int i, r, status, restore_sigchild;
-  const int *evilsignal;
-  sigset_t block, saved;
-  struct sigaction old_sigchild;
-  unsigned int portval;
-
-  switch (addr->sa_family) {
-  case AF_INET:
-    portval = ((struct sockaddr_in*)addr)->sin_port;
-    if (addrlen != sizeof(struct sockaddr_in)) goto bail;
-    break;
-  case AF_INET6:
-    portval = ((struct sockaddr_in6*)addr)->sin6_port;
-    if (addrlen != sizeof(struct sockaddr_in6)) goto bail;
-    break;
-  default:
-    goto bail;
-  }
-
-  if (!geteuid() || portval == 0 || ntohs(portval) >= IPPORT_RESERVED) {
-  bail:
-    return old_bind(fd,addr,addrlen);
-  }
-
-  sigfillset(&block);
-  for (evilsignal=evilsignals;
-       *evilsignal;
-       evilsignal++)
-    sigdelset(&block,*evilsignal);
-  if (sigprocmask(SIG_BLOCK,&block,&saved)) return -1;
-
-  switch (addr->sa_family) {
-  case AF_INET:
-    afarg = 0;
-    sprintf(addrarg,"%08lx",
-	    ((unsigned long)(((struct sockaddr_in*)addr)->sin_addr.s_addr))
-	    &0x0ffffffffUL);
-    break;
-  case AF_INET6:
-    afarg = "6";
-    for (i=0; i<16; i++)
-      sprintf(addrarg+i*2,"%02x",
-	      ((struct sockaddr_in6*)addr)->sin6_addr.s6_addr[i]);
-    break;
-  default:
-    abort();
-  }
-  sprintf(portarg,"%04x",
-	  portval&0x0ffff);
-
-  restore_sigchild= 0;
-  if (sigaction(SIGCHLD,NULL,&old_sigchild)) return -1;
-  if (old_sigchild.sa_handler == SIG_IGN) {
-    struct sigaction new_sigchild;
-
-    new_sigchild.sa_handler= SIG_DFL;
-    sigemptyset(&new_sigchild.sa_mask);
-    new_sigchild.sa_flags= 0;
-    if (sigaction(SIGCHLD,&new_sigchild,&old_sigchild)) return -1;
-    restore_sigchild= 1;
-  }
-
-  child= fork(); if (child==-1) goto x_err;
-
-  if (!child) {
-    if (dup2(fd,0)) exiterrno(errno);
-    removepreload();
-    execl(HELPER,HELPER,addrarg,portarg,afarg,(char*)0);
-    status= errno > 0 && errno < 127 ? errno : 127;
-    STDERRSTR_CONST("libauthbind: possible installation problem - "
-		    "could not invoke " HELPER "\n");
-    exiterrno(status);
-  }
-
-  rchild= waitpid(child,&status,0);
-  if (rchild==-1) goto x_err;
-  if (rchild!=child) { errno= ECHILD; goto x_err; }
-
-  if (WIFEXITED(status)) {
-    if (WEXITSTATUS(status)) {
-      errno= WEXITSTATUS(status);
-      if (errno >= 127) errno= ENXIO;
-      goto x_err;
-    }
-    r= 0;
-    goto x;
-  } else {
-    errno= ENOSYS;
-    goto x_err;
-  }
-
-x_err:
-  r= -1;
-x:
-  if (sigprocmask(SIG_SETMASK,&saved,0)) abort();
-  if (restore_sigchild) {
-    if (sigaction(SIGCHLD,&old_sigchild,NULL)) return -1;
-    if (old_sigchild.sa_handler == SIG_IGN) {
-      int discard;
-      while (waitpid(-1, &discard, WNOHANG) > 0)
-	;
-    }
-  }
-  return r;
-}
-#endif
