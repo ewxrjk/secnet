@@ -1,7 +1,7 @@
 
 CC:=@CC@
 
-TARGETS=udp-preload.so
+TARGETS=udp-preload.so check
 
 TESTSCRIPTS ?= $(shell echo t-*[0-9a-z])
 TESTNAMES := $(patsubst t-%,%,$(notdir $(TESTSCRIPTS)))
@@ -13,7 +13,25 @@ CFLAGS += -D_REENTRANT -fPIC
 udp-preload.so: udp-preload.o
 	$(CC) -shared -Wl,-soname,$@.1 $^ -o $@ -ldl
 
-check: $(foreach t,$(TESTNAMES),d-$t/ok)
+# These test scripts use little cpu but contain sleeps etc.  So when
+# there are several, we are going to want to run *loads* in parallel.
+#
+# Ideally we would do something like "every one of these counts for a
+# tenth of a job" but make can't do that.  So bodge it: we treat all the
+# tests as a single job, and disconnect the parent's jobserver.
+#
+# make.info says $(MAKE) causes special handling of the rule but only
+# if it's written literally like that in the rule, hence this
+# indirection.  We need no squash MAKEFLAGS and MFLAGS too.
+# MAKELEVEL seems like it will be fine to pass on.
+
+MAKE_NOTSPECIAL:=$(MAKE)
+
+check:
+	env -u MAKEFLAGS -u MFLAGS \
+	$(MAKE_NOTSPECIAL) -j$(shell nproc || 1)0 check-real
+
+check-real: $(foreach t,$(TESTNAMES),d-$t/ok)
 
 d-%/ok: t-% udp-preload.so common.tcl ../secnet
 	@rm -rf d-$*; mkdir d-$*
