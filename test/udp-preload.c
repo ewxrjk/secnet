@@ -62,14 +62,17 @@ static anyfn_type *find_any(const char *name) {
 #define bind_args   int fd, const struct sockaddr *addr, socklen_t addrlen
 #define sendto_args int fd, const void *buf, size_t len, int flags, \
                     const struct sockaddr *addr, socklen_t addrlen
+#define recvfrom_args  int fd, void *buf, size_t len, int flags, \
+                       struct sockaddr *addr, socklen_t *addrlen
 #define setsockopt_args  int fd, int level, int optname, \
                          const void *optval, socklen_t optlen
 #define getsockname_args int fd, struct sockaddr *addr, socklen_t *addrlen
-#define WRAPS(X)					\
+#define WRAPS(X)						\
     X(socket,     int,     (domain,type,protocol))		\
-    X(close,      int,     (fd))					\
+    X(close,      int,     (fd))				\
     X(bind,       int,     (fd,addr,addrlen))			\
     X(sendto,     ssize_t, (fd,buf,len,flags,addr,addrlen))	\
+    X(recvfrom,   ssize_t, (fd,buf,len,flags,addr,addrlen))	\
     X(setsockopt, int,     (fd,level,optname,optval,optlen))	\
     X(getsockname,int,     (fd,addr,addrlen))
 
@@ -284,4 +287,41 @@ ssize_t TWRAP(sendto) {
     m.msg_iovlen=2;
 
     return sendmsg(fd,&m,0);
+}
+
+ssize_t TWRAP(recvfrom) {
+    fdinfo *ent=lookup(fd);
+    if (!ent) return old_recvfrom(fd,buf,len,flags,addr,addrlen);
+
+//fprintf(stderr,"recvfrom %d len=%lu flags=%d al=%lu\n",
+//	fd, (unsigned long)len, flags, (unsigned long)*addrlen);
+
+    if (flags) { errno=ENOEXEC; return -1; }
+
+    char tbuf[ADDRPORTSTRLEN+1];
+
+    struct iovec iov[2];
+    iov[0].iov_base=tbuf;
+    iov[0].iov_len=sizeof(tbuf);
+    iov[1].iov_base=buf;
+    iov[1].iov_len=len;
+
+    struct msghdr m;
+    memset(&m,0,sizeof(m));
+    m.msg_iov=iov;
+    m.msg_iovlen=2;
+
+    ssize_t rr=recvmsg(fd,&m,0);
+    if (rr==-1) return rr;
+    if (rr<sizeof(tbuf)) { errno=ENXIO; return -1; }
+    if (tbuf[ADDRPORTSTRLEN]) { errno=E2BIG; return -1; }
+    if (str2addrport(tbuf,addr,addrlen)) {
+	fprintf(stderr, "recvfrom str2addrport `%s' %s\n",tbuf,
+		strerror(errno));
+	return -1;
+    }
+
+    rr -= sizeof(tbuf);
+//fprintf(stderr,"recvfrom %s %lu ok\n",tbuf,(unsigned long)rr);
+    return rr;
 }
