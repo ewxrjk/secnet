@@ -133,7 +133,7 @@ endif
 
 check: eax-aes-test.confirm eax-serpent-test.confirm \
 	eax-serpentbe-test.confirm check-ipaddrset \
-	msgcode-test.confirm
+	msgcode-test.confirm check-test
 
 version.c: Makefile
 	echo "#include \"secnet.h\"" >$@.new
@@ -163,6 +163,12 @@ msgcode-test.confirm: msgcode-test
 check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 	$(srcdir)/ipaddrset-test.py >ipaddrset-test.new
 	diff -u $(srcdir)/ipaddrset-test.expected ipaddrset-test.new
+
+check-test: secnet test-example/sites.conf
+	$(MAKE) -C test check
+
+test-example/sites.conf:
+	$(MAKE) -C test-example
 
 .PRECIOUS: eax-%-test
 
