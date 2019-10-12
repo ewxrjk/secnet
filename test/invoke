@@ -3,6 +3,7 @@
 package require Tclx
 
 load chiark_tcl_hbytes-1.so
+load chiark_tcl_dgram-1.so
 
 set netlink(inside) {
     local-address "172.18.232.9";
@@ -66,6 +67,7 @@ exec cat
 	append cfg "$delim
 	    udp {
                 port $port;
+                address \"::1\", \"127.0.0.1\";
 		buffer sysbuffer(4096);
 	    }
 	"
@@ -157,7 +159,42 @@ proc sendpkt {} {
 
 file mkdir test/tmp
 set tmp test/tmp
+set socktmp $tmp
+regsub {^(?!/)} $socktmp {./} socktmp ;# dgram-socket wants ./ or /
 
+proc udp-proxy {} {
+    global socktmp udpsock
+    set u $socktmp/udp
+    file delete $u
+    regsub {^(?!/)} $u {./} u
+    set udpsock [dgram-socket create $u]
+    dgram-socket on-receive $udpsock udp-relay
+}
+
+proc udp-relay {data src sock args} {
+    global udpsock socktmp
+    set headerlen [expr {52+1}]
+    set orgsrc $src
+
+    set dst [hbytes range $data 0 $headerlen]
+    regsub {(?:00)*$} $dst {} dst
+    set dst [hbytes h2raw $dst]
+
+    hbytes overwrite data 0 [hbytes zeroes $headerlen]
+    regsub {.*/} $src {} src
+    set srch [hbytes raw2h $src]
+    hbytes append srch 00
+    if {[catch {
+	if {[regexp {[^.,:0-9a-f]} $dst c]} { error "bad dst" }
+	if {[hbytes length $srch] > $headerlen} { error "src addr too long" }
+	hbytes overwrite data 0 $srch
+	dgram-socket transmit $udpsock $data $socktmp/$dst
+    } emsg]} {
+	puts stderr "$orgsrc -> $dst: $emsg"
+    }
+}
+
+udp-proxy
 spawn-secnet inside
 spawn-secnet outside
 
