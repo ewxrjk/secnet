@@ -1,11 +1,12 @@
 /*
- *  libauthbind.c - bind(2)-redirector library for authbind
+ *  udp-preload.c - testing mock library for secnet udp
+ *  This file is part of secnet.
  *
- *  authbind is Copyright (C) 1998 Ian Jackson
+ *  Copyright (C) 1998,2003-2004,2012,2017,2019 Ian Jackson
  * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
+ *  the Free Software Foundation; either version 3, or (at your option)
  *  any later version.
  * 
  *  This program is distributed in the hope that it will be useful,
@@ -13,10 +14,9 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  * 
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software Foundation,
- *  Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA. 
- * 
+ * You should have received a copy of the GNU General Public License
+ * version 3 along with secnet; if not, see
+ * https://www.gnu.org/licenses/gpl.html.
  */
 
 #define _GNU_SOURCE
@@ -48,7 +48,7 @@ static anyfn_type *find_any(const char *name) {
 
   kv= dlsym(RTLD_NEXT,name); if (kv) return kv;
   dlerr= dlerror(); if (!dlerr) dlerr= "dlsym() failed for no reason";
-  STDERRSTR_CONST("libauthbind: error finding original version of ");
+  STDERRSTR_CONST("udp-preload: error finding original version of ");
   STDERRSTR_STRING(name);
   STDERRSTR_CONST(": ");
   STDERRSTR_STRING(dlerr);
