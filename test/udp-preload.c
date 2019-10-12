@@ -58,12 +58,14 @@ static anyfn_type *find_any(const char *name) {
 }
 
 #define socket_args int domain, int type, int protocol
+#define close_args  int fd
 #define bind_args   int fd, const struct sockaddr *addr, socklen_t addrlen
 #define setsockopt_args  int fd, int level, int optname, \
                          const void *optval, socklen_t optlen
 #define getsockname_args int fd, struct sockaddr *addr, socklen_t *addrlen
 #define WRAPS(X)					\
     X(socket,     (domain,type,protocol))		\
+    X(close,      (fd))					\
     X(bind,       (fd,addr,addrlen))			\
     X(setsockopt, (fd,level,optname,optval,optlen))	\
     X(getsockname,(fd,addr,addrlen))
@@ -178,6 +180,14 @@ WRAP(socket) {
  fail:
     close(fd);
     return -1;
+}
+
+WRAP(close) {
+    if (fd<tablesz) {
+	free(table[fd]);
+	table[fd]=0;
+    }
+    return old_close(fd);
 }
 
 WRAP(bind) {
