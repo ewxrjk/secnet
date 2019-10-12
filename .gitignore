@@ -14,6 +14,7 @@ conffile.yy.[ch]
 /config.status
 /stamp-h
 /Makefile
+/common.make
 
 msgcode-test
 msgcode-test.confirm

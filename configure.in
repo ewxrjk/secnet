@@ -96,7 +96,7 @@ else
     AC_MSG_WARN([Disabling IPv6 support])
 fi
 
-AC_OUTPUT(Makefile,echo timestamp >stamp-h)
+AC_OUTPUT(Makefile common.make, echo timestamp >stamp-h)
 
 AH_TOP([
 #ifndef _CONFIG_H
