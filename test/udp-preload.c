@@ -161,6 +161,7 @@ WRAP(bind) {
     *p++='/';
     if (addrport2str(p,addr,addrlen)) return -1;
 //fprintf(stderr,"binding %s\n",sun.sun_path);
+    if (unlink(sun.sun_path) && errno!=ENOENT) return -1;
     return old_bind(fd,(const void*)&sun,sizeof(sun));
 }
 
