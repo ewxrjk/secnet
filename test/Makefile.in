@@ -3,12 +3,22 @@ CC:=@CC@
 
 TARGETS=udp-preload.so
 
+TESTSCRIPTS ?= $(shell echo t-*[0-9a-z])
+TESTNAMES := $(patsubst t-%,%,$(notdir $(TESTSCRIPTS)))
+
 all: $(TARGETS)
 
 CFLAGS += -D_REENTRANT -fPIC
 
 udp-preload.so: udp-preload.o
 	$(CC) -shared -Wl,-soname,$@.1 $^ -o $@ -ldl
+
+check: $(foreach t,$(TESTNAMES),d-$t/ok)
+
+d-%/ok: t-% udp-preload.so common.tcl ../secnet
+	@rm -rf d-$*; mkdir d-$*
+	@cd .. && test/$< >test/d-$*/log 2>&1
+	@printf "$* "
 
 clean:
 	$(RM) -f *.o *.so
