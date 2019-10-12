@@ -160,6 +160,17 @@ set tmp test/tmp
 set socktmp $tmp
 regsub {^(?!/)} $socktmp {./} socktmp ;# dgram-socket wants ./ or /
 
+proc prefix_preload {lib} {
+    global env
+    set l {}
+    catch { set l [split $env(PRELOAD) :] }
+    set l [concat [list $lib] $l]
+    set env(LD_PRELOAD) [join $l :]
+}
+
+set env(UDP_PRELOAD_DIR) $socktmp
+prefix_preload test/udp-preload.so
+
 proc udp-proxy {} {
     global socktmp udpsock
     set u $socktmp/udp
