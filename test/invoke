@@ -102,10 +102,10 @@ proc spawn-secnet {which} {
     set ch [open $cf w]
     puts $ch [mkconf $which]
     close $ch
-    set argl [list -dvnc $cf]
+    set argl [list ./secnet -dvnc $cf]
     set pid [fork]
     if {!$pid} {
-	execl ./secnet $argl
+	execl [lindex $argl 0] [lrange $argl 1 end]
     }
     puts -nonewline $netlinkfh($which.t) [hbytes h2raw c0]
 }
