@@ -60,6 +60,8 @@ static anyfn_type *find_any(const char *name) {
 #define socket_args int domain, int type, int protocol
 #define close_args  int fd
 #define bind_args   int fd, const struct sockaddr *addr, socklen_t addrlen
+#define sendto_args int fd, const void *buf, size_t len, int flags, \
+                    const struct sockaddr *addr, socklen_t addrlen
 #define setsockopt_args  int fd, int level, int optname, \
                          const void *optval, socklen_t optlen
 #define getsockname_args int fd, struct sockaddr *addr, socklen_t *addrlen
@@ -67,6 +69,7 @@ static anyfn_type *find_any(const char *name) {
     X(socket,     int,     (domain,type,protocol))		\
     X(close,      int,     (fd))					\
     X(bind,       int,     (fd,addr,addrlen))			\
+    X(sendto,     ssize_t, (fd,buf,len,flags,addr,addrlen))	\
     X(setsockopt, int,     (fd,level,optname,optval,optlen))	\
     X(getsockname,int,     (fd,addr,addrlen))
 
@@ -243,4 +246,37 @@ WRAP(getsockname) {
     }
     if (str2addrport(sun.sun_path,addr,addrlen)) return -1;
     return 0;
+}
+
+ssize_t TWRAP(sendto) {
+    fdinfo *ent=lookup(fd);
+    if (!ent) return old_sendto(fd,buf,len,flags,addr,addrlen);
+
+    if (flags) { errno=ENOEXEC; return -1; }
+
+    const char *leaf=getenv("UDP_PRELOAD_SERVER");
+    if (!leaf) leaf="udp";
+    if (strlen(leaf) > ADDRPORTSTRLEN) { errno=ENAMETOOLONG; return -1; }
+    struct sockaddr_un sun;
+    char *p=sun_prep(&sun);
+    strcpy(p,leaf);
+
+    char tbuf[ADDRPORTSTRLEN+1];
+    memset(tbuf,0,sizeof(tbuf));
+    if (addrport2str(tbuf,addr,addrlen)) return -1;
+
+    struct iovec iov[2];
+    iov[0].iov_base=tbuf;
+    iov[0].iov_len=sizeof(tbuf);
+    iov[1].iov_base=(void*)buf;
+    iov[1].iov_len=len;
+    
+    struct msghdr m;
+    memset(&m,0,sizeof(m));
+    m.msg_name=&sun;
+    m.msg_namelen=sizeof(sun);
+    m.msg_iov=iov;
+    m.msg_iovlen=2;
+
+    return sendmsg(fd,&m,0);
 }
