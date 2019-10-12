@@ -37,6 +37,7 @@ d-%/ok: t-% udp-preload.so common.tcl ../secnet
 	@rm -rf d-$*; mkdir d-$*
 	@cd .. && test/$< >test/d-$*/log 2>&1
 	@printf "$* "
+	@touch $@
 
 clean:
 	$(RM) -f *.o *.so
