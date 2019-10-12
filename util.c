@@ -590,7 +590,7 @@ const char *iaddr_to_string(const union iaddr *ia)
 
     int r = adns_addr2text(&ia->sa, 0, addrbuf, &addrbuflen, &port);
     if (r) {
-	const char fmt[]= "scoped IPv6 addr, error: %.*s";
+	const char fmt[]= "bad addr, error: %.*s";
 	sprintf(addrbuf, fmt,
 		(int)(ADNS_ADDR2TEXT_BUFLEN - sizeof(fmt)) /* underestimate */,
 		strerror(r));
