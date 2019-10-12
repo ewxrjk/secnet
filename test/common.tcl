@@ -88,7 +88,13 @@ exec cat
 	log-events "all";
 	random randomfile("/dev/urandom",no);
 	transform eax-serpent { }, serpent256-cbc { };
-	include test-example/sites.conf
+    }
+
+    set f [open test-example/sites.conf r]
+    set sites [read $f]
+    close $f
+    append cfg $sites
+    append cfg {
 	sites map(site,vpn/test-example/all-sites);
     }
     return $cfg
