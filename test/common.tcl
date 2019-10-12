@@ -1,5 +1,3 @@
-#! /usr/bin/tclsh
-
 package require Tclx
 
 load chiark_tcl_hbytes-1.so
@@ -193,13 +191,3 @@ proc udp-relay {data src sock args} {
 	puts stderr "$orgsrc -> $dst: $emsg"
     }
 }
-
-udp-proxy
-spawn-secnet inside
-spawn-secnet outside
-
-after 500 sendpkt
-after 1000 sendpkt
-after 5000 timed-out
-
-vwait ok
