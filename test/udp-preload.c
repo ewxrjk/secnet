@@ -96,7 +96,7 @@ static fdinfo **table;
 static int tablesz;
 
 static fdinfo *lookup(int fd) {
-    if (fd>=tablesz) return 0;
+    if (fd<0 || fd>=tablesz) return 0;
     return table[fd];
 }
 
@@ -203,7 +203,7 @@ WRAP(socket) {
 }
 
 WRAP(close) {
-    if (fd<tablesz) {
+    if (fd>=0 && fd<tablesz) {
 	free(table[fd]);
 	table[fd]=0;
     }
