@@ -155,8 +155,14 @@ proc sendpkt {} {
 	[hbytes h2raw c0[join $p ""]c0]
 }
 
-file mkdir test/tmp
-set tmp test/tmp
+if {![catch {
+    set tmp $env(AUTOPKGTEST_ARTIACTS)
+}]} {} elseif {![catch {
+    set tmp $env(AUTOPKGTEST_TMP)
+}]} {} elseif {[regsub {^test/t-} $argv0 {test/d-} tmp]} {
+    file mkdir $tmp
+}
+
 set socktmp $tmp/s
 exec mkdir -p -m700 $socktmp
 regsub {^(?!/)} $socktmp {./} socktmp ;# dgram-socket wants ./ or /

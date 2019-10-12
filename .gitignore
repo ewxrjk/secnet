@@ -37,6 +37,5 @@ test-example/sites.conf
 test-example/bogus-setup-request
 build-stamp
 
-test/tmp
 test/d-*
 test/udp-preload.so
