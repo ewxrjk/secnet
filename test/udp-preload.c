@@ -64,17 +64,17 @@ static anyfn_type *find_any(const char *name) {
                          const void *optval, socklen_t optlen
 #define getsockname_args int fd, struct sockaddr *addr, socklen_t *addrlen
 #define WRAPS(X)					\
-    X(socket,     (domain,type,protocol))		\
-    X(close,      (fd))					\
-    X(bind,       (fd,addr,addrlen))			\
-    X(setsockopt, (fd,level,optname,optval,optlen))	\
-    X(getsockname,(fd,addr,addrlen))
+    X(socket,     int,     (domain,type,protocol))		\
+    X(close,      int,     (fd))					\
+    X(bind,       int,     (fd,addr,addrlen))			\
+    X(setsockopt, int,     (fd,level,optname,optval,optlen))	\
+    X(getsockname,int,     (fd,addr,addrlen))
 
-#define DEF_OLD(fn,args)				\
-  typedef int fn##_fn_type(fn##_args);			\
-  static int find_##fn(fn##_args);			\
+#define DEF_OLD(fn,rt,args)				\
+  typedef rt fn##_fn_type(fn##_args);			\
+  static rt find_##fn(fn##_args);			\
   static fn##_fn_type find_##fn, *old_##fn=find_##fn;	\
-  static int find_##fn(fn##_args) {			\
+  static rt find_##fn(fn##_args) {			\
     anyfn_type *anyfn;					\
     anyfn= find_any(#fn); if (!anyfn) return -1;	\
     old_##fn= (fn##_fn_type*)anyfn;			\
@@ -84,6 +84,7 @@ static anyfn_type *find_any(const char *name) {
 WRAPS(DEF_OLD)
 
 #define WRAP(fn) int fn(fn##_args)
+#define TWRAP(fn) fn(fn##_args)
 
 typedef struct{
     int af;
