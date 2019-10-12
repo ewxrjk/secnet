@@ -33,6 +33,10 @@
 #include <sys/wait.h>
 #include <netinet/in.h>
 
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <arpa/inet.h>
+
 #define STDERRSTR_CONST(m) write(2,m,sizeof(m)-1)
 #define STDERRSTR_STRING(m) write(2,m,strlen(m))
 
@@ -89,16 +93,29 @@ static fdinfo *lookup(int fd) {
     return table[fd];
 }
 
-static int chkaddr(fdinfo *ent,
-		   const struct sockaddr *addr, socklen_t addrlen) {
-    if (addr->sa_family!=ent->af) { errno=EAFNOSUPPORT; return -1; }
-    socklen_t expectlen;
+#define ADDRPORTSTRLEN (INET6_ADDRSTRLEN+1+5) /* not including nul */
+
+static int addrport2str(char buf[ADDRPORTSTRLEN+1],
+			const struct sockaddr *addr, socklen_t addrlen) {
+    const void *addrv=addr;
+    const struct sockaddr_in  *sin;
+    const struct sockaddr_in6 *sin6;
+    uint16_t port;
+    socklen_t el;
     switch (addr->sa_family) {
-    case AF_INET:  expectlen=sizeof(ent->bound.v4); break;
-    case AF_INET6: expectlen=sizeof(ent->bound.v6); break;
-    default: abort();
+    case AF_INET : sin =addrv; el=sizeof(*sin ); port=sin ->sin_port;  break;
+    case AF_INET6: sin6=addrv; el=sizeof(*sin6); port=sin6->sin6_port; break;
+    default: errno=ESRCH; return -1;
     }
-    if (addrlen!=expectlen) { errno=EINVAL; return -1; }
+//fprintf(stderr,"af=%lu el=%lu addrlen=%lu\n",
+//	(unsigned long)addr->sa_family,
+//	(unsigned long)el,
+//	(unsigned long)addrlen);
+    if (addrlen!=el) { errno=EINVAL; return -1; }
+    char *p=buf;
+    if (!inet_ntop(addr->sa_family,addr,p,INET6_ADDRSTRLEN)) return -1;
+    p+=strlen(p);
+    sprintf(p,",%u",(unsigned)ntohs(port));
     return 0;
 }
 
@@ -128,9 +145,22 @@ WRAP(socket) {
 
 WRAP(bind) {
     fdinfo *ent=lookup(fd);
-    if (!ent) return bind(fd,addr,addrlen);
-    if (chkaddr(ent,addr,addrlen)) return -1;
-    memset(&ent->bound,0,sizeof(ent->bound));
-    memcpy(&ent->bound,addr,addrlen);
-    return 0;
+    if (!ent) return old_bind(fd,addr,addrlen);
+    const char *dir = getenv("UDP_PRELOAD_DIR");
+    if (!dir) { errno=ECHILD; return -1; }
+    struct sockaddr_un sun;
+    memset(&sun,0,sizeof(sun));
+    sun.sun_family=AF_UNIX;
+    int dl = strlen(dir);
+    if (dl + 1 + ADDRPORTSTRLEN + 1 > sizeof(sun.sun_path)) {
+	errno=ENAMETOOLONG; return -1;
+    }
+    strcpy(sun.sun_path,dir);
+    char *p=sun.sun_path+dl;
+    *p++='/';
+    if (addrport2str(p,addr,addrlen)) return -1;
+//fprintf(stderr,"binding %s\n",sun.sun_path);
+    return old_bind(fd,(const void*)&sun,sizeof(sun));
 }
+
+//udp (test/tmp/outside.conf:19): setsockopt(,IPV6_V6ONLY,&1,): Operation not supported
