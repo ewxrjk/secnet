@@ -13,7 +13,7 @@ conffile.yy.[ch]
 /config.h
 /config.status
 /stamp-h
-/Makefile
+Makefile
 /common.make
 
 msgcode-test
