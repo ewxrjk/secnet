@@ -59,9 +59,12 @@ static anyfn_type *find_any(const char *name) {
 
 #define socket_args int domain, int type, int protocol
 #define bind_args   int fd, const struct sockaddr *addr, socklen_t addrlen
-#define WRAPS(X)				\
-    X(socket, (domain,type,protocol))		\
-    X(bind,   (fd,addr,addrlen))
+#define setsockopt_args  int fd, int level, int optname, \
+                         const void *optval, socklen_t optlen
+#define WRAPS(X)					\
+    X(socket,     (domain,type,protocol))		\
+    X(bind,       (fd,addr,addrlen))			\
+    X(setsockopt, (fd,level,optname,optval,optlen))
 
 #define DEF_OLD(fn,args)				\
   typedef int fn##_fn_type(fn##_args);			\
@@ -160,4 +163,13 @@ WRAP(bind) {
     return old_bind(fd,(const void*)&sun,sizeof(sun));
 }
 
-//udp (test/tmp/outside.conf:19): setsockopt(,IPV6_V6ONLY,&1,): Operation not supported
+WRAP(setsockopt) {
+    fdinfo *ent=lookup(fd);
+    if (!ent) return old_setsockopt(fd,level,optname,optval,optlen);
+    if (ent->af==AF_INET6 && level==IPPROTO_IPV6 && optname==IPV6_V6ONLY
+	&& optlen==sizeof(int) && *(int*)optval==1) {
+	return 0;
+    }
+    errno=ENOTTY;
+    return -1;
+}
