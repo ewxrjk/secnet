@@ -150,7 +150,10 @@ static int str2addrport(char *str,
     char *comma=strchr(str,',');
     if (!comma) { errno=ESRCH; return -1; }
     *comma++=0;
-    if (inet_pton(af,str,iav)) return -1;
+    int r=inet_pton(af,str,iav);
+//fprintf(stderr,"inet_pton(%d,\"%s\",)=%d\n",af,str,r);
+    if (r<0) return -1;
+    if (r==0) { errno=ENOTTY; return -1; }
 
     char *ep;
     errno=0;
@@ -244,7 +247,9 @@ WRAP(getsockname) {
 //	(unsigned long)sunlen);
 	errno=EDOM; return -1;
     }
-    if (str2addrport(sun.sun_path,addr,addrlen)) return -1;
+    char *slash=strrchr(sun.sun_path,'/');
+    if (str2addrport(slash ? slash+1 : sun.sun_path,
+		     addr,addrlen)) return -1;
     return 0;
 }
 
