@@ -8,4 +8,8 @@ all: $(TARGETS)
 CFLAGS += -D_REENTRANT -fPIC
 
 udp-preload.so: udp-preload.o
-	ld -g -shared -soname $@.1 $^ -o $@ -ldl -lc
+	$(CC) -shared -Wl,-soname,$@.1 $^ -o $@ -ldl
+
+clean:
+	$(RM) -f *.o *.so
+	$(RM) -rf tmp
