@@ -98,13 +98,14 @@ static fdinfo *lookup(int fd) {
 static int addrport2str(char buf[ADDRPORTSTRLEN+1],
 			const struct sockaddr *addr, socklen_t addrlen) {
     const void *addrv=addr;
+    const void *iav;
     const struct sockaddr_in  *sin;
     const struct sockaddr_in6 *sin6;
     uint16_t port;
     socklen_t el;
     switch (addr->sa_family) {
-    case AF_INET : sin =addrv; el=sizeof(*sin ); port=sin ->sin_port;  break;
-    case AF_INET6: sin6=addrv; el=sizeof(*sin6); port=sin6->sin6_port; break;
+    case AF_INET:  sin =addrv; el=sizeof(*sin ); iav=&sin ->sin_addr ; port=sin ->sin_port ; break;
+    case AF_INET6: sin6=addrv; el=sizeof(*sin6); iav=&sin6->sin6_addr; port=sin6->sin6_port; break;
     default: errno=ESRCH; return -1;
     }
 //fprintf(stderr,"af=%lu el=%lu addrlen=%lu\n",
@@ -113,7 +114,7 @@ static int addrport2str(char buf[ADDRPORTSTRLEN+1],
 //	(unsigned long)addrlen);
     if (addrlen!=el) { errno=EINVAL; return -1; }
     char *p=buf;
-    if (!inet_ntop(addr->sa_family,addr,p,INET6_ADDRSTRLEN)) return -1;
+    if (!inet_ntop(addr->sa_family,iav,p,INET6_ADDRSTRLEN)) return -1;
     p+=strlen(p);
     sprintf(p,",%u",(unsigned)ntohs(port));
     return 0;
