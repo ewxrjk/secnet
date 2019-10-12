@@ -80,10 +80,6 @@ WRAPS(DEF_OLD)
 
 typedef struct{
     int af;
-    union {
-	struct sockaddr_in v4;
-	struct sockaddr_in6 v6;
-    } bound;
 } fdinfo;
 static fdinfo **table;
 static int tablesz;
@@ -136,7 +132,6 @@ WRAP(socket) {
     table[fd]=malloc(sizeof(*table[fd]));
     if (!table[fd]) goto fail;
     table[fd]->af=domain;
-    table[fd]->bound.v4.sin_family=0;
     return fd;
 
  fail:
