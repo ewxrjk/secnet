@@ -61,10 +61,12 @@ static anyfn_type *find_any(const char *name) {
 #define bind_args   int fd, const struct sockaddr *addr, socklen_t addrlen
 #define setsockopt_args  int fd, int level, int optname, \
                          const void *optval, socklen_t optlen
+#define getsockname_args int fd, struct sockaddr *addr, socklen_t *addrlen
 #define WRAPS(X)					\
     X(socket,     (domain,type,protocol))		\
     X(bind,       (fd,addr,addrlen))			\
-    X(setsockopt, (fd,level,optname,optval,optlen))
+    X(setsockopt, (fd,level,optname,optval,optlen))	\
+    X(getsockname,(fd,addr,addrlen))
 
 #define DEF_OLD(fn,args)				\
   typedef int fn##_fn_type(fn##_args);			\
@@ -116,6 +118,42 @@ static int addrport2str(char buf[ADDRPORTSTRLEN+1],
     if (!inet_ntop(addr->sa_family,iav,p,INET6_ADDRSTRLEN)) return -1;
     p+=strlen(p);
     sprintf(p,",%u",(unsigned)ntohs(port));
+    return 0;
+}
+
+static int str2addrport(char *str,
+			struct sockaddr *addr, socklen_t *addrlen) {
+    union {
+	struct sockaddr_in  sin;
+	struct sockaddr_in6 sin6;
+    } si;
+
+    memset(&si,0,sizeof(si));
+
+    int af;
+    void *iav;
+    uint16_t *portp;
+    socklen_t al;
+    switch (str[strcspn(str,".:")]) {
+    case '.': af=AF_INET ; iav=&si.sin .sin_addr ; al=sizeof(si.sin ); portp=&si.sin .sin_port ; break;
+    case ':': af=AF_INET6; iav=&si.sin6.sin6_addr; al=sizeof(si.sin6); portp=&si.sin6.sin6_port; break;
+    default: errno=ESRCH; return -1;
+    }
+    si.sin.sin_family=af;
+
+    char *comma=strchr(str,',');
+    if (!comma) { errno=ESRCH; return -1; }
+    *comma++=0;
+    if (inet_pton(af,str,iav)) return -1;
+
+    char *ep;
+    errno=0;
+    unsigned long port=strtoul(comma,&ep,10);
+    if (ep==comma || *ep || errno || port>65536) { errno=ESRCH; return -1; }
+    *portp= htons(port);
+
+    if (addr) memcpy(addr,&si, *addrlen<al ? *addrlen : al);
+    *addrlen=al;
     return 0;
 }
 
@@ -172,4 +210,20 @@ WRAP(setsockopt) {
     }
     errno=ENOTTY;
     return -1;
+}
+
+WRAP(getsockname) {
+    fdinfo *ent=lookup(fd);
+    if (!ent) return old_getsockname(fd,addr,addrlen);
+    struct sockaddr_un sun;
+    socklen_t sunlen=sizeof(sun);
+    if (old_getsockname(fd,(void*)&sun,&sunlen)) return -1;
+    if (sun.sun_family!=AF_UNIX || sunlen>sizeof(sun)) {
+//fprintf(stderr,"old_getsockname af=%lu sunlen=%lu\n",
+//	(unsigned long)sun.sun_family,
+//	(unsigned long)sunlen);
+	errno=EDOM; return -1;
+    }
+    if (str2addrport(sun.sun_path,addr,addrlen)) return -1;
+    return 0;
 }
