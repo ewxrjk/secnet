@@ -159,6 +159,22 @@ static int str2addrport(char *str,
     return 0;
 }
 
+static char *sun_prep(struct sockaddr_un *sun) {
+    const char *dir=getenv("UDP_PRELOAD_DIR");
+    if (!dir) { errno=ECHILD; return 0; }
+
+    memset(sun,0,sizeof(*sun));
+    sun->sun_family=AF_UNIX;
+    int dl = strlen(dir);
+    if (dl + 1 + ADDRPORTSTRLEN + 1 > sizeof(sun->sun_path)) {
+	errno=ENAMETOOLONG; return 0;
+    }
+    strcpy(sun->sun_path,dir);
+    char *p=sun->sun_path+dl;
+    *p++='/';
+    return p;
+}
+
 WRAP(socket) {
     if (!((domain==AF_INET || domain==AF_INET6) &&
 	  type==SOCK_DGRAM))
@@ -193,18 +209,8 @@ WRAP(close) {
 WRAP(bind) {
     fdinfo *ent=lookup(fd);
     if (!ent) return old_bind(fd,addr,addrlen);
-    const char *dir = getenv("UDP_PRELOAD_DIR");
-    if (!dir) { errno=ECHILD; return -1; }
     struct sockaddr_un sun;
-    memset(&sun,0,sizeof(sun));
-    sun.sun_family=AF_UNIX;
-    int dl = strlen(dir);
-    if (dl + 1 + ADDRPORTSTRLEN + 1 > sizeof(sun.sun_path)) {
-	errno=ENAMETOOLONG; return -1;
-    }
-    strcpy(sun.sun_path,dir);
-    char *p=sun.sun_path+dl;
-    *p++='/';
+    char *p=sun_prep(&sun);
     if (addrport2str(p,addr,addrlen)) return -1;
 //fprintf(stderr,"binding %s\n",sun.sun_path);
     if (unlink(sun.sun_path) && errno!=ENOENT) return -1;
