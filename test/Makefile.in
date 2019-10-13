@@ -33,7 +33,7 @@ check:
 
 check-real: $(foreach t,$(TESTNAMES),d-$t/ok)
 
-d-%/ok: t-% udp-preload.so common.tcl ../secnet
+d-%/ok: t-% udp-preload.so common.tcl ../secnet ../test-example/sites.conf
 	@rm -rf d-$*; mkdir d-$*
 	@cd .. && test/$< >test/d-$*/log 2>&1
 	@printf "$* "
