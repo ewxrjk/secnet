@@ -462,7 +462,7 @@ file=None
 complaints=0
 
 if len(sys.argv)<2:
-	pfile("stdin",sys.stdin.readlines())
+	inputfile=None
 	of=sys.stdout
 else:
 	if sys.argv[1]=='-u':
@@ -489,9 +489,6 @@ else:
 		if not ok:
 			print "caller not in group %s"%group
 			sys.exit(1)
-		headerinput=pfilepath(header,allow_include=True)
-		userinput=sys.stdin.readlines()
-		pfile("user input",userinput)
 	else:
 		if sys.argv[1]=='-P':
 			prefix=sys.argv[2]
@@ -499,7 +496,7 @@ else:
 		if len(sys.argv)>3:
 			print "Too many arguments"
 			sys.exit(1)
-		pfilepath(sys.argv[1])
+		inputfile=sys.argv[1]
 		of=sys.stdout
 		if len(sys.argv)>2:
 			of=open(sys.argv[2],'w')
@@ -519,7 +516,6 @@ def delempty(n):
 		delempty(n.children[i])
 		if not live(n.children[i]):
 			del n.children[i]
-delempty(root)
 
 # Check that all constraints are met (as far as I can tell
 # restrict-nets/networks/peer are the only special cases)
@@ -550,6 +546,17 @@ def checkconstraints(n,p,ra):
 	for i in n.children.keys():
 		checkconstraints(n.children[i],new_p,new_ra)
 
+if service:
+	headerinput=pfilepath(header,allow_include=True)
+	userinput=sys.stdin.readlines()
+	pfile("user input",userinput)
+else:
+	if inputfile is None:
+		pfile("stdin",sys.stdin.readlines())
+	else:
+		pfilepath(inputfile)
+
+delempty(root)
 checkconstraints(root,{},ipaddrset.complete_set())
 
 if complaints>0:
