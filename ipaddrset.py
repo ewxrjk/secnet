@@ -68,11 +68,12 @@ class IPAddressSet:
 			self._v[a.version].append(a)
 
 	# enquirers including standard comparisons
-	def __nonzero__(self):
+	def __bool__(self):
 		for v in _vsns:
 			if self._v[v]:
 				return True
 		return False
+	__nonzero__=__bool__ # for python2
 
 	def __eq__(self,other):
 		for v in _vsns:
