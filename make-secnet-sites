@@ -52,6 +52,7 @@ Cendio Systems AB.
 """
 
 from __future__ import print_function
+from __future__ import unicode_literals
 from builtins import int
 
 import string
@@ -70,6 +71,14 @@ sys.path.insert(1,"/usr/share/secnet")
 import ipaddrset
 
 VERSION="0.1.18"
+
+from sys import version_info
+if version_info.major == 2:  # for python2
+    import codecs
+    sys.stdin = codecs.getreader('utf-8')(sys.stdin)
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+    import io
+    open=lambda f,m='r': io.open(f,m,encoding='utf-8')
 
 # Are we being invoked from userv?
 service=0

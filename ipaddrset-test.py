@@ -30,6 +30,7 @@
 # don't believe it is a creative work that attracts copyright.  -iwj.
 
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import ipaddr
 from ipaddr import IPNetwork, IPAddress
