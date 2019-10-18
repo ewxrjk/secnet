@@ -257,6 +257,7 @@ class level:
 	allow_properties={}
 	require_properties={}
 	def __init__(self,w):
+		self.type=w[0]
 		self.name=w[1]
 		self.properties={}
 		self.children={}
