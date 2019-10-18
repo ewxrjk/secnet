@@ -88,12 +88,12 @@ else:
 		groupfiledir=sys.argv[3]
 		sitesfile=sys.argv[4]
 		group=sys.argv[5]
-		if not os.environ.has_key("USERV_USER"):
+		if "USERV_USER" not in os.environ:
 			print("Environment variable USERV_USER not found")
 			sys.exit(1)
 		user=os.environ["USERV_USER"]
 		# Check that group is in USERV_GROUP
-		if not os.environ.has_key("USERV_GROUP"):
+		if "USERV_GROUP" not in os.environ:
 			print("Environment variable USERV_GROUP not found")
 			sys.exit(1)
 		ugs=os.environ["USERV_GROUP"]
@@ -390,7 +390,7 @@ prefix=''
 
 def set_property(obj,w):
 	"Set a property on a configuration node"
-	if obj.properties.has_key(w[0]):
+	if w[0] in obj.properties:
 		obj.properties[w[0]].add(obj,w)
 	else:
 		obj.properties[w[0]]=keywords[w[0]][0](w)
@@ -415,7 +415,7 @@ def pline(i,allow_include=False):
 			return []
 		newfile=os.path.join(os.path.dirname(file),w[1])
 		return pfilepath(newfile,allow_include=allow_include)
-	if levels.has_key(keyword):
+	if keyword in levels:
 		# We may go up any number of levels, but only down by one
 		newdepth=levels[keyword].depth
 		currentdepth=len(obstack) # actually +1...
@@ -427,7 +427,7 @@ def pline(i,allow_include=False):
 		# See if it's a new one (and whether that's permitted)
 		# or an existing one
 		current=obstack[len(obstack)-1]
-		if current.children.has_key(w[1]):
+		if w[1] in current.children:
 			# Not new
 			current=current.children[w[1]]
 			if service and group and current.depth==2:
@@ -446,7 +446,7 @@ def pline(i,allow_include=False):
 			current=nl
 		obstack.append(current)
 		return [i]
-	if not current.allow_properties.has_key(keyword):
+	if keyword not in current.allow_properties:
 		complain("Property %s not allowed at %s level"%
 			(keyword,current.type))
 		return []
@@ -528,22 +528,22 @@ def checkconstraints(n,p,ra):
 	new_p=p.copy()
 	new_p.update(n.properties)
 	for i in n.require_properties.keys():
-		if not new_p.has_key(i):
+		if i not in new_p:
 			moan("%s %s is missing property %s"%
 				(n.type,n.name,i))
 	for i in new_p.keys():
-		if not n.allow_properties.has_key(i):
+		if i not in n.allow_properties:
 			moan("%s %s has forbidden property %s"%
 				(n.type,n.name,i))
 	# Check address range restrictions
-	if n.properties.has_key("restrict-nets"):
+	if "restrict-nets" in n.properties:
 		new_ra=ra.intersection(n.properties["restrict-nets"].set)
 	else:
 		new_ra=ra
-	if n.properties.has_key("networks"):
+	if "networks" in n.properties:
 		if not n.properties["networks"].set <= new_ra:
 			moan("%s %s networks out of bounds"%(n.type,n.name))
-		if n.properties.has_key("peer"):
+		if "peer" in n.properties:
 			if not n.properties["networks"].set.contains(
 				n.properties["peer"].addr):
 				moan("%s %s peer not in networks"%(n.type,n.name))
