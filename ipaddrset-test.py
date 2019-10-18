@@ -40,7 +40,7 @@ v4a=IPAddress('172.18.45.6')
 s=IPAddressSet()
 print 's =', s
 s.append([IPNetwork('172.18.45.0/24')])
-s.append([IPNetwork('2001:23:24::/40')])
+s.append([IPNetwork('2001:23:24::/48')])
 print s
 
 t=IPAddressSet(map(IPNetwork,['172.31.80.8/32','172.18.45.192/28']))
