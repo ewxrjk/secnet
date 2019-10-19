@@ -661,7 +661,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     l->postreadcheck=postreadcheck_tryload;
     l->u.tryload.log=log;
 
-    st=rsa_loadpriv_core(l,f,loc,True);
+    st=rsa_loadpriv_core(l,f,loc,False);
     if (!st) goto error_out;
     goto out;
 
