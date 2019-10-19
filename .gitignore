@@ -13,6 +13,7 @@ conffile.yy.[ch]
 /config.h
 /config.status
 /config.stamp
+/config.stamp.in
 Makefile
 /common.make
 
