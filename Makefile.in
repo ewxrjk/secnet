@@ -23,7 +23,7 @@ PACKAGE:=secnet
 VERSION=0.4.5
 
 VPATH:=@srcdir@
-
+srcdir:=@srcdir@
 include common.make
 
 INSTALL:=@INSTALL@

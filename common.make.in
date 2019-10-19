@@ -19,8 +19,6 @@
 
 @SET_MAKE@
 
-srcdir:=@srcdir@
-
 SHELL:=/bin/sh
 RM:=@RM@
 CC:=@CC@
