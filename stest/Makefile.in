@@ -2,7 +2,6 @@
 VPATH:=@srcdir@
 srcdir:=@srcdir@
 topdir:=@top_srcdir@
-topbuilddir:=$(shell cd .. && pwd)
 
 include ../common.make
 

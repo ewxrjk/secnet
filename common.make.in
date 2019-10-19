@@ -19,6 +19,8 @@
 
 @SET_MAKE@
 
+topbuilddir:=@abs_top_builddir@
+
 SHELL:=/bin/sh
 RM:=@RM@
 CC:=@CC@
