@@ -5994,7 +5994,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
 
   case $ac_file$ac_mode in
-    "default":C) echo timestamp >stamp-h ;;
+    "default":C) echo timestamp >config.stamp ;;
 
   esac
 done # for ac_tag
