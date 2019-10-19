@@ -74,7 +74,6 @@ static anyfn_type *find_any(const char *name) {
 
 #define DEF_OLD(fn,rt,args)				\
   typedef rt fn##_fn_type(fn##_args);			\
-  static rt find_##fn(fn##_args);			\
   static fn##_fn_type find_##fn, *old_##fn=find_##fn;	\
   static rt find_##fn(fn##_args) {			\
     anyfn_type *anyfn;					\
@@ -171,7 +170,7 @@ static char *sun_prep(struct sockaddr_un *sun) {
 
     memset(sun,0,sizeof(*sun));
     sun->sun_family=AF_UNIX;
-    int dl = strlen(dir);
+    size_t dl = strlen(dir);
     if (dl + 1 + ADDRPORTSTRLEN + 1 > sizeof(sun->sun_path)) {
 	errno=ENAMETOOLONG; return 0;
     }
@@ -309,7 +308,7 @@ ssize_t TWRAP(recvfrom) {
 
     ssize_t rr=recvmsg(fd,&m,0);
     if (rr==-1) return rr;
-    if (rr<sizeof(tbuf)) { errno=ENXIO; return -1; }
+    if ((size_t)rr<sizeof(tbuf)) { errno=ENXIO; return -1; }
     if (tbuf[ADDRPORTSTRLEN]) { errno=E2BIG; return -1; }
     if (str2addrport(tbuf,addr,addrlen)) {
 	fprintf(stderr, "recvfrom str2addrport `%s' %s\n",tbuf,
