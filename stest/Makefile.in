@@ -1,9 +1,15 @@
 
+VPATH:=@srcdir@
+srcdir:=@srcdir@
+topdir:=@top_srcdir@
+topbuilddir:=$(shell cd .. && pwd)
+
 CC:=@CC@
+# commmon.make
 
 TARGETS=udp-preload.so check
 
-TESTSCRIPTS ?= $(shell echo t-*[0-9a-z])
+TESTSCRIPTS ?= $(shell echo $(srcdir)/t-*[0-9a-z])
 TESTNAMES := $(patsubst t-%,%,$(notdir $(TESTSCRIPTS)))
 
 all: $(TARGETS)
@@ -33,9 +39,11 @@ check:
 
 check-real: $(foreach t,$(TESTNAMES),d-$t/ok)
 
-d-%/ok: t-% udp-preload.so common.tcl ../secnet ../test-example/sites.conf
+d-%/ok: $(srcdir)/t-% udp-preload.so $(srcdir)/common.tcl \
+		../secnet ../test-example/sites.conf
 	@rm -rf d-$*; mkdir d-$*
-	@cd .. && stest/$< >stest/d-$*/log 2>&1
+	export STEST_BUILDDIR=$(topbuilddir); \
+	cd $(topdir) && stest/t-$* >$(topbuilddir)/stest/d-$*/log 2>&1
 	@printf "$* "
 	@touch $@
 

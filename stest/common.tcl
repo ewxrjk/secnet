@@ -25,6 +25,7 @@ set extra(outside) {}
 
 proc mkconf {which} {
     global tmp
+    global builddir
     global netlink
     global ports
     global extra
@@ -73,7 +74,7 @@ exec cat
     }
     append cfg ";
 	local-name \"test-example/$which/$which\";
-	local-key rsa-private(\"test-example/$which.key\");
+	local-key rsa-private(\"$builddir/test-example/$which.key\");
 "
     append cfg $extra($which)
     append cfg {
@@ -90,7 +91,7 @@ exec cat
 	transform eax-serpent { }, serpent256-cbc { };
     }
 
-    set f [open test-example/sites.conf r]
+    set f [open $builddir/test-example/sites.conf r]
     set sites [read $f]
     close $f
     append cfg $sites
@@ -101,14 +102,15 @@ exec cat
 }
 
 proc spawn-secnet {which} {
-    global netlinkfh
     global tmp
+    global builddir
+    global netlinkfh
     upvar #0 pids($which) pid
     set cf $tmp/$which.conf
     set ch [open $cf w]
     puts $ch [mkconf $which]
     close $ch
-    set argl [list strace -o$tmp/$which.strace ./secnet -dvnc $cf]
+    set argl [list $builddir/secnet -dvnc $cf]
     set pid [fork]
     if {!$pid} {
 	execl [lindex $argl 0] [lrange $argl 1 end]
@@ -168,6 +170,11 @@ if {![catch {
 }]} {} elseif {[regsub {^stest/t-} $argv0 {stest/d-} tmp]} {
     file mkdir $tmp
 }
+if {![catch {
+    set builddir $env(STEST_BUILDDIR)
+}]} {} else {
+    set builddir .
+}
 
 set socktmp $tmp/s
 exec mkdir -p -m700 $socktmp
@@ -182,7 +189,7 @@ proc prefix_preload {lib} {
 }
 
 set env(UDP_PRELOAD_DIR) $socktmp
-prefix_preload stest/udp-preload.so
+prefix_preload $builddir/stest/udp-preload.so
 
 proc udp-proxy {} {
     global socktmp udpsock
