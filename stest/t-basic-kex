@@ -1,5 +1,5 @@
 #! /usr/bin/tclsh
 
-source test/common.tcl
+source stest/common.tcl
 
 test-kex

@@ -2,6 +2,6 @@
 
 # Dyamic key rollover config on inside only
 
-source test/common.tcl
+source stest/common.tcl
 
 test-kex

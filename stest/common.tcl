@@ -165,7 +165,7 @@ if {![catch {
     set tmp $env(AUTOPKGTEST_ARTIACTS)
 }]} {} elseif {![catch {
     set tmp $env(AUTOPKGTEST_TMP)
-}]} {} elseif {[regsub {^test/t-} $argv0 {test/d-} tmp]} {
+}]} {} elseif {[regsub {^stest/t-} $argv0 {stest/d-} tmp]} {
     file mkdir $tmp
 }
 
@@ -182,7 +182,7 @@ proc prefix_preload {lib} {
 }
 
 set env(UDP_PRELOAD_DIR) $socktmp
-prefix_preload test/udp-preload.so
+prefix_preload stest/udp-preload.so
 
 proc udp-proxy {} {
     global socktmp udpsock
