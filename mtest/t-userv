@@ -5,3 +5,9 @@ source mtest/common.tcl
 run-mss-userv Uuser Ginside -u \
     mtest/header.sites $tmp/groupfiles $tmp/out.sites Ginside \
     < mtest/Ginside.sites
+
+set seddery { sed -n 's/^[ \t]*//; /^[^#]/p' }
+exec bash -c "
+    diff -u <($seddery mtest/e-userv.sites) \\
+            <($seddery $tmp/out.sites     )
+"
