@@ -8,7 +8,7 @@ proc prefix_some_path {pathvar entry} {
 }
 
 if {![catch {
-    set builddir $env(STEST_BUILDDIR)
+    set builddir $env(SECNET_TEST_BUILDDIR)
 }]} {} else {
     set builddir .
 }
