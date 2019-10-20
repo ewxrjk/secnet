@@ -1,0 +1,9 @@
+#! /usr/bin/tclsh
+
+source mtest/common.tcl
+
+exec env \
+    USERV_USER=Uuser USERV_GROUP=Ginside \
+    ./make-secnet-sites -u \
+    mtest/header.sites $tmp/groupfiles $tmp/out.sites Ginside \
+    < mtest/Ginside.sites
