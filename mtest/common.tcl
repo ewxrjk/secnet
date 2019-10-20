@@ -17,9 +17,20 @@ proc run-mss-userv {user group args} {
 
 proc run-mss {args} { eval [list exec] [mss-program] $args }
 
+proc diff-output {expected got suffix} {
+    global seddery
+    global tmp
+    exec bash -c "
+    	diff -u <($seddery mtest/$expected$suffix) \\
+        	<($seddery $tmp/$got$suffix      )
+    "
+}
+
 file mkdir $tmp/groupfiles
 
 set env(PYTHONHASHSEED) 0
 set env(PYTHONBYTECODEBASE) 0
+
+set seddery { sed -n 's/^[ \t]*//; /^[^#]/p' }
 
 prefix_some_path PYTHONPATH .
