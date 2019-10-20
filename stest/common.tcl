@@ -1,3 +1,5 @@
+source test-common.tcl
+
 package require Tclx
 
 load chiark_tcl_hbytes-1.so
@@ -163,20 +165,6 @@ proc sendpkt {} {
 	[hbytes h2raw c0[join $p ""]c0]
 }
 
-if {![catch {
-    set builddir $env(STEST_BUILDDIR)
-}]} {} else {
-    set builddir .
-}
-
-if {![catch {
-    set tmp $env(AUTOPKGTEST_ARTIACTS)
-}]} {} elseif {![catch {
-    set tmp $env(AUTOPKGTEST_TMP)
-}]} {} elseif {[regsub {^stest/t-} $argv0 {stest/d-} tmp]} {
-    set tmp $builddir/$tmp
-    file mkdir $tmp
-}
 set socktmp $tmp/s
 exec mkdir -p -m700 $socktmp
 regsub {^(?!/)} $socktmp {./} socktmp ;# dgram-socket wants ./ or /
