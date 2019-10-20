@@ -12,6 +12,7 @@ TESTNAMES := $(patsubst t-%,%,$(notdir $(TESTSCRIPTS)))
 
 DEPS += udp-preload.so
 DEPS += $(srcdir)/common.tcl
+DEPS += $(topdir)/test-common.tcl
 DEPS += ../secnet
 DEPS += ../test-example/sites.conf
 
