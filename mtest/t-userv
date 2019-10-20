@@ -14,4 +14,24 @@ diff-output e-userv out .sites
 
 #----- argument parser does not look for args beyond header -----
 
-#run-mss-userv 
+set env(LC_MESSAGES) C
+
+set try [lreplace $good 4 4 --misparse-test]
+
+if {![catch {
+    eval run-mss-userv $try
+} emsg]} {
+    error "should have failed"
+} else {
+    switch -glob $emsg {
+	{*unrecognized arguments: --misparse-test*} {
+	    error "misparsed!"
+	}
+	{*No such file or directory: '--misparse-test/TGinside'*} {
+	}
+	* {
+	    error "huh ? $emsg"
+	}
+    }
+}
+
