@@ -5,6 +5,9 @@ TESTSCRIPTS ?= $(shell echo $(srcdir)/t-*[0-9a-z])
 TESTNAMES := $(patsubst t-%,%,$(notdir $(TESTSCRIPTS)))
 
 DEPS += $(topdir)/test-common.tcl
+DEPS += $(topdir)/common.make
+DEPS += $(topdir)/test-common.make
+DEPS += Makefile
 
 TARGETS += check
 
