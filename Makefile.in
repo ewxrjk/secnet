@@ -131,9 +131,11 @@ secnet: Makefile .git/HEAD $(shell sed -n 's#^ref: #.git/#p' .git/HEAD)
 secnet: $(wildcard .git/packed-refs)
 endif
 
+TESTDIRS=stest mtest
+
 check: eax-aes-test.confirm eax-serpent-test.confirm \
 	eax-serpentbe-test.confirm check-ipaddrset \
-	msgcode-test.confirm check-stest
+	msgcode-test.confirm $(addprefix check-,$(TESTDIRS))
 
 version.c: Makefile
 	echo "#include \"secnet.h\"" >$@.new
@@ -167,6 +169,9 @@ check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 check-stest: secnet test-example/sites.conf
 	$(MAKE) -C stest check
 
+check-mtest: make-secnet-sites ipaddrset.py
+	$(MAKE) -C mtest check
+
 test-example/sites.conf:
 	$(MAKE) -C test-example
 
@@ -197,11 +202,13 @@ install-force:
 	rm -f $(STALE_PYTHON_FILES)
 	$(MAKE) install
 
-clean:
+clean: $(addprefix clean-,$(TESTDIRS))
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
 	$(RM) -f *.d *.pyc *~ eax-*-test.confirm eax-*-test
 	$(RM) -f msgcode-test.confirm msgcode-test
-	$(MAKE) -C stest clean
+
+$(addprefix clean-,$(TESTDIRS)): clean-%:
+	$(MAKE) -C $* clean
 
 realclean:	clean
 	$(RM) -f *~ Makefile config.h  *.d \
