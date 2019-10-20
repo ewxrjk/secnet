@@ -2,8 +2,16 @@
 
 source mtest/common.tcl
 
-run-mss-userv Uuser Ginside -u \
-    mtest/header.sites $tmp/groupfiles $tmp/out.sites Ginside \
-    < mtest/Ginside.sites
+#----- success test -----
+
+set good [list Uuser Ginside -u \
+          mtest/header.sites $tmp/groupfiles $tmp/out.sites Ginside \
+	  < mtest/Ginside.sites]
+
+eval run-mss-userv $good
 
 diff-output e-userv out .sites
+
+#----- argument parser does not look for args beyond header -----
+
+#run-mss-userv 
