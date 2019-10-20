@@ -133,9 +133,19 @@ endif
 
 TESTDIRS=stest mtest
 
-check: eax-aes-test.confirm eax-serpent-test.confirm \
+FAST_CHECKS= eax-aes-test.confirm eax-serpent-test.confirm \
 	eax-serpentbe-test.confirm check-ipaddrset \
-	msgcode-test.confirm $(addprefix check-,$(TESTDIRS))
+	$(addprefix check-,$(TESTDIRS))
+
+CHECKS += $(FAST_CHECKS)
+CHECKS += msgcode-test.confirm
+
+check: $(CHECKS)
+
+recheck:
+	rm -f $(FAST_CHECKS)
+	rm -rf $(addsuffix /d-*, $(TESTDIRS))
+	$(MAKE) check
 
 version.c: Makefile
 	echo "#include \"secnet.h\"" >$@.new
