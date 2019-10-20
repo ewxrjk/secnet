@@ -1,0 +1,14 @@
+
+VPATH:=@srcdir@
+srcdir:=@srcdir@
+topdir:=@top_srcdir@
+
+DEPS += $(topdir)/make-secnet-sites
+DEPS += $(topdir)/ipaddrset.py
+DEPS += $(srcdir)/common.tcl
+
+TESTDIR=mtest
+
+include ../test-common.make
+
+check: check-real

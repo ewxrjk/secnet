@@ -97,7 +97,7 @@ else
 fi
 
 AC_OUTPUT(Makefile common.make test-common.make
-          test-example/Makefile stest/Makefile,
+          test-example/Makefile stest/Makefile mtest/Makefile,
           echo timestamp >config.stamp)
 
 AH_TOP([
