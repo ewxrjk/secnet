@@ -1,7 +1,12 @@
 source test-common.tcl
 
 proc mss-program {} {
+    global env
     set l ./make-secnet-sites
+    if {![catch { set py $env(MTEST_PYTHON) }]} {
+	set l [concat $py $l]
+    }
+    return $l
 }
 
 proc run-mss-userv {user group args} {
