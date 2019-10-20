@@ -2,8 +2,6 @@
 
 source mtest/common.tcl
 
-exec env \
-    USERV_USER=Uuser USERV_GROUP=Ginside \
-    ./make-secnet-sites -u \
+run-mss-userv Uuser Ginside -u \
     mtest/header.sites $tmp/groupfiles $tmp/out.sites Ginside \
     < mtest/Ginside.sites
