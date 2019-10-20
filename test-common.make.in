@@ -15,7 +15,7 @@ check-real: $(foreach t,$(TESTNAMES),d-$t/ok)
 d-%/ok: $(srcdir)/t-% $(DEPS)
 	@rm -rf d-$*; mkdir d-$*
 	export STEST_BUILDDIR=$(topbuilddir); \
-	cd $(topdir) && stest/t-$* >$(topbuilddir)/stest/d-$*/log 2>&1
+	cd $(topdir) && $(TESTDIR)/t-$* >$(topbuilddir)/$(TESTDIR)/d-$*/log 2>&1
 	@printf "$* "
 	@touch $@
 

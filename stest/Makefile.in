@@ -10,6 +10,8 @@ DEPS += $(srcdir)/common.tcl
 DEPS += ../secnet
 DEPS += ../test-example/sites.conf
 
+TESTDIR=stest
+
 include ../test-common.make
 
 CFLAGS += -D_REENTRANT -fPIC
