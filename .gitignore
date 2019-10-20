@@ -16,6 +16,7 @@ conffile.yy.[ch]
 /config.stamp.in
 Makefile
 /common.make
+/test-common.make
 
 msgcode-test
 msgcode-test.confirm

@@ -3,20 +3,14 @@ VPATH:=@srcdir@
 srcdir:=@srcdir@
 topdir:=@top_srcdir@
 
-include ../common.make
-
-TARGETS=udp-preload.so check
-
-TESTSCRIPTS ?= $(shell echo $(srcdir)/t-*[0-9a-z])
-TESTNAMES := $(patsubst t-%,%,$(notdir $(TESTSCRIPTS)))
+TARGETS += udp-preload.so
 
 DEPS += udp-preload.so
 DEPS += $(srcdir)/common.tcl
-DEPS += $(topdir)/test-common.tcl
 DEPS += ../secnet
 DEPS += ../test-example/sites.conf
 
-all: $(TARGETS)
+include ../test-common.make
 
 CFLAGS += -D_REENTRANT -fPIC
 
@@ -40,16 +34,3 @@ MAKE_NOTSPECIAL:=$(MAKE)
 check:
 	env -u MAKEFLAGS -u MFLAGS \
 	$(MAKE_NOTSPECIAL) -j$(shell nproc || 1)0 check-real
-
-check-real: $(foreach t,$(TESTNAMES),d-$t/ok)
-
-d-%/ok: $(srcdir)/t-% $(DEPS)
-	@rm -rf d-$*; mkdir d-$*
-	export STEST_BUILDDIR=$(topbuilddir); \
-	cd $(topdir) && stest/t-$* >$(topbuilddir)/stest/d-$*/log 2>&1
-	@printf "$* "
-	@touch $@
-
-clean:
-	$(RM) -f *.o *.so
-	$(RM) -rf tmp
