@@ -1,0 +1,5 @@
+location outside Goutside
+restrict-nets 172.18.232.0/29
+
+location inside Ginside
+restrict-nets 172.18.232.8/29
