@@ -169,13 +169,7 @@ set socktmp $tmp/s
 exec mkdir -p -m700 $socktmp
 regsub {^(?!/)} $socktmp {./} socktmp ;# dgram-socket wants ./ or /
 
-proc prefix_preload {lib} {
-    global env
-    set l {}
-    catch { set l [split $env(PRELOAD) :] }
-    set l [concat [list $lib] $l]
-    set env(LD_PRELOAD) [join $l :]
-}
+proc prefix_preload {lib} { prefix_some_path LD_PRELOAD $lib }
 
 set env(UDP_PRELOAD_DIR) $socktmp
 prefix_preload $builddir/stest/udp-preload.so

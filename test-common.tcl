@@ -1,4 +1,12 @@
 
+proc prefix_some_path {pathvar entry} {
+    global env
+    set l {}
+    catch { set l [split $env($pathvar) :] }
+    set l [concat [list $entry] $l]
+    set env($pathvar) [join $l :]
+}
+
 if {![catch {
     set builddir $env(STEST_BUILDDIR)
 }]} {} else {
