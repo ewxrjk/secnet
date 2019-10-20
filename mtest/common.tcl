@@ -15,6 +15,8 @@ proc run-mss-userv {user group args} {
 	 $args
 }
 
+proc run-mss {args} { eval [list exec] [mss-program] $args }
+
 file mkdir $tmp/groupfiles
 
 set env(PYTHONHASHSEED) 0
