@@ -22,7 +22,7 @@ d-%/ok: $(srcdir)/t-% $(DEPS)
 	@export SECNET_TEST_BUILDDIR=$(topbuilddir); \
 	 cd $(topdir) && \
 	 $(TESTDIR)/t-$* >$(topbuilddir)/$(TESTDIR)/d-$*/log 2>&1
-	@printf "$* "
+	@printf "$(TESTDIR)/$* "
 	@touch $@
 
 clean:
