@@ -18,5 +18,6 @@ proc run-mss-userv {user group args} {
 file mkdir $tmp/groupfiles
 
 set env(PYTHONHASHSEED) 0
+set env(PYTHONBYTECODEBASE) 0
 
 prefix_some_path PYTHONPATH .
