@@ -136,6 +136,14 @@ class Tainted:
 		# caller promises to throw if syntax was dangeorus
 		return self._rtn(True)
 
+	def output(self):
+		if self._ok is False: return ''
+		if self._ok is True: return self._s
+		print('%s:%d: unchecked/unknown additional data "%s"' %
+		      (self._file,self._line,self._s),
+		      file=sys.stderr)
+		sys.exit(1)
+
 	bad_name=re.compile(r'^[^a-zA-Z]|[^-_0-9a-zA-Z]')
 	# secnet accepts _ at start of names, but we reserve that
 	bad_name_counter=0
@@ -345,6 +353,7 @@ class rsakey (basetype):
 		self.l=w[1].number(0,max['rsa_bits'],'rsa len')
 		self.e=w[2].bignum_10('rsa','rsa e')
 		self.n=w[3].bignum_10('rsa','rsa n')
+		if len(w) >= 5: w[4].email()
 	def __str__(self):
 		return 'rsa-public("%s","%s")'%(self.e,self.n)
 
@@ -537,15 +546,18 @@ def set_property(obj,w):
 	else:
 		obj.properties[prop.raw()]=keywords[prop.raw_mark_ok()][0](w)
 
-def pline(i,allow_include=False):
+
+def pline(il,allow_include=False):
 	"Process a configuration file line"
 	global allow_defs, obstack, root
-	w=i.rstrip('\n').split()
-	if len(w)==0: return [i]
+	w=il.rstrip('\n').split()
+	if len(w)==0: return ['']
 	w=list([Tainted(x) for x in w])
 	keyword=w[0]
 	current=obstack[len(obstack)-1]
-	copyout=lambda: [i]
+	copyout=lambda: ['    '*len(obstack) +
+			' '.join([ww.output() for ww in w]) +
+	                '\n']
 	if keyword=='end-definitions':
 		keyword.raw_mark_ok()
 		allow_defs=sitelevel.depth
@@ -580,6 +592,7 @@ def pline(i,allow_include=False):
 			if service and group and current.depth==2:
 				if group!=current.group:
 					complain("Incorrect group!")
+				w[2].groupname()
 		else:
 			# New
 			# Ignore depth check for now
