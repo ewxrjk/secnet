@@ -20,9 +20,12 @@ secnet (0.5.0) unstable; urgency=medium
   * Bad address syntax error does not wrongly mention IPv6 scopes.
   * Minor refactoring to support forthcoming work.  [Mark Wooding]
 
-  other bugfixes:
+  other bugfixes, improvements and changes to secnet itself:
+  * Better logging of why we are sending NAK messages.
   * Correctly use the verified copy of the peer remote capabilities
     from MSG3.  (Bug is not a vulnerability.)    [Mark Wooding]
+  * Significant internal rearrangements and refactorings, to support
+    forthcoming key management work.  [Mark Wooding and Ian Jackson]
 
   build system etc.:
   * Completely overhaul release checklist; drop dist target.
@@ -30,8 +33,6 @@ secnet (0.5.0) unstable; urgency=medium
   * polypath.c: Fix missing include of <limits.h>.  [Mark Wooding]
   * Add a Wireshark dissector `secnet-wireshark.lua'.  It is not
     installed anywhere right now.  [Mark Wooding]
-  * Significant internal rearrangements and refactorings, to support
-    forthcoming key management work.  [Mark Wooding and Ian Jackson]
 
   documentation:
   * Improve documentation of capability negotiation in NOTES, secnet(8)
