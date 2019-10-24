@@ -585,6 +585,7 @@ if complaints>0:
 	if complaints==1: print("There was 1 problem.")
 	else: print("There were %d problems."%(complaints))
 	sys.exit(1)
+complaints=None # arranges to crash if we complain later
 
 if service:
 	# Put the user's input into their group file, and rebuild the main
