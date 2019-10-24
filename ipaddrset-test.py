@@ -12,10 +12,6 @@
 # You may redistribute this fileand/or modify it under the terms of
 # the GNU General Public License as published by the Free Software
 # Foundation; either version 2, or (at your option) any later version.
-# Note however that this version of ipaddrset.py uses the Python
-# ipaddr library from Google, which is licenced only under the Apache
-# Licence, version 2.0, which is only compatible with the GNU GPL v3
-# (or perhaps later versions), and not with the GNU GPL v2.
 #
 # This software is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,27 +28,27 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ipaddr
-from ipaddr import IPNetwork, IPAddress
+import ipaddress
+from ipaddress import ip_network, ip_address
 
 import ipaddrset
 from ipaddrset import IPAddressSet
 
-v4a=IPAddress('172.18.45.6')
+v4a=ip_address('172.18.45.6')
 
 s=IPAddressSet()
 print('s =', s)
-s.append([IPNetwork('172.18.45.0/24')])
-s.append([IPNetwork('2001:23:24::/48')])
+s.append([ip_network('172.18.45.0/24')])
+s.append([ip_network('2001:23:24::/48')])
 print(s)
 
-t=IPAddressSet(map(IPNetwork,['172.31.80.8/32','172.18.45.192/28']))
+t=IPAddressSet(map(ip_network,['172.31.80.8/32','172.18.45.192/28']))
 print('t =', t)
 print(t <= s)
 print(t == s)
 
 for n1s in ['172.18.44.0/23','172.18.45.6/32','172.18.45.0/24']:
-    n1=IPNetwork(n1s)
+    n1=ip_network(n1s)
     print(n1)
     print(s.contains(n1))
     print(t.contains(n1))

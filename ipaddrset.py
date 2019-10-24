@@ -1,4 +1,4 @@
-"""IP address set manipulation, built on top of ipaddr.py"""
+"""IP address set manipulation, built on top of ipaddress.py"""
 
 # This file is Free Software.  It was originally written for secnet.
 #
@@ -26,7 +26,7 @@
 # along with this software; if not, see
 # https://www.gnu.org/licenses/gpl.html.
 
-import ipaddr
+import ipaddress
 
 _vsns = [6,4]
 
@@ -35,7 +35,7 @@ class IPAddressSet:
 
 	# constructors
 	def __init__(self,l=[]):
-		"New set contains each ipaddr.IPNetwork in the sequence l"
+		"New set contains each IP*Network in the sequence l"
 		self._v = {}
 		for v in _vsns:
 			self._v[v] = [ ]
@@ -44,7 +44,8 @@ class IPAddressSet:
 	# housekeeping and representation
 	def _compact(self):
 		for v in _vsns:
-			self._v[v] = ipaddr.collapse_address_list(self._v[v])
+			self._v[v] = list(
+				ipaddress.collapse_addresses(self._v[v]))
 	def __repr__(self):
 		return "IPAddressSet(%s)" % self.networks()
 	def str(self,comma=",",none="-"):
@@ -58,12 +59,12 @@ class IPAddressSet:
 
 	# mutators
 	def append(self,l):
-		"Appends each ipaddr.IPNetwork in the sequence l to self"
+		"Appends each IP*Network in the sequence l to self"
 		self._append(l)
 		self._compact()
 
 	def _append(self,l):
-		"Appends each ipaddr.IPNetwork in the sequence l to self"
+		"Appends each IP*Network in the sequence l to self"
 		for a in l:
 			self._v[a.version].append(a)
 
@@ -143,7 +144,7 @@ class IPAddressSet:
 		except KeyError:
 			v = None
 		if v:
-			return self._contains_net(ipaddr.IPNetwork(thing))
+			return self._contains_net(ipaddress.ip_network(thing))
 		else:
 			return self.__ge__(thing)
 
@@ -151,7 +152,9 @@ def complete_set():
 	"Returns a set containing all addresses"
 	s=IPAddressSet()
 	for v in _vsns:
-		a=ipaddr.IPAddress(0,v)
-		n=ipaddr.IPNetwork("%s/0" % a)
+		if v==6: a=ipaddress.IPv6Address(0)
+		elif v==4: a=ipaddress.IPv4Address(0)
+		else: raise "internal error"
+		n=ipaddress.ip_network("%s/0" % a)
 		s.append([n])
 	return s

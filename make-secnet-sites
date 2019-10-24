@@ -46,8 +46,7 @@ no-suppress-args
 cd ~/secnet/sites-test/
 execute ~/secnet/make-secnet-sites.py -u vpnheader groupfiles sites
 
-This program is part of secnet. It relies on the "ipaddr" library from
-Cendio Systems AB.
+This program is part of secnet.
 
 """
 
@@ -62,7 +61,7 @@ import os
 import getopt
 import re
 
-import ipaddr
+import ipaddress
 
 # entry 0 is "near the executable", or maybe from PYTHONPATH=.,
 # which we don't want to preempt
@@ -148,7 +147,7 @@ def listof(subtype):
 class single_ipaddr (basetype):
 	"An IP address"
 	def __init__(self,w):
-		self.addr=ipaddr.IPAddress(w[1])
+		self.addr=ipaddress.ip_address(w[1])
 	def __str__(self):
 		return '"%s"'%self.addr
 
@@ -157,7 +156,7 @@ class networks (basetype):
 	def __init__(self,w):
 		self.set=ipaddrset.IPAddressSet()
 		for i in w[1:]:
-			x=ipaddr.IPNetwork(i,strict=True)
+			x=ipaddress.ip_network(i,strict=True)
 			self.set.append([x])
 	def __str__(self):
 		return ",".join(map((lambda n: '"%s"'%n), self.set.networks()))
