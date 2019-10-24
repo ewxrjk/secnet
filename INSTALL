@@ -30,7 +30,8 @@ http://vtun.sourceforge.net/tun/
 You will probably be using the supplied `make-secnet-sites' program to
 generate your VPN's list of sites as a secnet configuration from a
 more-human-writeable form.  If so you need to install the standard
-`ipaddr' Python module (python-ipaddr on Debian-derived systems).
+`future' and `ipaddr' Python modules (python-future and python-ipaddr
+on Debian-derived systems).
 
 ** System and network configuration
 

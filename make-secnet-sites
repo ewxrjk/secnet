@@ -52,6 +52,7 @@ Cendio Systems AB.
 """
 
 from __future__ import print_function
+from builtins import int
 
 import string
 import time
@@ -191,7 +192,7 @@ class boolean (basetype):
 class num (basetype):
 	"A decimal number"
 	def __init__(self,w):
-		self.n=string.atol(w[1])
+		self.n=int(w[1])
 	def __str__(self):
 		return '%d'%(self.n)
 
@@ -199,7 +200,7 @@ class address (basetype):
 	"A DNS name and UDP port number"
 	def __init__(self,w):
 		self.adr=w[1]
-		self.port=string.atoi(w[2])
+		self.port=int(w[2])
 		if (self.port<1 or self.port>65535):
 			complain("invalid port number")
 	def __str__(self):
@@ -208,7 +209,7 @@ class address (basetype):
 class rsakey (basetype):
 	"An RSA public key"
 	def __init__(self,w):
-		self.l=string.atoi(w[1])
+		self.l=int(w[1])
 		self.e=w[2]
 		self.n=w[3]
 	def __str__(self):
