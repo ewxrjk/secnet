@@ -527,7 +527,7 @@ def live(n):
 	return 0
 def delempty(n):
 	"Delete nodes that have no leafnode children"
-	for i in n.children.keys():
+	for i in list(n.children.keys()):
 		delempty(n.children[i])
 		if not live(n.children[i]):
 			del n.children[i]
