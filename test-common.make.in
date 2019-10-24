@@ -21,7 +21,8 @@ d-%/ok: $(srcdir)/t-% $(DEPS)
 	@rm -rf d-$*; mkdir d-$*
 	@export SECNET_TEST_BUILDDIR=$(topbuilddir); \
 	 cd $(topdir) && \
-	 $(TESTDIR)/t-$* >$(topbuilddir)/$(TESTDIR)/d-$*/log 2>&1
+	 $(TESTDIR)/t-$* >$(topbuilddir)/$(TESTDIR)/d-$*/log 2>&1 \
+	 || { cat $(topbuilddir)/$(TESTDIR)/d-$*/log >&2; false; }
 	@printf "$(TESTDIR)/$* "
 	@touch $@
 
