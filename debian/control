@@ -5,13 +5,13 @@ Maintainer: Ian Jackson <ijackson@chiark.greenend.org.uk>
 Uploaders: Stephen Early <steve@greenend.org.uk>,
            Richard Kettlewell <rjk@terraraq.org.uk>
 Build-Depends: debhelper (>= 5), libgmp3-dev, libadns1-dev, bison, flex,
-               libbsd-dev, python-ipaddress, python-future, tclx, tcl, libtcl-chiark-1
+               libbsd-dev, python3, tclx, tcl, libtcl-chiark-1
 Standards-Version: 3.0.1
 
 Package: secnet
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-future, python-ipaddr
-Recommends: python
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: python3
 Description: VPN software for distributed networks
  secnet allows multiple private networks, each 'hidden' behind a single
  globally-routable IP address, to be bridged together.

@@ -29,9 +29,7 @@ http://vtun.sourceforge.net/tun/
 
 You will probably be using the supplied `make-secnet-sites' program to
 generate your VPN's list of sites as a secnet configuration from a
-more-human-writeable form.  If so you need to install the standard
-`future' and `ipaddress' Python modules (python-future and
-python-ipaddress on Debian-derived systems).
+more-human-writeable form.
 
 ** System and network configuration
 
