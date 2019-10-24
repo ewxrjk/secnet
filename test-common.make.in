@@ -11,6 +11,8 @@ DEPS += Makefile
 
 TARGETS += check
 
+export PYTHONBYTECODEBASE=/dev/null
+
 all: $(TARGETS)
 
 check-real: $(foreach t,$(TESTNAMES),d-$t/ok)
