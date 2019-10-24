@@ -38,7 +38,7 @@ secnet (0.5.0) unstable; urgency=medium
   * Improve documentation of capability negotiation in NOTES, secnet(8)
     and magic.h.  [Mark Wooding]
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 24 Oct 2019 19:11:54 +0100
 
 secnet (0.4.5) unstable; urgency=medium
 
