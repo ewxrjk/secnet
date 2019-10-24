@@ -1,6 +1,41 @@
-secnet (0.4.6~) unstable; urgency=medium
+secnet (0.5.0) unstable; urgency=medium
 
-  * 
+  make-secnet-sites SECURITY FIX:
+  * Do not blindly trust inputs; instead, check the syntax for sanity.
+    Previous releases can be induced to run arbitrary code as the user
+    invoking secnet (which might be root), if a secnet sites.conf is used
+    that was generated from an untrustworthy sites file.
+  * The userv invocation mode of make-secnet-sites seems to have been safe
+    in itself, but it previously allowed hazardous data to be propagated
+    into the master sites file.  This is now prevented too.
+
+  make-secnet-sites overhaul work:
+  * make-secnet-sites is now in the common subset of Python2 and Python3.
+    The #! is python3 now, but it works with Python2.7 too.
+    It will probably *not* work with old versions of Python2.
+  * We no longer depend on the obsolete `ipaddr' library.  We use
+    `ipaddress' now.  And this is onlo a Recommends in the .deb.
+  * Ad-hoc argument parser been replaced with `argparse'.
+    There should be no change to existing working invocations.
+  * Bad address syntax error does not wrongly mention IPv6 scopes.
+  * Minor refactoring to support forthcoming work.  [Mark Wooding]
+
+  other bugfixes:
+  * Correctly use the verified copy of the peer remote capabilities
+    from MSG3.  (Bug is not a vulnerability.)    [Mark Wooding]
+
+  build system etc.:
+  * Completely overhaul release checklist; drop dist target.
+  * Remove dependency on `libfl.a'.  [Mark Wooding]
+  * polypath.c: Fix missing include of <limits.h>.  [Mark Wooding]
+  * Add a Wireshark dissector `secnet-wireshark.lua'.  It is not
+    installed anywhere right now.  [Mark Wooding]
+  * Significant internal rearrangements and refactorings, to support
+    forthcoming key management work.  [Mark Wooding and Ian Jackson]
+
+  documentation:
+  * Improve documentation of capability negotiation in NOTES, secnet(8)
+    and magic.h.  [Mark Wooding]
 
  --
 
