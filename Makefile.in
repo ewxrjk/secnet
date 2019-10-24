@@ -215,6 +215,7 @@ install-force:
 clean: $(addprefix clean-,$(TESTDIRS))
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
 	$(RM) -f *.d *.pyc *~ eax-*-test.confirm eax-*-test
+	$(RM) -rf __pycache__
 	$(RM) -f msgcode-test.confirm msgcode-test
 
 $(addprefix clean-,$(TESTDIRS)): clean-%:
