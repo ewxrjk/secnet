@@ -177,7 +177,8 @@ class dhgroup (basetype):
 class hash (basetype):
 	"A choice of hash function"
 	def __init__(self,w):
-		self.ht=w[1]
+		hname=w[1]
+		self.ht=hname
 		if (self.ht!='md5' and self.ht!='sha1'):
 			complain("unknown hash type %s"%(self.ht))
 	def __str__(self):
@@ -405,10 +406,11 @@ prefix=''
 
 def set_property(obj,w):
 	"Set a property on a configuration node"
-	if w[0] in obj.properties:
-		obj.properties[w[0]].add(obj,w)
+	prop=w[0]
+	if prop in obj.properties:
+		obj.properties[prop].add(obj,w)
 	else:
-		obj.properties[w[0]]=keywords[w[0]][0](w)
+		obj.properties[prop]=keywords[prop][0](w)
 
 def pline(i,allow_include=False):
 	"Process a configuration file line"
@@ -442,9 +444,10 @@ def pline(i,allow_include=False):
 		# See if it's a new one (and whether that's permitted)
 		# or an existing one
 		current=obstack[len(obstack)-1]
-		if w[1] in current.children:
+		tname=w[1]
+		if tname in current.children:
 			# Not new
-			current=current.children[w[1]]
+			current=current.children[tname]
 			if service and group and current.depth==2:
 				if group!=current.group:
 					complain("Incorrect group!")
@@ -457,7 +460,7 @@ def pline(i,allow_include=False):
 					"level %d"%nl.depth)
 				# we risk crashing if we continue
 				sys.exit(1)
-			current.children[w[1]]=nl
+			current.children[tname]=nl
 			current=nl
 		obstack.append(current)
 		return [i]
