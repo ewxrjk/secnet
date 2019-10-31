@@ -960,6 +960,11 @@ static void peerkeys_check_for_update(struct site *st)
      *  write: rename something onto update
      *  read: read update,proc,live in that order and take max
      *
+     * We support only one concurrent secnet, one concurrent
+     * writing make-secnet-sites, and any number of readers.
+     * We want to maintain a live file at all times as that
+     * is what secnet actually reads at startup and uses.
+     *
      * Proof that this is sound:
      *   Let us regard update,proc,live as i=0,1,2
      *   Files contain public key sets and are manipulated as
@@ -989,14 +994,19 @@ static void peerkeys_check_for_update(struct site *st)
      *   (a) check live vs proc, proc>live, mv:
      *      j=2, i=1; S'(i)=-1, so S(i) is being reduced.  S'(j) is
      *      equal to S(i), and the rename is atomic [1], so S'(j) and
-     *      S'(i) are updated simultaneously.
-     *      S(j) is being increased.
+     *      S'(i) are updated simultaneously.  S(j) is being
+     *      increased.  (There are no hazards from concurrent writers;
+     *      only we ourselves (secnet) write to live or proc.)
      *   (b) check live vs proc, proc<=live, rm:
      *      j=2, i=1; S'(i)=-1, so S(i) is being reduced.  But
-     *      S(j) is >= $(i) throughout.
-     *   (c) mv update proc (when update does not exist):
+     *      S(j) is >= $(i) throughout.  (Again, no concurrent
+     *      writer hazards.)
+     *   (c) mv update proc (when proc does not exist):
      *      j=1, i=0; S(i) is being reduced to -1.  But simultaneously
-     *      S(j) is being increased to the old S(i).
+     *      S(j) is being increased to the old S(i).  Our precondition
+     *      (proc not existing) is not subject to a concurrent writer
+     *      hazards because only we write to proc; our action is
+     *      atomic and takes whatever update is available (if any).
      *
      * Proof of soundness for the mss reading operation:
      *   Let M be MAX(\forall S) at the point where mss reads update.
