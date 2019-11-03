@@ -414,13 +414,14 @@ class level:
 			if self.allow_properties[i]:
 				self.indent(w,ind)
 				w.write("%s"%self.prop_out(i))
-	def output_data(self,w,ind,np):
+	def output_data(self,w,path):
+		ind = 2*len(path)
 		self.indent(w,ind)
 		w.write("%s {\n"%(self.name))
 		self.output_props(w,ind+2)
 		if self.depth==1: w.write("\n");
 		for c in self.children.values():
-			c.output_data(w,ind+2,np+self.name+"/")
+			c.output_data(w,path+(c,))
 		self.indent(w,ind)
 		w.write("};\n")
 
@@ -498,11 +499,13 @@ class sitelevel(level):
 	}
 	def __init__(self,w):
 		level.__init__(self,w)
-	def output_data(self,w,ind,np):
+	def output_data(self,w,path):
+		ind=2*len(path)
+		np='/'.join(map(lambda i: i.name, path))
 		self.indent(w,ind)
 		w.write("%s {\n"%(self.name))
 		self.indent(w,ind+2)
-		w.write("name \"%s\";\n"%(np+self.name))
+		w.write("name \"%s\";\n"%(np,))
 		self.output_props(w,ind+2)
 		self.indent(w,ind+2)
 		w.write("link netlink {\n");
@@ -655,7 +658,7 @@ def outputsites(w):
 	# Raw VPN data section of file
 	w.write(prefix+"vpn-data {\n")
 	for i in root.children.values():
-		i.output_data(w,2,"")
+		i.output_data(w,(i,))
 	w.write("};\n")
 
 	# Per-VPN flattened lists
