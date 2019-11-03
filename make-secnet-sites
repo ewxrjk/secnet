@@ -435,13 +435,13 @@ class vpnlevel(level):
 	}
 	def __init__(self,w):
 		level.__init__(self,w)
-	def output_vpnflat(self,w,ind,h):
+	def output_vpnflat(self,w,path):
 		"Output flattened list of site names for this VPN"
+		ind=2*(len(path)+1)
 		self.indent(w,ind)
 		w.write("%s {\n"%(self.name))
 		for i in self.children.keys():
-			self.children[i].output_vpnflat(w,ind+2,
-				h+"/"+self.name+"/"+i)
+			self.children[i].output_vpnflat(w,path+(self,))
 		w.write("\n")
 		self.indent(w,ind+2)
 		w.write("all-sites %s;\n"%
@@ -461,13 +461,19 @@ class locationlevel(level):
 	def __init__(self,w):
 		level.__init__(self,w)
 		self.group=w[2].groupname()
-	def output_vpnflat(self,w,ind,h):
+	def output_vpnflat(self,w,path):
+		ind=2*(len(path)+1)
 		self.indent(w,ind)
-		# The "h=h,self=self" abomination below exists because
+		# The "path=path,self=self" abomination below exists because
 		# Python didn't support nested_scopes until version 2.1
+		#
+		#"/"+self.name+"/"+i
 		w.write("%s %s;\n"%(self.name,','.join(
-			map(lambda x,h=h,self=self:
-				h+"/"+x,self.children.keys()))))
+			map(lambda x,path=path,self=self:
+			    '/'.join([prefix+"vpn-data"] + list(map(
+				    lambda i: i.name,
+				    path+(self,x)))),
+			    self.children.values()))))
 
 class sitelevel(level):
 	"Site level (i.e. a leafnode) in the configuration hierarchy"
@@ -655,7 +661,7 @@ def outputsites(w):
 	# Per-VPN flattened lists
 	w.write(prefix+"vpn {\n")
 	for i in root.children.values():
-		i.output_vpnflat(w,2,prefix+"vpn-data")
+		i.output_vpnflat(w,())
 	w.write("};\n")
 
 	# Flattened list of sites
