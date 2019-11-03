@@ -25,22 +25,23 @@ set extra(inside) {
 }
 set extra(outside) {}
 
-proc mkconf {which} {
+proc mkconf {location site} {
     global tmp
     global builddir
     global netlink
     global ports
     global extra
     global netlinkfh
-    set pipefp $tmp/$which.netlink
+    set pipefp $tmp/$site.netlink
     foreach tr {t r} {
 	file delete $pipefp.$tr
 	exec mkfifo -m600 $pipefp.$tr
-	set netlinkfh($which.$tr) [set fh [open $pipefp.$tr r+]]
+	set netlinkfh($site.$tr) [set fh [open $pipefp.$tr r+]]
 	fconfigure $fh -blocking 0 -buffering none -translation binary
     }
-    fileevent $netlinkfh($which.r) readable [list netlink-readable $which]
-    set fakeuf $tmp/$which.fake-userv
+    fileevent $netlinkfh($site.r) readable \
+	[list netlink-readable $location $site]
+    set fakeuf $tmp/$site.fake-userv
     set fakeuh [open $fakeuf w 0755]
     puts $fakeuh "#!/bin/sh
 set -e
@@ -56,15 +57,15 @@ exec cat
 	netlink userv-ipif {
 	    name \"netlink\";
             userv-path \"$fakeuf\";
-	$netlink($which)
+	$netlink($site)
 	    mtu 1400;
 	    buffer sysbuffer(2048);
-	    interface \"secnet-test-[string range $which 0 0]\";
+	    interface \"secnet-test-[string range $site 0 0]\";
         };
         comm
 "
     set delim {}
-    foreach port $ports($which) {
+    foreach port $ports($site) {
 	append cfg "$delim
 	    udp {
                 port $port;
@@ -75,10 +76,10 @@ exec cat
         set delim ,
     }
     append cfg ";
-	local-name \"test-example/$which/$which\";
-	local-key rsa-private(\"$builddir/test-example/$which.key\");
+	local-name \"test-example/$location/$site\";
+	local-key rsa-private(\"$builddir/test-example/$site.key\");
 "
-    append cfg $extra($which)
+    append cfg $extra($site)
     append cfg {
 	log logfile {
 	    filename "/dev/tty";
@@ -103,28 +104,28 @@ exec cat
     return $cfg
 }
 
-proc spawn-secnet {which} {
+proc spawn-secnet {location site} {
     global tmp
     global builddir
     global netlinkfh
-    upvar #0 pids($which) pid
-    set cf $tmp/$which.conf
+    upvar #0 pids($site) pid
+    set cf $tmp/$site.conf
     set ch [open $cf w]
-    puts $ch [mkconf $which]
+    puts $ch [mkconf $location $site]
     close $ch
     set argl [list $builddir/secnet -dvnc $cf]
     set pid [fork]
     if {!$pid} {
 	execl [lindex $argl 0] [lrange $argl 1 end]
     }
-    puts -nonewline $netlinkfh($which.t) [hbytes h2raw c0]
+    puts -nonewline $netlinkfh($site.t) [hbytes h2raw c0]
 }
 
-proc netlink-readable {which} {
+proc netlink-readable {location site} {
     global ok
-    upvar #0 netlinkfh($which.r) fh
+    upvar #0 netlinkfh($site.r) fh
     read $fh; # empty the buffer
-    switch -exact $which {
+    switch -exact $site {
 	inside {
 	    puts OK
 	    set ok 1; # what a bodge
@@ -208,8 +209,8 @@ proc udp-relay {data src sock args} {
 
 proc test-kex {} {
     udp-proxy
-    spawn-secnet inside
-    spawn-secnet outside
+    spawn-secnet in inside
+    spawn-secnet out outside
 
     after 500 sendpkt
     after 1000 sendpkt
