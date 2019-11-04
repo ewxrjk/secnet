@@ -71,6 +71,8 @@ sys.path.insert(1,"/usr/local/share/secnet")
 sys.path.insert(1,"/usr/share/secnet")
 import ipaddrset
 
+from argparseactionnoyes import ActionNoYes
+
 VERSION="0.1.18"
 
 from sys import version_info
@@ -212,16 +214,21 @@ def parse_args():
 	global group
 	global user
 	global of
+	global key_prefix
 
 	ap = argparse.ArgumentParser(description='process secnet sites files')
 	ap.add_argument('--userv', '-u', action='store_true',
 			help='userv service fragment update mode')
+	ap.add_argument('--conf-key-prefix', action=ActionNoYes,
+			default=True,
+		 help='prefix conf file key names derived from sites data')
 	ap.add_argument('--prefix', '-P', nargs=1,
 			help='set prefix')
 	ap.add_argument('arg',nargs=argparse.REMAINDER)
 	av = ap.parse_args()
 	#print(repr(av), file=sys.stderr)
 	service = 1 if av.userv else 0
+	key_prefix = av.conf_key_prefix
 	if service:
 		if len(av.arg)!=4:
 			print("Wrong number of arguments")
@@ -414,10 +421,13 @@ class level:
 			if self.allow_properties[i]:
 				self.indent(w,ind)
 				w.write("%s"%self.prop_out(i))
+	def kname(self):
+		return ((self.type[0].upper() if key_prefix else '')
+			+ self.name)
 	def output_data(self,w,path):
 		ind = 2*len(path)
 		self.indent(w,ind)
-		w.write("%s {\n"%(self.name))
+		w.write("%s {\n"%(self.kname()))
 		self.output_props(w,ind+2)
 		if self.depth==1: w.write("\n");
 		for c in self.children.values():
@@ -440,13 +450,14 @@ class vpnlevel(level):
 		"Output flattened list of site names for this VPN"
 		ind=2*(len(path)+1)
 		self.indent(w,ind)
-		w.write("%s {\n"%(self.name))
+		w.write("%s {\n"%(self.kname()))
 		for i in self.children.keys():
 			self.children[i].output_vpnflat(w,path+(self,))
 		w.write("\n")
 		self.indent(w,ind+2)
 		w.write("all-sites %s;\n"%
-			','.join(self.children.keys()))
+			','.join(map(lambda i: i.kname(),
+				     self.children.values())))
 		self.indent(w,ind)
 		w.write("};\n")
 
@@ -469,10 +480,10 @@ class locationlevel(level):
 		# Python didn't support nested_scopes until version 2.1
 		#
 		#"/"+self.name+"/"+i
-		w.write("%s %s;\n"%(self.name,','.join(
+		w.write("%s %s;\n"%(self.kname(),','.join(
 			map(lambda x,path=path,self=self:
 			    '/'.join([prefix+"vpn-data"] + list(map(
-				    lambda i: i.name,
+				    lambda i: i.kname(),
 				    path+(self,x)))),
 			    self.children.values()))))
 
@@ -503,7 +514,7 @@ class sitelevel(level):
 		ind=2*len(path)
 		np='/'.join(map(lambda i: i.name, path))
 		self.indent(w,ind)
-		w.write("%s {\n"%(self.name))
+		w.write("%s {\n"%(self.kname()))
 		self.indent(w,ind+2)
 		w.write("name \"%s\";\n"%(np,))
 		self.output_props(w,ind+2)
@@ -669,8 +680,8 @@ def outputsites(w):
 
 	# Flattened list of sites
 	w.write(prefix+"all-sites %s;\n"%",".join(
-		map(lambda x:"%svpn/%s/all-sites"%(prefix,x),
-			root.children.keys())))
+		map(lambda x:"%svpn/%s/all-sites"%(prefix,x.kname()),
+			root.children.values())))
 
 line=0
 file=None
