@@ -55,6 +55,8 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	hackypar.o
 # version.o is handled specially below and in the link rule for secnet.
 
+PYMODULES := ipaddrset.py
+
 TEST_OBJECTS:=eax-aes-test.o eax-serpent-test.o eax-serpentbe-test.o \
 		eax-test.o aes.o
 
@@ -179,7 +181,7 @@ check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 check-stest: secnet test-example/sites.conf
 	$(MAKE) -C stest check
 
-check-mtest: make-secnet-sites ipaddrset.py
+check-mtest: make-secnet-sites $(PYMODULES)
 	$(MAKE) -C mtest check
 
 test-example/sites.conf:
@@ -203,7 +205,9 @@ install: installdirs
 	$$ok
 	$(INSTALL_PROGRAM) secnet $(sbindir)/`echo secnet|sed '$(transform)'`
 	$(INSTALL_PROGRAM) ${srcdir}/make-secnet-sites $(sbindir)/`echo make-secnet-sites|sed '$(transform)'`
-	$(INSTALL_DATA) ${srcdir}/ipaddrset.py $(prefix)/share/secnet/ipaddrset.py
+	set -e; for m in $(PYMODULES); do \
+		$(INSTALL_DATA) ${srcdir}/$$m $(prefix)/share/secnet/$$m; \
+		done
 	$(INSTALL_SCRIPT) ${srcdir}/polypath-interface-monitor-linux \
 		$(datarootdir)/secnet/.
 	$(INSTALL_DATA) ${srcdir}/secnet.8 $(mandir)/man8/secnet.8
