@@ -533,11 +533,6 @@ class sitelevel(level):
 # (depth,properties)
 levels={'vpn':vpnlevel, 'location':locationlevel, 'site':sitelevel}
 
-# Reserved vpn/location/site names
-reserved={'all-sites':None}
-reserved.update(keywords)
-reserved.update(levels)
-
 def complain(msg):
 	"Complain about a particular input line"
 	global complaints
