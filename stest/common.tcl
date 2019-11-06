@@ -99,7 +99,7 @@ exec cat
     close $f
     append cfg $sites
     append cfg {
-	sites map(site,vpn/test-example/all-sites);
+	sites map(site,all-sites);
     }
     return $cfg
 }
