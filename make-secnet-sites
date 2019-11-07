@@ -211,6 +211,7 @@ def parse_args():
 	global header
 	global groupfiledir
 	global sitesfile
+	global outputfile
 	global group
 	global user
 	global of
@@ -258,8 +259,6 @@ def parse_args():
 			print("Too many arguments")
 			sys.exit(1)
 		(inputfile, outputfile) = (av.arg + [None]*2)[0:2]
-		if outputfile is None: of=sys.stdout
-		else: of=open(outputfile,'w')
 
 parse_args()
 
@@ -776,4 +775,11 @@ if service:
 	f.close()
 	os.rename(sitesfile+"-tmp",sitesfile)
 else:
+	if outputfile is None:
+		of=sys.stdout
+	else:
+		tmp_outputfile=outputfile+'~tmp~'
+		of=open(tmp_outputfile,'w')
 	outputsites(of)
+	if outputfile is not None:
+		os.rename(tmp_outputfile,outputfile)
