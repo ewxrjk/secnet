@@ -250,7 +250,7 @@ def parse_args():
 			sys.exit(1)
 		(inputfile, outputfile) = (av.arg + [None]*2)[0:2]
 		if outputfile is None: of=sys.stdout
-		else: of=open(sys.argv[2],'w')
+		else: of=open(outputfile,'w')
 
 parse_args()
 
