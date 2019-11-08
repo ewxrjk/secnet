@@ -572,6 +572,7 @@ def set_property(obj,w):
 	prop=w[0]
 	propname=prop.raw_mark_ok()
 	kw=keywords[propname]
+	if len(kw) >= 3: propname=kw[2] # for aliases
 	if propname in obj.properties:
 		obj.properties[propname].add(obj,w)
 	else:
