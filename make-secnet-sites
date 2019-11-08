@@ -105,19 +105,19 @@ class Tainted:
 		assert(self._ok is not True)
 		self._ok=False
 		complain('bad parameter: %s: %s' % (what, why))
-		return self
+		return False
 
 	def _max_ok(self,what,maxlen):
 		if len(self._s) > maxlen:
-			self._bad(what,'too long (max %d)' % maxlen)
-		return self
+			return self._bad(what,'too long (max %d)' % maxlen)
+		return True
 
 	def _re_ok(self,bad,what,maxlen=None):
 		if maxlen is None: maxlen=max[what]
 		self._max_ok(what,maxlen)
-		if self._ok is False: return self
+		if self._ok is False: return False
 		if bad.search(self._s): return self._bad(what,'bad syntax')
-		return self
+		return True
 
 	def _rtnval(self, is_ok, ifgood, ifbad=''):
 		if is_ok:
