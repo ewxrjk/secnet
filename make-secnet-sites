@@ -570,11 +570,12 @@ allow_defs=0   # Level above which new definitions are permitted
 def set_property(obj,w):
 	"Set a property on a configuration node"
 	prop=w[0]
-	kw=keywords[prop.raw_mark_ok()]
-	if prop.raw() in obj.properties:
-		obj.properties[prop.raw()].add(obj,w)
+	propname=prop.raw_mark_ok()
+	kw=keywords[propname]
+	if propname in obj.properties:
+		obj.properties[propname].add(obj,w)
 	else:
-		obj.properties[prop.raw()]=kw[0](w)
+		obj.properties[propname]=kw[0](w)
 
 
 def pline(il,allow_include=False):
