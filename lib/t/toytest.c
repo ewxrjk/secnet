@@ -9,7 +9,7 @@ int main(void)
   const char *p;
 
   p = greeting();
-  if (!STRNCMP(p, ==, "Hello", 5)) {
+  if (STRNCMP(p, !=, "Hello", 5)) {
     fprintf(stderr, "greeting `%s' has bad salutation\n", p);
     exit(1);
   }
