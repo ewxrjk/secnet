@@ -57,7 +57,7 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	hackypar.o base91s/base91.o
 # version.o is handled specially below and in the link rule for secnet.
 
-PYMODULES := ipaddrset.py argparseactionnoyes.py
+PYMODULES := ipaddrset.py argparseactionnoyes.py base91.py
 
 TEST_OBJECTS:=eax-aes-test.o eax-serpent-test.o eax-serpentbe-test.o \
 		eax-test.o aes.o
