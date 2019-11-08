@@ -182,6 +182,13 @@ class Tainted:
 					     % (minn,maxx))
 		return self._rtnval(ok,v,minn)
 
+	def hexid(self,byteslen,what):
+		ok=self._re_ok(Tainted.bad_hex,what,byteslen*2)
+		if ok:
+			if len(self._s) < byteslen*2:
+				ok=self._bad(what,'too short')
+		return self._rtn(ok,ifbad='00'*byteslen)
+
 	bad_host=re.compile(r'[^-\][_.:0-9a-zA-Z]')
 	# We permit _ so we can refer to special non-host domains
 	# which have A and AAAA RRs.  This is a crude check and we may
@@ -203,6 +210,11 @@ class Tainted:
 	bad_groupname=re.compile(r'^[^_A-Za-z]|[^-+_0-9A-Za-z]')
 	def groupname(self):
 		ok=self._re_ok(Tainted.bad_groupname,'group name',64)
+		return self._rtn(ok)
+
+	bad_base91=re.compile(r'[^!-~]|[\'\"\\]')
+	def base91(self,what='base91'):
+		ok=self._re_ok(Tainted.bad_base91,what,4096)
 		return self._rtn(ok)
 
 def parse_args():
