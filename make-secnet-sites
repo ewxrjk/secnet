@@ -497,7 +497,7 @@ class pubkey (inpub):
 		return len(self.forpub(version,fs)) != 0
 
 class rsakey (pubkey):
-	"An RSA public key"
+	"An old-style RSA public key"
 	def __init__(self,w):
 		self.l=w[1].number(0,max['rsa_bits'],'rsa len')
 		self.e=w[2].bignum_10('rsa','rsa e')
@@ -583,7 +583,7 @@ keywords={
  'pkg':(listof(somepubkey),"start of public key group",'pub'),
  'pkgf':(listof(somepubkey),"start of fallback public key group",'pub'),
  'pub':(listof(somepubkey),"new style public site key"),
- 'pubkey':(listof(somepubkey),"RSA public site key",'pub'),
+ 'pubkey':(listof(somepubkey),"Old-style RSA public site key",'pub'),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
  'address':(address,"External contact address and port"),
  'mobile':(boolean,"Site is mobile"),
