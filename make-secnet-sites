@@ -149,8 +149,8 @@ class Tainted:
 	bad_name=re.compile(r'^[^a-zA-Z]|[^-_0-9a-zA-Z]')
 	# secnet accepts _ at start of names, but we reserve that
 	bad_name_counter=0
-	def name(self):
-		ok=self._re_ok(Tainted.bad_name,'name')
+	def name(self,what='name'):
+		ok=self._re_ok(Tainted.bad_name,what)
 		return self._rtn(ok,
 				 '_line%d_%s' % (self._line, id(self)))
 
