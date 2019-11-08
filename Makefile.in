@@ -1,0 +1,157 @@
+### -*-makefile-gmake-*-
+###
+### Top-level build script for toy project.
+###
+### (c) 2019 Mark Wooding
+###
+
+###----- Licensing notice ---------------------------------------------------
+###
+### This program is free software; you can redistribute it and/or modify
+### it under the terms of the GNU Library General Public License as
+### published by the Free Software Foundation; either version 2 of the
+### License, or (at your option) any later version.
+###
+### This program is distributed in the hope that it will be useful,
+### but WITHOUT ANY WARRANTY; without even the implied warranty of
+### MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+### GNU Library General Public License for more details.
+###
+### You should have received a copy of the GNU Library General Public
+### License along with this program; if not, write to the Free
+### Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+### MA 02111-1307, USA.
+
+## Default target.
+all::
+
+###--------------------------------------------------------------------------
+### Configuration things.
+
+## (This is a toy.  More stuff is needed in a proper project.)
+
+## Source and build directories.
+srcdir			 = @srcdir@
+abs_srcdir		 = @abs_srcdir@
+abs_builddir		 = @abs_builddir@
+
+## Installation directories.
+prefix			 = @prefix@
+exec_prefix		 = @exec_prefix@
+bindir			 = @bindir@
+
+## Build options.
+CC			 = @CC@
+CFLAGS			 = @CFLAGS@
+DEFS			 = @DEFS@
+INCLUDES		 = @INCLUDES@
+LD			 = @CC@
+LDFLAGS			 = @LDFLAGS@
+LIBS			 = @LIBS@
+
+INCLUDES		+= -I$(srcdir)/lib/
+
+###--------------------------------------------------------------------------
+### Machinery.
+
+dirvars			 =
+dirtargets		 =
+ALL_SUBDIRS		:=
+D			:=
+%dirstack		:=
+
+dirvars			+= TARGETS PROGRAMS LIBS CLEANFILES
+dirtargets		+= all clean check install
+
+define %descend-subdir
+  %dirstack		:= $$D $$(%dirstack)
+  D			:= $$(if $$D,$$D/)$1
+  ALL_SUBDIRS		+= $$D
+  include $$(srcdir)/$$D/Subdir.mk
+  D			:= $$(firstword $$(dirstack))
+  %dirstack		:= $$(wordlist 2,$$(words $$(%dirstack)),$$(%dirstack))
+endef
+descend-subdirs		 = $(foreach d,$1, \
+				$(eval $(call %descend-subdir,$d)))
+
+V			 = 0
+v-tag			 = $(call %v-tag.$V,$1)
+%v-tag.0		 = @printf "  %-8s %s\n" "$1" "$@";
+%v-tag.1		 =
+
+V_AT			 = $(%V_AT.$V)
+%V_AT.0			 = @
+%V_AT.1			 =
+
+VPATH			 = $(srcdir)
+
+COMPILE			 = $(call v-tag,CC)$(CC) -c -o$@ -MD \
+				$(DEFS) $(INCLUDES) $(CFLAGS)
+%.o: %.c
+	$(COMPILE) $<
+
+LINK			 = $(call v-tag,LD)$(LD) -o$@ \
+				$(CFLAGS) $(LDFLAGS) $(LIBS)
+
+objects			 = $(addsuffix $(if $2,$2,.o), \
+				$(basename $(filter %.c %.s %.S,$1)))
+
+ALL_DEPFILES		:=
+notice-objects		 = $(eval ALL_DEPFILES += $$(patsubst %.o,%.d,$1))
+
+###--------------------------------------------------------------------------
+### Descend into subdirectories.
+
+SUBDIRS			 =
+
+SUBDIRS			+= lib
+SUBDIRS			+= src
+
+$(call descend-subdirs, $(SUBDIRS))
+
+###--------------------------------------------------------------------------
+### Maintaining the build system.
+
+$(srcdir)/configure: $(srcdir)/configure.ac
+	$(call v-tag,AUTOCONF)cd $(srcdir) && autoconf
+
+config.status: $(srcdir)/configure
+	$(call v-tag,CONFIG)./config.status --recheck
+
+Makefile: config.status $(srcdir)/Makefile.in \
+		$(foreach d,$(ALL_SUBDIRS), $d/Makefile)
+	$(call v-tag,SUBST)./config.status Makefile
+$(foreach d,$(ALL_SUBDIRS), \
+	$(eval $d/Makefile: config.status $$(srcdir)/$d/Makefile.in; \
+		$$(call v-tag,SUBST)./config.status $$@))
+
+###--------------------------------------------------------------------------
+### More machinery.
+
+all_dirtargets		 = $(foreach d,$(ALL_SUBDIRS), \
+				$(foreach t,$(dirtargets), $d/$t))
+
+$(all_dirtargets)::
+
+ifeq ($(origin SUBDIR),undefined)
+$(foreach t,$(dirtargets), \
+	$(eval $t:: $(foreach d,$(ALL_SUBDIRS),$d/$t)))
+else
+$(foreach t,$(dirtargets), \
+	$(eval $t:: $(SUBDIR)/$t))
+endif
+$(foreach d,$(SUBDIRS), \
+	$(foreach t,$(dirtargets), \
+		$(eval $d/$t::)))
+.PHONY: $(foreach t,$(dirtargets),$t $(foreach d,$(ALL_SUBDIRS),$d/$t))
+
+$(foreach d,$(ALL_SUBDIRS), $d/clean):: %/clean:
+	rm -f $*/*.o $*/*.d $($*_CLEANFILES)
+
+realclean:: clean
+	rm -f config.status config.log
+	rm -f Makefile $(foreach d,$(ALL_SUBDIRS), $d/Makefile)
+
+-include $(ALL_DEPFILES)
+
+###----- That's all, folks --------------------------------------------------

@@ -1,0 +1,14 @@
+## Build artifacts.
+*.a
+*.d
+*.o
+*.stamp
+/lib/t/toytest
+/src/toy
+
+## Autoconf cruft.
+Makefile
+/autom4te.cache/
+/config.log
+/config.status
+/configure
