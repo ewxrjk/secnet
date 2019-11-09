@@ -453,8 +453,8 @@ keywords={
  'renegotiate-time':(num,"Time after key setup to begin renegotiation (ms)"),
  'restrict-nets':(networks,"Allowable networks"),
  'networks':(networks,"Claimed networks"),
- 'pub':(listof(somepubkey),"new style public site key",'pubkey'),
- 'pubkey':(listof(somepubkey),"RSA public site key"),
+ 'pub':(listof(somepubkey),"new style public site key"),
+ 'pubkey':(listof(somepubkey),"RSA public site key",'pub'),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
  'address':(address,"External contact address and port"),
  'mobile':(boolean,"Site is mobile"),
@@ -584,7 +584,7 @@ class sitelevel(level):
 	 'networks':"Networks claimed by the site",
 	 'hash':"hash function",
 	 'peer':"Gateway address of the site",
-	 'pubkey':"RSA public key of the site",
+	 'pub':"public key of the site",
 	}
 	def __init__(self,w):
 		level.__init__(self,w)
@@ -596,7 +596,7 @@ class sitelevel(level):
 		self.indent(w,ind+2)
 		w.write("name \"%s\";\n"%(np,))
 		self.indent(w,ind+2)
-		w.write("key %s;\n"%str(self.properties["pubkey"].list[0]))
+		w.write("key %s;\n"%str(self.properties["pub"].list[0]))
 		self.output_props(w,ind+2)
 		self.indent(w,ind+2)
 		w.write("link netlink {\n");
