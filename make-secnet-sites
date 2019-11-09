@@ -391,7 +391,7 @@ keywords={
  'renegotiate-time':(num,"Time after key setup to begin renegotiation (ms)"),
  'restrict-nets':(networks,"Allowable networks"),
  'networks':(networks,"Claimed networks"),
- 'pubkey':(rsakey,"RSA public site key"),
+ 'pubkey':(listof(rsakey),"RSA public site key"),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
  'address':(address,"External contact address and port"),
  'mobile':(boolean,"Site is mobile"),
@@ -511,7 +511,7 @@ class sitelevel(level):
 	 'address':sp,
 	 'networks':None,
 	 'peer':None,
-	 'pubkey':(lambda n,v:"key %s;\n"%v),
+	 'pubkey':None,
 	 'mobile':sp,
 	})
 	require_properties={
@@ -531,6 +531,8 @@ class sitelevel(level):
 		w.write("%s {\n"%(self.kname()))
 		self.indent(w,ind+2)
 		w.write("name \"%s\";\n"%(np,))
+		self.indent(w,ind+2)
+		w.write("key %s;\n"%str(self.properties["pubkey"].list[0]))
 		self.output_props(w,ind+2)
 		self.indent(w,ind+2)
 		w.write("link netlink {\n");
