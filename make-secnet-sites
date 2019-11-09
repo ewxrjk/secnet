@@ -413,7 +413,10 @@ class address (basetype):
 	def __str__(self):
 		return '"%s"; port %d'%(self.adr,self.port)
 
-class rsakey (basetype):
+class pubkey (basetype):
+	"Some kind of publie key"
+
+class rsakey (pubkey):
 	"An RSA public key"
 	def __init__(self,w):
 		self.l=w[1].number(0,max['rsa_bits'],'rsa len')
@@ -422,6 +425,12 @@ class rsakey (basetype):
 		if len(w) >= 5: w[4].email()
 	def __str__(self):
 		return 'rsa-public("%s","%s")'%(self.e,self.n)
+
+def somepubkey(w):
+	if w[0]=='pubkey':
+		return rsakey(w)
+	else:
+		assert(False)
 
 # Possible properties of configuration nodes
 keywords={
@@ -435,7 +444,7 @@ keywords={
  'renegotiate-time':(num,"Time after key setup to begin renegotiation (ms)"),
  'restrict-nets':(networks,"Allowable networks"),
  'networks':(networks,"Claimed networks"),
- 'pubkey':(listof(rsakey),"RSA public site key"),
+ 'pubkey':(listof(somepubkey),"RSA public site key"),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
  'address':(address,"External contact address and port"),
  'mobile':(boolean,"Site is mobile"),
