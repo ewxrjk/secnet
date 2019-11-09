@@ -86,7 +86,7 @@ if version_info.major == 2:  # for python2
     import io
     open=lambda f,m='r': io.open(f,m,encoding='utf-8')
 
-max={'rsa_bits':8200,'name':33,'dh_bits':8200}
+max={'rsa_bits':8200,'name':33,'dh_bits':8200,'algname':127}
 
 def debugrepr(*args):
 	if debug_level > 0:
@@ -415,6 +415,11 @@ class address (basetype):
 
 class pubkey (basetype):
 	"Some kind of publie key"
+	def __init__(self,w):
+		self.a=w[1].name('algname')
+		self.d=w[2].base91();
+	def __str__(self):
+		return 'make-public("%s","%s")'%(self.a,self.d)
 
 class rsakey (pubkey):
 	"An RSA public key"
@@ -425,10 +430,14 @@ class rsakey (pubkey):
 		if len(w) >= 5: w[4].email()
 	def __str__(self):
 		return 'rsa-public("%s","%s")'%(self.e,self.n)
+		# this specialisation means we can generate files
+		# compatible with old secnet executables
 
 def somepubkey(w):
 	if w[0]=='pubkey':
 		return rsakey(w)
+	elif w[0]=='pub':
+		return pubkey(w)
 	else:
 		assert(False)
 
@@ -444,6 +453,7 @@ keywords={
  'renegotiate-time':(num,"Time after key setup to begin renegotiation (ms)"),
  'restrict-nets':(networks,"Allowable networks"),
  'networks':(networks,"Claimed networks"),
+ 'pub':(listof(somepubkey),"new style public site key",'pubkey'),
  'pubkey':(listof(somepubkey),"RSA public site key"),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
  'address':(address,"External contact address and port"),
@@ -564,6 +574,7 @@ class sitelevel(level):
 	 'address':sp,
 	 'networks':None,
 	 'peer':None,
+	 'pub':None,
 	 'pubkey':None,
 	 'mobile':sp,
 	})

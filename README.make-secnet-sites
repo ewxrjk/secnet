@@ -196,8 +196,8 @@ INPUT SYNTAX
 		Assigns a public-key closure to the `key' key,
 		constructed as `rsa-public(E, N)'.  The argument HUNOZ
 		must be an integer, but is otherwise ignored; it's
-		conventionally the length of N in bits.  Acceptable only
-		at site level; required at site level.
+		conventionally the length of N in bits.
+		Acceptable only at site level.  See `pub'.
 
 	mobile BOOL
 		Assigns BOOL to the `mobile' key.  Acceptable only at
@@ -212,7 +212,8 @@ INPUT SYNTAX
 		Defines a public key.  ALG is an algorithm name and
 		DATA91S is the public key data, encoded according to
 		secnet-base91 (see below).
-		Not yet suported in make-secnet-sites.
+		Gives make-public("ALG","DATAB91S") in sites.conf;
+		at least one `pub' or `pubkey' must be specified.
 
 	serial SETIDHEX
 		Specifies the key set id (8 hex digits representing
