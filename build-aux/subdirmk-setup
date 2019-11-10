@@ -78,7 +78,7 @@ sub write_makefile ($$) {
     o <<END;
 default: all
 %:
-	\$(MAKE) -C $cd ${dir_prefix}$@
+	\$(MAKE) -C $cd ${dir_prefix}\$@
 END
 }
 
@@ -153,7 +153,7 @@ sub process_subtree ($$) {
     my $dir_prefix = join '', map { "$_/" } @$path;
     my $dir_suffix = join '', map { "/$_" } @$path;
     my $dir_name = join '/', @$path ? @$path : '.';
-    my $var_prefix = map { "${_}_" } @$path ? @$path : qw(TOP);
+    my $var_prefix = join '', map { "${_}_" } @$path ? @$path : qw(TOP);
 
     write_makefile($dir_prefix, scalar @$path);
 
