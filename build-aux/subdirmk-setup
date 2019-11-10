@@ -72,13 +72,13 @@ sub install_output_files () {
 
 sub write_makefile ($$) {
     my ($dir_prefix,$depth) = @_;
-    print STDERR "write_makefile @_\n";
+    #print STDERR "write_makefile @_\n";
     start_output_file("${dir_prefix}Makefile");
     my $cd = $depth ? join('/', ('..',) x $depth) : '.';
     o <<END;
 default: all
 %:
-	\$(MAKE) -C $cd ${dir_prefix}\$@
+	\$(MAKE) -C $cd -f subdirs.mk ${dir_prefix}\$@
 END
 }
 
@@ -86,8 +86,8 @@ sub filter_subdir_mk ($$$$$) {
     my ($dir_prefix, $dir_suffix, $dir_name,
 	$var_prefix, $targets) = @_;
 
-    use Data::Dumper;
-    print STDERR "filter @_\n";
+    #use Data::Dumper;
+    #print STDERR "filter @_\n";
 
     my $in = "${srcdir}/${dir_prefix}Subdir.mk.in";
     open I, '<', $in or die "open $in: $!\n";
@@ -147,8 +147,8 @@ sub process_subtree ($$) {
     # recursive, children first
     my ($node, $path) = @_;
 
-    use Data::Dumper;
-    print STDERR Dumper(\@_);
+    #use Data::Dumper;
+    #print STDERR Dumper(\@_);
 
     my $dir_prefix = join '', map { "$_/" } @$path;
     my $dir_suffix = join '', map { "/$_" } @$path;
@@ -175,16 +175,11 @@ sub process_subtree ($$) {
     my @targets = sort keys %targets;
     foreach my $target (@targets) {
 	my $target_varname = target_varname($var_prefix, $target);
-	print O <<END;
-${dir_prefix}${target}: \$($target_varname)
-END
-	if (@child_subdirs) {
-	    print O "${dir_prefix}${target}:";
-	    foreach my $child_subdir (@child_subdirs) {
-		print O " $child_subdir/$target";
-	    }
-	    print O "\n";
+	print O "${dir_prefix}${target}: \$($target_varname)";
+	foreach my $child_subdir (@child_subdirs) {
+	    print O " $child_subdir/$target";
 	}
+	print O "\n";
     }
     
     return @targets;
@@ -192,7 +187,10 @@ END
 
 sub process_tree() {
     process_subtree($root, [ ]);
-    start_output_file("subdirs.mk");
+    start_output_file("subdirs.mk.tmp");
+    foreach my $v (qw(top_srcdir abs_top_srcdir)) {
+	o "$v=\@$v@\n";
+    }
     o "include Subdir.mk\n";
     foreach my $subdir (@subdirs) {
 	o "include $subdir/Subdir.mk\n";
