@@ -8,20 +8,23 @@
 &^		=>	$(top_srcdir)/subdir		or $(top_srcdir)
 &~		=>	$(abs_top_srcdir)/subdir	or $(abs_top_srcdir)
 
-&&			=>	&
+&&		=>	&&
+\&		=>	&
 
 & thing thing... &	=>	each thing prefixed by &/ &^ &~ resp
 & ^ thing thing... &		each thing is any non-ws
 & ~ thing thing... &		& may be omitted before EOL or before \EOL
+				other &'s not recognised
 
 CAPS is [A-Z][0-9_A-Z]*(?!\w)
 lc is [a-z][-+,0-9_a-z]*(?!\w)
 
-&! spc		disables & *until* EOL
+&!<spaces or tabs>	disables & *until* EOL (and disappears)
 
 &!STUFF		STUFF is recognised instead of & (beyond EOL)
-		STUFF is either all punct or all alphanum (incl _)
+		STUFF is either all ASCII punct or all ASCII alphanum (incl _)
 		any lwsp after STUFF is discarded too
+
 eg notably
  STUFF!&		now & is recognised instead (ie back to normal)
  STUFFSTUFF	STUFF

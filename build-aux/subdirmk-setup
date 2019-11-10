@@ -27,68 +27,87 @@ sub build_tree () {
 }
 
 sub write_makefile ($$) {
-    my ($subdir,$depth) = @_;
-    start_output_file("$subdir/Makefile");
+    my ($dir_prefix,$depth) = @_;
+    start_output_file("${dir_prefix}Makefile");
     my $cd = $depth ? join('/', ('..',) x $depth) : '.';
     o <<END;
 default: all
 %:
-	$(MAKE) -C $cd $subdir/$@
+	$(MAKE) -C $cd ${dir_prefix}$@
 END
 }
 
-sub filter_subdir_mk ($) {
-    my ($subdir) = @_;
-    my $in = "$srcdir/$subdir/Subdir.mk.in";
+sub filter_subdir_mk ($$$$$) {
+    my ($dir_prefix, $dir_suffix, $dir_name, $var_prefix,
+	$targets) = @_;
+
+    my $in = "${srcdir}/${dir_prefix}Subdir.mk.in";
     open I, '<' $in or die "open $in: $!\n";
-    my $caps_re = qr{[A-Z][0-9_A-Z]*(?!\w)};
-    my $lc_e = qr{[a-z][-+,0-9_a-z]*(?!\w)};
+    my $caps_re = qr{[A-Z][0-9_A-Z]*(?=\W)};
+    my $lc_e = qr{[a-z][-+,0-9_a-z]*(?=\W)};
     my $esclit = '&';
     my $esc = '\\&';
+
     while (<I>) {
 	for (;;) {
-	    s{^(.*?)(?=$esc)}{};
+	    unless (s{^(.*?)(\\)?(?=$esc)}{}) { o $_; last; }
 	    o $1;
-	    last if m{^\n};
+	    if ($2) { o $esclit; next; }
 	    s{^$esc}{} or die "$_ ?";
-	    if (s{^$esc}{}) {
-		o $esclit;
+	    if (s{^$esc}{}) { o "$esclit$esclit" }
+	    elsif (m{^TARGETS(?:_[0-9a-zA-Z_]+)?(?=\W)}{}) {
+		my $t = $2 // 'all';
+		o target_varname($varname_prefix, $t);
+		$targets->{$t}=1;
 	    }
-	    elsif (m{^(?=$caps_re)}) { o "${for_var}_" }
+	    elsif (m{^(?=$caps_re)}) { o "${var_prefix}_" }
 	    elsif (m{^(?=$lc_re)}) { o $dir_prefix }
-	    elsif (s{^_}{}) { o "${for_var}_" }
+	    elsif (s{^_}{}) { o "${var_prefix}_" }
 	    elsif (s{^/}{}) { o $dir_prefix }
-	    elsif (s{^=_}{}) { o $for_var }
+	    elsif (s{^=_}{}) { o $var_prefix }
 	    elsif (s{^=/}{}) { o $dir_name }
 	    elsif (s{^\^}{}) { o "\$(top_srcdir)${dir_suffix}" }
 	    elsif (s{^\}}{}) { o "\$(abs_top_srcdir)${dir_suffix}" }
-	    elsif (m{^[ \t]}) {
-		for (;;) {
-		    if (s{^[ \t]+($caps_re)}{}) {
-			o "
-
-		    s{^
-	} else 
-	} 
-		     s{^~}{$dir_name} ||
-		
-
-[A-Z][0-9A-Z_](?!\w
-(=?)([/.~])}{}) {
-		my ($val, 
-		o $subdir;
-	    } elsif (s{^[_/]}{}) {
-		o 
+	    elsif (s{^(?:[ \t]+([~^]))?(?=[ \t]){}}{}) {
+		my $prefix =
+		    !$1       ? $dir_prefix                     :
+		    $1 eq '~' ? '$(abs_top_srcdir)'.$dir_suffix :
+		    $1 eq '~' ? '$(abs_top_srcdir)'.$dir_suffix :
+		    die;
+		my $after='';
+		if (m{([ \t])$esc}) { ($_,$after) = ($`, $1.$'); }
+		s{(?<=[ \t])(?=\S)(?!\\\s*$)}{$prefix}g;
+		o $_;
+		$_ = $after;
+	    } elsif (s{^![ \t]+}{}) {
+		o $_;
+		$_ = '';
+	    } elsif (s{^!(\pPosixWord+|\pPosixPunct+)[ \t]*}{}) {
+		$esclit = $1;
+		$esc = $esclit;
+		$esc =~ s/\W/\\$&/g;
+	    } else {
+		die "bad escape $esclit$_ ";
+	    }
+	}
     }
+}
+
+sub target_varname ($$) {
+    my ($var_prefix, $target) = @_;
+    return $vprefix.'TARGETS'.($target eq 'all' ? '' : "_$target");
 }
 
 sub process_subtree ($$) {
     # => list of descendants (in form SUBDIR/)
     # recursive, children first
     my ($node, $path);
-    my $dprefix = join '', map { "${_}/" } @$path;
-    my $vprefix = join '', map { "${_}_" } @$path;
-    my $subdir = @$path ? (join '/', @$path) : '.';
+
+    my $dir_prefix = join '', map { "$_/" } @$path;
+    my $dir_suffix = join '', map { "/$_" } @$path;
+    my $dir_name = join '/', @$path ? @$path : '.';
+    my $var_prefix = map { "${_}_" } @$path ? @$path : qw(TOP);
+
     write_makefile($subdir, scalar @$path);
 
     my %targets = qw(all 1);
@@ -101,16 +120,14 @@ sub process_subtree ($$) {
     }
     start_output_file("$subdir/Subdir.mk.tmp");
 
-    filter_subdir_mk();
-
-    $targets{$_}++ foreach
-	write_subdir($child);
+    filter_subdir_mk($dir_prefix, $dir_suffix, $dir_name,
+		     $var_prefix, \%targets);
 
     my @targets = sort keys %targets;
     foreach my $target (@targets) {
-	$vsuffix = $target eq 'all' ? '' : "_$target";
+	my $target_varname = target_varname($var_prefix, target);
 	print O <<END;
-${dprefix}${target}: \$(${vprefix}TARGETS${vsuffix})
+${dprefix}${target}: \$($target_varname)
 END
 	if (@child_subdirs) {
 	    print O "${dprefix}${target}:";
