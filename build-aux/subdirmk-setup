@@ -8,25 +8,41 @@
 
 use strict;
 
-our @allsubdirs = @ARGV;
+our $root = [ '.', [ ] ];
+# each node is [ 'relative subdir name', \@children ]
 
-sub write_makefile () {
+sub build_tree () {
+    foreach my $subdir (@ARGV) {
+	my @path = $subdir eq '.' ? () : split m{/+}, $subdir;
+	my $node = $root;
+	foreach my $d (@path) {
+	    my ($c,) = grep { $_->[0] eq $d } @{ $node->[1] };
+	    if (!$c) {
+		$c = [ $d, [ ] ];
+		push @{ $node->[1] }, $c;
+	    }
+	    $node = $c;
+	}
+    }
+}
+
+
+
+sub write_makefile ($$) {
+    my ($subdir,$depth) = @_;
     start_output_file("Makefile");
+    my $cd = $depth ? join('/', ('..',) x $depth) : '.';
     print O <<END;
 %:
-	$(MAKE) -C @top $subdir/$@
+	$(MAKE) -C $cd $subdir/$@
 END
-
-    my @thesedirs = $subdir, grep { $_ =~ m{^$subdir/} } @allsubdirs;
-    printf O "include $_/Subdir.mk"
-	
-
+}
 
 sub process_subdir ($$) {
     my ($subdir) = @_;
-    my $d
-    write_makefile($subdir);
+    my $depth = $subdir eq '.' ? 0 : scalar split m{/+}, $subdir;
+    write_makefile($subdir,$depth);
     filter_subdir_mk();
 }
 
-foreach (@allsubdirs) { process_subdir($_); }
+build_tree();
