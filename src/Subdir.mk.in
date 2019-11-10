@@ -3,6 +3,7 @@
 ### Build script for main program
 ###
 ### (c) 2019 Mark Wooding
+### (c) 2019 Ian Jackson
 ###
 
 ###----- Licensing notice ---------------------------------------------------
@@ -22,14 +23,10 @@
 ### Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 ### MA 02111-1307, USA.
 
-$D/all:: $D/toy
-$D_CLEANFILES		:=
+&TARGETS_all	+= & toy
 
-toy_SOURCES		:= $(addprefix $D/, toy.c)
-toy_OBJECTS		:= $(call objects, $(toy_SOURCES))
-toy_LIBS		 = lib/libtoy.a
-$(call notice-objects, $(toy_OBJECTS))
+&OBJECTS	+= & toy.o
+&LIBS		+= lib/libtoy.a
 
-$D/toy: $(toy_OBJECTS) $(toy_LIBS)
+&toy: $(&OBJECTS) $(&LIBS)
 	$(LINK) $^
-$D_CLEANFILES		+= $D/toy

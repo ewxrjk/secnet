@@ -3,6 +3,7 @@
 ### Build script for library
 ###
 ### (c) 2019 Mark Wooding
+### (c) 2019 Ian Jackson
 ###
 
 ###----- Licensing notice ---------------------------------------------------
@@ -22,16 +23,9 @@
 ### Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 ### MA 02111-1307, USA.
 
-$D/all:: $D/libtoy.a
-$D_CLEANFILES		:=
+&TARGETS_all	+= & libtoy.a
 
-libtoy_SOURCES		:= $(addprefix $D/, toylib.c)
-libtoy_OBJECTS		:= $(call objects, $(libtoy_SOURCES))
-$(call notice-objects, $(libtoy_OBJECTS))
+&OBJECTS	+= & toylib.c
 
-$D/libtoy.a: $(libtoy_OBJECTS)
-	$(call v-tag,AR)ar rc $@ $^
-$D_CLEANFILES		+= $D/libtoy.a
-
-SUBDIRS			 = t
-$(call descend-subdirs, $(SUBDIRS))
+&libtoy.a:	$(&OBJECTS)
+	$(AR) rc $@ $^

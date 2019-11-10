@@ -3,6 +3,7 @@
 ### Build script for library test
 ###
 ### (c) 2019 Mark Wooding
+### (c) 2019 Ian Jackson
 ###
 
 ###----- Licensing notice ---------------------------------------------------
@@ -22,20 +23,16 @@
 ### Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 ### MA 02111-1307, USA.
 
-$D_CLEANFILES		:=
+&TARGETS_check	+= & toytest.stamp
 
-$D/check:: $D/toytest.stamp
+&OBJECTS	+= & toytest.o
+&LIBS		+= lib/libtoy.a
 
-toytest_SOURCES		:= $(addprefix $D/, toytest.c)
-toytest_OBJECTS		:= $(call objects, $(toytest_SOURCES))
-toytest_LIBS		 = lib/libtoy.a
-$(call notice-objects, $(toytest_OBJECTS))
+&CLEAN		+= & toytest
 
-$D/toytest: $(toytest_OBJECTS) $(toytest_LIBS)
+&toytest:	$(&OBJECTS) $(&LIBS)
 	$(LINK) $^
-$D_CLEANFILES		+= $D/toytest
 
-$D/toytest.stamp: $D/toytest
+&toytest.stamp: & toytest
 	$<
 	touch $@
-$D_CLEANFILES		+= $D/toytest.stamp

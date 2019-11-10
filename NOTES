@@ -1,0 +1,24 @@
+&=		=>	subdir
+&_		=>	subdir_
+&/		=>	subdir/
+&CAPS		=>	subdir_CAPS
+&lc		=>	subdir/lc
+
+&.= &._ &./ &.CAPS &.lc	=>	$(top_srcdir)/subdir
+&:= &:_ &:/ &:CAPS &:lc	=>	$(abs_top_srcdir)/subdir
+& thing thing		=>	like &thing &thing (until EOL)
+
+&&		=>	&
+
+&! spc		disables & *until* EOL
+
+&!STUFF		STUFF is recognised instead of & (beyond EOL)
+		STUFF is either all punct or all alphanum (incl _)
+		any lwsp after STUFF is discarded too
+eg notably
+ STUFF!&		now & is recognised instead (ie back to normal)
+ STUFFSTUFF	STUFF
+
+eg
+ &!@@@		@@@ is recognised instead of &
+ @@@!&		go back to &
