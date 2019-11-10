@@ -1,20 +1,21 @@
-&=			=>	subdir
-&_			=>	subdir_
-&/			=>	subdir/
-&CAPS			=>	subdir_CAPS	_ counts
-&lc			=>	subdir/lc	_ counts
+&CAPS		=>	subdir_CAPS  			or TOP_CAPS
+&lc		=>	subdir/lc    			or lc
 
-&,= &,_ &,/ &,CAPS &,lc		prefixes $(top_srcdir)/subdir
-&;= &;_ &;/ &;CAPS &;lc		prefixes $(abs_top_srcdir)/subdir
-
-&.			=>	$(top_srcdir)
-&:			=>	$(abs_top_srcdir)
-
-& thing thing		=>	like &thing &thing (until EOL)
-				(edits only `thing's which are CAPS or lc
-				and follow a space)
+&_		=>	subdir_				or TOP_
+&/		=>	subdir/				or nothing
+&=_		=>	subdir				or TOP
+&=/		=>	subdir				or .
+&^		=>	$(top_srcdir)/subdir		or $(top_srcdir)
+&~		=>	$(abs_top_srcdir)/subdir	or $(abs_top_srcdir)
 
 &&			=>	&
+
+& thing thing... &	=>	each thing prefixed by &/ &^ &~ resp
+& ^ thing thing... &		each thing is any non-ws
+& ~ thing thing... &		& may be omitted before EOL or before \EOL
+
+CAPS is [A-Z][0-9_A-Z]*(?!\w)
+lc is [a-z][-+,0-9_a-z]*(?!\w)
 
 &! spc		disables & *until* EOL
 
@@ -32,3 +33,5 @@ eg
 &TARGETS[_things]		is handled specially
 				must be spelled precisely this way
 				if no _things, means _all
+
+Also, `all' is weird in that it is present even if not specified

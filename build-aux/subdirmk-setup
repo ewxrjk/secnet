@@ -26,17 +26,107 @@ sub build_tree () {
     }
 }
 
-
-
 sub write_makefile ($$) {
     my ($subdir,$depth) = @_;
-    start_output_file("Makefile");
+    start_output_file("$subdir/Makefile");
     my $cd = $depth ? join('/', ('..',) x $depth) : '.';
-    print O <<END;
+    o <<END;
+default: all
 %:
 	$(MAKE) -C $cd $subdir/$@
 END
 }
+
+sub filter_subdir_mk ($) {
+    my ($subdir) = @_;
+    my $in = "$srcdir/$subdir/Subdir.mk.in";
+    open I, '<' $in or die "open $in: $!\n";
+    my $caps_re = qr{[A-Z][0-9_A-Z]*(?!\w)};
+    my $lc_e = qr{[a-z][-+,0-9_a-z]*(?!\w)};
+    my $esclit = '&';
+    my $esc = '\\&';
+    while (<I>) {
+	for (;;) {
+	    s{^(.*?)(?=$esc)}{};
+	    o $1;
+	    last if m{^\n};
+	    s{^$esc}{} or die "$_ ?";
+	    if (s{^$esc}{}) {
+		o $esclit;
+	    }
+	    elsif (m{^(?=$caps_re)}) { o "${for_var}_" }
+	    elsif (m{^(?=$lc_re)}) { o $dir_prefix }
+	    elsif (s{^_}{}) { o "${for_var}_" }
+	    elsif (s{^/}{}) { o $dir_prefix }
+	    elsif (s{^=_}{}) { o $for_var }
+	    elsif (s{^=/}{}) { o $dir_name }
+	    elsif (s{^\^}{}) { o "\$(top_srcdir)${dir_suffix}" }
+	    elsif (s{^\}}{}) { o "\$(abs_top_srcdir)${dir_suffix}" }
+	    elsif (m{^[ \t]}) {
+		for (;;) {
+		    if (s{^[ \t]+($caps_re)}{}) {
+			o "
+
+		    s{^
+	} else 
+	} 
+		     s{^~}{$dir_name} ||
+		
+
+[A-Z][0-9A-Z_](?!\w
+(=?)([/.~])}{}) {
+		my ($val, 
+		o $subdir;
+	    } elsif (s{^[_/]}{}) {
+		o 
+    }
+}
+
+sub process_subtree ($$) {
+    # => list of descendants (in form SUBDIR/)
+    # recursive, children first
+    my ($node, $path);
+    my $dprefix = join '', map { "${_}/" } @$path;
+    my $vprefix = join '', map { "${_}_" } @$path;
+    my $subdir = @$path ? (join '/', @$path) : '.';
+    write_makefile($subdir, scalar @$path);
+
+    my %targets = qw(all 1);
+    my @child_subdirs;
+    foreach my $child (@{ $node->[1] }) {
+	my @childpath = (@$path, $child->[0]);
+	push @child_subdirs, join '/', @childpath;
+	$targets{$_}++ foreach
+	    process_subtree($child, [  ]);
+    }
+    start_output_file("$subdir/Subdir.mk.tmp");
+
+    filter_subdir_mk();
+
+    $targets{$_}++ foreach
+	write_subdir($child);
+
+    my @targets = sort keys %targets;
+    foreach my $target (@targets) {
+	$vsuffix = $target eq 'all' ? '' : "_$target";
+	print O <<END;
+${dprefix}${target}: \$(${vprefix}TARGETS${vsuffix})
+END
+	if (@child_subdirs) {
+	    print O "${dprefix}${target}:";
+	    foreach my $child_subdir (@child_subdirs) {
+		print O " $child_subdir/$target";
+	    }
+	    print O "\n";
+	}
+    }
+    
+
+    foreach my $descendant (@descendants) {
+	foreach my $target (@$targets) {
+    print O <<END;
+END
+
 
 sub process_subdir ($$) {
     my ($subdir) = @_;
@@ -45,4 +135,7 @@ sub process_subdir ($$) {
     filter_subdir_mk();
 }
 
+
+    
 build_tree();
+process_subtree($root, [ ]);
