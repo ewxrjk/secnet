@@ -1,14 +1,20 @@
-&=		=>	subdir
-&_		=>	subdir_
-&/		=>	subdir/
-&CAPS		=>	subdir_CAPS
-&lc		=>	subdir/lc
+&=			=>	subdir
+&_			=>	subdir_
+&/			=>	subdir/
+&CAPS			=>	subdir_CAPS	_ counts
+&lc			=>	subdir/lc	_ counts
 
-&.= &._ &./ &.CAPS &.lc	=>	$(top_srcdir)/subdir
-&:= &:_ &:/ &:CAPS &:lc	=>	$(abs_top_srcdir)/subdir
+&,= &,_ &,/ &,CAPS &,lc		prefixes $(top_srcdir)/subdir
+&;= &;_ &;/ &;CAPS &;lc		prefixes $(abs_top_srcdir)/subdir
+
+&.			=>	$(top_srcdir)
+&:			=>	$(abs_top_srcdir)
+
 & thing thing		=>	like &thing &thing (until EOL)
+				(edits only `thing's which are CAPS or lc
+				and follow a space)
 
-&&		=>	&
+&&			=>	&
 
 &! spc		disables & *until* EOL
 
@@ -22,3 +28,7 @@ eg notably
 eg
  &!@@@		@@@ is recognised instead of &
  @@@!&		go back to &
+
+&TARGETS[_things]		is handled specially
+				must be spelled precisely this way
+				if no _things, means _all

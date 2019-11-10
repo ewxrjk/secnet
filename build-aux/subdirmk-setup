@@ -1,0 +1,32 @@
+#!/usr/bin/perl -w
+#
+# $(srcdir)/build-aux/subdirmk-setup SUBDIR...
+#
+# generates
+#   Subdir.mk.tmp
+#   Makefile.tmp
+
+use strict;
+
+our @allsubdirs = @ARGV;
+
+sub write_makefile () {
+    start_output_file("Makefile");
+    print O <<END;
+%:
+	$(MAKE) -C @top $subdir/$@
+END
+
+    my @thesedirs = $subdir, grep { $_ =~ m{^$subdir/} } @allsubdirs;
+    printf O "include $_/Subdir.mk"
+	
+
+
+sub process_subdir ($$) {
+    my ($subdir) = @_;
+    my $d
+    write_makefile($subdir);
+    filter_subdir_mk();
+}
+
+foreach (@allsubdirs) { process_subdir($_); }
