@@ -57,6 +57,13 @@ sub start_output_file ($) {
     open O, ">", $tmp or die "create $tmp: $!\n";
 }
 
+sub install_output_files () {
+    close_any_output_file();
+    foreach my $f (sort keys %output_files) {
+	rename "$f.tmp", $f or die "install new $f: $!\n";
+    }
+}
+
 sub o {
     die unless defined $writing_output;
     print O @_ or die "error writing $writing_output.tmp: $!\n";
@@ -80,7 +87,7 @@ sub filter_subdir_mk ($$$$$) {
     my $in = "${srcdir}/${dir_prefix}Subdir.mk.in";
     open I, '<', $in or die "open $in: $!\n";
     my $caps_re = qr{[A-Z][0-9_A-Z]*(?=\W)};
-    my $lc_e = qr{[a-z][-+,0-9_a-z]*(?=\W)};
+    my $lc_re = qr{[a-z][-+,0-9_a-z]*(?=\W)};
     my $esclit = '&';
     my $esc = '\\&';
 
@@ -91,9 +98,9 @@ sub filter_subdir_mk ($$$$$) {
 	    if ($2) { o $esclit; next; }
 	    s{^$esc}{} or die "$_ ?";
 	    if (s{^$esc}{}) { o "$esclit$esclit" }
-	    elsif (m{^TARGETS(?:_[0-9a-zA-Z_]+)?(?=\W)}{}) {
+	    elsif (s{^TARGETS(?:_[0-9a-zA-Z_]+)?(?=\W)}{}) {
 		my $t = $2 // 'all';
-		o target_varname($varname_prefix, $t);
+		o target_varname($var_prefix, $t);
 		$targets->{$t}=1;
 	    }
 	    elsif (m{^(?=$caps_re)}) { o "${var_prefix}_" }
@@ -129,6 +136,7 @@ sub filter_subdir_mk ($$$$$) {
     }
 }
 
+sub process_subtree ($$);
 sub process_subtree ($$) {
     # => list of descendants (in form SUBDIR/)
     # recursive, children first
@@ -139,7 +147,7 @@ sub process_subtree ($$) {
     my $dir_name = join '/', @$path ? @$path : '.';
     my $var_prefix = map { "${_}_" } @$path ? @$path : qw(TOP);
 
-    write_makefile($subdir, scalar @$path);
+    write_makefile($dir_prefix, scalar @$path);
 
     my %targets = qw(all 1);
     my @child_subdirs;
@@ -149,19 +157,19 @@ sub process_subtree ($$) {
 	$targets{$_}++ foreach
 	    process_subtree($child, [  ]);
     }
-    start_output_file("$subdir/Subdir.mk.tmp");
+    start_output_file("${dir_prefix}Subdir.mk.tmp");
 
     filter_subdir_mk($dir_prefix, $dir_suffix, $dir_name,
 		     $var_prefix, \%targets);
 
     my @targets = sort keys %targets;
     foreach my $target (@targets) {
-	my $target_varname = target_varname($var_prefix, target);
+	my $target_varname = target_varname($var_prefix, $target);
 	print O <<END;
-${dprefix}${target}: \$($target_varname)
+${dir_prefix}${target}: \$($target_varname)
 END
 	if (@child_subdirs) {
-	    print O "${dprefix}${target}:";
+	    print O "${dir_prefix}${target}:";
 	    foreach my $child_subdir (@child_subdirs) {
 		print O " $child_subdir/$target";
 	    }
