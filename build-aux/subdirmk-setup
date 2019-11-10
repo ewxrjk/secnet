@@ -24,8 +24,8 @@ END
 
 sub process_subdir ($$) {
     my ($subdir) = @_;
-    my $d
-    write_makefile($subdir);
+    my $depth = $subdir eq '.' ? 0 : scalar split m{/+}, $subdir;
+    write_makefile($subdir,$depth);
     filter_subdir_mk();
 }
 
