@@ -26,6 +26,11 @@ sub build_tree () {
     }
 }
 
+sub target_varname ($$) {
+    my ($var_prefix, $target) = @_;
+    return $vprefix.'TARGETS'.($target eq 'all' ? '' : "_$target");
+}
+
 sub write_makefile ($$) {
     my ($dir_prefix,$depth) = @_;
     start_output_file("${dir_prefix}Makefile");
@@ -38,8 +43,8 @@ END
 }
 
 sub filter_subdir_mk ($$$$$) {
-    my ($dir_prefix, $dir_suffix, $dir_name, $var_prefix,
-	$targets) = @_;
+    my ($dir_prefix, $dir_suffix, $dir_name,
+	$var_prefix, $targets) = @_;
 
     my $in = "${srcdir}/${dir_prefix}Subdir.mk.in";
     open I, '<' $in or die "open $in: $!\n";
@@ -93,11 +98,6 @@ sub filter_subdir_mk ($$$$$) {
     }
 }
 
-sub target_varname ($$) {
-    my ($var_prefix, $target) = @_;
-    return $vprefix.'TARGETS'.($target eq 'all' ? '' : "_$target");
-}
-
 sub process_subtree ($$) {
     # => list of descendants (in form SUBDIR/)
     # recursive, children first
@@ -138,21 +138,18 @@ END
 	}
     }
     
-
-    foreach my $descendant (@descendants) {
-	foreach my $target (@$targets) {
-    print O <<END;
-END
-
-
-sub process_subdir ($$) {
-    my ($subdir) = @_;
-    my $depth = $subdir eq '.' ? 0 : scalar split m{/+}, $subdir;
-    write_makefile($subdir,$depth);
-    filter_subdir_mk();
+    return @targets;
 }
 
+sub process_tree() {
+    process_subtree($root, [ ]);
+    start_output_file("subdirs.mk");
+    o "include Subdir.mk\n";
+    foreach my $subdir (@ARGV) {
+	o "include $subdir/Subdir.mk";
+    }
+}
 
-    
 build_tree();
-process_subtree($root, [ ]);
+process_tree();
+install_output_files();
