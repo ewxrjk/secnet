@@ -103,20 +103,20 @@ sub filter_subdir_mk ($$$$$) {
 	    if ($2) { o $esclit; next; }
 	    s{^$esc}{} or die "$_ ?";
 	    if (s{^$esc}{}) { o "$esclit$esclit" }
-	    elsif (s{^TARGETS(?:_[0-9a-zA-Z_]+)?(?=\W)}{}) {
-		my $t = $2 // 'all';
+	    elsif (s{^TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
+		my $t = $1 // 'all';
 		o target_varname($var_prefix, $t);
 		$targets->{$t}=1;
 	    }
-	    elsif (m{^(?=$caps_re)}) { o "${var_prefix}_" }
+	    elsif (m{^(?=$caps_re)}) { o $var_prefix }
 	    elsif (m{^(?=$lc_re)}) { o $dir_prefix }
-	    elsif (s{^_}{}) { o "${var_prefix}_" }
+	    elsif (s{^_}{}) { o $var_prefix }
 	    elsif (s{^/}{}) { o $dir_prefix }
 	    elsif (s{^=_}{}) { o $var_prefix }
 	    elsif (s{^=/}{}) { o $dir_name }
 	    elsif (s{^\^}{}) { o "\$(top_srcdir)${dir_suffix}" }
 	    elsif (s{^\}}{}) { o "\$(abs_top_srcdir)${dir_suffix}" }
-	    elsif (s{^(?:[ \t]+([~^]))?(?=[ \t]){}}{}) {
+	    elsif (s{^(?:[ \t]+([~^]))?(?=[ \t])}{}) {
 		my $prefix =
 		    !$1       ? $dir_prefix                     :
 		    $1 eq '~' ? '$(abs_top_srcdir)'.$dir_suffix :
@@ -169,6 +169,8 @@ sub process_subtree ($$) {
 
     filter_subdir_mk($dir_prefix, $dir_suffix, $dir_name,
 		     $var_prefix, \%targets);
+
+    o "\n";
 
     my @targets = sort keys %targets;
     foreach my $target (@targets) {
