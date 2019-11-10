@@ -8,11 +8,19 @@
 
 use strict;
 
+our $srcdir;
+our @subdirs = @ARGV;
+
+die unless $ARGV[0] eq '--srcdir';
+die unless @ARGV>=2;
+shift @ARGV;
+($srcdir, @subdirs) = @ARGV;
+
 our $root = [ '.', [ ] ];
 # each node is [ 'relative subdir name', \@children ]
 
 sub build_tree () {
-    foreach my $subdir (@ARGV) {
+    foreach my $subdir (@subdirs) {
 	my @path = $subdir eq '.' ? () : split m{/+}, $subdir;
 	my $node = $root;
 	foreach my $d (@path) {
@@ -38,7 +46,7 @@ sub write_makefile ($$) {
     o <<END;
 default: all
 %:
-	$(MAKE) -C $cd ${dir_prefix}$@
+	\$(MAKE) -C $cd ${dir_prefix}$@
 END
 }
 
@@ -145,7 +153,7 @@ sub process_tree() {
     process_subtree($root, [ ]);
     start_output_file("subdirs.mk");
     o "include Subdir.mk\n";
-    foreach my $subdir (@ARGV) {
+    foreach my $subdir (@subdirs) {
 	o "include $subdir/Subdir.mk";
     }
 }
