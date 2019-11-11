@@ -32,11 +32,16 @@ AC_PROG_CC
 INCLUDES=
 AC_SUBST(INCLUDES)
 
-AC_CONFIG_FILES(
-  [Makefile]
-  [lib/Makefile]
-  [lib/t/Makefile]
-  [src/Makefile])
+m4_define([SUBDIRSMK_SUBDIRS],
+[m4_map_args_w([$1],[_SUBDIRSMK_SUBDIR(],[/)])])dnl
+
+m4_define([_SUBDIRSMK_SUBDIR],
+[AC_CONFIG_FILES([$1Subdir.mk:$1Subdir.mk.tmp])])dnl
+dnl ,[subdirsmk_need_prep]
+dnl [AC_CONFIG_COMMANDS([$1Subdir.mk],)
+
+SUBDIRSMK_SUBDIRS([lib lib/t src])
+
 AC_OUTPUT
 
 dnl----- That's all, folks --------------------------------------------------
