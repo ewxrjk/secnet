@@ -194,10 +194,11 @@ sub process_tree() {
     foreach my $v (qw(top_srcdir abs_top_srcdir)) {
 	o "$v=\@$v@\n";
     }
-    o "include Subdir.mk\n";
+    o "MAKEFILES += Subdir.mk\n";
     foreach my $subdir (@subdirs) {
-	o "include $subdir/Subdir.mk\n";
+	o "MAKEFILES += $subdir/Subdir.mk\n";
     }
+    o "include \$(MAKEFILES)";
 }
 
 build_tree();

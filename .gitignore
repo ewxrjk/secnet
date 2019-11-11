@@ -8,6 +8,10 @@
 
 ## Autoconf cruft.
 Makefile
+Subdir.mk
+/subdirs.mk
+*.tmp
+
 /autom4te.cache/
 /config.log
 /config.status
