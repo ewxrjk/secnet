@@ -16,7 +16,7 @@ LIBS		?= @LIBS@
 
 INCLUDES	+= -I&^/lib/
 
-LINK		?= $(LD) -o$@ $(CFLAGS) $(LDFLAGS)
+LINK		?= $(CC) -o$@ $(CFLAGS) $(LDFLAGS)
 AR		?= ar
 COMPILE		?= $(CC) -c -o$@ -MD $(DEFS) $(INCLUDES) $(CFLAGS)
 

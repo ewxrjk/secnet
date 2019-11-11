@@ -79,10 +79,11 @@ sub write_makefile ($$) {
     my $cd = $depth ? join('/', ('..',) x $depth) : '.';
     o <<END;
 default: all
+	\@: \$@
 %:	FORCE-ALWAYS-RUN
 	\$(MAKE) -C $cd -f subdirs.mk ${dir_prefix}\$@
 Makefile FORCE-ALWAYS-RUN:
-	: \$@
+	\@: \$@
 .SUFFIXES:
 END
 }
