@@ -36,8 +36,16 @@ m4_define([SUBDIRSMK_SUBDIRS],
 [m4_map_args_w([$1],[_SUBDIRSMK_SUBDIR(],[/)])])dnl
 
 AC_CONFIG_FILES([subdirs.mk:subdirs.mk.tmp Subdir.mk:Subdir.mk.tmp],[],
-[echo 'running subdirmk-setup'
-'$srcdir'/build-aux/subdirmk-setup --srcdir '$srcdir' $subdirsmk_subdirs])
+[
+subdirsmk_need_prep=false
+AS_IF([\$ac_need_defaults],
+[subdirsmk_need_prep=true],[
+AS_CASE([" \$ac_config_targets "],[*" subdirs.mk "*],
+[subdirsmk_need_prep=true])])
+AS_IF([\$subdirsmk_need_prep],[
+ echo 'running subdirmk-setup'
+ '$srcdir'/build-aux/subdirmk-setup --srcdir '$srcdir' $subdirsmk_subdirs
+])])
 
 m4_define([_SUBDIRSMK_SUBDIR],
 [subdirsmk_subdirs="$subdirsmk_subdirs '$1'"

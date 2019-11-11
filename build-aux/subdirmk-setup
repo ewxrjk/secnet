@@ -16,6 +16,8 @@ die unless @ARGV>=2;
 shift @ARGV;
 ($srcdir, @subdirs) = @ARGV;
 
+s{/+$}{} foreach @subdirs;
+
 our $root = [ '.', [ ] ];
 # each node is [ 'relative subdir name', \@children ]
 
@@ -77,6 +79,7 @@ sub write_makefile ($$) {
     my $cd = $depth ? join('/', ('..',) x $depth) : '.';
     o <<END;
 default: all
+.SUFFIXES:
 %:
 	\$(MAKE) -C $cd -f subdirs.mk ${dir_prefix}\$@
 END

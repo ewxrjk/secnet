@@ -23,3 +23,14 @@ COMPILE		?= $(CC) -c -o$@ -MD $(DEFS) $(INCLUDES) $(CFLAGS)
 %.o: %.c
 	$(COMPILE) $<
 
+&^/configure: &^/configure.ac
+	cd &^ && autoconf
+
+config.status: &^/configure
+	./config.status --recheck
+
+subdirs.mk: config.status &^/build-aux/subdirmk-setup
+	./config.status $@
+
+%/Subdir.mk: &^/%/Subdir.mk.in subdirs.mk
+	./config.status $@

@@ -92,19 +92,6 @@ $(call descend-subdirs, $(SUBDIRS))
 ###--------------------------------------------------------------------------
 ### Maintaining the build system.
 
-$(srcdir)/configure: $(srcdir)/configure.ac
-	$(call v-tag,AUTOCONF)cd $(srcdir) && autoconf
-
-config.status: $(srcdir)/configure
-	$(call v-tag,CONFIG)./config.status --recheck
-
-Makefile: config.status $(srcdir)/Makefile.in \
-		$(foreach d,$(ALL_SUBDIRS), $d/Makefile)
-	$(call v-tag,SUBST)./config.status Makefile
-$(foreach d,$(ALL_SUBDIRS), \
-	$(eval $d/Makefile: config.status $$(srcdir)/$d/Makefile.in; \
-		$$(call v-tag,SUBST)./config.status $$@))
-
 ###--------------------------------------------------------------------------
 ### More machinery.
 
