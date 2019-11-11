@@ -89,14 +89,15 @@ sub filter_subdir_mk ($$$$$) {
     #use Data::Dumper;
     #print STDERR "filter @_\n";
 
-    my $in = "${srcdir}/${dir_prefix}Subdir.mk.in";
-    open I, '<', $in or die "open $in: $!\n";
+    my $in = "${dir_prefix}Subdir.mk.in";
     my $caps_re = qr{[A-Z][0-9_A-Z]*(?=\W)};
     my $lc_re = qr{[a-z][-+,0-9_a-z]*(?=\W)};
     my $esclit = '&';
     my $esc = '\\&';
 
-    while (<I>) {
+    for my $f ($in, "Perdir.mk.in") {
+      open I, '<', $f or die "open $f: $!\n";
+      while (<I>) {
 	for (;;) {
 	    unless (s{^(.*?)(\\)?(?=$esc)}{}) { o $_; last; }
 	    o $1;
@@ -138,6 +139,8 @@ sub filter_subdir_mk ($$$$$) {
 		die "bad escape $esclit$_ ";
 	    }
 	}
+      }
+      I->error and die "read $f: $!\n";
     }
 }
 

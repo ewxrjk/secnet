@@ -25,7 +25,7 @@
 
 &TARGETS	+= & libtoy.a
 
-&OBJECTS	+= & toylib.c
+&OBJECTS	+= & toylib.o
 
 &libtoy.a:	$(&OBJECTS)
 	$(AR) rc $@ $^

@@ -35,14 +35,13 @@ AC_SUBST(INCLUDES)
 m4_define([SUBDIRSMK_SUBDIRS],
 [m4_map_args_w([$1],[_SUBDIRSMK_SUBDIR(],[/)])])dnl
 
-AC_CONFIG_COMMANDS([subdirsmk],[],
-['$srcdir'/build-aux/subdirmk-setup --srcdir '$srcdir' $subdirsmk_subdirs])
+AC_CONFIG_FILES([subdirs.mk:subdirs.mk.tmp Subdir.mk:Subdir.mk.tmp],[],
+[echo 'running subdirmk-setup'
+'$srcdir'/build-aux/subdirmk-setup --srcdir '$srcdir' $subdirsmk_subdirs])
 
 m4_define([_SUBDIRSMK_SUBDIR],
 [subdirsmk_subdirs="$subdirsmk_subdirs '$1'"
 AC_CONFIG_FILES([$1Subdir.mk:$1Subdir.mk.tmp])])dnl
-dnl 
-dnl [AC_CONFIG_COMMANDS([$1Subdir.mk],)
 
 SUBDIRSMK_SUBDIRS([lib lib/t src])
 

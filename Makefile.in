@@ -41,15 +41,6 @@ exec_prefix		 = @exec_prefix@
 bindir			 = @bindir@
 
 ## Build options.
-CC			 = @CC@
-CFLAGS			 = @CFLAGS@
-DEFS			 = @DEFS@
-INCLUDES		 = @INCLUDES@
-LD			 = @CC@
-LDFLAGS			 = @LDFLAGS@
-LIBS			 = @LIBS@
-
-INCLUDES		+= -I$(srcdir)/lib/
 
 ###--------------------------------------------------------------------------
 ### Machinery.
@@ -83,18 +74,7 @@ V_AT			 = $(%V_AT.$V)
 %V_AT.0			 = @
 %V_AT.1			 =
 
-VPATH			 = $(srcdir)
 
-COMPILE			 = $(call v-tag,CC)$(CC) -c -o$@ -MD \
-				$(DEFS) $(INCLUDES) $(CFLAGS)
-%.o: %.c
-	$(COMPILE) $<
-
-LINK			 = $(call v-tag,LD)$(LD) -o$@ \
-				$(CFLAGS) $(LDFLAGS) $(LIBS)
-
-objects			 = $(addsuffix $(if $2,$2,.o), \
-				$(basename $(filter %.c %.s %.S,$1)))
 
 ALL_DEPFILES		:=
 notice-objects		 = $(eval ALL_DEPFILES += $$(patsubst %.o,%.d,$1))
