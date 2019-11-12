@@ -3,8 +3,10 @@
 # $(srcdir)/build-aux/subdirmk-setup SUBDIR...
 #
 # generates
+#   main.mk.tmp
+# and in each subdirectory
 #   Subdir.mk.tmp
-#   Makefile.tmp
+#   Makefile
 
 use strict;
 
@@ -81,7 +83,7 @@ sub write_makefile ($$) {
 default: all
 	\@: \$@
 %:	FORCE-ALWAYS-RUN
-	\$(MAKE) -C $cd -f subdirs.mk ${dir_prefix}\$@
+	\$(MAKE) -C $cd -f main.mk ${dir_prefix}\$@
 Makefile FORCE-ALWAYS-RUN:
 	\@: \$@
 .SUFFIXES:
@@ -196,7 +198,7 @@ sub process_subtree ($$) {
 
 sub process_tree() {
     process_subtree($root, [ ]);
-    start_output_file("subdirs.mk.tmp");
+    start_output_file("main.mk.tmp");
     foreach my $v (qw(top_srcdir abs_top_srcdir)) {
 	o "$v=\@$v@\n";
     }

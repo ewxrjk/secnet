@@ -1,0 +1,17 @@
+
+CONFIGURE	?= configure
+CONFIGURE_AC 	?= $(CONFIGURE).ac
+CONFIG_STATUS 	?= config.status
+SUBDIRMK	?= subdirmk
+
+&^/$(CONFIGURE): &^/$(CONFIGURE_AC)
+	cd &^ && autoconf
+
+$(CONFIG_STATUS): &^/$(CONFIGURE)
+	./$(CONFIG_STATUS) --recheck
+
+all-subdirs.mk $(MAKFILES): makefiles.phantom
+.INTERMEDIATE: makefiles.phantom
+makefiles.phantom: $(addprefix &^/,$(addsuffix .in,$(MAKEFILES)))	\
+		$(CONFIG_STATUS) &^/$(SUBDIRMK)/generate
+	./$(CONFIG_STATUS)

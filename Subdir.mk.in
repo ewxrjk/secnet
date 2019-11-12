@@ -22,15 +22,3 @@ COMPILE		?= $(CC) -c -o$@ -MD $(DEFS) $(INCLUDES) $(CFLAGS)
 
 %.o: %.c
 	$(COMPILE) $<
-
-&^/configure: &^/configure.ac
-	cd &^ && autoconf
-
-config.status: &^/configure
-	./config.status --recheck
-
-subdirs.mk $(MAKFILES): makefiles.phantom
-.INTERMEDIATE: makefiles.phantom
-makefiles.phantom: $(addprefix &^/,$(addsuffix .in,$(MAKEFILES)))	\
-		config.status &^/build-aux/subdirmk-setup
-	./config.status
