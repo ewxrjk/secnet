@@ -115,7 +115,7 @@ sub filter_subdir_mk ($$$$$) {
 	    elsif (s{^TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
 		my $t = $1 // 'all';
 		o target_varname($var_prefix, $t);
-		$targets->{$t}=1;
+		$targets->{$t} //= [ ];
 	    }
 	    elsif (m{^(?=$caps_re)}) { o $var_prefix }
 	    elsif (m{^(?=$lc_re)}) { o $dir_prefix }
@@ -168,12 +168,11 @@ sub process_subtree ($$) {
 
     write_makefile($dir_prefix, scalar @$path);
 
-    my %targets = qw(all 1);
-    my @child_subdirs;
+    my %targets = (all => []);
     foreach my $child (@{ $node->[1] }) {
 	my @childpath = (@$path, $child->[0]);
-	push @child_subdirs, join '/', @childpath;
-	$targets{$_}++ foreach
+	my $child_subdir = join '/', @childpath;
+	push @{ $targets{$_} }, $child_subdir foreach
 	    process_subtree($child, \@childpath);
     }
     start_output_file("${dir_prefix}Subdir.mk.tmp");
@@ -187,7 +186,7 @@ sub process_subtree ($$) {
     foreach my $target (@targets) {
 	my $target_varname = target_varname($var_prefix, $target);
 	print O "${dir_prefix}${target}: \$($target_varname)";
-	foreach my $child_subdir (@child_subdirs) {
+	foreach my $child_subdir (@{ $targets{$target} }) {
 	    print O " $child_subdir/$target";
 	}
 	print O "\n";

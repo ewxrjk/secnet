@@ -3,7 +3,11 @@ AC_DEFUN([SUBDIRMK_SUBDIRS],
 [m4_map_args_w([$1],[_SUBDIRMK_SUBDIR(],[/)])])dnl
 
 AC_DEFUN_ONCE([_SUBDIRMK_INIT],[
-  AC_CONFIG_FILES([main.mk:main.mk.tmp Subdir.mk:Subdir.mk.tmp],[],[
+  AC_CONFIG_FILES([
+	main.mk:main.mk.tmp
+	Subdir.mk:Subdir.mk.tmp
+	subdirmk/regen.mk
+	],[],[
     subdirsmk_need_prep=false
     AS_IF([\$ac_need_defaults],[
       subdirsmk_need_prep=true],[

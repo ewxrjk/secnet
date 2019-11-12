@@ -7,12 +7,15 @@
 /src/toy
 
 ## Autoconf cruft.
-Makefile
-Subdir.mk
-/subdirs.mk
-*.tmp
 
 /autom4te.cache/
 /config.log
 /config.status
 /configure
+
+## subdirmk-generated
+/main.mk
+/subdirmk/regen.mk
+Makefile
+Subdir.mk
+*.tmp

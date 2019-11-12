@@ -2,16 +2,19 @@
 CONFIGURE	?= configure
 CONFIGURE_AC 	?= $(CONFIGURE).ac
 CONFIG_STATUS 	?= config.status
-SUBDIRMK	?= subdirmk
 
-&^/$(CONFIGURE): &^/$(CONFIGURE_AC)
+$(top_srcdir)/$(CONFIGURE): $(top_srcdir)/$(CONFIGURE_AC)
 	cd &^ && autoconf
 
-$(CONFIG_STATUS): &^/$(CONFIGURE)
+$(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
 	./$(CONFIG_STATUS) --recheck
 
-all-subdirs.mk $(MAKFILES): makefiles.phantom
+MAKEFILES += subdirmk/regen.mk
+
+main.mk $(MAKFILES): makefiles.phantom
 .INTERMEDIATE: makefiles.phantom
-makefiles.phantom: $(addprefix &^/,$(addsuffix .in,$(MAKEFILES)))	\
-		$(CONFIG_STATUS) &^/$(SUBDIRMK)/generate
+makefiles.phantom: 						\
+		$(top_srcdir)/subdirmk/generate			\
+		$(CONFIG_STATUS)				\
+		$(foreach m,$(MAKEFILES),$(top_srcdir)/$(m).in)
 	./$(CONFIG_STATUS)
