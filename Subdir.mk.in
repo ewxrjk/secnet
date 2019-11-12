@@ -29,8 +29,8 @@ COMPILE		?= $(CC) -c -o$@ -MD $(DEFS) $(INCLUDES) $(CFLAGS)
 config.status: &^/configure
 	./config.status --recheck
 
-subdirs.mk: config.status &^/build-aux/subdirmk-setup
-	./config.status $@
-
-%/Subdir.mk: &^/%/Subdir.mk.in subdirs.mk
-	./config.status $@
+subdirs.mk $(MAKFILES): makefiles.phantom
+.INTERMEDIATE: makefiles.phantom
+makefiles.phantom: $(addprefix &^/,$(addsuffix .in,$(MAKEFILES)))	\
+		config.status &^/build-aux/subdirmk-setup
+	./config.status
