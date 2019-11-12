@@ -1,0 +1,1 @@
+subdirmk/autogen.sh
