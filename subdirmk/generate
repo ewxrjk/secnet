@@ -203,7 +203,7 @@ sub filter_subdir_mk ($$$$$) {
 			 "${srcdir}/$f", \$esclit, $enoentok);
     };
     $pi->("${dir_prefix}Subdir.mk.in", 0);
-    $pi->("Perdir.mk.in",              0);
+    $pi->("Perdir.mk.in",              1);
 }
 
 sub process_subtree ($$);
