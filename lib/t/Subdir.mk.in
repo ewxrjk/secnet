@@ -28,7 +28,7 @@
 &OBJECTS	+= & toytest.o
 &LIBS		+= lib/libtoy.a
 
-&CLEAN		+= & toytest
+&CLEAN		+= & toytest toytest.stamp
 
 &toytest:	$(&OBJECTS) $(&LIBS)
 	$(LINK) $^

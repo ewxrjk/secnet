@@ -13,6 +13,7 @@
 #   Perdir.mk.in
 
 use strict;
+use POSIX;
 
 print "$0 @ARGV\n" or die $!;
 
@@ -108,13 +109,13 @@ sub filter_subdir_mk ($$$$$) {
     #use Data::Dumper;
     #print STDERR "filter @_\n";
 
-    my $in = "${dir_prefix}Subdir.mk.in";
+    my $in = "${srcdir}/${dir_prefix}Subdir.mk.in";
     my $caps_re = qr{[A-Z][0-9_A-Z]*(?=\W)};
     my $lc_re = qr{[a-z][-+,0-9_a-z]*(?=\W)};
     my $esclit = '&';
     my $esc = '\\&';
 
-    for my $f ($in, "Perdir.mk.in") {
+    for my $f ($in, "${srcdir}/Perdir.mk.in") {
       open I, '<', $f or die "open $f: $!\n";
       while (<I>) {
 	for (;;) {
@@ -183,6 +184,7 @@ sub process_subtree ($$) {
     foreach my $child (@{ $node->[1] }) {
 	my @childpath = (@$path, $child->[0]);
 	my $child_subdir = join '/', @childpath;
+	mkdir $child_subdir or $!==EEXIST or die "mkdir $child_subdir: $!";
 	push @{ $targets{$_} }, $child_subdir foreach
 	    process_subtree($child, \@childpath);
     }

@@ -23,4 +23,4 @@ COMPILE		?= $(CC) -c -o$@ -MD $(DEFS) $(INCLUDES) $(CFLAGS)
 %.o: %.c
 	$(COMPILE) $<
 
-include &^/subdirmk/regen.mk
+include subdirmk/regen.mk
