@@ -14,11 +14,13 @@ $(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
 
 MAKEFILES += subdirmk/regen.mk
 
+MAKEFILE_TEMPLATES += $(top_srcdir)/Perdir.mk.in
+
 main.mk $(MAKEFILES): .makefiles.stamp ;
 .makefiles.stamp: 						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
-		$(top_srcdir)/Perdir.mk.in			\
+		$(MAKEFILE_TEMPLATES)				\
 		$(foreach m,$(MAKEFILES),$(top_srcdir)/$(m).in)
 # This filtering arranges that we can often run config.status to
 # generate only particular output files.  We look for *inputs* that

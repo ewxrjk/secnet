@@ -16,6 +16,12 @@
 & ~ thing thing... &		& may be omitted before EOL or before \EOL
 				other &'s not recognised
 
+start of line (maybe after ws):
+&:<directive> <args>....
+args are processed for & first
+&:include filename		filename should usually be foo.mk.in
+&:-include filename
+
 CAPS is [A-Z][0-9_A-Z]*(?!\w)
 lc is [a-z][-+,0-9_a-z]*(?!\w)
 

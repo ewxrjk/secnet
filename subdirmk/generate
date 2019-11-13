@@ -125,6 +125,9 @@ sub process_input_mk ($$$$$$$$) {
 	return;
     }
     while (<$input>) {
+	if (s#^\s*$esc\:##) {
+	    $buffering_output='';
+	}
 	for (;;) {
 	    unless (s{^(.*?)(\\)?(?=$esc)}{}) { o $_; last; }
 	    o $1;
@@ -163,6 +166,20 @@ sub process_input_mk ($$$$$$$$) {
 		$set_esc->();
 	    } else {
 		die "bad escape $$esclitr$_ ";
+	    }
+	}
+	if (defined $buffering_output) {
+	    $_=$buffering_output;
+	    $buffering_output=undef;
+	    if (m#^(-?)include\s+(\S+)\s+$#) {
+		my $subf = "$srcdir/$2";
+		o "MAKEFILE_TEMPLATES += $subf\n";
+		process_input_mk($dir_prefix, $dir_suffix, $dir_name,
+				 $var_prefix, $targets,
+				 $subf, $esclitr, $subf);
+		o "\n";
+	    } else {
+		die "unknown directive $_ ";
 	    }
 	}
     }
