@@ -35,7 +35,7 @@ main.mk $(MAKEFILES): .makefiles.stamp ;
 			subdirmk/regen.mk.in			\
 			$(top_srcdir)/subdirmk/regen.mk.in	\
 			, $?),,					\
-		$(patsubst %.mk.in,%.mk,$(filter %.mk.in,$?)))
+		$(sort $(patsubst %.mk.in,%.mk,$(filter %.mk.in,$?))))
 	touch $@
 
 realclean:: clean
