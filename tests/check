@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+cd example
+git clean -xdff
+./autogen.sh && ./configure
+make -j4 all check
+make -j4 clean
+make -j4 all check
+
+git clean -xdff
+mkdir build
+cd build
+.././autogen.sh && ../configure
+make -j4 all check

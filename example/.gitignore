@@ -23,3 +23,6 @@
 Makefile
 Subdir.mk
 *.tmp
+
+#----- For our out-of-tree build test -----
+/build
