@@ -14,14 +14,20 @@ $(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
 
 MAKEFILES += subdirmk/regen.mk
 
-main.mk $(MAKEFILES): makefiles.phantom ;
-.INTERMEDIATE: makefiles.phantom
-makefiles.phantom: 						\
+main.mk $(MAKEFILES): .config.status.needed
+	./$<
+.INTERMEDIATE: .config.status.needed
+.config.status.needed: 						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
 		$(top_srcdir)/Perdir.mk.in			\
 		$(foreach m,$(MAKEFILES),$(top_srcdir)/$(m).in)
-	./$(CONFIG_STATUS)
+	: $?
+	set -e; printf >$@.tmp "#!/bin/sh\nset -e\n%s %s"	\
+		"./$(CONFIG_STATUS)"				\
+		"$(if	$(filter-out %.mk.in, $?),,		\
+			$(patsubst %.mk.in,%.mk,$?))"	;	\
+		chmod +x $@.tmp; mv -f $@.tmp $@
 
 realclean:: clean
 	$(RM) config.status config.log
