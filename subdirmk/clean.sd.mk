@@ -5,5 +5,5 @@
 
 # &TARGETS_clean
 
-&/clean:
+&/clean::
 	$(RM) $(&CLEAN)
