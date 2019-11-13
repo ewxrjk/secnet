@@ -98,28 +98,30 @@ Makefile FORCE-ALWAYS-RUN:
 END
 }
 
-sub filter_subdir_mk ($$$$$) {
+sub process_input_mk ($$$$$$$);
+sub process_input_mk ($$$$$$$) {
     my ($dir_prefix, $dir_suffix, $dir_name,
-	$var_prefix, $targets) = @_;
+	$var_prefix, $targets,
+	$f, $esclitr) = @_;
 
-    #use Data::Dumper;
-    #print STDERR "filter @_\n";
-
-    my $in = "${srcdir}/${dir_prefix}Subdir.mk.in";
     my $caps_re = qr{[A-Z][0-9_A-Z]*(?=\W)};
     my $lc_re = qr{[a-z][-+,0-9_a-z]*(?=\W)};
-    my $esclit = '&';
-    my $esc = '\\&';
 
-    for my $f ($in, "${srcdir}/Perdir.mk.in") {
-      open I, '<', $f or die "open $f: $!\n";
-      while (<I>) {
+    my $esc;
+    my $set_esc = sub {
+	$esc = $$esclitr;
+	$esc =~ s/\W/\\$&/g;
+    };
+    $set_esc->();
+
+    open I, '<', $f or die "open $f: $!\n";
+    while (<I>) {
 	for (;;) {
 	    unless (s{^(.*?)(\\)?(?=$esc)}{}) { o $_; last; }
 	    o $1;
-	    if ($2) { o $esclit; next; }
+	    if ($2) { o $$esclitr; next; }
 	    s{^$esc}{} or die "$_ ?";
-	    if (s{^$esc}{}) { o "$esclit$esclit" }
+	    if (s{^$esc}{}) { o "$$esclitr$$esclitr" }
 	    elsif (s{^TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
 		my $t = $1 // 'all';
 		o target_varname($var_prefix, $t);
@@ -148,15 +150,29 @@ sub filter_subdir_mk ($$$$$) {
 		o $_;
 		$_ = '';
 	    } elsif (s{^!(\S+)(?:[ \t]+|$)}{}) {
-		$esclit = $1;
-		$esc = $esclit;
-		$esc =~ s/\W/\\$&/g;
+		$$esclitr = $1;
+		$set_esc->();
 	    } else {
-		die "bad escape $esclit$_ ";
+		die "bad escape $$esclitr$_ ";
 	    }
 	}
-      }
-      I->error and die "read $f: $!\n";
+    }
+    I->error and die "read $f: $!\n";
+}
+
+sub filter_subdir_mk ($$$$$) {
+    my ($dir_prefix, $dir_suffix, $dir_name,
+	$var_prefix, $targets) = @_;
+
+    #use Data::Dumper;
+    #print STDERR "filter @_\n";
+
+    my $esclit = '&';
+    for my $f ("${srcdir}/${dir_prefix}Subdir.mk.in",
+	       "${srcdir}/Perdir.mk.in") {
+	process_input_mk($dir_prefix, $dir_suffix, $dir_name,
+			 $var_prefix, $targets,
+			 $f, \$esclit);
     }
 }
 
