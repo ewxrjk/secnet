@@ -9,3 +9,4 @@ CDEPS_CFLAGS ?= -MD -MF $(*D)/.$(*F).d
 		$(dir $b).$(notdir $b).d)
 -include $(&DEPFILES)
 
+&CLEAN += $(&DEPFILES)
