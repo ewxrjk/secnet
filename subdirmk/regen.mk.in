@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: LGPL-2.0-or-later
 
 CONFIGURE	?= configure
-CONFIGURE_AC 	?= $(CONFIGURE).ac
-CONFIG_STATUS 	?= config.status
+CONFIGURE_AC	?= $(CONFIGURE).ac
+CONFIG_STATUS	?= config.status
 
-CONFIGURE_ACS 	+= $(CONFIGURE_AC)
-CONFIGURE_ACS 	+= subdirmk/subdirmk.ac
+CONFIGURE_ACS	+= $(CONFIGURE_AC)
+CONFIGURE_ACS	+= subdirmk/subdirmk.ac
 
 $(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
 	cd $(top_srcdir) && autoconf
@@ -22,7 +22,7 @@ MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
 	))
 
 main.mk $(MAKEFILES): .makefiles.stamp ;
-.makefiles.stamp: 						\
+.makefiles.stamp:						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
 		$(MAKEFILE_TEMPLATES)

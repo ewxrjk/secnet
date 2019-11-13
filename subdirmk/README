@@ -14,7 +14,7 @@ style is not very ergonomic.  The main difficulties are:
   - constantly having to write out long file and directory names
   - the lack of a per-directory make variable namespace means
     long make variables (or namespace clashes)
-  - it is difficult to arrange that one can cd to a subdirectory 
+  - it is difficult to arrange that one can cd to a subdirectory
     and say `make all' and have something reasonable happen
     (to wit, build an appropriate subset)
 
@@ -151,8 +151,8 @@ we describe the expansion at the top level, which is often a special
 case (in general in variable names we call that TOP rather than the
 empty string).
 
-&CAPS		=>	sub_dir_CAPS  			or TOP_CAPS
-&lc		=>	sub/dir/lc    			or lc
+&CAPS		=>	sub_dir_CAPS			or TOP_CAPS
+&lc		=>	sub/dir/lc			or lc
 	Here CAPS is any ASCII letter A-Z and lc is a-z.
 	The assumption is that filenames are usually lowercase and
 	variables usually uppercase.  Otherwise, use another syntax:
