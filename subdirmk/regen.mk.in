@@ -22,3 +22,9 @@ makefiles.phantom: 						\
 		$(top_srcdir)/Perdir.mk.in			\
 		$(foreach m,$(MAKEFILES),$(top_srcdir)/$(m).in)
 	./$(CONFIG_STATUS)
+
+realclean: clean
+	$(RM) config.status config.log
+	$(RM) main.mk $(MAKEFILES)
+
+-include $(ALL_DEPFILES)
