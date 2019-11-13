@@ -1,28 +1,8 @@
-# subdirmk example - .gitignore
+# subdirmk - subdirmk/.gitignore
 #  Copyright 2019 Mark Wooding
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
 
-#----- Build artifacts -----
-*.a
-.*.d
-*.o
-*.stamp
-/lib/t/toytest
-/src/toy
-
-#----- Autoconf cruft -----
-
-/autom4te.cache/
-/config.log
-/config.status
-/configure
-
 #----- subdirmk-generated -----
-.makefiles.stamp
-/main.mk
-/subdirmk/regen.mk
-/subdirmk/usual.mk
-Makefile
-Subdir.mk
-*.tmp
+/regen.mk
+/usual.mk
