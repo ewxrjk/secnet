@@ -1,6 +1,6 @@
 ## Build artifacts.
 *.a
-*.d
+.*.d
 *.o
 *.stamp
 /lib/t/toytest
