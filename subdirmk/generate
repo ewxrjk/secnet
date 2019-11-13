@@ -202,10 +202,8 @@ sub filter_subdir_mk ($$$$$) {
 			 $var_prefix, $targets,
 			 "${srcdir}/$f", \$esclit, $enoentok);
     };
-    for my $f ("${dir_prefix}Subdir.mk.in",
-	       "Perdir.mk.in") {
-	$pi->($f, 0);
-    }
+    $pi->("${dir_prefix}Subdir.mk.in", 0);
+    $pi->("Perdir.mk.in",              0);
 }
 
 sub process_subtree ($$);
