@@ -195,11 +195,16 @@ sub filter_subdir_mk ($$$$$) {
     #print STDERR "filter @_\n";
 
     my $esclit = '&';
-    for my $f ("${srcdir}/${dir_prefix}Subdir.mk.in",
-	       "${srcdir}/Perdir.mk.in") {
+
+    my $pi = sub {
+	my ($f, $enoentok) = @_;
 	process_input_mk($dir_prefix, $dir_suffix, $dir_name,
 			 $var_prefix, $targets,
-			 $f, \$esclit, 0);
+			 $f, \$esclit, $enoentok);
+    };
+    for my $f ("${srcdir}/${dir_prefix}Subdir.mk.in",
+	       "${srcdir}/Perdir.mk.in") {
+	$pi->($f, 0);
     }
 }
 
