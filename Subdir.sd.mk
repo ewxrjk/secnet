@@ -1,5 +1,5 @@
 
 INCLUDES	+= -I&^/lib/
 
-&:include subdirmk/usual.mk.in
+include subdirmk/usual.mk
 include subdirmk/regen.mk

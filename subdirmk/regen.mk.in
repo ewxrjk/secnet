@@ -12,16 +12,16 @@ $(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
 $(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
 	./$(CONFIG_STATUS) --recheck
 
-MAKEFILES += subdirmk/regen.mk
-
-MAKEFILE_TEMPLATES += $(top_srcdir)/Perdir.mk.in
+MAKEFILE_TEMPLATES += $(top_srcdir)/Perdir.sd.mk
+MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
+	@_SUBDIRMK_MAKEFILES@ \
+	))
 
 main.mk $(MAKEFILES): .makefiles.stamp ;
 .makefiles.stamp: 						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
-		$(MAKEFILE_TEMPLATES)				\
-		$(foreach m,$(MAKEFILES),$(top_srcdir)/$(m).in)
+		$(MAKEFILE_TEMPLATES)
 # This filtering arranges that we can often run config.status to
 # generate only particular output files.  We look for *inputs* that
 # have changed.  If the only inputs that have changed are ones that we
@@ -31,11 +31,12 @@ main.mk $(MAKEFILES): .makefiles.stamp ;
 # regen.mk.in twice because if $(top_srcdir) is `.', make elides the
 # directory part from $?.
 	./$(CONFIG_STATUS) $(if					\
-		$(filter-out Subdir.mk.in %/Subdir.mk.in	\
-			subdirmk/regen.mk.in			\
-			$(top_srcdir)/subdirmk/regen.mk.in	\
+		$(filter-out Subdir.sd.mk %/Subdir.sd.mk	\
+			     %.mk.in				\
 			, $?),,					\
-		$(sort $(patsubst %.mk.in,%.mk,$(filter %.mk.in,$?))))
+		$(sort						\
+			$(patsubst %.sd.mk,%.mk,$(filter %.sd.mk,$?)) \
+			$(patsubst %.mk.in,%.mk,$(filter %.mk.in,$?))))
 	touch $@
 
 realclean:: clean

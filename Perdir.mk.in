@@ -1,3 +1,0 @@
-
-&:include subdirmk/cdeps.mk.in
-&:include subdirmk/clean.mk.in

@@ -3,10 +3,10 @@
 # $(srcdir)/subdirmk/generate [--srcdir=SRCDIR] [--] SUBDIR...
 #
 # generates in each subdirectory	from in each subdirectory
-#     Subdir.mk.tmp			    Subdir.mk.in
+#     Subdir.mk.tmp			    Subdir.sd.mk
 #     Makefile
 # and in toplevel			and in toplevel
-#     main.mk.tmp			    Perdir.mk.in
+#     main.mk.tmp			    Perdir.sd.mk
 
 use strict;
 use POSIX;
@@ -124,6 +124,8 @@ sub process_input_mk ($$$$$$$$) {
 	die "open $f: $!\n" unless $!==ENOENT && $enoent_ok;
 	return;
     }
+    o "MAKEFILE_TEMPLATES += $f\n";
+
     while (<$input>) {
 	if (s#^\s*$esc\:##) {
 	    $buffering_output='';
@@ -173,7 +175,6 @@ sub process_input_mk ($$$$$$$$) {
 	    $buffering_output=undef;
 	    if (m#^(-?)include\s+(\S+)\s+$#) {
 		my $subf = "$srcdir/$2";
-		o "MAKEFILE_TEMPLATES += $subf\n";
 		process_input_mk($dir_prefix, $dir_suffix, $dir_name,
 				 $var_prefix, $targets,
 				 $subf, $esclitr, $subf);
@@ -202,8 +203,8 @@ sub filter_subdir_mk ($$$$$) {
 			 $var_prefix, $targets,
 			 "${srcdir}/$f", \$esclit, $enoentok);
     };
-    $pi->("${dir_prefix}Subdir.mk.in", 0);
-    $pi->("Perdir.mk.in",              1);
+    $pi->("${dir_prefix}Subdir.sd.mk", 0);
+    $pi->("Perdir.sd.mk",              1);
 }
 
 sub process_subtree ($$);
