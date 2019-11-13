@@ -1,9 +1,0 @@
-
-all: a b
-
-a b: ab.x ;
-
-.INTERMEDIATE: ab.x
-ab.x: NOTES zork
-	wc -l NOTES >a # $@
-	wc -c NOTES >b # $@
