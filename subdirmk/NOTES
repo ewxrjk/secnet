@@ -21,9 +21,9 @@ lc is [a-z][-+,0-9_a-z]*(?!\w)
 
 &!<spaces or tabs>	disables & *until* EOL (and disappears)
 
-&!STUFF		STUFF is recognised instead of & (beyond EOL)
-		STUFF is either all ASCII punct or all ASCII alphanum (incl _)
-		any lwsp after STUFF is discarded too
+&!STUFF<lwsp>		STUFF is recognised instead of &
+			the terminating lwsp is discarded too
+			may also occur at eol
 
 eg notably
  STUFF!&		now & is recognised instead (ie back to normal)

@@ -150,7 +150,7 @@ sub filter_subdir_mk ($$$$$) {
 	    } elsif (s{^![ \t]+}{}) {
 		o $_;
 		$_ = '';
-	    } elsif (s{^!(\pPosixWord+|\pPosixPunct+)[ \t]*}{}) {
+	    } elsif (s{^!(\S+)(?:[ \t]+|$)}{}) {
 		$esclit = $1;
 		$esc = $esclit;
 		$esc =~ s/\W/\\$&/g;
