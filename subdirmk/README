@@ -1,3 +1,48 @@
+subdirmk - assistance for non-recursive use of make
+===================================================
+
+Introduction
+------------
+
+Peter Miller's 1997 essay _Recursive Make Considered Harmful_
+persuasively argues that it is better to arrannge to have a single
+make invocation with the project's complete dependency tree, rather
+than the currently conventional `$(MAKE) -C subdirectory' approach.
+
+However, actually writing a project's build system in a non-recursive
+style is not very ergonomic.  The main difficulties are:
+  - constantly having to write out long file and directory names
+  - the lack of a per-directory make variable namespace means
+    long make variables (or namespace clashes)
+  - it is difficult to arrange that one can cd to a subdirectory 
+    and say `make all' and have something reasonable happen
+    (to wit, build an appropriate subset)
+
+`subdirmk' is an attempt to solve these problems (and it also slightly
+alleviates some of the boilerplate needed to support out-of-tree
+builds well).
+
+Basic approach
+--------------
+
+The developer is expected to write a makefile fragment in each
+relevant subdirectory called `Subdir.mk.in'.
+
+These fragments may contain ordinary make language.
+
+However, the sigil & is treated specially.  By and large, it refers to
+`the current directory'.  Variable names and filenames may be prefixed
+by &_ and &/.  Lists of 
+
+
+
+
+
+  https://web.archive.org/web/20150330111905/http://miller.emu.id.au/pmiller/books/rmch/
+
+
+
+
 &CAPS		=>	subdir_CAPS  			or TOP_CAPS
 &lc		=>	subdir/lc    			or lc
 
