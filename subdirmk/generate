@@ -104,6 +104,7 @@ default: all
 Makefile FORCE-ALWAYS-RUN:
 	\$(MAKE) -C $cd -f main.mk \$(addprefix ${dir_prefix},\$(or \$(MAKECMDGOALS),all))
 .SUFFIXES:
+.PHONY:	FORCE-ALWAYS-RUN
 END
 }
 
