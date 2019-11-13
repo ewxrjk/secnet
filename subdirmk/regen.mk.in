@@ -16,5 +16,6 @@ main.mk $(MAKFILES): makefiles.phantom
 makefiles.phantom: 						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
+		$(top_srcdir)/Perdir.mk.in			\
 		$(foreach m,$(MAKEFILES),$(top_srcdir)/$(m).in)
 	./$(CONFIG_STATUS)
