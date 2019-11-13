@@ -11,7 +11,7 @@
 &&		=>	&&
 \&		=>	&
 
-& thing thing... &	=>	each thing prefixed by &/ &^ &~ resp
+& thing thing... &	=>	each thing prefixed by &/ &^/ &~/ resp
 & ^ thing thing... &		each thing is any non-ws
 & ~ thing thing... &		& may be omitted before EOL or before \EOL
 				other &'s not recognised
@@ -26,7 +26,7 @@ lc is [a-z][-+,0-9_a-z]*(?!\w)
 			may also occur at eol
 
 eg notably
- STUFF!&		now & is recognised instead (ie back to normal)
+ STUFF!&	now & is recognised instead (ie back to normal)
  STUFFSTUFF	STUFF
 
 eg
