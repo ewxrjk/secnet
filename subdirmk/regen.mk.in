@@ -16,7 +16,7 @@ $(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
 $(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
 	./$(CONFIG_STATUS) --recheck
 
-MAKEFILE_TEMPLATES += $(top_srcdir)/Perdir.sd.mk
+# Normally, generate will add all the inputs to MAKEFILE_TEMPLATES.
 MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
 	@_SUBDIRMK_MAKEFILES@ \
 	))
