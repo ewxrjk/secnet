@@ -3,6 +3,20 @@
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
 
+# Usage:
+#   include subdirmk/regen.mk
+# (probably in toplevel Subdir.sd.mk)
+#
+# Arranges that config.status is automatically rerun to update
+# makefiles from templates, whenever a template *.sd.mk or *.mk.in is
+# edited; and that autoconf is rerun if configure's inputs are edited.
+#
+# If you add includes to configure.ac, add them to CONFIGURE_ACS.
+#
+# Also provides a `realclean::' target at the toplevel which deletes
+# the autoconf output.  This may be made into a recursive target
+# by mentioning &TARGETS_realclean in appropriate .sd.mk.
+
 CONFIGURE	?= configure
 CONFIGURE_AC	?= $(CONFIGURE).ac
 CONFIG_STATUS	?= config.status
