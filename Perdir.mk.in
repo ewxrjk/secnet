@@ -1,6 +1,6 @@
 
-&CLEAN += &/*~
-&CLEAN += $(&OBJECTS)
+&CLEAN += & *~ *.tmp
+&CLEAN += $(&OBJECTS) $(&DEPFILES)
 
 # &TARGETS_clean
 
