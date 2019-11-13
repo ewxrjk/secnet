@@ -108,7 +108,8 @@ per-directory substitutions, for each directory.
 Global definitions
 ------------------
 
-If want to set global variables, such as CC
+If want to set global variables, such as CC, that should only be done
+once.  The usual approach is to include 
 
 
 
