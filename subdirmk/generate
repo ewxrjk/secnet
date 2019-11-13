@@ -165,6 +165,8 @@ sub process_input_mk ($$$$$$$$) {
 		s{(?<=[ \t])(?=\S)(?!\\\s*$)}{$prefix}g;
 		o $_;
 		$_ = $after;
+	    } elsif (s{^\#}{}) {
+		$_ = '';
 	    } elsif (s{^![ \t]+}{}) {
 		o $_;
 		$_ = '';

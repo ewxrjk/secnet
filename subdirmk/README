@@ -192,6 +192,9 @@ empty string).
 
 &!<lwsp>	disables & until EOL (and then disappears)
 
+&#	delete everything to end of line
+	(useful if the RHS contains unrecognise & constructions)
+
 &!STUFF
 	changes the escape sequence from & to literally STUFF
 	STUFF may be any series of of non-whitespace characters,
