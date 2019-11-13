@@ -20,9 +20,19 @@ main.mk $(MAKEFILES): .makefiles.stamp ;
 		$(CONFIG_STATUS)				\
 		$(top_srcdir)/Perdir.mk.in			\
 		$(foreach m,$(MAKEFILES),$(top_srcdir)/$(m).in)
-	: $? X $(filter-out Subdir.mk.in regen.mk.in, $(notdir $?))
+# This filtering arranges that we can often run config.status to
+# generate only particular output files.  We look for *inputs* that
+# have changed.  If the only inputs that have changed are ones that we
+# know affect only one output (Subdir.mk.in and regen.mk.in), we pass
+# config.status the corresponding output file names.  Otherwise we
+# pass nothing and config.status does them all.  We need to mention
+# regen.mk.in twice because if $(top_srcdir) is `.', make elides the
+# directory part from $?.
 	./$(CONFIG_STATUS) $(if					\
-		$(filter-out Subdir.mk.in regen.mk.in, $(notdir $?)),,	\
+		$(filter-out Subdir.mk.in %/Subdir.mk.in	\
+			subdirmk/regen.mk.in			\
+			$(top_srcdir)/subdirmk/regen.mk.in	\
+			, $?),,					\
 		$(patsubst %.mk.in,%.mk,$(filter %.mk.in,$?)))
 	touch $@
 
