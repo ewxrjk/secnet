@@ -25,8 +25,8 @@ builds well).
 Basic approach
 --------------
 
-The developer is expected to write a makefile fragment in each
-relevant subdirectory called `Subdir.sd.mk'.
+The developer is expected to write a makefile fragment, in each
+relevant subdirectory, called `Subdir.sd.mk'.
 
 These fragments may contain ordinary make language.
 
@@ -66,8 +66,9 @@ But `foo' can also be a conventional target like `all'.
 Each subdirectory has its own `all' target.  For example a
 subdirectory `src' has a target `src/all'.  The rules for these are
 automatically generated from the settings of the per-directory
-&TARGETS variables.  (In src/Subdir.sd.mk, this of course refers to a
-make variable called src_TARGETS.)
+&TARGETS variables.  &TARGETS is magic in this way.  (In
+src/Subdir.sd.mk, &TARGES of course refers to a make variable called
+src_TARGETS.)
 
 The `all' target in a parent directory is taken to imply the `all'
 targets in all of its subdirectories, recursively.  And in the
@@ -81,7 +82,7 @@ invocation at a time.
 
 You can define other per-directory recursive targets too: simply
 mention (usually, by setting) the variable &TARGETS_zonk, or whatever.
-This will create a src/zonk target.  (&TARGETS is magic.)
+This will create a src/zonk target.
 Unlike `all', these other targets only exist in areas of the project
 where at least something mentions them.  So for example, if
 &TARGETS_zonk is mentioned in src but not lib, `make zonk' in
@@ -99,7 +100,14 @@ This lets you do per-directory boilerplate.  Some useful boilerplate
 is already provided in subdirmk, for you to reference like this:
   &:include subdirmk/cdeps.sd.mk
   &:include subdirmk/clean.sd.mk
-(for example in Perdir.sd.mk).
+For example you could put that in Perdir.sd.mk.
+
+Global definitions
+------------------
+
+If want to set global variables, such as CC, that should only be done
+once.  You can put them in your top-level Subdir.sd.mk, or a separate
+file you `include' and declare using SUBDIRMK_MAKEFILES.
 
 Subdirectory templates `.sd.mk' vs plain autoconf templates `.mk.in'
 --------------------------------------------------------------------
@@ -111,8 +119,10 @@ There are two kinds of template files.
  Processed by             &-substitution,         autoconf only
                           then autoconf
 
+ Instantiated             Usu. once per subdir    Once only
+
  Need to be mentioned     No, but Subdir.sd.mk    All not in subdirmk/
- in configure.ac          via SUBDIRMK_SUBDIRS    via SUBDIRMK_MAKEFILES
+ in configure.ac?         via SUBDIRMK_SUBDIRS    via SUBDIRMK_MAKEFILES
 
  How to include           `&:include foo.sd.mk'   `include foo.mk'
 			  in all relevant .sd.mk  in only one
@@ -123,77 +133,108 @@ If you `include subdirmk/regen.mk', dependency management and
 automatic regeneration for all of this template substitution, and for
 config.status etc. is done for you.
 
-Global definitions
-------------------
+Substitution syntax
+-------------------
 
-If want to set global variables, such as CC, that should only be done
-once.  The usual approach is to include 
+In general & expands to the subdirectory name when used for a
+filename, and to the subdirectory name with / replaced with _ for
+variable names.
 
+Note that & is processed *even in makefile comments*.  The substitutor
+does not understand make syntax, or shell syntax, at all.  However,
+the substitution rules are chosen to work well with constructs which
+are common in makefiles.
 
+In the notation below, we suppose that the substitution is being in
+done in a subdirectory sub/dir of the source tree.  In the RH column
+we describe the expansion at the top level, which is often a special
+case (in general in variable names we call that TOP rather than the
+empty string).
 
-  subdirmk/cdeps.mk.in
-  subdirmk/cdeps.mk.in
-  
+&CAPS		=>	sub_dir_CAPS  			or TOP_CAPS
+&lc		=>	sub/dir/lc    			or lc
+	Here CAPS is any ASCII letter A-Z and lc is a-z.
+	The assumption is that filenames are usually lowercase and
+	variables usually uppercase.  Otherwise, use another syntax:
 
+&_		=>	sub_dir_			or TOP_
+&/		=>	sub/dir/			or nothing
+&=_		=>	sub_dir				or TOP
+&=/		=>	sub/dir				or .
+&^		=>	$(top_srcdir)/sub/dir		or $(top_srcdir)
+&~		=>	$(abs_top_srcdir)/sub/dir	or $(abs_top_srcdir)
 
+&&		=>	&&		for convenience in shell runes
+\&		=>	&		general escaping mechanism
 
+& thing thing... &
+& ^ thing thing... &
+& ~ thing thing... &
+	Convenience syntax for prefixing multiple filenames.
+	Introduced by & followed by lwsp (space or tab).
+	Each lwsp-separated non-ws word is prefixed by &/ &^/ &~/
+	respectively.  No other & escapes are recognised.
+	This processing continues until a & preceded by lwsp,
+	or until EOL (the end of the line), or \ then EOL.
 
-
-
-  (None of this prevents
-
-
-
-
-
-  https://web.archive.org/web/20150330111905/http://miller.emu.id.au/pmiller/books/rmch/
-
-
-
-
-&CAPS		=>	subdir_CAPS  			or TOP_CAPS
-&lc		=>	subdir/lc    			or lc
-
-&_		=>	subdir_				or TOP_
-&/		=>	subdir/				or nothing
-&=_		=>	subdir				or TOP
-&=/		=>	subdir				or .
-&^		=>	$(top_srcdir)/subdir		or $(top_srcdir)
-&~		=>	$(abs_top_srcdir)/subdir	or $(abs_top_srcdir)
-
-&&		=>	&&
-\&		=>	&
-
-& thing thing... &	=>	each thing prefixed by &/ &^/ &~/ resp
-& ^ thing thing... &		each thing is any non-ws
-& ~ thing thing... &		& may be omitted before EOL or before \EOL
-				other &'s not recognised
-
-start of line (maybe after ws):
 &:<directive> <args>....
-args are processed for & first
-&:include filename		filename should usually be foo.mk.in
-&:-include filename
+	recognised at start of line only (possibly after lwsp)
+	args are processed for &
 
-CAPS is [A-Z][0-9_A-Z]*(?!\w)
-lc is [a-z][-+,0-9_a-z]*(?!\w)
+&:include filename		filename should usually be foo.sd.mk
+&:-include filename		tolerate nonexistent file
 
-&!<spaces or tabs>	disables & *until* EOL (and disappears)
+&!<lwsp>	disables & until EOL (and then disappears)
 
-&!STUFF<lwsp>		STUFF is recognised instead of &
-			the terminating lwsp is discarded too
-			may also occur at eol
+&!STUFF
+	changes the escape sequence from & to literally STUFF
+	STUFF may be any series of of non-whitespace characters,
+	and is terminated by EOL or lwsp.  STUFF and the lwsp
+	is discarded.
 
-eg notably
- STUFF!&	now & is recognised instead (ie back to normal)
- STUFFSTUFF	STUFF
+	After this, write STUFF instead of &, everywhere.
+	The effect is global and lasts until the next setting.
+	It takes effect on &:include'd files too, so maybe set
+	it back before using &:include.
 
-eg
- &!@@@		@@@ is recognised instead of &
- @@@!&		go back to &
+	Notably
+		STUFFSTUFF	=>	STUFF
+		\STUFF		=>	STUFF
+		STUFF!&		set escape back to &
 
-&TARGETS[_things]		is handled specially
-				must be spelled precisely this way
-				if no _things, means _all
+&TARGETS_things
+	Handled specially.  If mentioned, declares that
+	this subdirectory ought to have a target `things'.
+	(`all' if not specified).  The rule will be
+		&/things:: $(&TARGETS_things)
 
-Also, `all' is weird in that it is present even if not specified
+	You may extend it by adding more :: rules for the target,
+	but the preferred style is to do things like this:
+		&TARGETS_check += & test-passed.stamp
+
+	It is important to mention &TARGETS_things at least once in
+	the context of each applicable directory, because it arranges
+	that the *parent* will also have a `things' target which
+	recursively implies this directory's `things'.
+
+	Must be spelled exactly &TARGETS_things.  &_TARGETS_things,
+	for example, does not work.  But mentioning it in a #-comment
+	*does* work because the & filter does not care about comments.
+
+	`all' is extra special: every directory has an `all'
+	target, which corresponds to &TARGETS.
+
+Subdirectory and variable naming
+--------------------------------
+
+The simple variable decoration scheme does not enforce a strict
+namespace distinction between parts of variable names which come from
+subdirectory names, and parts that mean something else.
+
+So it is a good idea to be a bit careful with your directory naming.
+`TOP', names that contain `_', and names that are similar to parts of
+make variables (whether conventional ones, or ones used in your
+project) are best avoided.
+
+If you name your variables in ALL CAPS and your subdirectories in
+lower case with `-' rather than `_', there will be no confusion.
