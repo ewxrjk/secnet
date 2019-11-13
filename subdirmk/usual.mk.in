@@ -19,7 +19,7 @@ LIBS		?= @LIBS@
 
 LINK		?= $(CC) -o$@ $(CFLAGS) $(LDFLAGS)
 AR		?= ar
-COMPILE		?= $(CC) -c -o$@ -MD -MF $(*D)/.$(*F).d $(DEFS) $(INCLUDES) $(CFLAGS)
+COMPILE		?= $(CC) -c -o$@ $(CDEPS_CFLAGS) $(DEFS) $(INCLUDES) $(CFLAGS)
 
 %.o: %.c
 	$(COMPILE) $<
