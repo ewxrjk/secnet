@@ -3,7 +3,7 @@
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
 
-VPATH		= &^
+VPATH		= $(top_srcdir)
 
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
