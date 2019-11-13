@@ -103,11 +103,11 @@ Makefile FORCE-ALWAYS-RUN:
 END
 }
 
-sub process_input_mk ($$$$$$$);
-sub process_input_mk ($$$$$$$) {
+sub process_input_mk ($$$$$$$$);
+sub process_input_mk ($$$$$$$$) {
     my ($dir_prefix, $dir_suffix, $dir_name,
 	$var_prefix, $targets,
-	$f, $esclitr) = @_;
+	$f, $esclitr, $enoent_ok) = @_;
 
     my $caps_re = qr{[A-Z][0-9_A-Z]*(?=\W)};
     my $lc_re = qr{[a-z][-+,0-9_a-z]*(?=\W)};
@@ -119,8 +119,12 @@ sub process_input_mk ($$$$$$$) {
     };
     $set_esc->();
 
-    open I, '<', $f or die "open $f: $!\n";
-    while (<I>) {
+    my $input = new IO::File $f, '<';
+    if (!$input) {
+	die "open $f: $!\n" unless $!==ENOENT && $enoent_ok;
+	return;
+    }
+    while (<$input>) {
 	for (;;) {
 	    unless (s{^(.*?)(\\)?(?=$esc)}{}) { o $_; last; }
 	    o $1;
@@ -162,7 +166,8 @@ sub process_input_mk ($$$$$$$) {
 	    }
 	}
     }
-    I->error and die "read $f: $!\n";
+    $input->error and die "read $f: $!\n";
+    close $input or die "close $f: $!\n";
 }
 
 sub filter_subdir_mk ($$$$$) {
@@ -177,7 +182,7 @@ sub filter_subdir_mk ($$$$$) {
 	       "${srcdir}/Perdir.mk.in") {
 	process_input_mk($dir_prefix, $dir_suffix, $dir_name,
 			 $var_prefix, $targets,
-			 $f, \$esclit);
+			 $f, \$esclit, 0);
     }
 }
 
