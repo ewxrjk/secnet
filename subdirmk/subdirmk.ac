@@ -16,8 +16,7 @@ AC_DEFUN_ONCE([_SUBDIRMK_INIT],[
       ])
     ])
     AS_IF([\$subdirsmk_need_prep],[
-      echo 'running subdirmk/generate'
-     '$srcdir'/subdirmk/generate --srcdir '$srcdir' $subdirsmk_subdirs
+     '$srcdir'/subdirmk/generate --srcdir='$srcdir' $subdirsmk_subdirs 
     ])
   ])
 ])

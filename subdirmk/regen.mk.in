@@ -7,7 +7,7 @@ CONFIGURE_ACS 	+= $(CONFIGURE_AC)
 CONFIGURE_ACS 	+= subdirmk/subdirmk.ac
 
 $(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
-	cd &^ && autoconf
+	cd $(top_srcdir) && autoconf
 
 $(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
 	./$(CONFIG_STATUS) --recheck

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $(srcdir)/subdirmk/generate [--srcdir=SRCDIR] SUBDIR...
+# $(srcdir)/subdirmk/generate [--srcdir=SRCDIR] [--] SUBDIR...
 #
 # generates in each subdirectory
 #   Subdir.mk.tmp
@@ -14,13 +14,20 @@
 
 use strict;
 
-our $srcdir;
-our @subdirs = @ARGV;
+print "$0 @ARGV\n" or die $!;
 
-die unless $ARGV[0] eq '--srcdir';
-die unless @ARGV>=2;
-shift @ARGV;
-($srcdir, @subdirs) = @ARGV;
+our $srcdir='.';
+
+while (@ARGV && $ARGV[0] =~ m/^-/) {
+    $_ = shift @ARGV;
+    last if $_ eq '--';
+    if (s/^--srcdir=//) {
+	$srcdir=$';
+    } else {
+	die "$0: unknown option \`$_'\n";
+    }
+}
+our @subdirs = @ARGV;
 
 s{/+$}{} foreach @subdirs;
 
