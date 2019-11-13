@@ -24,5 +24,6 @@ Makefile
 Subdir.mk
 *.tmp
 
-#----- For our out-of-tree build test -----
+#----- For our tests -----
 /build
+/src/for-test.sd.mk

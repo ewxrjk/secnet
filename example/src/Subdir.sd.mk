@@ -10,3 +10,5 @@
 
 &toy: $(&OBJECTS) $(&LIBS)
 	$(LINK) $^
+
+&:-include src/for-test.sd.mk

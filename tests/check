@@ -11,5 +11,12 @@ make -j4 all check
 git clean -xdff
 mkdir build
 cd build
+>>../src/for-test.sd.mk
 .././autogen.sh && ../configure
 make -j4 all check
+
+echo '# for-check 1' >>../src/for-test.sd.mk
+make -j4
+grep '^# for-check 1' src/Subdir.mk || false
+
+echo ok.
