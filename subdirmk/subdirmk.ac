@@ -1,3 +1,8 @@
+dnl -*-autoconf-*-
+dnl subdirmk - autoconf macros
+dnl  Copyright 2019 Mark Wooding
+dnl  Copyright 2019 Ian Jackson
+dnl SPDX-License-Identifier: LGPL-2.0-or-later
 
 _SUBDIRMK_MAKEFILES=""
 AC_SUBST([_SUBDIRMK_MAKEFILES])

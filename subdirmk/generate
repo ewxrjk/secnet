@@ -1,5 +1,9 @@
 #!/usr/bin/perl -w
 #
+# subdirmk - &-filter (makefile generation program)
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+#
 # $(srcdir)/subdirmk/generate [--srcdir=SRCDIR] [--] SUBDIR...
 #
 # generates in each subdirectory	from in each subdirectory
