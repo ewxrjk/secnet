@@ -1,0 +1,4 @@
+
+&DEPFILES += $(patsubst %.o,%.d,$(&OBJECTS))
+-include $(&DEPFILES)
+

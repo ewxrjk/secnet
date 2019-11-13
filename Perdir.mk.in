@@ -1,12 +1,3 @@
 
-&CLEAN += & *~ *.tmp
-&CLEAN += $(&OBJECTS) $(&DEPFILES)
-&CLEAN += $(&TARGETS)
-
-# &TARGETS_clean
-
-&/clean:
-	$(RM) $(&CLEAN)
-
-&DEPFILES += $(patsubst %.o,%.d,$(&OBJECTS))
--include $(&DEPFILES)
+&:include subdirmk/cdeps.mk.in
+&:include subdirmk/clean.mk.in
