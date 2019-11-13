@@ -93,7 +93,7 @@ mention its name in Perdir.sd.mk (see below).
 Perdir.sd.mk, inclusion
 -----------------------
 
-The file Perdir.sd.mk in the toplevel of fthe source is automatically
+The file Perdir.sd.mk in the toplevel of the source is automatically
 processed after each individual directory's Subdir.sd.mk, and the
 &-substituted contents therefore appear once for each subdirectory.
 
