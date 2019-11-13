@@ -1,26 +1,8 @@
 dnl -*-autoconf-*-
-dnl
-dnl Configuration script for toy project
-dnl
-dnl (c) 2019 Mark Wooding
-dnl
-
-dnl----- Licensing notice ---------------------------------------------------
-dnl
-dnl This program is free software; you can redistribute it and/or modify
-dnl it under the terms of the GNU Library General Public License as
-dnl published by the Free Software Foundation; either version 2 of the
-dnl License, or (at your option) any later version.
-dnl
-dnl This program is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-dnl GNU Library General Public License for more details.
-dnl
-dnl You should have received a copy of the GNU Library General Public
-dnl License along with this program; if not, write to the Free
-dnl Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-dnl MA 02111-1307, USA.
+dnl subdirmk example - configuration script
+dnl  Copyright 2019 Mark Wooding
+dnl  Copyright 2019 Ian Jackson
+dnl SPDX-License-Identifier: LGPL-2.0-or-later
 
 AC_INIT([mktoy], [0.9.0], [mdw@distorted.org.uk])
 AC_CONFIG_SRCDIR([src/toy.c])
