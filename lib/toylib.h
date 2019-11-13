@@ -1,3 +1,9 @@
+/*
+ * subdirmk - example code
+ *  Copyright 2019 Mark Wooding
+ * SPDX-License-Identifier: LGPL-2.0-or-later
+ */
+
 #ifndef LIBTOY_H
 #define LIBTOY_H
 
