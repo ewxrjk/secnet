@@ -54,6 +54,7 @@ sub target_varname ($$) {
 our $writing_output;
 our $buffering_output;
 our %output_files;
+our %input_files;
 
 sub close_any_output_file() {
     return unless defined $writing_output;
@@ -124,7 +125,7 @@ sub process_input_mk ($$$$$$$$) {
 	die "open $f: $!\n" unless $!==ENOENT && $enoent_ok;
 	return;
     }
-    o "MAKEFILE_TEMPLATES += $f\n";
+    $input_files{$f}++;
 
     while (<$input>) {
 	if (s#^\s*$esc\:##) {
@@ -260,6 +261,9 @@ sub process_tree() {
     o "MAKEFILES += Subdir.mk\n";
     foreach my $subdir (@subdirs) {
 	o "MAKEFILES += $subdir/Subdir.mk\n";
+    }
+    foreach my $input (sort keys %input_files) {
+	o "MAKEFILE_TEMPLATES += $input\n";
     }
     o "include \$(MAKEFILES)";
 }
