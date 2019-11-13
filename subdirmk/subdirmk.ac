@@ -1,0 +1,36 @@
+dnl -*-autoconf-*-
+dnl subdirmk - autoconf macros
+dnl  Copyright 2019 Mark Wooding
+dnl  Copyright 2019 Ian Jackson
+dnl SPDX-License-Identifier: LGPL-2.0-or-later
+
+_SUBDIRMK_MAKEFILES=""
+AC_SUBST([_SUBDIRMK_MAKEFILES])
+
+AC_DEFUN([SUBDIRMK_SUBDIRS],
+[_SUBDIRMK_INIT
+m4_map_args_w([$1],[_SUBDIRMK_SUBDIR(],[/)])])dnl
+
+AC_DEFUN_ONCE([_SUBDIRMK_INIT],[
+  AC_CONFIG_FILES([
+	main.mk:main.mk.tmp
+	Subdir.mk:Subdir.mk.tmp
+	],[],[
+     '$srcdir'/subdirmk/generate --srcdir='$srcdir' $subdirmk_subdirs
+  ])
+  SUBDIRMK_MAKEFILES([subdirmk/regen.mk subdirmk/usual.mk])
+])
+
+AC_DEFUN([_SUBDIRMK_SUBDIR],[
+  subdirmk_subdirs="$subdirmk_subdirs '$1'"
+  AC_CONFIG_FILES([$1Subdir.mk:$1Subdir.mk.tmp])
+])
+
+AC_DEFUN([SUBDIRMK_MAKEFILES],
+[_SUBDIRMK_INIT
+m4_map_args_w([$1],[_SUBDIRMK_MAKEFILE(],[)])])dnl
+
+AC_DEFUN([_SUBDIRMK_MAKEFILE],[
+  _SUBDIRMK_MAKEFILES="$_SUBDIRMK_MAKEFILES $1"
+  AC_CONFIG_FILES([$1:$1.in])
+])

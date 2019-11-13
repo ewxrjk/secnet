@@ -1,0 +1,32 @@
+# subdirmk - usual variable settings
+#  Copyright 2019 Mark Wooding
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+
+# Usage:
+#   include subdirmk/usual.mk
+# (probably in toplevel Subdir.sd.mk)
+#
+# Provides various conventional `make' variables, and a
+# rule for compiling C programs.
+
+VPATH		= $(top_srcdir)
+
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+bindir		= @bindir@
+
+CC		?= @CC@
+CFLAGS		?= @CFLAGS@
+DEFS		?= @DEFS@
+INCLUDES	?= @INCLUDES@
+LD		?= @CC@
+LDFLAGS		?= @LDFLAGS@
+LIBS		?= @LIBS@
+
+LINK		?= $(CC) -o$@ $(CFLAGS) $(LDFLAGS)
+AR		?= ar
+COMPILE		?= $(CC) -c -o$@ $(CDEPS_CFLAGS) $(DEFS) $(INCLUDES) $(CFLAGS)
+
+%.o: %.c
+	$(COMPILE) $<

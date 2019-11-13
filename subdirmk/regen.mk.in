@@ -1,0 +1,65 @@
+# subdirmk - rules for regenerating makefiles etc.
+#  Copyright 2019 Mark Wooding
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+
+# Usage:
+#   include subdirmk/regen.mk
+# (probably in toplevel Subdir.sd.mk)
+#
+# Arranges that config.status is automatically rerun to update
+# makefiles from templates, whenever a template *.sd.mk or *.mk.in is
+# edited; and that autoconf is rerun if configure's inputs are edited.
+#
+# If you add includes to configure.ac, add them to CONFIGURE_ACS.
+#
+# Also provides a `realclean::' target at the toplevel which deletes
+# the autoconf output.  This may be made into a recursive target
+# by mentioning &TARGETS_realclean in appropriate .sd.mk.
+
+CONFIGURE	?= configure
+CONFIGURE_AC	?= $(CONFIGURE).ac
+CONFIG_STATUS	?= config.status
+
+CONFIGURE_ACS	+= $(CONFIGURE_AC)
+CONFIGURE_ACS	+= subdirmk/subdirmk.ac
+
+$(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
+	cd $(top_srcdir) && autoconf
+
+$(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
+	./$(CONFIG_STATUS) --recheck
+
+# Normally, generate will add all the inputs to MAKEFILE_TEMPLATES.
+MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
+	@_SUBDIRMK_MAKEFILES@ \
+	))
+
+main.mk $(MAKEFILES): .makefiles.stamp ;
+.makefiles.stamp:						\
+		$(top_srcdir)/subdirmk/generate			\
+		$(CONFIG_STATUS)				\
+		$(MAKEFILE_TEMPLATES)
+# This filtering arranges that we can often run config.status to
+# generate only particular output files.  We look for *inputs* that
+# have changed.  If the only inputs that have changed are ones that we
+# know affect only one output (Subdir.mk.in and regen.mk.in), we pass
+# config.status the corresponding output file names.  Otherwise we
+# pass nothing and config.status does them all.  We need to mention
+# regen.mk.in twice because if $(top_srcdir) is `.', make elides the
+# directory part from $?.
+	./$(CONFIG_STATUS) $(if					\
+		$(filter-out Subdir.sd.mk %/Subdir.sd.mk	\
+			     %.mk.in				\
+			, $?),,					\
+		$(patsubst $(top_srcdir)/%,%, $(sort		\
+			$(patsubst %.sd.mk,%.mk,$(filter %.sd.mk,$?)) \
+			$(patsubst %.mk.in,%.mk,$(filter %.mk.in,$?)))))
+	touch $@
+
+realclean:: clean
+	$(RM) config.status config.log
+	$(RM) main.mk $(MAKEFILES) @_SUBDIRMK_MAKEFILES@
+	$(RM) $(addsuffix Makefile,$(dir $(MAKEFILES)))
+
+-include $(ALL_DEPFILES)
