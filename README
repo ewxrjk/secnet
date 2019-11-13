@@ -83,7 +83,7 @@ individual targets (as specified according to their dependencies).
 
 You can define other per-directory recursive targets too: simply
 mention (usually, by setting) the variable &TARGETS_zonk, or whatever.
-This will create a src/zonk target.
+This will create a src/zonk target (for appropriate value of src/).
 Unlike `all', these other targets only exist in areas of the project
 where at least something mentions them.  So for example, if
 &TARGETS_zonk is mentioned in src but not lib, `make zonk' in
@@ -193,7 +193,7 @@ empty string).
 &!<lwsp>	disables & until EOL (and then disappears)
 
 &#	delete everything to end of line
-	(useful if the RHS contains unrecognise & constructions)
+	(useful if the RHS contains unrecognised & constructions)
 
 &!STUFF
 	changes the escape sequence from & to literally STUFF
