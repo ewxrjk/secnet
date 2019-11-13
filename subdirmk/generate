@@ -109,8 +109,8 @@ sub process_input_mk ($$$$$$$$) {
 	$var_prefix, $targets,
 	$f, $esclitr, $enoent_ok) = @_;
 
-    my $caps_re = qr{[A-Z][0-9_A-Z]*(?=\W)};
-    my $lc_re = qr{[a-z][-+,0-9_a-z]*(?=\W)};
+    my $caps_re = qr{[A-Z]};
+    my $lc_re = qr{[a-z]};
 
     my $esc;
     my $set_esc = sub {
