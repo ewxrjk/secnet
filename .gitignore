@@ -17,6 +17,7 @@
 .makefiles.stamp
 /main.mk
 /subdirmk/regen.mk
+/subdirmk/usual.mk
 Makefile
 Subdir.mk
 *.tmp
