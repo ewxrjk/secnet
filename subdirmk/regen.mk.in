@@ -4,6 +4,7 @@ CONFIGURE_AC 	?= $(CONFIGURE).ac
 CONFIG_STATUS 	?= config.status
 
 CONFIGURE_ACS 	+= $(CONFIGURE_AC)
+CONFIGURE_ACS 	+= subdirmk/subdirmk.ac
 
 $(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
 	cd &^ && autoconf
