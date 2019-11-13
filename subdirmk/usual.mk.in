@@ -3,6 +3,13 @@
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
 
+# Usage:
+#   include subdirmk/usual.mk
+# (probably in toplevel Subdir.sd.mk)
+#
+# Provides various conventional `make' variables, and a
+# rule for compiling C programs.
+
 VPATH		= $(top_srcdir)
 
 prefix		= @prefix@
