@@ -238,3 +238,40 @@ project) are best avoided.
 
 If you name your variables in ALL CAPS and your subdirectories in
 lower case with `-' rather than `_', there will be no confusion.
+
+
+Legal information
+-----------------
+
+subdirmk is
+ Copyright 2019 Mark Wooding
+ Copyright 2019 Ian Jackson
+
+    subdirmk and its example is free software; you can redistribute it
+    and/or modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public
+    License along with this library as the file LGPL-2.
+    If not, see https://www.gnu.org/.
+
+Individual files generally contain the following tag in the copyright
+notice, instead of the full licence grant text:
+  SPDX-License-Identifier: LGPL-2.0-or-later
+As is conventional, this should be read as a licence grant.
+
+Contributions are accepted based on the git commit Signed-off-by
+convention, by which the contributors' certify their contributions
+according to the Developer Certificate of Origin version 1.1 - see
+the file DEVELOPER-CERTIFICATE.
+
+Where subdirmk is used by and incorporated into another project (eg
+via git subtree), the directory subdirmk/ is under GNU LGPL-2.0+, and
+the rest of the project are under that other project's licence(s).
+(The project's overall licence must be compatible with LGPL-2.0+.)
