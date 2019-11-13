@@ -3,7 +3,9 @@ CONFIGURE	?= configure
 CONFIGURE_AC 	?= $(CONFIGURE).ac
 CONFIG_STATUS 	?= config.status
 
-$(top_srcdir)/$(CONFIGURE): $(top_srcdir)/$(CONFIGURE_AC)
+CONFIGURE_ACS 	+= $(CONFIGURE_AC)
+
+$(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
 	cd &^ && autoconf
 
 $(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
