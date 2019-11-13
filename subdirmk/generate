@@ -178,7 +178,7 @@ sub process_input_mk ($$$$$$$$) {
 		my $subf = "$srcdir/$2";
 		process_input_mk($dir_prefix, $dir_suffix, $dir_name,
 				 $var_prefix, $targets,
-				 $subf, $esclitr, $subf);
+				 $subf, $esclitr, $1);
 		o "\n";
 	    } else {
 		die "unknown directive $_ ";
