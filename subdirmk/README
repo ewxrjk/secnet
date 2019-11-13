@@ -239,6 +239,33 @@ project) are best avoided.
 If you name your variables in ALL CAPS and your subdirectories in
 lower case with `-' rather than `_', there will be no confusion.
 
+Incorporating this into your project
+------------------------------------
+
+Use `git-subtree' to merge the subdirmk/ directory.  You may find it
+useful to symlink the DEVELOPER-CERTIFICATE file (git can store
+symlinks as symlinks - just `git add' the link).  And you probably
+want to mention the situation in your top-level COPYING.
+
+Symlink autogen.sh into your project toplevel.
+
+In your configure.ac, say
+
+  m4_include([subdirmk/subdirmk.ac])
+  SUBDIRMK_SUBDIRS([...list of subdirectories in relative syntax...])
+
+Write a Subdir.sd.mk in each directory.  The toplevel one should
+probably contain:
+
+  include subdirmk/usual.mk
+  include subdirmk/regen.mk
+
+Write a Perdir.sd.mk in the toplevel, if you want.  It should probably
+have:
+
+  &:include subdirmk/cdeps.sd.mk
+  &:include subdirmk/clean.sd.mk
+
 
 Legal information
 -----------------
