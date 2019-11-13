@@ -189,8 +189,8 @@ empty string).
 &!STUFF
 	changes the escape sequence from & to literally STUFF
 	STUFF may be any series of of non-whitespace characters,
-	and is terminated by EOL or lwsp.  STUFF and the lwsp
-	is discarded.
+	and is terminated by EOL or lwsp.  &!STUFF and the lwsp
+	are discarded.
 
 	After this, write STUFF instead of &, everywhere.
 	The effect is global and lasts until the next setting.
@@ -198,7 +198,7 @@ empty string).
 	it back before using &:include.
 
 	Notably
-		STUFFSTUFF	=>	STUFF
+		STUFFSTUFF	=>	STUFFSTUFF
 		\STUFF		=>	STUFF
 		STUFF!&		set escape back to &
 
