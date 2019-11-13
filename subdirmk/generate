@@ -102,7 +102,7 @@ default: all
 %:	FORCE-ALWAYS-RUN
 	\@:
 Makefile FORCE-ALWAYS-RUN:
-	\$(MAKE) -C $cd -f main.mk \$(addprefix ${dir_prefix},\$(MAKECMDGOALS))
+	\$(MAKE) -C $cd -f main.mk \$(addprefix ${dir_prefix},\$(or \$(MAKECMDGOALS),all))
 .SUFFIXES:
 END
 }
