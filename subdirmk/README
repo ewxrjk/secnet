@@ -203,9 +203,8 @@ empty string).
 		STUFF!&		set escape back to &
 
 &TARGETS_things
-	Handled specially.  If mentioned, declares that
-	this subdirectory ought to have a target `things'.
-	(`all' if not specified).  The rule will be
+	Handled specially.  If mentioned, declares that this
+	subdir ought to have a target `things'.  The rule will be
 		&/things:: $(&TARGETS_things)
 
 	You may extend it by adding more :: rules for the target,
@@ -213,13 +212,14 @@ empty string).
 		&TARGETS_check += & test-passed.stamp
 
 	It is important to mention &TARGETS_things at least once in
-	the context of each applicable directory, because it arranges
-	that the *parent* will also have a `things' target which
-	recursively implies this directory's `things'.
+	the context of each applicable directory, because doing so
+	arranges that the *parent* will also have a `things' target
+	which recursively implies this directory's `things'.
 
 	Must be spelled exactly &TARGETS_things.  &_TARGETS_things,
-	for example, does not work.  But mentioning it in a #-comment
-	*does* work because the & filter does not care about comments.
+	for example, is not magic.  But mentioning &TARGETS_things in
+	a #-comment *does* work because the & filter does not care
+	about comments.
 
 	`all' is extra special: every directory has an `all'
 	target, which corresponds to &TARGETS.
