@@ -8,16 +8,7 @@ AC_DEFUN_ONCE([_SUBDIRMK_INIT],[
 	Subdir.mk:Subdir.mk.tmp
 	subdirmk/regen.mk
 	],[],[
-    subdirsmk_need_prep=false
-    AS_IF([\$ac_need_defaults],[
-      subdirsmk_need_prep=true],[
-      AS_CASE([" \$ac_config_targets "],[*" main.mk "*],[
-	subdirsmk_need_prep=true
-      ])
-    ])
-    AS_IF([\$subdirsmk_need_prep],[
      '$srcdir'/subdirmk/generate --srcdir='$srcdir' $subdirsmk_subdirs 
-    ])
   ])
 ])
 
