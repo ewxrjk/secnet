@@ -38,9 +38,9 @@ main.mk $(MAKEFILES): .makefiles.stamp ;
 		$(filter-out Subdir.sd.mk %/Subdir.sd.mk	\
 			     %.mk.in				\
 			, $?),,					\
-		$(sort						\
+		$(patsubst $(top_srcdir)/%,%, $(sort		\
 			$(patsubst %.sd.mk,%.mk,$(filter %.sd.mk,$?)) \
-			$(patsubst %.mk.in,%.mk,$(filter %.mk.in,$?))))
+			$(patsubst %.mk.in,%.mk,$(filter %.mk.in,$?)))))
 	touch $@
 
 realclean:: clean
