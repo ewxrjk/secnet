@@ -27,3 +27,4 @@ Subdir.mk
 #----- For our tests -----
 /build
 /src/for-test.sd.mk
+/lib/for-test.mk.in

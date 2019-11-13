@@ -19,6 +19,10 @@ m4_include([subdirmk/subdirmk.ac])
 SUBDIRMK_SUBDIRS([lib])
 SUBDIRMK_SUBDIRS([lib/t src])
 
+if test -f $srcdir/lib/for-test.mk.in; then
+   SUBDIRMK_MAKEFILES([lib/for-test.mk])
+fi
+
 AC_OUTPUT
 
 dnl----- That's all, folks --------------------------------------------------
