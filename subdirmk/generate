@@ -52,6 +52,7 @@ sub target_varname ($$) {
 }
 
 our $writing_output;
+our $buffering_output;
 our %output_files;
 
 sub close_any_output_file() {
@@ -62,6 +63,10 @@ sub close_any_output_file() {
 }
 
 sub o {
+    if (defined $buffering_output) {
+	$buffering_output .= $_ foreach @_;
+	return;
+    }
     die unless defined $writing_output;
     print O @_ or die "error writing $writing_output.tmp: $!\n";
 }
