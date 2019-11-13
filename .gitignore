@@ -1,4 +1,4 @@
-## Build artifacts.
+#----- Build artifacts -----
 *.a
 .*.d
 *.o
@@ -6,14 +6,14 @@
 /lib/t/toytest
 /src/toy
 
-## Autoconf cruft.
+#----- Autoconf cruft -----
 
 /autom4te.cache/
 /config.log
 /config.status
 /configure
 
-## subdirmk-generated
+#----- subdirmk-generated -----
 .makefiles.stamp
 /main.mk
 /subdirmk/regen.mk
