@@ -45,7 +45,7 @@ main.mk $(MAKEFILES): .makefiles.stamp ;
 
 realclean:: clean
 	$(RM) config.status config.log
-	$(RM) main.mk subdirmk/regen.mk $(MAKEFILES)
+	$(RM) main.mk $(MAKEFILES) @_SUBDIRMK_MAKEFILES@
 	$(RM) $(addsuffix Makefile,$(dir $(MAKEFILES)))
 
 -include $(ALL_DEPFILES)
