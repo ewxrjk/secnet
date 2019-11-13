@@ -14,6 +14,7 @@
 /configure
 
 ## subdirmk-generated
+.makefiles.stamp
 /main.mk
 /subdirmk/regen.mk
 Makefile
