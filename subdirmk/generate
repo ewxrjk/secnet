@@ -131,6 +131,12 @@ sub process_input_mk ($$$$$$$$) {
     }
     $input_files{$f}++;
 
+    my %pfxmap = (
+		  ''  => $dir_prefix,
+		  ',' => "\$(top_srcdir)${dir_suffix}/",
+		  ';' => "\$(top_srcdir)/",
+		 );
+
     while (<$input>) {
 	if (s#^\s*$esc\:##) {
 	    $buffering_output='';
@@ -147,19 +153,13 @@ sub process_input_mk ($$$$$$$$) {
 		$targets->{$t} //= [ ];
 	    }
 	    elsif (m{^(?=$caps_re)}) { o $var_prefix }
-	    elsif (m{^(?=$lc_re)}) { o $dir_prefix }
+	    elsif (s{^([,;]?)(?=$lc_re)}{}) { o $pfxmap{$1} }
 	    elsif (s{^_}{}) { o $var_prefix }
-	    elsif (s{^/}{}) { o $dir_prefix }
 	    elsif (s{^=_}{}) { o $var_prefix }
+	    elsif (s{^([,;]?)/}{}) { o $pfxmap{$1} }
 	    elsif (s{^=/}{}) { o $dir_name }
-	    elsif (s{^\^}{}) { o "\$(top_srcdir)${dir_suffix}" }
-	    elsif (s{^\}}{}) { o "\$(abs_top_srcdir)${dir_suffix}" }
-	    elsif (s{^(?:[ \t]+([~^]))?(?=[ \t])}{}) {
-		my $prefix =
-		    !$1       ? $dir_prefix                     :
-		    $1 eq '~' ? '$(abs_top_srcdir)'.$dir_suffix :
-		    $1 eq '~' ? '$(abs_top_srcdir)'.$dir_suffix :
-		    die;
+	    elsif (s{^([,;]?)(?=[ \t])}{}) {
+		my $prefix = $pfxmap{$1} // die;
 		my $after='';
 		if (m{([ \t])$esc}) { ($_,$after) = ($`, $1.$'); }
 		s{(?<=[ \t])(?=\S)(?!\\\s*$)}{$prefix}g;

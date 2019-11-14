@@ -2,7 +2,7 @@
 &TARGETS += & udp-preload.so
 
 &DEPS += & udp-preload.so
-&DEPS += &^/common.tcl
+&DEPS += &, common.tcl
 &DEPS += secnet
 &DEPS += test-example/sites.conf
 &DEPS += test-example/inside.key

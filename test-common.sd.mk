@@ -1,7 +1,7 @@
 
 include common.make
 
-&TESTSCRIPTS ?= $(shell echo &^/t-*[0-9a-z])
+&TESTSCRIPTS ?= $(shell echo &,t-*[0-9a-z])
 &TESTNAMES := $(patsubst t-%,%,$(notdir $(&TESTSCRIPTS)))
 
 &DEPS += $(src)/test-common.tcl
@@ -15,7 +15,7 @@ include common.make
 
 CHECK_SILENT ?= @
 
-&d-%/ok: &^/t-% $(&DEPS)
+&d-%/ok: &,t-% $(&DEPS)
 	$(CHECK_SILENT) rm -rf &d-$*; mkdir &d-$*
 	$(CHECK_SILENT) export SECNET_TEST_BUILDDIR=$(topbuilddir); \
 	 export PYTHONBYTECODEBASE=/dev/null; \
