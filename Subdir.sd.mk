@@ -65,6 +65,9 @@ OBJECTS:=version.o
 TEST_OBJECTS:=
 endif
 
+&OBJECTS += $(OBJECTS) $(TEST_OBJECTS)
+&:include subdirmk/cdeps.sd.mk
+
 STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 			$(foreach p, /usr /usr/local, \
 			$(foreach l, ipaddr, \
@@ -80,7 +83,7 @@ STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 	bison -d -o $@ $<
 
 %.o: %.c conffile.yy.h
-	$(CC) $(CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
+	$(CC) $(CPPFLAGS) $(ALL_CFLAGS) $(CDEPS_CFLAGS) -c $< -o $@
 
 all::	$(TARGETS)
 
@@ -90,12 +93,6 @@ ${srcdir}/config.h.in: configure.ac
 
 MAKEFILE_TEMPLATES += config.h.in
 CONFIG_STATUS_OUTPUTS += config.h
-
-# C and header file dependency rules
-SOURCES:=$(OBJECTS:.o=.c) $(TEST_OBJECTS:.o=.c)
-DEPENDS:=$(OBJECTS:.o=.d) $(TEST_OBJECTS:.o=.d)
-
--include *.d
 
 # Manual dependencies section
 conffile.yy.c:	conffile.fl conffile.tab.c
@@ -193,12 +190,13 @@ install-force:
 
 clean::
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
-	$(RM) -f *.d *.pyc *~ eax-*-test.confirm eax-*-test
+	$(RM) -f *.pyc *~ eax-*-test.confirm eax-*-test
+	$(RM) $(&CLEAN)
 	$(RM) -rf __pycache__
 	$(RM) -f msgcode-test.confirm msgcode-test
 
 realclean::	clean
-	$(RM) -f *~ Makefile config.h  *.d \
+	$(RM) -f *~ Makefile config.h \
 	config.log config.status config.cache \
 	config.stamp Makefile.bak
 
