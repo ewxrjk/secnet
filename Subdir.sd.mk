@@ -82,28 +82,17 @@ STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 %.o: %.c conffile.yy.h
 	$(CC) $(CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
 
-all:	$(TARGETS) check
+all::	$(TARGETS) check
 
-# Automatic remaking of configuration files, from autoconf documentation
-${srcdir}/configure: configure.in
-	cd ${srcdir} && autoconf
+include subdirmk/regen.mk
 
 # autoheader might not change config.h.in, so touch a stamp file.
 ${srcdir}/config.h.in: config.stamp.in
-${srcdir}/config.stamp.in: configure.in
+${srcdir}/config.stamp.in: configure.ac
 	cd ${srcdir} && autoheader
 	echo timestamp > ${srcdir}/config.stamp.in
 
-config.h: config.stamp
-config.stamp: config.h.in config.status
-	./config.status
-
-Makefile: Makefile.in config.status
-	./config.status
-
-config.status: configure
-	./config.status --recheck
-# End of config file remaking rules
+MAKEFILE_TEMPLATES += config.h.in
 
 # C and header file dependency rules
 SOURCES:=$(OBJECTS:.o=.c) $(TEST_OBJECTS:.o=.c)
@@ -197,7 +186,7 @@ installdirs:
 install: installdirs
 	set -e; ok=true; for f in $(STALE_PYTHON_FILES); do \
 		if test -e $$f; then \
-			echo >&2 "ERROR: $$f still exists "\
+			echo >\&2 "ERROR: $$f still exists "\
 				"- try \`make install-force'"; \
 			ok=false; \
 		fi; \
@@ -216,7 +205,7 @@ install-force:
 	rm -f $(STALE_PYTHON_FILES)
 	$(MAKE) install
 
-clean: $(addprefix clean-,$(TESTDIRS))
+clean:: $(addprefix clean-,$(TESTDIRS))
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
 	$(RM) -f *.d *.pyc *~ eax-*-test.confirm eax-*-test
 	$(RM) -rf __pycache__
@@ -225,12 +214,12 @@ clean: $(addprefix clean-,$(TESTDIRS))
 $(addprefix clean-,$(TESTDIRS)): clean-%:
 	$(MAKE) -C $* clean
 
-realclean:	clean
+realclean::	clean
 	$(RM) -f *~ Makefile config.h  *.d \
 	config.log config.status config.cache \
 	config.stamp Makefile.bak
 
-distclean:	realclean
+distclean::	realclean
 
 # Release checklist:
 #

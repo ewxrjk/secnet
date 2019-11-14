@@ -19,9 +19,13 @@ dnl https://www.gnu.org/licenses/gpl.html.
 
 sinclude(ac_prog_cc_no_writeable_strings.m4)
 
+m4_include(subdirmk/subdirmk.ac)
+
 AC_INIT(secnet,0.1.18+,secnet@chiark.greenend.org.uk)
 AC_CONFIG_SRCDIR(secnet.c)
 AC_CONFIG_HEADER(config.h)
+
+SUBDIRMK_SUBDIRS([])
 
 AC_PREREQ(2.50)
 AC_REVISION($Id: configure.in,v 1.4 2002/09/09 22:05:02 steve Exp $)
@@ -96,7 +100,7 @@ else
     AC_MSG_WARN([Disabling IPv6 support])
 fi
 
-AC_OUTPUT(Makefile common.make test-common.make
+AC_OUTPUT(common.make test-common.make
           test-example/Makefile stest/Makefile mtest/Makefile,
           echo timestamp >config.stamp)
 

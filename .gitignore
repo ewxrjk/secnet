@@ -24,7 +24,12 @@ msgcode-test.confirm
 autom4te.cache
 
 *~
+*.tmp
 TAGS
+
+.makefiles.stamp
+Subdir.mk
+/main.mk
 
 debian/files
 debian/secnet.debhelper.log
