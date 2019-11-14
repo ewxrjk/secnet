@@ -143,11 +143,11 @@ Summary of recommended directory reference syntaxes
 
 Path construction &-expansions, meanings summary:
 
-      Recommended     In build tree             In source tree
-             when     Relative  Absolute        Relative     Absolute
-                                          
-  This directory      &         &@              &,           &@,
-  Top level           .         &@.             &;           &@;
+                      Relative paths in...   Absolute paths in...
+                      build     source       build           source
+                                                       
+  This directory      &         &,           &@              &@,
+  Top level           .         &;           &@.             &@;
 
 Adding `@' means "absolute path".  (`&.' is not allowed without @
 because just `&./' is a silly way of writing `.'.)  `/' terminates the
@@ -157,17 +157,17 @@ processing.
 
 In more detail, with the various options for what comes next:
 
-      Recommended     In build tree             In source tree
-             when     Relative  Absolute        Relative     Absolute
-                                          
-  This       lc       &file     &@file          &,file       &@,file
-  directory  any      &/file    &@/file         &,/file      &@,/file
-             several  & f g h   &@ f g h        &, f g h     &@, f g h
-
-  Top        lc                 &@.file         &;file       &@;file
-  level      any      file      &@./file        &;/file      &@;/file
-             several  f g h     &@. f g h       &; f g h     &@; f g h
-             .mk.in   file      $(abs)/file     $(src)/file  $(abs_src)/file
+      Recommended     Relative paths in...   Absolute paths in...
+             for      build     source       build           source
+                                                       
+  This       lc       &file     &,file       &@file          &@,file
+  directory  any      &/file    &,/file      &@/file         &@,/file
+             several  & f g h   &, f g h     &@ f g h        &@, f g h
+                                             
+  Top        lc                 &;file       &@.file         &@;file
+  level      any      file      &;/file      &@./file        &@;/file
+             several  f g h     &; f g h     &@. f g h       &@; f g h
+             .mk.in   file      $(src)/file  $(abs)/file     $(abs_src)/file
 
 Substitution syntax
 -------------------
