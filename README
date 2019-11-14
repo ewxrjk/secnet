@@ -141,17 +141,31 @@ config.status etc. is done for you.
 Summary of directory reference syntaxes
 ---------------------------------------
 
+Path construction &-expansions, meanings summary:
+
+                      In build tree            In source tree
+  This directory      just &                   &,
+  Top level           &.  implies absolute     &;
+
+Adding `@' means "absolute path".  This is not needed with &. because
+there is never any need to use &. since it would expand to nothing.
+`/' terminates the escape (needed if the next thing is not a lowercase
+character, or space).  `=' means "just the value, no /".  Space starts
+multi-word processing.
+
       Recommended     In build tree             In source tree
              when     Relative  Absolute        Relative     Absolute
                                           
-  This       lc       &file     &~file          &^file       &^~file
-  directory  any      &/file    &~/file         &^/file      &^~/file
-             several  & f g h   & ~ f g h       & ^ f g h    & ^~ f g h
+  This       lc       &file     &@file          &,file       &@,file
+  directory  any      &/file    &@/file         &,/file      &@,/file
+             several  & f g h   &@ f g h        &, f g h     &^, f g h
 
-  Top        lc                 &@~file         &@^file      &@~^file
-  level      any      file      &@~/file        &@^/file     &@~^/file
+  Top        lc                 &.file          &;file       &@;file
+  level      any      file      &./file         &;/file      &@;/file
              .mk.in   file      $(abs)/file     $(src)/file  $(abs_src)/file
-             several  f g h     & @~ f g h      & @^ f g h   & @~^ f g h
+             several  f g h     &. f g h        &; f g h     &@; f g h
+                                &@. file
+                                &@. f g h
 
 Substitution syntax
 -------------------
