@@ -10,4 +10,4 @@
 &libtoy.a:	$(&OBJECTS)
 	$(AR) rc $@ $^
 
--include &,for-test.mk
+-include &^/lib/for-test.mk
