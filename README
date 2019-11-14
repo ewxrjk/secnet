@@ -190,8 +190,9 @@ empty string).
 	variables usually uppercase.  Otherwise, use another syntax:
 
 &_		=>	sub_dir_			or TOP_
-&/		=>	sub/dir/			or nothing
 &=_		=>	sub_dir				or TOP
+
+&/		=>	sub/dir/			or nothing
 &=/		=>	sub/dir				or .
 &^		=>	$(top_srcdir)/sub/dir		or $(top_srcdir)
 &~		=>	$(abs_top_srcdir)/sub/dir	or $(abs_top_srcdir)
