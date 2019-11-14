@@ -22,7 +22,6 @@
 topbuilddir:=@abs_top_builddir@
 
 SHELL:=/bin/sh
-RM:=@RM@
 CC:=@CC@
 
 CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
