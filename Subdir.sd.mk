@@ -84,15 +84,12 @@ STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 
 all::	$(TARGETS) check
 
-include subdirmk/regen.mk
-
-# autoheader might not change config.h.in, so touch a stamp file.
-${srcdir}/config.h.in: config.stamp.in
-${srcdir}/config.stamp.in: configure.ac
+${srcdir}/config.h.in: configure.ac
 	cd ${srcdir} && autoheader
-	echo timestamp > ${srcdir}/config.stamp.in
+	touch $@
 
 MAKEFILE_TEMPLATES += config.h.in
+CONFIG_STATUS_OUTPUTS += config.h
 
 # C and header file dependency rules
 SOURCES:=$(OBJECTS:.o=.c) $(TEST_OBJECTS:.o=.c)
@@ -220,6 +217,8 @@ realclean::	clean
 	config.stamp Makefile.bak
 
 distclean::	realclean
+
+include subdirmk/regen.mk
 
 # Release checklist:
 #
