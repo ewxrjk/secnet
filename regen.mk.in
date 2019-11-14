@@ -35,7 +35,7 @@ MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
 	@_SUBDIRMK_MAKEFILES@ \
 	))
 
-main.mk $(MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp ;
+main.mk $(SUBDIRMK_MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp ;
 .makefiles.stamp:						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
@@ -59,7 +59,7 @@ main.mk $(MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp ;
 
 realclean:: clean
 	$(RM) config.status config.log
-	$(RM) main.mk $(MAKEFILES) @_SUBDIRMK_MAKEFILES@
-	$(RM) $(addsuffix Makefile,$(dir $(MAKEFILES)))
+	$(RM) main.mk $(SUBDIRMK_MAKEFILES) @_SUBDIRMK_MAKEFILES@
+	$(RM) $(addsuffix Makefile,$(dir $(SUBDIRMK_MAKEFILES)))
 
 -include $(ALL_DEPFILES)
