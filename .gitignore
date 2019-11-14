@@ -8,6 +8,7 @@ conffile.yy.[ch]
 /eax-*-test
 /eax-*-test.confirm
 /ipaddrset-test.new
+/ipaddrset.confirm
 
 /config.log
 /config.h

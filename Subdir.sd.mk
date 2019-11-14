@@ -119,7 +119,7 @@ endif
 TESTDIRS=stest mtest
 
 &TARGETS_check = eax-aes-test.confirm eax-serpent-test.confirm \
-	eax-serpentbe-test.confirm check-ipaddrset \
+	eax-serpentbe-test.confirm ipaddrset.confirm \
 	$(addsuffix /check,$(TESTDIRS))
 
 &TARGETS_fullcheck += $(&TARGETS_check)
@@ -155,9 +155,10 @@ msgcode-test.confirm: msgcode-test
 	./msgcode-test
 	touch $@
 
-check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
+ipaddrset.confirm: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 	$(srcdir)/ipaddrset-test.py >ipaddrset-test.new
 	diff -u $(srcdir)/ipaddrset-test.expected ipaddrset-test.new
+	touch $@
 
 .PRECIOUS: eax-%-test
 
