@@ -35,7 +35,7 @@ MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
 	@_SUBDIRMK_MAKEFILES@ \
 	))
 
-main.mk $(MAKEFILES): .makefiles.stamp ;
+main.mk $(MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp ;
 .makefiles.stamp:						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
