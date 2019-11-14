@@ -143,15 +143,19 @@ Summary of recommended directory reference syntaxes
 
 Path construction &-expansions, meanings summary:
 
-                      In build tree             In source tree
-  This directory        just &                    &,
-  Top level             &.  implies absolute      &;
+      Recommended     In build tree             In source tree
+             when     Relative  Absolute        Relative     Absolute
+                                          
+  This directory      &         &@              &,           &@,
+  Top level           .         &@.             &;           &@;
 
-Adding `@' means "absolute path".  This is not needed with &. because
-there is never any need to use &. since it would expand to nothing.
-`/' terminates the escape (needed if the next thing is not a lowercase
-character, or space).  `=' means "just the value, no /".  Space starts
-multi-word processing.
+Adding `@' means "absolute path".  (`&.' is not allowed without @
+because just `&./' is a silly way of writing `.'.)  `/' terminates the
+escape (needed if the next thing is not a lowercase character, or
+space).  `=' means "just the value, no /".  Space starts multi-word
+processing.
+
+In more detail, with the various options for what comes next:
 
       Recommended     In build tree             In source tree
              when     Relative  Absolute        Relative     Absolute
@@ -160,9 +164,9 @@ multi-word processing.
   directory  any      &/file    &@/file         &,/file      &@,/file
              several  & f g h   &@ f g h        &, f g h     &@, f g h
 
-  Top        lc                 &.file          &;file       &@;file
-  level      any      file      &./file         &;/file      &@;/file
-             several  f g h     &. f g h        &; f g h     &@; f g h
+  Top        lc                 &@.file         &;file       &@;file
+  level      any      file      &@./file        &;/file      &@;/file
+             several  f g h     &@. f g h       &; f g h     &@; f g h
              .mk.in   file      $(abs)/file     $(src)/file  $(abs_src)/file
 
 Substitution syntax
@@ -199,7 +203,7 @@ empty string).
 &;lc	=> $(top_srcdir)/lc		  &;/	=> $(top_srcdir)/
 
 &@lc	=> $(PWD)/sub/dir/lc		  &@/	=> $(PWD)/sub/dir/
-&.lc	=> $(PWD)/lc			  &./	=> $(PWD)/
+&@.lc	=> $(PWD)/lc			  &@./	=> $(PWD)/
 &@,lc	=> $(abs_top_srcdir)/sub/dir/lc	  &@,/	=> $(abs_top_srcdir)/sub/dir/
 &@;lc	=> $(abs_top_srcdir)/lc		  &@;/	=> $(abs_top_srcdir)/
 
@@ -207,16 +211,16 @@ In general:
     =	return subdir without delimiter (not allowed with `,' `;' `@')
     ,   pathname of this subdirectory in source tree
     ;   pathname of top level of source tree
-    .   pathname of this directory in build tree, implies absolute pathnames
-    @   absolute pathnames (forbidden with `.', must come first)
+    .   pathname of this directory in build tree, `@' must be specified
+    @   absolute pathnames
 
 So pathname syntax is a subset of:
     '&' [ '@' ] [ ',' | ';' | '.' ] [ lc | '/' ]
 
     To avoid incomprehensible .sd.mk files, some combinations are not
-    allowed.  For example `&@=./' would mean `$(PWD)/sub/dir' but can
-    be spelled `$(PWD)/&=/', but more normally the trailing / can be
-    tolerated, so use `&@/'.
+    allowed.  For example `&=./' would mean `.' and `&./' would be the
+    empty string.  Variations with `=' and one of `@' `,' `;' are
+    uncommon and must be written using make variables instead.
 
 &&		=>	&&		for convenience in shell runes
 \&		=>	&		general escaping mechanism
