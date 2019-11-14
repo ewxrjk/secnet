@@ -99,8 +99,9 @@ else
     AC_MSG_WARN([Disabling IPv6 support])
 fi
 
-AC_OUTPUT(common.make test-common.make
-          test-example/Makefile stest/Makefile mtest/Makefile,
+SUBDIRMK_MAKEFILES(common.make test-common.make)
+
+AC_OUTPUT(stest/Makefile mtest/Makefile,
           echo timestamp >config.stamp)
 
 AH_TOP([
