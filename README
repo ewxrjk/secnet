@@ -164,7 +164,7 @@ In more detail, with the various options for what comes next:
   directory  any      &/file    &,/file      &@/file         &@,/file
              several  & f g h   &, f g h     &@ f g h        &@, f g h
                                              
-  Top        lc                 &;file       &@.file         &@;file
+  Top        lc       file      &;file       &@.file         &@;file
   level      any      file      &;/file      &@./file        &@;/file
              several  f g h     &; f g h     &@. f g h       &@; f g h
              .mk.in   file      $(src)/file  $(abs)/file     $(abs_src)/file
