@@ -264,7 +264,7 @@ sub process_tree() {
     foreach my $v (qw(top_srcdir abs_top_srcdir)) {
 	o "$v=\@$v@\n";
     }
-    o "MAKEFILES :=\n";
+    o "SUBDIRMK_MAKEFILES :=\n";
     o "MAKEFILE_TEMPLATES :=\n";
     o "SUBDIRMK_MAKEFILES += Subdir.mk\n";
     foreach my $subdir (@subdirs) {
