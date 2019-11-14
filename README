@@ -141,15 +141,17 @@ config.status etc. is done for you.
 Summary of directory reference syntaxes
 ---------------------------------------
 
-                  In build tree             In source tree             
-                  Relative  Absolute        Relative     Absolute      
+      Recommended     In build tree             In source tree
+             when     Relative  Absolute        Relative     Absolute
                                           
-                  &file     $(abs)/&file                             
- This directory   &/file    $(abs)/&/file   &^/file      &~/file       
-                  & f g h                   & ^ f g h    & ~ f g h     
-                                          
- Top level        file      $(abs)/file     $(ts)/file   $(ats)/file   
-                  f g h                                              
+  This       lc       &file     &~file          &^file       &^~file
+  directory  any      &/file    &~/file         &^/file      &^~/file
+             several  & f g h   & ~ f g h       & ^ f g h    & ^~ f g h
+
+  Top        lc                 &@~file         &@^file      &@~^file
+  level      any      file      &@~/file        &@^/file     &@~^/file
+             .mk.in   file      $(abs)/file     $(src)/file  $(abs_src)/file
+             several  f g h     & @~ f g h      & @^ f g h   & @~^ f g h
 
 Substitution syntax
 -------------------
@@ -181,6 +183,11 @@ empty string).
 &=/		=>	sub/dir				or .
 &^		=>	$(top_srcdir)/sub/dir		or $(top_srcdir)
 &~		=>	$(abs_top_srcdir)/sub/dir	or $(abs_top_srcdir)
+
+In general:
+        ^       filenames in source tree rather than build tree
+        ~       filenames are absolute rather than relative
+        @       filenames do not contain subdir (useful with the above)
 
 &&		=>	&&		for convenience in shell runes
 \&		=>	&		general escaping mechanism
