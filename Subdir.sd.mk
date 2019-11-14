@@ -170,9 +170,6 @@ check-stest: secnet test-example/sites.conf
 check-mtest: make-secnet-sites $(PYMODULES)
 	$(MAKE) -C mtest check
 
-test-example/sites.conf:
-	$(MAKE) -C test-example
-
 .PRECIOUS: eax-%-test
 
 installdirs:

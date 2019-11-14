@@ -2359,6 +2359,10 @@ ac_config_headers="$ac_config_headers config.h"
 
 
 
+  subdirmk_subdirs="$subdirmk_subdirs 'test-example/'"
+  ac_config_files="$ac_config_files test-example/Subdir.mk:test-example/Subdir.mk.tmp"
+
+
 
 
 
@@ -5434,6 +5438,7 @@ do
     "Subdir.mk") CONFIG_FILES="$CONFIG_FILES Subdir.mk:Subdir.mk.tmp" ;;
     "subdirmk/regen.mk") CONFIG_FILES="$CONFIG_FILES subdirmk/regen.mk:subdirmk/regen.mk.in" ;;
     "subdirmk/usual.mk") CONFIG_FILES="$CONFIG_FILES subdirmk/usual.mk:subdirmk/usual.mk.in" ;;
+    "test-example/Subdir.mk") CONFIG_FILES="$CONFIG_FILES test-example/Subdir.mk:test-example/Subdir.mk.tmp" ;;
     "common.make") CONFIG_FILES="$CONFIG_FILES common.make:common.make.in" ;;
     "test-common.make") CONFIG_FILES="$CONFIG_FILES test-common.make:test-common.make.in" ;;
     "stest/Makefile") CONFIG_FILES="$CONFIG_FILES stest/Makefile" ;;

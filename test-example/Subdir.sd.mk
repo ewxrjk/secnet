@@ -1,17 +1,14 @@
-TARGETS=sites.conf inside.key outside.key
+&TARGETS += & sites.conf inside.key outside.key
 
-VPATH:=@srcdir@
-include ../common.make
-srcdir:=@srcdir@
-topdir:=@top_srcdir@
+include common.make
 
-all: $(TARGETS)
-
-%.key: %.key.b64
+&/%.key: &^/%.key.b64
 	base64 -d <$< >$@.new && mv -f $@.new $@
 
-sites.conf: $(topdir)/make-secnet-sites $(srcdir)/sites Makefile
-	$(topdir)/make-secnet-sites $(srcdir)/sites sites.conf
+&sites.conf: $(src)/make-secnet-sites &^/sites Subdir.mk
+	$(src)/make-secnet-sites &^/sites &sites.conf
 
-clean:
-	rm -f *~ ./#*# *.new $(TARGETS)
+&clean::
+	rm -f *~ ./#*# *.new
+
+&:include subdirmk/clean.sd.mk
