@@ -82,7 +82,7 @@ STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 %.o: %.c conffile.yy.h
 	$(CC) $(CPPFLAGS) $(ALL_CFLAGS) -c $< -o $@
 
-all::	$(TARGETS) check
+all::	$(TARGETS)
 
 ${srcdir}/config.h.in: configure.ac
 	cd ${srcdir} && autoheader
@@ -121,17 +121,15 @@ endif
 
 TESTDIRS=stest mtest
 
-FAST_CHECKS= eax-aes-test.confirm eax-serpent-test.confirm \
+&TARGETS_check = eax-aes-test.confirm eax-serpent-test.confirm \
 	eax-serpentbe-test.confirm check-ipaddrset \
 	$(addsuffix /check,$(TESTDIRS))
 
-CHECKS += $(FAST_CHECKS)
-CHECKS += msgcode-test.confirm
-
-check: $(CHECKS)
+&TARGETS_fullcheck += $(&TARGETS_check)
+&TARGETS_fullcheck += msgcode-test.confirm
 
 recheck:
-	rm -f $(FAST_CHECKS)
+	rm -f $(&TARGETS_CHECK)
 	rm -rf $(addsuffix /d-*, $(TESTDIRS))
 	$(MAKE) check
 
