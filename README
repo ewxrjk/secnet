@@ -231,14 +231,14 @@ empty string).
 &~/		=>	$(top_srcdir)/
 
 In general:
-    =	return subdir without delimiter (not allowed with `,' `;')
-    ,   pathname of this subdirectory in source tree
-    ;   pathname of top level of source tree
+    =	return subdir without delimiter (not allowed with `^' `~')
+    ^   pathname of this subdirectory in source tree
+    ~   pathname of top level of source tree
     /	terminates the escape (needed if next is not lwsp or space)
   lwsp  starts multi-word processing (see below)
 
 So pathname syntax is a subset of:
-    '&' [ ',' | ';' ] [ lc | '/' ]
+    '&' [ '^' | '~' ] [ lc | '/' ]
 
 &&		=>	&&		for convenience in shell runes
 \&		=>	&		general escaping mechanism
