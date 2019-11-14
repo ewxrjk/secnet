@@ -13,15 +13,17 @@ include common.make
 
 &check-real: $(foreach t,$(&TESTNAMES),&d-$t/ok)
 
+CHECK_SILENT ?= @
+
 &d-%/ok: &^/t-% $(&DEPS)
-	@rm -rf &d-$*; mkdir &d-$*
-	@export SECNET_TEST_BUILDDIR=$(topbuilddir); \
+	$(CHECK_SILENT) rm -rf &d-$*; mkdir &d-$*
+	$(CHECK_SILENT) export SECNET_TEST_BUILDDIR=$(topbuilddir); \
 	 export PYTHONBYTECODEBASE=/dev/null; \
 	 cd $(src) && \
 	 &/t-$* >$(topbuilddir)/&/d-$*/log 2>\&1 \
 	 || { cat $(topbuilddir)/&/d-$*/log >\&2; false; }
-	@printf "&/$* "
-	@touch $@
+	$(CHECK_SILENT) printf "&/$* "
+	$(CHECK_SILENT) touch $@
 
 &clean::
 	$(RM) -f & *.o *.so
