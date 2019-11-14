@@ -282,7 +282,10 @@ You can convert your project incrementally.  Start with the top-level
 Makefile.in and rename it to Subdir.sd.mk, and add the appropriate
 stuff to configure.ac, and fix everything up.  Leave the existing
 $(MAKE) -C for your existing subdirectories alone.  Then you can
-convert individual subdirectories, or classes of subdirectories.
+convert individual subdirectories, or classes of subdirectories, at
+your leisure.  (You must be /sure/ that each subdirectory will be
+entered only once at a time, but your existing recursive make descent
+system should already do that or you already have concurrency bugs.)
 
 Aside from this, be very wary of any invocation of $(MAKE) anywhere.
 This is a frequent source of concurrency bugs in recursive make build
