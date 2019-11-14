@@ -133,8 +133,8 @@ sub process_input_mk ($$$$$$$$) {
 
     my %pfxmap = (
 		  ''  => $dir_prefix,
-		  ',' => "\$(top_srcdir)${dir_suffix}/",
-		  ';' => "\$(top_srcdir)/",
+		  '^' => "\$(top_srcdir)${dir_suffix}/",
+		  '~' => "\$(top_srcdir)/",
 		 );
 
     while (<$input>) {
@@ -153,12 +153,12 @@ sub process_input_mk ($$$$$$$$) {
 		$targets->{$t} //= [ ];
 	    }
 	    elsif (m{^(?=$caps_re)}) { o $var_prefix }
-	    elsif (s{^([,;]?)(?=$lc_re)}{}) { o $pfxmap{$1} }
+	    elsif (s{^([~^]?)(?=$lc_re)}{}) { o $pfxmap{$1} }
 	    elsif (s{^_}{}) { o $var_prefix }
 	    elsif (s{^=_}{}) { o $var_prefix }
-	    elsif (s{^([,;]?)/}{}) { o $pfxmap{$1} }
+	    elsif (s{^([~^]?)/}{}) { o $pfxmap{$1} }
 	    elsif (s{^=/}{}) { o $dir_name }
-	    elsif (s{^([,;]?)(?=[ \t])}{}) {
+	    elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die;
 		my $after='';
 		if (m{([ \t])$esc}) { ($_,$after) = ($`, $1.$'); }
