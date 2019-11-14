@@ -141,15 +141,15 @@ config.status etc. is done for you.
 Summary of directory reference syntaxes
 ---------------------------------------
 
-                  In source tree             In build tree
-                  Relative     Absolute      Relative  Absolute
-
-                                             &file     $(abs)/&file
- This directory   &^/file      &~/file       &/file    $(abs)/&/file
-                  & ^ f g h    & ~ f g h     & f g h
-
- Top level        $(ts)/file   $(ats)/file   file      $(abs)/file
-                                             f g h
+                  In build tree             In source tree             
+                  Relative  Absolute        Relative     Absolute      
+                                          
+                  &file     $(abs)/&file                             
+ This directory   &/file    $(abs)/&/file   &^/file      &~/file       
+                  & f g h                   & ^ f g h    & ~ f g h     
+                                          
+ Top level        file      $(abs)/file     $(ts)/file   $(ats)/file   
+                  f g h                                              
 
 Substitution syntax
 -------------------
