@@ -286,11 +286,11 @@ convert individual subdirectories, or classes of subdirectories.
 
 Aside from this, be very wary of any invocation of $(MAKE) anywhere.
 This is a frequent source of concurrency bugs in recursive make build
-systems.  When combined with nonrecursive make there is no
-separate-directory barrier stopping the different invocations ending
-up trying to make the same targets at the same time, which causes
-hideous racy lossage.  There are ways to get this to work reliably but
-it is advanced stuff.
+systems.  When combined with nonrecursive make it's all in the same
+directory and there is nothing stopping the different invocations
+ending up trying to make the same targets at the same time. That
+causes hideous racy lossage.  There are ways to get this to work
+reliably but it is advanced stuff.
 
 If you make syntax errors, or certain kinds of other errors, in your
 makefiles, you may find that just `make' is broken now and cannot get
