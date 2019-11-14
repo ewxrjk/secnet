@@ -138,7 +138,7 @@ sub process_input_mk ($$$$$$$$) {
 	for (;;) {
 	    unless (s{^(.*?)(\\)?(?=$esc)}{}) { o $_; last; }
 	    o $1;
-	    if ($2) { o $$esclitr; next; }
+	    if ($2) { s#^$esc##; o $$esclitr; next; }
 	    s{^$esc}{} or die "$_ ?";
 	    if (s{^$esc}{}) { o "$$esclitr$$esclitr" }
 	    elsif (s{^TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
