@@ -5,7 +5,7 @@ include common.make
 &TESTNAMES := $(patsubst t-%,%,$(notdir $(&TESTSCRIPTS)))
 
 &DEPS += $(src)/test-common.tcl
-&DEPS += $(src)/common.make
+&DEPS += common.make
 &DEPS += $(src)/test-common.sd.mk
 &DEPS += &/Subdir.mk
 
@@ -18,8 +18,8 @@ include common.make
 	@export SECNET_TEST_BUILDDIR=$(topbuilddir); \
 	 export PYTHONBYTECODEBASE=/dev/null; \
 	 cd $(src) && \
-	 &^/t-$* >&d-$*/log 2>\&1 \
-	 || { cat &d-$*/log >\&2; false; }
+	 &/t-$* >$(topbuilddir)/&/d-$*/log 2>\&1 \
+	 || { cat $(topbuilddir)/&/d-$*/log >\&2; false; }
 	@printf "&/$* "
 	@touch $@
 
