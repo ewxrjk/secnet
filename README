@@ -143,9 +143,9 @@ Summary of recommended directory reference syntaxes
 
 Path construction &-expansions, meanings summary:
 
-                      In build tree            In source tree
-  This directory      just &                   &,
-  Top level           &.  implies absolute     &;
+                      In build tree             In source tree
+  This directory        just &                    &,
+  Top level             &.  implies absolute      &;
 
 Adding `@' means "absolute path".  This is not needed with &. because
 there is never any need to use &. since it would expand to nothing.
@@ -194,24 +194,51 @@ empty string).
 
 &/		=>	sub/dir/			or nothing
 &=/		=>	sub/dir				or .
-&^		=>	$(top_srcdir)/sub/dir		or $(top_srcdir)
-&~		=>	$(abs_top_srcdir)/sub/dir	or $(abs_top_srcdir)
+
+&,lc		=>	$(top_srcdir)/sub/dir/lc
+&,/		=>	$(top_srcdir)/sub/dir/
+
+&;lc		=>	$(top_srcdir)/sub/dir/lc
+&;/		=>	$(top_srcdir)/sub/dir/
+
+&@lc		=>	$(PWD)/sub/dir/lc
+&@/		=>	$(PWD)/sub/dir/
+
+&.lc		=>      $(PWD)/lc
+&./		=>      $(PWD)/
+
+&@,lc		=>	$(abs_top_srcdir)/sub/dir/lc
+&@,/		=>	$(abs_top_srcdir)/sub/dir/
+
+&@;lc		=>	$(abs_top_srcdir)/sub/dir/lc
+&@;/		=>	$(abs_top_srcdir)/sub/dir/
 
 In general:
-        ^       filenames in source tree rather than build tree
-        ~       filenames are absolute rather than relative
-        @       filenames do not contain subdir (useful with the above)
+    =	return subdir without delimiter (not allowed with `,' `;' `@')
+    ,   pathname of this subdirectory in source tree
+    ;   pathname of top level of source tree
+    .   pathname of this directory in build tree, implies absolute pathnames
+    @   absolute pathnames (forbidden with `.', must come first)
+
+So pathname syntax is a subset of:
+    '&' [ '@' ] [ ',' | ';' | '.' ] [ lc | '/' ]
+
+    To avoid incomprehensible .sd.mk files, some combinations are not
+    allowed.  For example `&@=./' would mean `$(PWD)/sub/dir' but can
+    be spelled `$(PWD)/&=/', but more normally the trailing / can be
+    tolerated, so use `&@/'.
 
 &&		=>	&&		for convenience in shell runes
 \&		=>	&		general escaping mechanism
 
 & thing thing... &
-& ^ thing thing... &
-& ~ thing thing... &
+&. thing thing... &     &@. thing thing... &
+&, thing thing... &     &@, thing thing... &
+&; thing thing... &     &@; thing thing... &
 	Convenience syntax for prefixing multiple filenames.
-	Introduced by & followed by lwsp (space or tab).
-	Each lwsp-separated non-ws word is prefixed by &/ &^/ &~/
-	respectively.  No other & escapes are recognised.
+	Introduced by & followed by lwsp where lc could go.
+	Each lwsp-separated non-ws word is prefixed by &/ &./ &@./
+        etc. respectively.  No other & escapes are recognised.
 	This processing continues until & preceded by lwsp,
 	or until EOL (the end of the line), or \ then EOL.
 
