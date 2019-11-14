@@ -195,23 +195,13 @@ empty string).
 &/		=>	sub/dir/			or nothing
 &=/		=>	sub/dir				or .
 
-&,lc		=>	$(top_srcdir)/sub/dir/lc
-&,/		=>	$(top_srcdir)/sub/dir/
+&,lc	=> $(top_srcdir)/sub/dir/lc	  &,/	=> $(top_srcdir)/sub/dir/
+&;lc	=> $(top_srcdir)/lc		  &;/	=> $(top_srcdir)/
 
-&;lc		=>	$(top_srcdir)/sub/dir/lc
-&;/		=>	$(top_srcdir)/sub/dir/
-
-&@lc		=>	$(PWD)/sub/dir/lc
-&@/		=>	$(PWD)/sub/dir/
-
-&.lc		=>      $(PWD)/lc
-&./		=>      $(PWD)/
-
-&@,lc		=>	$(abs_top_srcdir)/sub/dir/lc
-&@,/		=>	$(abs_top_srcdir)/sub/dir/
-
-&@;lc		=>	$(abs_top_srcdir)/sub/dir/lc
-&@;/		=>	$(abs_top_srcdir)/sub/dir/
+&@lc	=> $(PWD)/sub/dir/lc		  &@/	=> $(PWD)/sub/dir/
+&.lc	=> $(PWD)/lc			  &./	=> $(PWD)/
+&@,lc	=> $(abs_top_srcdir)/sub/dir/lc	  &@,/	=> $(abs_top_srcdir)/sub/dir/
+&@;lc	=> $(abs_top_srcdir)/lc		  &@;/	=> $(abs_top_srcdir)/
 
 In general:
     =	return subdir without delimiter (not allowed with `,' `;' `@')
@@ -231,13 +221,13 @@ So pathname syntax is a subset of:
 &&		=>	&&		for convenience in shell runes
 \&		=>	&		general escaping mechanism
 
-& thing thing... &
-&. thing thing... &     &@. thing thing... &
+& thing thing... &	&@ thing thing... &
+			&. thing thing... &
 &, thing thing... &     &@, thing thing... &
 &; thing thing... &     &@; thing thing... &
 	Convenience syntax for prefixing multiple filenames.
 	Introduced by & followed by lwsp where lc could go.
-	Each lwsp-separated non-ws word is prefixed by &/ &./ &@./
+	Each lwsp-separated non-ws word is prefixed by &/ etc.
         etc. respectively.  No other & escapes are recognised.
 	This processing continues until & preceded by lwsp,
 	or until EOL (the end of the line), or \ then EOL.
