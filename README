@@ -275,6 +275,28 @@ have:
   &:include subdirmk/cdeps.sd.mk
   &:include subdirmk/clean.sd.mk
 
+Hints
+-----
+
+You can convert your project incrementally.  Start with the top-level
+Makefile.in and rename it to Subdir.sd.mk, and add the appropriate
+stuff to configure.ac, and fix everything up.  Leave the existing
+$(MAKE) -C for your existing subdirectories alone.  Then you can
+convert individual subdirectories, or classes of subdirectories.
+
+Aside from this, be very wary of any invocation of $(MAKE) anywhere.
+This is a frequent source of concurrency bugs in recursive make build
+systems.  When combined with nonrecursive make there is no
+separate-directory barrier stopping the different invocations ending
+up trying to make the same targets at the same time, which causes
+hideous racy lossage.  There are ways to get this to work reliably but
+it is advanced stuff.
+
+If you make syntax errors, or certain kinds of other errors, in your
+makefiles, you may find that just `make' is broken now and cannot get
+far enough to regenerate a working set of makefiles.  If this happens
+just rerun ./config.status by hand.
+
 
 Legal information
 -----------------
