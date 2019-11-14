@@ -138,8 +138,8 @@ If you `include subdirmk/regen.mk', dependency management and
 automatic regeneration for all of this template substitution, and for
 config.status etc. is done for you.
 
-Summary of directory reference syntaxes
----------------------------------------
+Summary of recommended directory reference syntaxes
+---------------------------------------------------
 
 Path construction &-expansions, meanings summary:
 
@@ -158,14 +158,12 @@ multi-word processing.
                                           
   This       lc       &file     &@file          &,file       &@,file
   directory  any      &/file    &@/file         &,/file      &@,/file
-             several  & f g h   &@ f g h        &, f g h     &^, f g h
+             several  & f g h   &@ f g h        &, f g h     &@, f g h
 
   Top        lc                 &.file          &;file       &@;file
   level      any      file      &./file         &;/file      &@;/file
-             .mk.in   file      $(abs)/file     $(src)/file  $(abs_src)/file
              several  f g h     &. f g h        &; f g h     &@; f g h
-                                &@. file
-                                &@. f g h
+             .mk.in   file      $(abs)/file     $(src)/file  $(abs_src)/file
 
 Substitution syntax
 -------------------
