@@ -2363,6 +2363,14 @@ ac_config_headers="$ac_config_headers config.h"
   ac_config_files="$ac_config_files test-example/Subdir.mk:test-example/Subdir.mk.tmp"
 
 
+  subdirmk_subdirs="$subdirmk_subdirs 'mtest/'"
+  ac_config_files="$ac_config_files mtest/Subdir.mk:mtest/Subdir.mk.tmp"
+
+
+  subdirmk_subdirs="$subdirmk_subdirs 'stest/'"
+  ac_config_files="$ac_config_files stest/Subdir.mk:stest/Subdir.mk.tmp"
+
+
 
 
 
@@ -4722,12 +4730,6 @@ fi
   ac_config_files="$ac_config_files common.make:common.make.in"
 
 
-  _SUBDIRMK_MAKEFILES="$_SUBDIRMK_MAKEFILES test-common.make"
-  ac_config_files="$ac_config_files test-common.make:test-common.make.in"
-
-
-
-ac_config_files="$ac_config_files stest/Makefile mtest/Makefile"
 
 ac_config_commands="$ac_config_commands default"
 
@@ -5439,10 +5441,9 @@ do
     "subdirmk/regen.mk") CONFIG_FILES="$CONFIG_FILES subdirmk/regen.mk:subdirmk/regen.mk.in" ;;
     "subdirmk/usual.mk") CONFIG_FILES="$CONFIG_FILES subdirmk/usual.mk:subdirmk/usual.mk.in" ;;
     "test-example/Subdir.mk") CONFIG_FILES="$CONFIG_FILES test-example/Subdir.mk:test-example/Subdir.mk.tmp" ;;
+    "mtest/Subdir.mk") CONFIG_FILES="$CONFIG_FILES mtest/Subdir.mk:mtest/Subdir.mk.tmp" ;;
+    "stest/Subdir.mk") CONFIG_FILES="$CONFIG_FILES stest/Subdir.mk:stest/Subdir.mk.tmp" ;;
     "common.make") CONFIG_FILES="$CONFIG_FILES common.make:common.make.in" ;;
-    "test-common.make") CONFIG_FILES="$CONFIG_FILES test-common.make:test-common.make.in" ;;
-    "stest/Makefile") CONFIG_FILES="$CONFIG_FILES stest/Makefile" ;;
-    "mtest/Makefile") CONFIG_FILES="$CONFIG_FILES mtest/Makefile" ;;
     "default") CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

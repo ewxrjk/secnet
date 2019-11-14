@@ -1,22 +1,20 @@
 
-VPATH:=@srcdir@
-srcdir:=@srcdir@
-topdir:=@top_srcdir@
+&TARGETS += & udp-preload.so
 
-TARGETS += udp-preload.so
+&DEPS += & udp-preload.so
+&DEPS += &^/common.tcl
+&DEPS += secnet
+&DEPS += test-example/sites.conf
+&DEPS += test-example/inside.key
+&DEPS += test-example/outside.key
 
-DEPS += udp-preload.so
-DEPS += $(srcdir)/common.tcl
-DEPS += ../secnet
-DEPS += ../test-example/sites.conf
+&:include test-common.sd.mk
 
-TESTDIR=stest
+&OBJECTS += & udp-preload.o
 
-include ../test-common.make
+$(&OBJECTS) : ALL_CFLAGS += -D_REENTRANT -fPIC
 
-CFLAGS += -D_REENTRANT -fPIC
-
-udp-preload.so: udp-preload.o
+&udp-preload.so: $(&OBJECTS)
 	$(CC) -shared -Wl,-soname,$@.1 $^ -o $@ -ldl
 
 # These test scripts use little cpu but contain sleeps etc.  So when
@@ -33,6 +31,6 @@ udp-preload.so: udp-preload.o
 
 MAKE_NOTSPECIAL:=$(MAKE)
 
-check:
+&check: $(&DEPS)
 	env -u MAKEFLAGS -u MFLAGS \
-	$(MAKE_NOTSPECIAL) -j$(shell nproc || 1)0 check-real
+	$(MAKE_NOTSPECIAL) -j$(shell nproc || 1)0 &check-real

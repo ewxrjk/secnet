@@ -123,7 +123,7 @@ TESTDIRS=stest mtest
 
 FAST_CHECKS= eax-aes-test.confirm eax-serpent-test.confirm \
 	eax-serpentbe-test.confirm check-ipaddrset \
-	$(addprefix check-,$(TESTDIRS))
+	$(addsuffix /check,$(TESTDIRS))
 
 CHECKS += $(FAST_CHECKS)
 CHECKS += msgcode-test.confirm
@@ -164,12 +164,6 @@ check-ipaddrset: ipaddrset-test.py ipaddrset.py ipaddrset-test.expected
 	$(srcdir)/ipaddrset-test.py >ipaddrset-test.new
 	diff -u $(srcdir)/ipaddrset-test.expected ipaddrset-test.new
 
-check-stest: secnet test-example/sites.conf
-	$(MAKE) -C stest check
-
-check-mtest: make-secnet-sites $(PYMODULES)
-	$(MAKE) -C mtest check
-
 .PRECIOUS: eax-%-test
 
 installdirs:
@@ -199,14 +193,11 @@ install-force:
 	rm -f $(STALE_PYTHON_FILES)
 	$(MAKE) install
 
-clean:: $(addprefix clean-,$(TESTDIRS))
+clean::
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
 	$(RM) -f *.d *.pyc *~ eax-*-test.confirm eax-*-test
 	$(RM) -rf __pycache__
 	$(RM) -f msgcode-test.confirm msgcode-test
-
-$(addprefix clean-,$(TESTDIRS)): clean-%:
-	$(MAKE) -C $* clean
 
 realclean::	clean
 	$(RM) -f *~ Makefile config.h  *.d \
