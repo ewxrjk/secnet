@@ -264,14 +264,14 @@ sub process_tree() {
     foreach my $v (qw(top_srcdir abs_top_srcdir)) {
 	o "$v=\@$v@\n";
     }
-    o "MAKEFILES += Subdir.mk\n";
+    o "SUBDIRMK_MAKEFILES += Subdir.mk\n";
     foreach my $subdir (@subdirs) {
-	o "MAKEFILES += $subdir/Subdir.mk\n";
+	o "SUBDIRMK_MAKEFILES += $subdir/Subdir.mk\n";
     }
     foreach my $input (sort keys %input_files) {
 	o "MAKEFILE_TEMPLATES += $input\n";
     }
-    o "include \$(MAKEFILES)";
+    o "include \$(SUBDIRMK_MAKEFILES)";
 }
 
 build_tree();
