@@ -5,4 +5,4 @@
 
 &:include test-common.sd.mk
 
-&check: &check-real
+&check:: &check-real
