@@ -1,5 +1,6 @@
 Stephen Early <steve@greenend.org.uk> - original author
 Ian Jackson <ijackson@chiark.greenend.org.uk> - current maintainer
+Mark Wooding <mdw@distorted.org.uk> - much useful stuff
 Ross Anderson, Eli Biham, Lars Knudsen - serpent
 Colin Plumb, Ian Jackson - MD5 implementation
 Steve Reid, James H. Brown, Saul Kravitz - SHA1 implementation
