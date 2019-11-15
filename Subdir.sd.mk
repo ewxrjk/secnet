@@ -119,14 +119,13 @@ endif
 TESTDIRS=stest mtest
 
 &TARGETS_check = eax-aes-test.confirm eax-serpent-test.confirm \
-	eax-serpentbe-test.confirm ipaddrset.confirm \
-	$(addsuffix /check,$(TESTDIRS))
+	eax-serpentbe-test.confirm ipaddrset.confirm
 
 &TARGETS_fullcheck += $(&TARGETS_check)
 &TARGETS_fullcheck += msgcode-test.confirm
 
 recheck:
-	rm -f $(&TARGETS_CHECK)
+	rm -f $(&TARGETS_check)
 	rm -rf $(addsuffix /d-*, $(TESTDIRS))
 	$(MAKE) check
 
