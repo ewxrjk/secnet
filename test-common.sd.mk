@@ -9,8 +9,6 @@ include common.make
 &DEPS += $(src)/test-common.sd.mk
 &DEPS += &/Subdir.mk
 
-&TARGETS += &check
-
 &check-real: $(foreach t,$(&TESTNAMES),&d-$t/ok)
 
 CHECK_SILENT ?= @
