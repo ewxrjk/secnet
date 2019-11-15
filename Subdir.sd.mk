@@ -103,7 +103,7 @@ conffile.tab.c:	conffile.y
 conffile.yy.o: ALL_CFLAGS += -Wno-sign-compare
 
 secnet:	$(OBJECTS)
-	$(MAKE) version.o # *.o $(filter-out %.o, $^)
+	$(MAKE) -f main.mk version.o # *.o $(filter-out %.o, $^)
 	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $(OBJECTS) version.o $(LDLIBS)
 # We (always) regenerate the version, but only if we regenerate the
 # binary.  (This is necessary as the version string is can depend on
@@ -127,7 +127,7 @@ TESTDIRS=stest mtest
 recheck:
 	rm -f $(&TARGETS_check)
 	rm -rf $(addsuffix /d-*, $(TESTDIRS))
-	$(MAKE) check
+	$(MAKE) -f main.mk check
 
 .PHONY: FORCE
 version.c: FORCE
@@ -187,7 +187,7 @@ install: installdirs
 
 install-force:
 	rm -f $(STALE_PYTHON_FILES)
-	$(MAKE) install
+	$(MAKE) -f main.mk install
 
 clean::
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
