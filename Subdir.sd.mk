@@ -61,7 +61,7 @@ TEST_OBJECTS:=eax-aes-test.o eax-serpent-test.o eax-serpentbe-test.o \
 		eax-test.o aes.o
 
 ifeq (version.o,$(MAKECMDGOALS))
-OBJECTS:=version.o
+OBJECTS:=
 TEST_OBJECTS:=
 endif
 
@@ -129,7 +129,8 @@ recheck:
 	rm -rf $(addsuffix /d-*, $(TESTDIRS))
 	$(MAKE) check
 
-version.c: Makefile
+.PHONY: FORCE
+version.c: FORCE
 	echo "#include \"secnet.h\"" >$@.new
 	@set -ex; if test -e .git && type -p git >/dev/null; then \
 		v=$$(git describe --match 'v*'); v=$${v#v}; \
