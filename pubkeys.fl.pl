@@ -158,6 +158,7 @@ BASE91S	[]-~!#-&(-[]+
 
 struct pubkeyset_context {
     /* filled in during setup: */
+    const char *path;
     struct log_if *log;
     struct buffer_if *data_buf;
     struct peer_keyset *building;
@@ -185,11 +186,11 @@ static struct pubkeyset_context c[1];
         break;						\
     })
 #define DOSKIP(m) ({					\
-        slilog(LI,M_INFO,"l.%d: " m, c->lno);	\
+        slilog(LI,M_INFO,"%s:%d: " m, c->path, c->lno);	\
         DOSKIPQ;					\
     })
 #define FAIL(m) do{					\
-	slilog(LI,M_ERR,"l.%d: " m, c->lno);	\
+	slilog(LI,M_ERR,"%s:%d: " m, c->path, c->lno);	\
 	return -1;					\
     }while(0)
 
@@ -278,6 +279,7 @@ keyset_load(const char *path, struct buffer_if *data_buf,
 	    struct log_if *log, int logcl_enoent) {
     assert(!c->building);
     c->log=log;
+    c->path=path;
     pkyyin = fopen(path, "r");
     if (!pkyyin) {
 	slilog(LI,
