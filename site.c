@@ -1067,7 +1067,7 @@ static void peerkeys_check_for_update(struct site *st)
 
     int r=rename(inputp,oursp);
     if (r) {
-	slog(st,LOG_ERROR,"failed to claim key update file %s as %s: %s\n",
+	slog(st,LOG_ERROR,"failed to claim key update file %s as %s: %s",
 	     inputp,oursp,strerror(errno));
 	return;
     }
