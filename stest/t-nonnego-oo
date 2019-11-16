@@ -1,0 +1,13 @@
+#! /usr/bin/tclsh
+
+source stest/common.tcl
+
+# `non-negotiating' ends:
+set privkey(inside) test-example/inside.key
+set privkey(outside) test-example/outside.key
+# So old, old; ie -oo
+
+# There is no -no because the sites file tells a new inside to expect
+# a different key.
+
+test-kex

@@ -25,8 +25,8 @@ set extra(inside) {
 }
 set extra(outside) {}
 
-set privkey(inside) test-example/inside.key
-set privkey(outside) test-example/outside.key
+set privkey(inside) test-example/inside.privkeys/
+set privkey(outside) test-example/outside.privkeys/
 
 proc mkconf {location site} {
     global tmp
