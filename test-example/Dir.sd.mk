@@ -1,4 +1,4 @@
-&TARGETS += & sites.conf inside.key outside.key all-privkeys
+&TARGETS += & sites.conf inside.key outside.key rsa1-sites2.key all-privkeys
 
 include common.make
 
@@ -16,6 +16,7 @@ define privkey
 	rm -rf &/$1.privkeys
 endef
 
+$(eval $(call privkey,outside,5dc36a4700,rsa1-sites2.key))
 $(eval $(call privkey,outside,0000000000,outside.key))
 $(eval $(call privkey,inside,0000000000,inside.key))
 
