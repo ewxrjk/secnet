@@ -946,6 +946,9 @@ static void peerkeys_check_for_update(struct site *st)
      *                  may be incomplete, unverified, or even malicious
      *                  only secnet may write or remove.
      *
+     *  <F>~tmp        update file from config manager, only mss may
+     *                  write or rename
+     *
      * secnet discards updates that are not more recent than (by
      * serial) the live file.  But it may not process updates
      * immediately.
