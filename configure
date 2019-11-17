@@ -2149,6 +2149,10 @@ ac_config_headers="$ac_config_headers config.h"
   ac_config_files="$ac_config_files stest/Dir.mk:stest/Dir.mk.tmp"
 
 
+  subdirmk_subdirs="$subdirmk_subdirs 'base91s/'"
+  ac_config_files="$ac_config_files base91s/Dir.mk:base91s/Dir.mk.tmp"
+
+
 
 
 
@@ -4874,6 +4878,7 @@ do
     "test-example/Dir.mk") CONFIG_FILES="$CONFIG_FILES test-example/Dir.mk:test-example/Dir.mk.tmp" ;;
     "mtest/Dir.mk") CONFIG_FILES="$CONFIG_FILES mtest/Dir.mk:mtest/Dir.mk.tmp" ;;
     "stest/Dir.mk") CONFIG_FILES="$CONFIG_FILES stest/Dir.mk:stest/Dir.mk.tmp" ;;
+    "base91s/Dir.mk") CONFIG_FILES="$CONFIG_FILES base91s/Dir.mk:base91s/Dir.mk.tmp" ;;
     "common.make") CONFIG_FILES="$CONFIG_FILES common.make:common.make.in" ;;
     "default") CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
 

@@ -25,7 +25,7 @@ AC_INIT(secnet,0.1.18+,secnet@chiark.greenend.org.uk)
 AC_CONFIG_SRCDIR(secnet.c)
 AC_CONFIG_HEADER(config.h)
 
-SUBDIRMK_SUBDIRS([test-example mtest stest])
+SUBDIRMK_SUBDIRS([test-example mtest stest base91s])
 
 AC_PREREQ(2.50)
 AC_REVISION($Id: configure.in,v 1.4 2002/09/09 22:05:02 steve Exp $)

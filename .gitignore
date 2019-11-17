@@ -48,3 +48,6 @@ build-stamp
 
 [sm]test/d-*
 stest/udp-preload.so
+
+base91s/*.[ch]
+base91s/base91s
