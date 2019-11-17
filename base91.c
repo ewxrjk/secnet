@@ -113,6 +113,18 @@ size_t basE91_encode_end(struct basE91 *b, void *o)
 	return n;
 }
 
+/* return maximum length that an input of length i could encode to
+ * (this is a maximum, not a precise figure, because the actual
+ * size depends on the precise data */
+
+size_t basE91_encode_maxlen(size_t i /* must be < SIZE_T_MAX/8 */)
+{
+	size_t bits = i*8;
+	size_t pairs = bits / 13;
+	size_t leftover = bits % 13;
+	return 2*pairs + (leftover==0 ? 0 : leftover<=6 ? 1 : 2);
+}
+
 size_t basE91_decode(struct basE91 *b, const void *i, size_t len, void *o)
 {
 	const unsigned char *ib = i;
@@ -156,4 +168,17 @@ size_t basE91_decode_end(struct basE91 *b, void *o)
 	b->val = -1;
 
 	return n;
+}
+
+/* return maximum length that an input of length i could decode to
+ * (this is a maximum, not a precise figure, because the actual
+ * size depends on the precise data */
+
+size_t basE91_decode_maxlen(size_t i /* must be < SIZE_T_MAX/7 */)
+{
+	size_t pairs = i / 2;
+	size_t bits = pairs * 14;
+	size_t bytes = bits / 8;
+	size_t leftover = i % 2;
+	return bytes + !!leftover;
 }
