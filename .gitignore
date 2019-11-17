@@ -1,6 +1,8 @@
 /base91
+/lentest
 *.o
 /test/b91dec
 /test/b91enc
+/test/lentest
 /test/*.dat
 /test/*.b91

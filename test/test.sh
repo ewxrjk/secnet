@@ -81,6 +81,10 @@ echo "+-- random data $T"
 fold -w 73 rnd0.b91 | ./b91dec -vvm 89 | cmp rnd0.dat && echo PASSED || fail_exit
 fold -w 71 rnd1.b91 | ./b91dec -vvm 73 | cmp rnd1.dat && echo PASSED || fail_exit
 
+echo "
+maxlength tests:"
+./lentest && echo PASSED || fail_exit
+
 echo '
 ================
 all tests passed

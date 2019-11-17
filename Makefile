@@ -13,7 +13,7 @@ mandir = $(prefix)/share/man
 man1dir = $(mandir)/man1
 manext = .1
 
-BIN = base91
+BIN = base91 lentest
 
 .PHONY: all install check clean
 
@@ -24,6 +24,8 @@ all: $(BIN)
 
 base91: cli.o base91.o
 	$(CC) $(LDFLAGS) -o $@ $^
+
+lentest: lentest.o base91.o
 
 install: all
 	mkdir -p $(DESTDIR)$(bindir)

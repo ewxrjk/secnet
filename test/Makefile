@@ -5,6 +5,7 @@ SHELL = /bin/sh
 all:
 	ln -sf ../base91 b91enc
 	ln -sf ../base91 b91dec
+	ln -sf ../lentest .
 	$(SHELL) test.sh
 
 clean:
