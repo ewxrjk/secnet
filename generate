@@ -99,7 +99,7 @@ sub write_makefile ($$) {
     my $cd = $depth ? join('/', ('..',) x $depth) : '.';
     o <<END;
 default: all
-%:	FORCE-ALWAYS-RUN
+\$(MAKECMDGOALS) all: FORCE-ALWAYS-RUN
 	\@:
 Makefile FORCE-ALWAYS-RUN:
 	\$(MAKE) -C $cd -f main.mk \$(addprefix ${dir_prefix},\$(or \$(MAKECMDGOALS),all))
