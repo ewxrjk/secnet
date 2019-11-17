@@ -140,8 +140,8 @@ int main(int argc, char **argv)
 {
 	size_t buf_size = 65536;	/* buffer memory defaults to 64 KiB */
 	int flags = init_flags(*argv);
-	char *ifile = "from standard input";
-	char *ofile = NULL;
+	const char *ifile = "from standard input";
+	const char *ofile = NULL;
 	int opt;
 	struct option longopts[8] = {
 		{"decode", no_argument, NULL, 'd'},
