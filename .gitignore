@@ -1,0 +1,6 @@
+/base91
+*.o
+/test/b91dec
+/test/b91enc
+/test/*.dat
+/test/*.b91
