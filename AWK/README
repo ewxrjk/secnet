@@ -1,0 +1,16 @@
+This is a (slow) AWK implementation of the basE91 decoder. It decodes from
+standard input to standard output.
+
+Example usage:
+
+	awk -f b91dec.awk < file.b91 > file.bin
+  or
+	./b91dec.awk < file.b91 > file.bin
+
+
+Be careful on non-Unix systems! - During output, some ported versions of awk
+automatically convert byte values of 0x0A to the native line break sequence of
+the host system (e.g. 0x0D 0x0A under DOS/Windows). This can result in corrupt
+binary files.
+You should test on some examples and compare the output of b91dec.awk with the
+original data before relying on it.

@@ -1,0 +1,4 @@
+Main-Class: b91cli
+Package-Title: basE91 command line tool
+Package-Version: 0.6.0
+Package-Vendor: Joachim Henke
