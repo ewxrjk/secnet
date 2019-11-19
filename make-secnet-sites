@@ -417,7 +417,7 @@ class level:
 	def prop_out(self,n):
 		return self.allow_properties[n](n,str(self.properties[n]))
 	def output_props(self,w,ind):
-		for i in self.properties.keys():
+		for i in sorted(self.properties.keys()):
 			if self.allow_properties[i]:
 				self.indent(w,ind)
 				w.write("%s"%self.prop_out(i))
