@@ -517,7 +517,7 @@ static void polypath_sendmsg_interf(struct polypath *st,
 		      "%s has no suitable address to transmit %s",
 		      interf->name, af_name(af));
 
-    *allreasonable *= reasonable;
+    *allreasonable &= reasonable;
 }
 
 static bool_t polypath_sendmsg(void *commst, struct buffer_if *buf,
