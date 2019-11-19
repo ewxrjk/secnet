@@ -17,13 +17,17 @@ proc run-mss-userv {user group args} {
 
 proc run-mss {args} { eval [list exec] [mss-program] $args }
 
+proc diff {a b seddery} {
+    exec bash -c "
+    	diff -u <($seddery $a) \\
+        	<($seddery $b)
+    "
+}
+
 proc diff-output {expected got suffix} {
     global seddery
     global tmp
-    exec bash -c "
-    	diff -u <($seddery mtest/$expected$suffix) \\
-        	<($seddery $tmp/$got$suffix      )
-    "
+    diff mtest/$expected$suffix $tmp/$got$suffix $seddery
 }
 
 file mkdir $tmp/groupfiles

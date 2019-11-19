@@ -5,7 +5,4 @@ source mtest/common.tcl
 run-mss --no-conf-key-prefix test-example/sites $tmp/out.conf
 
 set seddery { sed -n 's/^[ \t]*//; /^[^#]/p' }
-exec bash -c "
-    diff -u <($seddery mtest/e-basic.conf) \\
-            <($seddery $tmp/out.conf     )
-"
+diff  mtest/e-basic.conf $tmp/out.conf $seddery
