@@ -27,3 +27,5 @@ CHECK_SILENT ?= @
 	$(RM) -f & *.o *.so
 	$(RM) -rf & tmp
 	$(RM) -rf & d-*
+
+&:include subdirmk/clean.sd.mk
