@@ -430,7 +430,8 @@ class level:
 		w.write("%s {\n"%(self.kname()))
 		self.output_props(w,ind+2)
 		if self.depth==1: w.write("\n");
-		for c in self.children.values():
+		for k in sorted(self.children.keys()):
+			c=self.children[k]
 			c.output_data(w,path+(c,))
 		self.indent(w,ind)
 		w.write("};\n")
