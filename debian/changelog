@@ -1,6 +1,48 @@
 secnet (0.5.1~) unstable; urgency=medium
 
-  * 
+  POTENTIALLY INCOMPATIBLE CHANGE.  SECURITY IMPLICATIONS.
+
+  * make-secnet-sites: Prefix names when writing secnet sites.conf file.
+
+    make-secnet-sites must copy names (vpn, location and site names) from
+    the input sites file (which is not wholly trusted) to the secnet
+    config file.  Prior to this release, naming a location or site the
+    same as a secnet predefined name could generate a broken sites.conf
+    which secnet would reject.
+
+    make-secnet-sites now adds a prefixe to these names when writing
+    sites.conf.  This will not affect configurations which use the
+    make-secnet-sites-provided `all-sites' key, as is usual.  Other
+    configurations will break unless the references in the static part of
+    the config are adjusted.
+
+    Previous behaviour can be restored with the --no-conf-key-prefix
+    option.  (Planned future enhancements to secnet are likely to make use
+    of that option, with untrusted input, dangerously insecure.)
+
+  other changes to make-secnet-sites:
+  * Fix argument parsing.  Fixes a regression affecting -P in 0.5.0,
+    and also fixes new facilities introduced in 0.5.0.
+  * Sort the properties on output (and adjust the test case expected
+    outputs).  Tests now pass on (at least) Python 2.7.13, 3.5.3, 3.7.5.
+  * Delete some unused code.
+
+  secnet:
+  * Change one idiom to avoid a warning from GCC9.  No functional change.
+
+  build system - MAJOR CHANGES:
+  * Replace recursive make with use of the new subdirmk system.
+    This represents a fairly comprehensive overhaul of the makefiles.
+    Several bugs (esp. involving dependencies between files in different
+    directories) are fixed.
+  * Drop `make check' from `make all'.  (Otherwise there is no way
+    to ask for `all' without `check'.)
+  * Suppress a number of unhelpful new compiler warnings from GCC9.
+  * Release checklist updates.
+  
+  tests:
+  * Make locations have different names to sites.
+  * Somewhat better debugging output from mtest.
 
  --
 
