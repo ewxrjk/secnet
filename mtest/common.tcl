@@ -10,12 +10,12 @@ proc mss-program {} {
 }
 
 proc run-mss-userv {user group args} {
-    eval [list exec env USERV_USER=$user USERV_GROUP=$group] \
+    eval [list prexec env USERV_USER=$user USERV_GROUP=$group] \
 	 [mss-program] \
 	 $args
 }
 
-proc run-mss {args} { eval [list exec] [mss-program] $args }
+proc run-mss {args} { eval [list prexec] [mss-program] $args }
 
 proc diff {a b seddery {sedderyb X}} {
     if {![string compare $sedderyb X]} { set sedderyb $seddery }

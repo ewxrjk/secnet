@@ -7,6 +7,11 @@ proc prefix_some_path {pathvar entry} {
     set env($pathvar) [join $l :]
 }
 
+proc prexec {args} {
+    puts "exec $args"
+    eval exec $args
+}
+
 if {![catch {
     set builddir $env(SECNET_TEST_BUILDDIR)
 }]} {} else {
