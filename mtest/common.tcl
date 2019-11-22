@@ -17,11 +17,12 @@ proc run-mss-userv {user group args} {
 
 proc run-mss {args} { eval [list exec] [mss-program] $args }
 
-proc diff {a b seddery} {
-    puts "$a $b $seddery"
+proc diff {a b seddery {sedderyb X}} {
+    if {![string compare $sedderyb X]} { set sedderyb $seddery }
+    puts "$a $b $seddery $sedderyb"
     exec bash -c "
-    	diff -u <($seddery $a) \\
-        	<($seddery $b)
+    	diff -u <( <$a $seddery  ) \\
+        	<( <$b $sedderyb )
     "
 }
 
