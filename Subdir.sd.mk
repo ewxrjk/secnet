@@ -207,7 +207,7 @@ include subdirmk/regen.mk
 
 # Release checklist:
 #
-#  0. Use this checklist from Makefile.in
+#  0. Use this checklist from Subdir.sd.mk
 #
 #  1. Check that the tree has what you want
 #
