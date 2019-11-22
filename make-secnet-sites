@@ -214,6 +214,7 @@ def parse_args():
 	global group
 	global user
 	global of
+	global prefix
 	global key_prefix
 
 	ap = argparse.ArgumentParser(description='process secnet sites files')
@@ -228,6 +229,7 @@ def parse_args():
 	av = ap.parse_args()
 	#print(repr(av), file=sys.stderr)
 	service = 1 if av.userv else 0
+	prefix = '' if av.prefix is None else av.prefix[0]
 	key_prefix = av.conf_key_prefix
 	if service:
 		if len(av.arg)!=4:
@@ -554,7 +556,6 @@ root=level([UntaintedRoot(x) for x in ['root','root']])
 # All vpns are children of this node
 obstack=[root]
 allow_defs=0   # Level above which new definitions are permitted
-prefix=''
 
 def set_property(obj,w):
 	"Set a property on a configuration node"
