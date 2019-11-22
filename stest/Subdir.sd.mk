@@ -12,7 +12,7 @@
 
 &OBJECTS += & udp-preload.o
 
-$(&OBJECTS) : ALL_CFLAGS += -D_REENTRANT -fPIC
+$(&OBJECTS) : ALL_CFLAGS += -D_REENTRANT -fPIC -Wno-unused-result
 
 &udp-preload.so: $(&OBJECTS)
 	$(CC) -shared -Wl,-soname,$@.1 $^ -o $@ -ldl
