@@ -1,6 +1,6 @@
 secnet (0.5.1~) unstable; urgency=medium
 
-  POTENTIALLY INCOMPATIBLE CHANGE.  SECURITY IMPLICATIONS.
+  POTENTIALLY INCOMPATIBLE CHANGE.  Some security implications.
 
   * make-secnet-sites: Prefix names when writing secnet sites.conf file.
 
@@ -8,9 +8,11 @@ secnet (0.5.1~) unstable; urgency=medium
     the input sites file (which is not wholly trusted) to the secnet
     config file.  Prior to this release, naming a location or site the
     same as a secnet predefined name could generate a broken sites.conf
-    which secnet would reject.
+    which secnet would reject.  (With the existing featureset,
+    malfunctions other than rejection, eg privilege escalation, are not
+    possible.)
 
-    make-secnet-sites now adds a prefixe to these names when writing
+    make-secnet-sites now adds a prefix to these names when writing
     sites.conf.  This will not affect configurations which use the
     make-secnet-sites-provided `all-sites' key, as is usual.  Other
     configurations will break unless the references in the static part of
@@ -31,18 +33,25 @@ secnet (0.5.1~) unstable; urgency=medium
   * Change one idiom to avoid a warning from GCC9.  No functional change.
 
   build system - MAJOR CHANGES:
+  * Fix out-of-tree builds.  (Broken in 0.5.0)
   * Replace recursive make with use of the new subdirmk system.
     This represents a fairly comprehensive overhaul of the makefiles.
     Several bugs (esp. involving dependencies between files in different
     directories) are fixed.
   * Drop `make check' from `make all'.  (Otherwise there is no way
     to ask for `all' without `check'.)
-  * Suppress a number of unhelpful new compiler warnings from GCC9.
-  * Release checklist updates.
-  
+  * Suppress two unhelpful new compiler warnings from GCC9.
+  * Release checklist update.
+
+  documentation:
+  * Creit Mark Wooding properly in CREDITS.
+  * Include DEVELOPER-CERTIFICATE.
+
   tests:
-  * Make locations have different names to sites.
+  * Locations now have different names to sites.
   * Somewhat better debugging output from mtest.
+  * Do not run msgcode-test except with `make fullcheck'.
+  * Other minor bugfixes and improvments.
 
  --
 
