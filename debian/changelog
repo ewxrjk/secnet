@@ -1,4 +1,4 @@
-secnet (0.5.1~) unstable; urgency=medium
+secnet (0.5.1) unstable; urgency=medium
 
   POTENTIALLY INCOMPATIBLE CHANGE.  Some security implications.
 
@@ -53,7 +53,7 @@ secnet (0.5.1~) unstable; urgency=medium
   * Do not run msgcode-test except with `make fullcheck'.
   * Other minor bugfixes and improvments.
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Fri, 22 Nov 2019 23:09:46 +0000
 
 secnet (0.5.0) unstable; urgency=medium
 
