@@ -404,7 +404,7 @@ struct sigscheme_info;
 typedef bool_t sigscheme_loadpub(const struct sigscheme_info *algo,
 				 struct buffer_if *pubkeydata,
 				 struct sigpubkey_if **sigpub_r,
-				 struct log_if *log);
+				 struct log_if *log, struct cloc loc);
   /* pubkeydata is (supposedly) for this algorithm.
    * loadpub should log an error if it fails.
    * pubkeydata may be modified (but not freed) */

@@ -227,7 +227,7 @@ static struct pubkeyset_context c[1];
     if (c->building->nkeys >= MAX_SIG_KEYS) DOSKIP("too many public keys");
     struct sigpubkey_if *pubkey;
     bool_t ok=c->scheme->loadpub(c->scheme,c->data_buf,
-				 &pubkey,c->log);
+				 &pubkey,c->log,c->loc);
     if (!ok) break;
     memcpy(c->building->keys[c->building->nkeys].id.b,
 	   c->grpid,
