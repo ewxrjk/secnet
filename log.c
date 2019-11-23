@@ -330,7 +330,7 @@ static void logfile_vlog(void *sst, int class, const char *message,
 	pidbuf[0]=0;
     }
 
-    if (secnet_is_daemon && st->f) {
+    if (secnet_is_daemon) {
 	if (class&st->level) {
 	    t=time(NULL);
 	    tm=localtime(&t);
