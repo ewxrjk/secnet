@@ -93,6 +93,9 @@ struct rsapriv {
     each(0,e,"public exponent")			\
     each(1,n,"modulus")
 
+#define RSAPUB_LOADCORE_PASSBN(ix,en,what) \
+    en##s, en##_loc,
+
 struct rsapub {
     closure_t cl;
     struct sigpubkey_if ops;
@@ -309,11 +312,13 @@ static void rsapub_dispose(void *sst) {
     free(st);
 }
 
-static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
-			    list_t *args)
+#define RSAPUB_LOADCORE_DEFBN(ix,en,what) \
+    const char *en##s, struct cloc en##_loc,
+
+static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
+				       struct cloc overall_loc)
 {
     struct rsapub *st;
-    item_t *i;
 
     NEW(st);
     st->cl.description="rsapub";
@@ -327,28 +332,43 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.check=rsa_sig_check;
     st->ops.hash=0;
     st->ops.dispose=rsapub_dispose;
-    st->loc=loc;
+    st->loc=overall_loc;
 
-#define RSAPUB_APPLY_GETBN(ix,en,what)					\
-    char *en;								\
-    i=list_elem(args,ix);						\
-    if (i) {								\
-	if (i->type!=t_string) {					\
-	    cfgfatal(i->loc,"rsa-public",what " must be a string\n");	\
-	}								\
-	en=i->data.string;						\
-	if (mpz_init_set_str(&st->en,en,10)!=0) {			\
-	    cfgfatal(i->loc,"rsa-public", what " \"%s\" is not a "	\
-		     "decimal number string\n",en);			\
-	}								\
-    } else {								\
-	cfgfatal(loc,"rsa-public","you must provide the " what "\n");	\
+#define RSAPUB_LOADCORE_GETBN(ix,en,what)				\
+    if (mpz_init_set_str(&st->en,en##s,10)!=0) {			\
+	cfgfatal(en##_loc,"rsa-public", what " \"%s\" is not a "	\
+		 "decimal number string\n",en##s);			\
     }									\
     if (mpz_sizeinbase(&st->en, 256) > RSA_MAX_MODBYTES) {		\
-	cfgfatal(loc, "rsa-public", "implausibly large " what "\n");	\
+	cfgfatal(en##_loc, "rsa-public", "implausibly large " what "\n"); \
     }
 
+    RSAPUB_BNS(RSAPUB_LOADCORE_GETBN)
+
+    return st;
+}
+
+static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
+			    list_t *args)
+{
+
+#define RSAPUB_APPLY_GETBN(ix,en,what)				\
+    item_t *en##i;						\
+    const char *en##s;						\
+    en##i=list_elem(args,ix);					\
+    if (!en##i)							\
+        cfgfatal(loc,"rsa-public",				\
+                 "you must provide an encryption key\n");	\
+    struct cloc en##_loc=en##i->loc;				\
+    if (en##i->type!=t_string)					\
+	cfgfatal(en##_loc,"rsa-public",				\
+		 "first argument must be a string\n");		\
+    en##s=en##i->data.string;
+
     RSAPUB_BNS(RSAPUB_APPLY_GETBN)
+
+    struct rsapub *st=rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_PASSBN)
+				       loc);
 
     return new_closure(&st->cl);
 }
