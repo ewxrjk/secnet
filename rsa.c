@@ -315,6 +315,9 @@ static void rsapub_dispose(void *sst) {
 #define RSAPUB_LOADCORE_DEFBN(ix,en,what) \
     const char *en##s, struct cloc en##_loc,
 
+#define LDPUBFATAL(enloc,...) \
+    cfgfatal(enloc, "rsa-public", __VA_ARGS__)
+
 static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
 				       struct cloc overall_loc)
 {
@@ -336,11 +339,11 @@ static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
 
 #define RSAPUB_LOADCORE_GETBN(ix,en,what)				\
     if (mpz_init_set_str(&st->en,en##s,10)!=0) {			\
-	cfgfatal(en##_loc,"rsa-public", what " \"%s\" is not a "	\
+	LDPUBFATAL(en##_loc, what " \"%s\" is not a "			\
 		 "decimal number string\n",en##s);			\
     }									\
     if (mpz_sizeinbase(&st->en, 256) > RSA_MAX_MODBYTES) {		\
-	cfgfatal(en##_loc, "rsa-public", "implausibly large " what "\n"); \
+	LDPUBFATAL(en##_loc, "implausibly large " what "\n");		\
     }
 
     RSAPUB_BNS(RSAPUB_LOADCORE_GETBN)
