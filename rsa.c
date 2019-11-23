@@ -45,6 +45,8 @@ struct rsacommon {
     uint8_t *hashbuf;
 };
 
+#define FREE(b)                ({ free((b)); (b)=0; })
+
 struct load_ctx {
     void (*verror)(struct load_ctx *l,
 		   FILE *maybe_f, bool_t unsup,
@@ -372,7 +374,6 @@ static void load_error(struct load_ctx *l, FILE *maybe_f,
 #define LDUNSUP(...)      ({ load_error(l,0,1,__VA_ARGS__); goto error_out; })
 #define LDFATAL_FILE(...) ({ load_error(l,f,0,__VA_ARGS__); goto error_out; })
 #define LDUNSUP_FILE(...) ({ load_error(l,f,1,__VA_ARGS__); goto error_out; })
-#define FREE(b)                ({ free((b)); (b)=0; })
 #define KEYFILE_GET(is)   ({					\
 	uint##is##_t keyfile_get_tmp=keyfile_get_##is(l,f);	\
 	if (!l->postreadcheck(l,f)) goto error_out;		\
