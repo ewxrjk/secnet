@@ -702,7 +702,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     goto out;
 
  error_out:
-    if (st) { free(st); st=0; }
+    FREE(st);
  out:
     if (f) fclose(f);
     if (!st) return False;
