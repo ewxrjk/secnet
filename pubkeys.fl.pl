@@ -311,10 +311,6 @@ keyset_load(const char *path, struct buffer_if *data_buf,
     int r=pkyylex();
     if (r) goto err_bad;
 
-    if (!c->had_serial) {
-	slilog(LI,M_ERR,"missing serial number in %s",path);
-	goto err_bad;
-    }
     if (!c->building->nkeys) {
 	slilog(LI,M_ERR,"no useable keys in %s",path);
 	goto err_bad;
