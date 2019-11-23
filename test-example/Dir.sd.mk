@@ -1,4 +1,4 @@
-&TARGETS += & sites.conf inside.key outside.key
+&TARGETS += & sites.conf inside.key outside.key all-privkeys
 
 include common.make
 
