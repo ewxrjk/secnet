@@ -339,6 +339,7 @@ static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
     st->ops.hash=0;
     st->ops.dispose=rsapub_dispose;
     st->loc=overall_loc;
+    RSAPUB_BNS(RSAPUB_INIT_ST_BN)
 
 #define RSAPUB_LOADCORE_GETBN(ix,en,what)				\
     if (mpz_init_set_str(&st->en,en##s,10)!=0) {			\
@@ -352,6 +353,10 @@ static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
     RSAPUB_BNS(RSAPUB_LOADCORE_GETBN)
 
     return st;
+
+ error_out:
+    rsapub_dispose(st);
+    return 0;
 }
 
 static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
