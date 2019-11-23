@@ -45,11 +45,11 @@ struct rsacommon {
     uint8_t *hashbuf;
 };
 
-struct rsapriv_load_ctx {
-    void (*verror)(struct rsapriv_load_ctx *l,
+struct load_ctx {
+    void (*verror)(struct load_ctx *l,
 		   FILE *maybe_f, bool_t unsup,
 		   const char *message, va_list args);
-    bool_t (*postreadcheck)(struct rsapriv_load_ctx *l, FILE *f);
+    bool_t (*postreadcheck)(struct load_ctx *l, FILE *f);
     union {
 	struct {
 	    struct cloc loc;
@@ -61,7 +61,7 @@ struct rsapriv_load_ctx {
 };
 
 FORMAT(printf,4,0)
-static void verror_tryload(struct rsapriv_load_ctx *l,
+static void verror_tryload(struct load_ctx *l,
 			   FILE *maybe_f, bool_t unsup,
 			   const char *message, va_list args)
 {
@@ -70,7 +70,7 @@ static void verror_tryload(struct rsapriv_load_ctx *l,
     vslilog(l->u.tryload.log,class,message,args);
 }
 
-static void verror_cfgfatal(struct rsapriv_load_ctx *l,
+static void verror_cfgfatal(struct load_ctx *l,
 			    FILE *maybe_f, bool_t unsup,
 			    const char *message, va_list args)
 {
@@ -360,7 +360,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
-static void load_error(struct rsapriv_load_ctx *l, FILE *maybe_f,
+static void load_error(struct load_ctx *l, FILE *maybe_f,
 		       bool_t unsup, const char *fmt, ...)
 {
     va_list al;
@@ -380,7 +380,7 @@ static void load_error(struct rsapriv_load_ctx *l, FILE *maybe_f,
 	keyfile_get_tmp;					\
     })
 
-static uint32_t keyfile_get_32(struct rsapriv_load_ctx *l, FILE *f)
+static uint32_t keyfile_get_32(struct load_ctx *l, FILE *f)
 {
     uint32_t r;
     r=fgetc(f)<<24;
@@ -390,7 +390,7 @@ static uint32_t keyfile_get_32(struct rsapriv_load_ctx *l, FILE *f)
     return r;
 }
 
-static uint16_t keyfile_get_16(struct rsapriv_load_ctx *l, FILE *f)
+static uint16_t keyfile_get_16(struct load_ctx *l, FILE *f)
 {
     uint16_t r;
     r=fgetc(f)<<8;
@@ -409,7 +409,7 @@ static void rsapriv_dispose(void *sst)
     free(st);
 }
 
-static struct rsapriv *rsa_loadpriv_core(struct rsapriv_load_ctx *l,
+static struct rsapriv *rsa_loadpriv_core(struct load_ctx *l,
 					 FILE *f, struct cloc loc,
 					 bool_t do_validity_check)
 {
@@ -638,7 +638,7 @@ error_out:
     goto out;
 }
 
-static bool_t postreadcheck_tryload(struct rsapriv_load_ctx *l, FILE *f)
+static bool_t postreadcheck_tryload(struct load_ctx *l, FILE *f)
 {
     assert(!ferror(f));
     if (feof(f)) { load_error(l,0,0,"eof mid-integer"); return False; }
@@ -663,7 +663,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     loc.file="dynamically loaded";
     loc.line=0;
 
-    struct rsapriv_load_ctx l[1];
+    struct load_ctx l[1];
     l->verror=verror_tryload;
     l->postreadcheck=postreadcheck_tryload;
     l->u.tryload.log=log;
@@ -681,7 +681,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     return True;
 }
 
-static bool_t postreadcheck_apply(struct rsapriv_load_ctx *l, FILE *f)
+static bool_t postreadcheck_apply(struct load_ctx *l, FILE *f)
 {
     cfgfile_postreadcheck(l->u.apply.loc,f);
     return True;
@@ -694,7 +694,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     item_t *i;
     cstring_t filename;
     FILE *f;
-    struct rsapriv_load_ctx l[1];
+    struct load_ctx l[1];
 
     l->verror=verror_cfgfatal;
     l->postreadcheck=postreadcheck_apply;
