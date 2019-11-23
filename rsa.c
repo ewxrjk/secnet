@@ -319,6 +319,7 @@ static bool_t rsa_sig_check(void *sst, uint8_t *data, int32_t datalen,
 static void rsapub_dispose(void *sst) {
     struct rsapub *st=sst;
 
+    if (!st) return;
     mpz_clear(&st->e);
     mpz_clear(&st->n);
     rsacommon_dispose(&st->common);
