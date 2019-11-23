@@ -50,6 +50,7 @@ struct load_ctx {
 		   FILE *maybe_f, bool_t unsup,
 		   const char *message, va_list args);
     bool_t (*postreadcheck)(struct load_ctx *l, FILE *f);
+    const char *what;
     struct cloc *loc;
     union {
 	struct {
@@ -64,7 +65,7 @@ static void verror_tryload(struct load_ctx *l,
 			   const char *message, va_list args)
 {
     int class=unsup ? M_DEBUG : M_ERR;
-    slilog_part(l->u.tryload.log,class,"rsa1priv load: ");
+    slilog_part(l->u.tryload.log,class,"%s: ",l->what);
     vslilog(l->u.tryload.log,class,message,args);
 }
 
@@ -72,7 +73,7 @@ static void verror_cfgfatal(struct load_ctx *l,
 			    FILE *maybe_f, bool_t unsup,
 			    const char *message, va_list args)
 {
-    vcfgfatal_maybefile(maybe_f,*l->loc,"rsa-private",message,args);
+    vcfgfatal_maybefile(maybe_f,*l->loc,l->what,message,args);
 }
 
 struct rsapriv {
@@ -658,6 +659,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     }
 
     struct load_ctx l[1];
+    l->what="rsa1priv load";
     l->verror=verror_tryload;
     l->postreadcheck=postreadcheck_tryload;
     l->loc=&loc;
@@ -691,6 +693,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     FILE *f;
     struct load_ctx l[1];
 
+    l->what="rsa-private";
     l->verror=verror_cfgfatal;
     l->postreadcheck=postreadcheck_apply;
     l->loc=&loc;
