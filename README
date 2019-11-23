@@ -316,6 +316,7 @@ Defines:
 
 logfile: dict argument
   filename (string): where to log to; default is stderr
+  prefix (string): added to messages [""]
   class (string list): what type of messages to log
     { "debug-config", M_DEBUG_CONFIG },
     { "debug-phase", M_DEBUG_PHASE },

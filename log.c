@@ -308,6 +308,7 @@ struct logfile {
     string_t logfile;
     uint32_t level;
     FILE *f;
+    const char *prefix;
     bool_t forked;
 };
 
@@ -333,9 +334,10 @@ static void logfile_vlog(void *sst, int class, const char *message,
     if (class&st->level) {
 	t=time(NULL);
 	tm=localtime(&t);
-	fprintf(st->f,"%s %2d %02d:%02d:%02d %s",
+	fprintf(st->f,"%s %2d %02d:%02d:%02d %s%s%s",
 		months[tm->tm_mon],tm->tm_mday,tm->tm_hour,tm->tm_min,
 		tm->tm_sec,
+		st->prefix, st->prefix[0] ? " " : "",
 		pidbuf);
 	vfprintf(st->f,message,args);
 	fprintf(st->f,"\n");
@@ -427,6 +429,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.buff[0]=0;
     st->loc=loc;
     st->f=stderr;
+    st->prefix="";
     st->forked=0;
 
     item=list_elem(args,0);
@@ -436,6 +439,8 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     dict=item->data.dict;
 
     st->logfile=dict_read_string(dict,"filename",False,"logfile",loc);
+    st->prefix=dict_read_string(dict,"prefix",False,"logfile",loc);
+    if (!st->prefix) st->prefix="";
     st->level=string_list_to_word(dict_lookup(dict,"class"),
 				       message_class_table,"logfile");
 
