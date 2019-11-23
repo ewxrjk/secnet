@@ -83,7 +83,7 @@ exec cat
     append cfg "
 	log logfile {
 	    prefix \"$site\";
-	    class \"info\",\"notice\",\"warning\",\"error\",\"security\",\"fatal\";
+	    class \"debug\",\"info\",\"notice\",\"warning\",\"error\",\"security\",\"fatal\";
 	};
     "
     append cfg {
