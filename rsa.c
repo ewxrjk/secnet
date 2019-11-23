@@ -61,6 +61,16 @@ struct load_ctx {
     } u;
 };
 
+static void load_err(struct load_ctx *l,
+		     const struct cloc *maybe_loc, FILE *maybe_f,
+		     bool_t unsup, const char *fmt, ...)
+{
+    va_list al;
+    va_start(al,fmt);
+    l->verror(l, maybe_loc ? maybe_loc : l->loc, maybe_f,unsup,fmt,al);
+    va_end(al);
+}
+
 FORMAT(printf,5,0)
 static void verror_tryload(struct load_ctx *l, const struct cloc *loc,
 			   FILE *maybe_f, bool_t unsup,
@@ -382,16 +392,6 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
 				       loc);
 
     return new_closure(&st->cl);
-}
-
-static void load_err(struct load_ctx *l,
-		     const struct cloc *maybe_loc, FILE *maybe_f,
-		     bool_t unsup, const char *fmt, ...)
-{
-    va_list al;
-    va_start(al,fmt);
-    l->verror(l, maybe_loc ? maybe_loc : l->loc, maybe_f,unsup,fmt,al);
-    va_end(al);
 }
 
 #define LDFATAL(...)      ({ load_err(l,0,0,0,__VA_ARGS__); goto error_out; })
