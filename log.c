@@ -330,22 +330,16 @@ static void logfile_vlog(void *sst, int class, const char *message,
 	pidbuf[0]=0;
     }
 
-    if (secnet_is_daemon) {
-	if (class&st->level) {
-	    t=time(NULL);
-	    tm=localtime(&t);
-	    fprintf(st->f,"%s %2d %02d:%02d:%02d %s",
-		    months[tm->tm_mon],tm->tm_mday,tm->tm_hour,tm->tm_min,
-		    tm->tm_sec,
-		    pidbuf);
-	    vfprintf(st->f,message,args);
-	    fprintf(st->f,"\n");
-	    fflush(st->f);
-	}
-    } else {
-	if (pidbuf[0]) MessageFallback(class,"%s",pidbuf);
-	vMessageFallback(class,message,args);
-	MessageFallback(class,"\n");
+    if (class&st->level) {
+	t=time(NULL);
+	tm=localtime(&t);
+	fprintf(st->f,"%s %2d %02d:%02d:%02d %s",
+		months[tm->tm_mon],tm->tm_mday,tm->tm_hour,tm->tm_min,
+		tm->tm_sec,
+		pidbuf);
+	vfprintf(st->f,message,args);
+	fprintf(st->f,"\n");
+	fflush(st->f);
     }
 }
 
