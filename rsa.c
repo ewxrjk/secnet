@@ -48,7 +48,7 @@ struct rsacommon {
 #define FREE(b)                ({ free((b)); (b)=0; })
 
 struct load_ctx {
-    void (*verror)(struct load_ctx *l,
+    void (*verror)(struct load_ctx *l, const struct cloc *loc,
 		   FILE *maybe_f, bool_t unsup,
 		   const char *message, va_list args);
     bool_t (*postreadcheck)(struct load_ctx *l, FILE *f);
@@ -61,8 +61,8 @@ struct load_ctx {
     } u;
 };
 
-FORMAT(printf,4,0)
-static void verror_tryload(struct load_ctx *l,
+FORMAT(printf,5,0)
+static void verror_tryload(struct load_ctx *l, const struct cloc *loc,
 			   FILE *maybe_f, bool_t unsup,
 			   const char *message, va_list args)
 {
@@ -71,7 +71,7 @@ static void verror_tryload(struct load_ctx *l,
     vslilog(l->u.tryload.log,class,message,args);
 }
 
-static void verror_cfgfatal(struct load_ctx *l,
+static void verror_cfgfatal(struct load_ctx *l, const struct cloc *loc,
 			    FILE *maybe_f, bool_t unsup,
 			    const char *message, va_list args)
 {
@@ -384,19 +384,20 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
-static void load_error(struct load_ctx *l, FILE *maybe_f,
-		       bool_t unsup, const char *fmt, ...)
+static void load_err(struct load_ctx *l,
+		     const struct cloc *maybe_loc, FILE *maybe_f,
+		     bool_t unsup, const char *fmt, ...)
 {
     va_list al;
     va_start(al,fmt);
-    l->verror(l,maybe_f,unsup,fmt,al);
+    l->verror(l, maybe_loc ? maybe_loc : l->loc, maybe_f,unsup,fmt,al);
     va_end(al);
 }
 
-#define LDFATAL(...)      ({ load_error(l,0,0,__VA_ARGS__); goto error_out; })
-#define LDUNSUP(...)      ({ load_error(l,0,1,__VA_ARGS__); goto error_out; })
-#define LDFATAL_FILE(...) ({ load_error(l,f,0,__VA_ARGS__); goto error_out; })
-#define LDUNSUP_FILE(...) ({ load_error(l,f,1,__VA_ARGS__); goto error_out; })
+#define LDFATAL(...)      ({ load_err(l,0,0,0,__VA_ARGS__); goto error_out; })
+#define LDUNSUP(...)      ({ load_err(l,0,0,1,__VA_ARGS__); goto error_out; })
+#define LDFATAL_FILE(...) ({ load_err(l,0,f,0,__VA_ARGS__); goto error_out; })
+#define LDUNSUP_FILE(...) ({ load_err(l,0,f,1,__VA_ARGS__); goto error_out; })
 #define KEYFILE_GET(is)   ({					\
 	uint##is##_t keyfile_get_tmp=keyfile_get_##is(l,f);	\
 	if (!l->postreadcheck(l,f)) goto error_out;		\
@@ -664,7 +665,7 @@ error_out:
 static bool_t postreadcheck_tryload(struct load_ctx *l, FILE *f)
 {
     assert(!ferror(f));
-    if (feof(f)) { load_error(l,0,0,"eof mid-integer"); return False; }
+    if (feof(f)) { load_err(l,0,0,0,"eof mid-integer"); return False; }
     return True;
 }
 
