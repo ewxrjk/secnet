@@ -903,7 +903,7 @@ static void peerkeys_maybe_incorporate(struct site *st, const char *file,
 				       int logcl_enoent)
 {
     struct peer_keyset *atsuffix=
-	keyset_load(file,&st->scratch,st->log,logcl_enoent);
+	keyset_load(file,&st->scratch,st->log,logcl_enoent,st->defhash);
     if (!atsuffix) return;
 
     if (st->peerkeys_current &&
@@ -2547,7 +2547,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	pathprefix_template_init(&st->peerkeys_tmpl,st->peerkeys_path,
 				 PEERKEYS_SUFFIX_MAXLEN + 1 /* nul */);
 	st->peerkeys_current=keyset_load(st->peerkeys_path,
-					 &st->scratch,st->log,M_ERR);
+					 &st->scratch,st->log,M_ERR,
+					 st->defhash);
 	if (fixed_pubkey) {
 	    fixed_pubkey->dispose(fixed_pubkey->st);
 	}

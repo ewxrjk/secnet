@@ -38,7 +38,8 @@ struct peer_keyset {
 
 extern struct peer_keyset *
 keyset_load(const char *path, struct buffer_if *data_buf,
-	    struct log_if *log, int logcl_enoent);
+	    struct log_if *log, int logcl_enoent,
+	    struct hash_if *defhash);
 
 extern void keyset_dispose(struct peer_keyset **ks);
 
