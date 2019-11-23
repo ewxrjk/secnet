@@ -96,6 +96,9 @@ struct rsapriv {
 #define RSAPUB_LOADCORE_PASSBN(ix,en,what) \
     en##s, en##_loc,
 
+#define RSAPUB_INIT_ST_BN( ix,en,what) mpz_init (&st->en);
+#define RSAPUB_CLEAR_ST_BN(ix,en,what) mpz_clear(&st->en);
+
 struct rsapub {
     closure_t cl;
     struct sigpubkey_if ops;
