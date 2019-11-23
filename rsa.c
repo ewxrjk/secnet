@@ -320,8 +320,7 @@ static void rsapub_dispose(void *sst) {
     struct rsapub *st=sst;
 
     if (!st) return;
-    mpz_clear(&st->e);
-    mpz_clear(&st->n);
+    RSAPUB_BNS(RSAPUB_CLEAR_ST_BN)
     rsacommon_dispose(&st->common);
     free(st);
 }
