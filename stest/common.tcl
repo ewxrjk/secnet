@@ -82,7 +82,6 @@ exec cat
     append cfg $extra($site)
     append cfg {
 	log logfile {
-	    filename "/dev/tty";
 	    class "info","notice","warning","error","security","fatal";
 	};
 	system {
