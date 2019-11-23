@@ -80,10 +80,13 @@ exec cat
 	local-key rsa-private(\"$builddir/test-example/$site.key\");
 "
     append cfg $extra($site)
-    append cfg {
+    append cfg "
 	log logfile {
-	    class "info","notice","warning","error","security","fatal";
+	    prefix \"$site\";
+	    class \"info\",\"notice\",\"warning\",\"error\",\"security\",\"fatal\";
 	};
+    "
+    append cfg {
 	system {
 	};
 	resolver adns {
