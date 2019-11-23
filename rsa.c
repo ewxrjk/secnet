@@ -88,6 +88,11 @@ struct rsapriv {
     MP_INT q, dq;
     MP_INT w;
 };
+
+#define RSAPUB_BNS(each)			\
+    each(0,e,"public exponent")			\
+    each(1,n,"modulus")
+
 struct rsapub {
     closure_t cl;
     struct sigpubkey_if ops;
@@ -309,7 +314,6 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
 {
     struct rsapub *st;
     item_t *i;
-    string_t e,n;
 
     NEW(st);
     st->cl.description="rsapub";
@@ -325,39 +329,27 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.dispose=rsapub_dispose;
     st->loc=loc;
 
-    i=list_elem(args,0);
-    if (i) {
-	if (i->type!=t_string) {
-	    cfgfatal(i->loc,"rsa-public","first argument must be a string\n");
-	}
-	e=i->data.string;
-	if (mpz_init_set_str(&st->e,e,10)!=0) {
-	    cfgfatal(i->loc,"rsa-public","encryption key \"%s\" is not a "
-		     "decimal number string\n",e);
-	}
-    } else {
-	cfgfatal(loc,"rsa-public","you must provide an encryption key\n");
+#define RSAPUB_APPLY_GETBN(ix,en,what)					\
+    char *en;								\
+    i=list_elem(args,ix);						\
+    if (i) {								\
+	if (i->type!=t_string) {					\
+	    cfgfatal(i->loc,"rsa-public",what " must be a string\n");	\
+	}								\
+	en=i->data.string;						\
+	if (mpz_init_set_str(&st->en,en,10)!=0) {			\
+	    cfgfatal(i->loc,"rsa-public", what " \"%s\" is not a "	\
+		     "decimal number string\n",en);			\
+	}								\
+    } else {								\
+	cfgfatal(loc,"rsa-public","you must provide the " what "\n");	\
+    }									\
+    if (mpz_sizeinbase(&st->en, 256) > RSA_MAX_MODBYTES) {		\
+	cfgfatal(loc, "rsa-public", "implausibly large " what "\n");	\
     }
-    if (mpz_sizeinbase(&st->e, 256) > RSA_MAX_MODBYTES) {
-	cfgfatal(loc, "rsa-public", "implausibly large public exponent\n");
-    }
-    
-    i=list_elem(args,1);
-    if (i) {
-	if (i->type!=t_string) {
-	    cfgfatal(i->loc,"rsa-public","second argument must be a string\n");
-	}
-	n=i->data.string;
-	if (mpz_init_set_str(&st->n,n,10)!=0) {
-	    cfgfatal(i->loc,"rsa-public","modulus \"%s\" is not a decimal "
-		     "number string\n",n);
-	}
-    } else {
-	cfgfatal(loc,"rsa-public","you must provide a modulus\n");
-    }
-    if (mpz_sizeinbase(&st->n, 256) > RSA_MAX_MODBYTES) {
-	cfgfatal(loc, "rsa-public", "implausibly large modulus\n");
-    }
+
+    RSAPUB_BNS(RSAPUB_APPLY_GETBN)
+
     return new_closure(&st->cl);
 }
 
