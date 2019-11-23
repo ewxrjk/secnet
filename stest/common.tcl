@@ -117,18 +117,37 @@ proc spawn-secnet {location site} {
     puts $ch [mkconf $location $site]
     close $ch
     set argl [list $builddir/secnet -dvnc $cf]
+    set divertk SECNET_STEST_DIVERT_$site
     puts -nonewline "spawn"
     foreach k [array names env] {
 	switch -glob $k {
+	    SECNET_STEST_DIVERT_* -
 	    SECNET_TEST_BUILDDIR { }
 	    *SECNET* -
 	    *PRELOAD* { puts -nonewline " $k=$env($k)" }
 	}
     }
     puts " $argl"
-    set pid [fork]
-    if {!$pid} {
-	execl [lindex $argl 0] [lrange $argl 1 end]
+    if {[info exists env($divertk)]} {
+	switch -glob $env($divertk) {
+	    i {
+		puts -nonewline "run ^ command, hit return "
+		flush stdout
+		gets stdin
+		set argl {}
+	    }
+	    0 - "" {
+	    }
+	    * {
+		set argl [split $env($divertk)]
+	    }
+	}
+    }
+    if {[llength $argl]} { 
+	set pid [fork]
+	if {!$pid} {
+	    execl [lindex $argl 0] [lrange $argl 1 end]
+	}
     }
     puts -nonewline $netlinkfh($site.t) [hbytes h2raw c0]
 }
