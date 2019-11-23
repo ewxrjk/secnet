@@ -50,10 +50,8 @@ struct load_ctx {
 		   FILE *maybe_f, bool_t unsup,
 		   const char *message, va_list args);
     bool_t (*postreadcheck)(struct load_ctx *l, FILE *f);
+    struct cloc *loc;
     union {
-	struct {
-	    struct cloc loc;
-	} apply;
 	struct {
 	    struct log_if *log;
 	} tryload;
@@ -74,7 +72,7 @@ static void verror_cfgfatal(struct load_ctx *l,
 			    FILE *maybe_f, bool_t unsup,
 			    const char *message, va_list args)
 {
-    vcfgfatal_maybefile(maybe_f,l->u.apply.loc,"rsa-private",message,args);
+    vcfgfatal_maybefile(maybe_f,*l->loc,"rsa-private",message,args);
 }
 
 struct rsapriv {
@@ -666,6 +664,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     struct load_ctx l[1];
     l->verror=verror_tryload;
     l->postreadcheck=postreadcheck_tryload;
+    l->loc=&loc;
     l->u.tryload.log=log;
 
     st=rsa_loadpriv_core(l,f,loc,False);
@@ -683,7 +682,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
 
 static bool_t postreadcheck_apply(struct load_ctx *l, FILE *f)
 {
-    cfgfile_postreadcheck(l->u.apply.loc,f);
+    cfgfile_postreadcheck(*l->loc,f);
     return True;
 }
 
@@ -698,7 +697,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     l->verror=verror_cfgfatal;
     l->postreadcheck=postreadcheck_apply;
-    l->u.apply.loc=loc;
+    l->loc=&loc;
 
     /* Argument is filename pointing to SSH1 private key file */
     i=list_elem(args,0);
