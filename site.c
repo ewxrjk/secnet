@@ -318,6 +318,7 @@ struct site {
     int ncomms;
     struct resolver_if *resolver;
     struct log_if *log;
+    struct hash_if *defhash;
     struct random_if *random;
     struct privcache_if *privkeys;
     struct sigprivkey_if *privkey_fixed;
@@ -2423,14 +2424,15 @@ static void site_childpersist_clearkeys(void *sst, uint32_t newphase)
 }
 
 static void setup_sethash(struct site *st, dict_t *dict,
-			  struct hash_if **hash, struct cloc loc,
+			  struct cloc loc,
 			  sig_sethash_fn *sethash, void *sigkey_st) {
-    if (!*hash) *hash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
-    sethash(sigkey_st,*hash);
+    if (!st->defhash)
+	cfgfatal(loc,"site","other settings imply `hash' key is needed");
+    sethash(sigkey_st,st->defhash);
 }
 #define SETUP_SETHASH(k) do{						\
     if ((k)->sethash)							\
-        setup_sethash(st,dict, &hash,loc, (k)->sethash,(k)->st);	\
+        setup_sethash(st,dict,loc, (k)->sethash,(k)->st);	\
 }while(0)
 
 static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
@@ -2528,7 +2530,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
-    struct hash_if *hash=0;
+    st->defhash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
 
     st->privkeys=find_cl_if(dict,"key-cache",CL_PRIVCACHE,False,"site",loc);
     if (!st->privkeys) {
