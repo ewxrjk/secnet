@@ -363,6 +363,7 @@ static void logfile_hup_notify(void *sst, int signum)
 {
     struct logfile *st=sst;
     FILE *f;
+    if (!st->logfile) return;
     f=fopen(st->logfile,"a");
     if (!f) {
 	logfile_log(st,M_FATAL,"received SIGHUP, but could not reopen "
@@ -379,7 +380,7 @@ static void logfile_phase_hook(void *sst, uint32_t new_phase)
     struct logfile *st=sst;
     FILE *f;
 
-    if (background) {
+    if (background && st->logfile) {
 	f=fopen(st->logfile,"a");
 	if (!f) fatal_perror("logfile (%s:%d): cannot open \"%s\"",
 			     st->loc.file,st->loc.line,st->logfile);
@@ -431,7 +432,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.vlogfn=logfile_vlog;
     st->ops.buff[0]=0;
     st->loc=loc;
-    st->f=NULL;
+    st->f=stderr;
     st->forked=0;
 
     item=list_elem(args,0);
@@ -440,7 +441,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
     dict=item->data.dict;
 
-    st->logfile=dict_read_string(dict,"filename",True,"logfile",loc);
+    st->logfile=dict_read_string(dict,"filename",False,"logfile",loc);
     st->level=string_list_to_word(dict_lookup(dict,"class"),
 				       message_class_table,"logfile");
 

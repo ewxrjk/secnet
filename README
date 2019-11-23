@@ -315,7 +315,7 @@ Defines:
   syslog (closure => log closure)
 
 logfile: dict argument
-  filename (string): where to log to
+  filename (string): where to log to; default is stderr
   class (string list): what type of messages to log
     { "debug-config", M_DEBUG_CONFIG },
     { "debug-phase", M_DEBUG_PHASE },
