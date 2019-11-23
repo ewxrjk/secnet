@@ -45,6 +45,38 @@ struct rsacommon {
     uint8_t *hashbuf;
 };
 
+struct rsapriv_load_ctx {
+    void (*verror)(struct rsapriv_load_ctx *l,
+		   FILE *maybe_f, bool_t unsup,
+		   const char *message, va_list args);
+    bool_t (*postreadcheck)(struct rsapriv_load_ctx *l, FILE *f);
+    union {
+	struct {
+	    struct cloc loc;
+	} apply;
+	struct {
+	    struct log_if *log;
+	} tryload;
+    } u;
+};
+
+FORMAT(printf,4,0)
+static void verror_tryload(struct rsapriv_load_ctx *l,
+			   FILE *maybe_f, bool_t unsup,
+			   const char *message, va_list args)
+{
+    int class=unsup ? M_DEBUG : M_ERR;
+    slilog_part(l->u.tryload.log,class,"rsa1priv load: ");
+    vslilog(l->u.tryload.log,class,message,args);
+}
+
+static void verror_cfgfatal(struct rsapriv_load_ctx *l,
+			    FILE *maybe_f, bool_t unsup,
+			    const char *message, va_list args)
+{
+    vcfgfatal_maybefile(maybe_f,l->u.apply.loc,"rsa-private",message,args);
+}
+
 struct rsapriv {
     closure_t cl;
     struct sigprivkey_if ops;
@@ -328,20 +360,14 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
-struct rsapriv_load_ctx {
-    void (*verror)(struct rsapriv_load_ctx *l,
-		   FILE *maybe_f, bool_t unsup,
-		   const char *message, va_list args);
-    bool_t (*postreadcheck)(struct rsapriv_load_ctx *l, FILE *f);
-    union {
-	struct {
-	    struct cloc loc;
-	} apply;
-	struct {
-	    struct log_if *log;
-	} tryload;
-    } u;
-};
+static void load_error(struct rsapriv_load_ctx *l, FILE *maybe_f,
+		       bool_t unsup, const char *fmt, ...)
+{
+    va_list al;
+    va_start(al,fmt);
+    l->verror(l,maybe_f,unsup,fmt,al);
+    va_end(al);
+}
 
 #define LDFATAL(...)      ({ load_error(l,0,0,__VA_ARGS__); goto error_out; })
 #define LDUNSUP(...)      ({ load_error(l,0,1,__VA_ARGS__); goto error_out; })
@@ -370,15 +396,6 @@ static uint16_t keyfile_get_16(struct rsapriv_load_ctx *l, FILE *f)
     r=fgetc(f)<<8;
     r|=fgetc(f);
     return r;
-}
-
-static void load_error(struct rsapriv_load_ctx *l, FILE *maybe_f,
-		       bool_t unsup, const char *fmt, ...)
-{
-    va_list al;
-    va_start(al,fmt);
-    l->verror(l,maybe_f,unsup,fmt,al);
-    va_end(al);
 }
 
 static void rsapriv_dispose(void *sst)
@@ -621,16 +638,6 @@ error_out:
     goto out;
 }
 
-FORMAT(printf,4,0)
-static void verror_tryload(struct rsapriv_load_ctx *l,
-			   FILE *maybe_f, bool_t unsup,
-			   const char *message, va_list args)
-{
-    int class=unsup ? M_DEBUG : M_ERR;
-    slilog_part(l->u.tryload.log,class,"rsa1priv load: ");
-    vslilog(l->u.tryload.log,class,message,args);
-}
-
 static bool_t postreadcheck_tryload(struct rsapriv_load_ctx *l, FILE *f)
 {
     assert(!ferror(f));
@@ -672,13 +679,6 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     if (!st) return False;
     *sigpriv_r=&st->ops;
     return True;
-}
-
-static void verror_cfgfatal(struct rsapriv_load_ctx *l,
-			    FILE *maybe_f, bool_t unsup,
-			    const char *message, va_list args)
-{
-    vcfgfatal_maybefile(maybe_f,l->u.apply.loc,"rsa-private",message,args);
 }
 
 static bool_t postreadcheck_apply(struct rsapriv_load_ctx *l, FILE *f)
