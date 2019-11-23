@@ -134,6 +134,7 @@ L	[ \t]*
 S	[ \t]+
 BASE91S	[]-~!#-&(-[]+
 %x SKIPNL
+%x SYNTAXERR
 
 %option yylineno
 %option noyywrap
@@ -267,7 +268,14 @@ static struct pubkeyset_context c[1];
 
 <INITIAL><<EOF>>	{ return 0; }
 
-<*>. { FAIL("syntax error"); }
+<*>. {
+    yymore();
+    BEGIN(SYNTAXERR);
+}
+<SYNTAXERR>.* {
+    slilog(LI,M_DEBUG,"pubkeys syntax error at `%s'", yytext);
+    FAIL("syntax error");
+}
 <*>\n { FAIL("syntax error - unexpected newline"); }
 <<EOF>> { FAIL("syntax error - unexpected eof"); }
 
