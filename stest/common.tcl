@@ -180,7 +180,7 @@ proc sendpkt {} {
 
 set socktmp $tmp/s
 exec mkdir -p -m700 $socktmp
-regsub {^(?!/)} $socktmp {./} socktmp ;# dgram-socket wants ./ or /
+regsub {^(?!/|\./)} $socktmp {./} socktmp ;# dgram-socket wants ./ or /
 
 proc prefix_preload {lib} { prefix_some_path LD_PRELOAD $lib }
 
