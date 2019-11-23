@@ -49,7 +49,7 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     if (!f) {
 	if (errno == ENOENT) {
 	    slilog(log,M_DEBUG,"private key %s not found\n",
-		   st->path.write_here);
+		   st->path.buffer);
 	} else {
 	    slilog(log,M_ERR,"failed to open private key file %s\n",
 		   st->path.buffer);
