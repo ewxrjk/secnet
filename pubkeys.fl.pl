@@ -109,7 +109,7 @@ while (<DATA>) {
     if (m/^!FINAL \{\s*$/) {
 	die unless $kw;
 	die if @next_kw;
-	$co .= inst("FIN_$kwid")."\\n { BEGIN(0); c->lno++; }\n";
+	$co .= inst("FIN_$kwid")."\\n { BEGIN(0); c->loc.line++; }\n";
 	$co .= inst("$in_s")."{L}/\\n {\n";
 	$co .= "\tBEGIN(FIN_$kwid);\n";
 	$co .= lineno(1,1);
@@ -158,13 +158,12 @@ BASE91S	[]-~!#-&(-[]+
 
 struct pubkeyset_context {
     /* filled in during setup: */
-    const char *path;
+    struct cloc loc; /* line is runtime */
     struct log_if *log;
     struct buffer_if *data_buf;
     struct peer_keyset *building;
     /* runtime: */
     bool_t had_serial;
-    int lno;
     bool_t fallback_skip;
     const struct sigscheme_info *scheme;
     uint8_t grpid[GRPIDSZ];
@@ -186,11 +185,11 @@ static struct pubkeyset_context c[1];
         break;						\
     })
 #define DOSKIP(m) ({					\
-        slilog(LI,M_INFO,"%s:%d: " m, c->path, c->lno);	\
+        slilog(LI,M_INFO,"%s:%d: " m, c->loc.file, c->loc.line);	\
         DOSKIPQ;					\
     })
 #define FAIL(m) do{					\
-	slilog(LI,M_ERR,"%s:%d: " m, c->path, c->lno);	\
+	slilog(LI,M_ERR,"%s:%d: " m, c->loc.file, c->loc.line);	\
 	return -1;					\
     }while(0)
 
@@ -258,11 +257,11 @@ static struct pubkeyset_context c[1];
     BEGIN(SKIPNL);
 }
 {L}\n {
-    c->lno++;
+    c->loc.line++;
 }
 
 <SKIPNL>.*\n {
-    c->lno++;
+    c->loc.line++;
     BEGIN(0);
 }
 
@@ -279,7 +278,7 @@ keyset_load(const char *path, struct buffer_if *data_buf,
 	    struct log_if *log, int logcl_enoent) {
     assert(!c->building);
     c->log=log;
-    c->path=path;
+    c->loc.file=path;
     pkyyin = fopen(path, "r");
     if (!pkyyin) {
 	slilog(LI,
@@ -297,7 +296,7 @@ keyset_load(const char *path, struct buffer_if *data_buf,
     c->building->refcount=1;
     c->fallback_skip=0;
     c->had_serial=0;
-    c->lno=1;
+    c->loc.line=1;
     FILLZERO(c->grpid);
     FILLZERO(c->serial);
     int r=pkyylex();
