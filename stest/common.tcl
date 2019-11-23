@@ -116,6 +116,7 @@ proc spawn-secnet {location site} {
     puts $ch [mkconf $location $site]
     close $ch
     set argl [list $builddir/secnet -dvnc $cf]
+    puts "spawn $argl"
     set pid [fork]
     if {!$pid} {
 	execl [lindex $argl 0] [lrange $argl 1 end]
