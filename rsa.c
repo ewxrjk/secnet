@@ -48,12 +48,12 @@ struct rsacommon {
 #define FREE(b)                ({ free((b)); (b)=0; })
 
 struct load_ctx {
-    void (*verror)(struct load_ctx *l, const struct cloc *loc,
+    void (*verror)(struct load_ctx *l, struct cloc loc,
 		   FILE *maybe_f, bool_t unsup,
 		   const char *message, va_list args);
     bool_t (*postreadcheck)(struct load_ctx *l, FILE *f);
     const char *what;
-    struct cloc *loc;
+    struct cloc loc;
     union {
 	struct {
 	    struct log_if *log;
@@ -67,12 +67,12 @@ static void load_err(struct load_ctx *l,
 {
     va_list al;
     va_start(al,fmt);
-    l->verror(l, maybe_loc ? maybe_loc : l->loc, maybe_f,unsup,fmt,al);
+    l->verror(l, maybe_loc ? *maybe_loc : l->loc, maybe_f,unsup,fmt,al);
     va_end(al);
 }
 
 FORMAT(printf,5,0)
-static void verror_tryload(struct load_ctx *l, const struct cloc *loc,
+static void verror_tryload(struct load_ctx *l, struct cloc loc,
 			   FILE *maybe_f, bool_t unsup,
 			   const char *message, va_list args)
 {
@@ -81,11 +81,11 @@ static void verror_tryload(struct load_ctx *l, const struct cloc *loc,
     vslilog(l->u.tryload.log,class,message,args);
 }
 
-static void verror_cfgfatal(struct load_ctx *l, const struct cloc *loc,
+static void verror_cfgfatal(struct load_ctx *l, struct cloc loc,
 			    FILE *maybe_f, bool_t unsup,
 			    const char *message, va_list args)
 {
-    vcfgfatal_maybefile(maybe_f,*l->loc,l->what,message,args);
+    vcfgfatal_maybefile(maybe_f,l->loc,l->what,message,args);
 }
 
 struct rsapriv {
@@ -687,7 +687,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     l->what="rsa1priv load";
     l->verror=verror_tryload;
     l->postreadcheck=postreadcheck_tryload;
-    l->loc=&loc;
+    l->loc=loc;
     l->u.tryload.log=log;
 
     st=rsa_loadpriv_core(l,f,loc,False);
@@ -705,7 +705,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
 
 static bool_t postreadcheck_apply(struct load_ctx *l, FILE *f)
 {
-    cfgfile_postreadcheck(*l->loc,f);
+    cfgfile_postreadcheck(l->loc,f);
     return True;
 }
 
@@ -721,7 +721,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     l->what="rsa-private";
     l->verror=verror_cfgfatal;
     l->postreadcheck=postreadcheck_apply;
-    l->loc=&loc;
+    l->loc=loc;
 
     /* Argument is filename pointing to SSH1 private key file */
     i=list_elem(args,0);
