@@ -434,6 +434,7 @@ extern const struct sigscheme_info sigschemes[]; /* sentinel has name==0 */
 const struct sigscheme_info *sigscheme_lookup(const char *name);
 
 extern sigscheme_loadpriv rsa1_loadpriv;
+extern sigscheme_loadpub  rsa1_loadpub;
 
 /***** END of signature schemes *****/
 

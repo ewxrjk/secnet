@@ -401,6 +401,46 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     return new_closure(&st->cl);
 }
 
+bool_t rsa1_loadpub(const struct sigscheme_info *algo,
+		    struct buffer_if *pubkeydata,
+		    struct sigpubkey_if **sigpub_r,
+		    struct log_if *log, struct cloc loc)
+{
+    struct rsapub *st=0;
+
+    struct load_ctx l[1];
+    l->verror=verror_tryload;
+    l->postreadcheck=0;
+    l->what="rsa1_loadpub";
+    l->loc=loc;
+    l->u.tryload.log=log;
+
+    char *nul=buf_append(pubkeydata,1);
+    if (!nul) LDPUBFATAL(0,"rsa1 public key data too long for extra nul");
+    *nul=0;
+
+    const char *delim=" \t\n";
+    char *saveptr;
+    /*unused*/ strtok_r(pubkeydata->start,delim,&saveptr);
+
+#define RSAPUB_TRYLOAD_GETBN(ix,en,what)				\
+    struct cloc en##_loc=loc;						\
+    const char *en##s=strtok_r(0,delim,&saveptr);			\
+    if (!en##s) LDPUBFATAL(0,"end of pubkey data looking for " what);
+
+    RSAPUB_BNS(RSAPUB_TRYLOAD_GETBN);
+
+    st=rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_PASSBN) l);
+    if (!st) goto error_out;
+
+    *sigpub_r=&st->ops;
+    return True;
+
+ error_out:
+    rsapub_dispose(st);
+    return False;
+}
+
 #define LDFATAL(...)      ({ load_err(l,0,0,0,__VA_ARGS__); goto error_out; })
 #define LDUNSUP(...)      ({ load_err(l,0,0,1,__VA_ARGS__); goto error_out; })
 #define LDFATAL_FILE(...) ({ load_err(l,0,f,0,__VA_ARGS__); goto error_out; })

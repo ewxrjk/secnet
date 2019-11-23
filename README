@@ -576,8 +576,14 @@ priv-cache: dict argument
 ** rsa
 
 Defines:
+  sigscheme algorithm 00 "rsa1"
   rsa-private (closure => rsaprivkey closure)
   rsa-public (closure => rsapubkey closure)
+
+rsa1 sigscheme algorithm:
+  private key: SSH private key file, version 1, no password
+  public key: SSH public key file, version 1
+    (length, restrictions, email, etc., ignored)
 
 rsa-private: string[,bool]
   arg1: filename of SSH private key file (version 1, no password)

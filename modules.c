@@ -41,5 +41,6 @@ void init_builtin_modules(dict_t *dict)
 }
 
 const struct sigscheme_info sigschemes[]={
+    { "rsa1", 0x00, rsa1_loadpub, rsa1_loadpriv },
     { 0 }
 };
