@@ -412,7 +412,7 @@ typedef bool_t sigscheme_loadpub(const struct sigscheme_info *algo,
 typedef bool_t sigscheme_loadpriv(const struct sigscheme_info *algo,
 				  struct buffer_if *privkeydata,
 				  struct sigprivkey_if **sigpriv_r,
-				  struct log_if *log);
+				  struct log_if *log, struct cloc loc);
   /* privkeydata may contain data for any algorithm, not necessarily
    * this one!  If it is not for this algorithm, return False and do
    * not log anything (other than at M_DEBUG).  If it *is* for this

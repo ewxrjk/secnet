@@ -646,7 +646,7 @@ static bool_t postreadcheck_tryload(struct load_ctx *l, FILE *f)
 bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
 		     struct buffer_if *privkeydata,
 		     struct sigprivkey_if **sigpriv_r,
-		     struct log_if *log)
+		     struct log_if *log, struct cloc loc)
 {
     FILE *f=0;
     struct rsapriv *st=0;
@@ -656,10 +656,6 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
 	slilog(log,M_ERR,"failed to fmemopen private key file\n");
 	goto error_out;
     }
-
-    struct cloc loc;
-    loc.file="dynamically loaded";
-    loc.line=0;
 
     struct load_ctx l[1];
     l->verror=verror_tryload;

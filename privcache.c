@@ -78,7 +78,8 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 	 scheme++) {
 	st->databuf.start=st->databuf.base;
 	st->databuf.size=got;
-	ok=scheme->loadpriv(scheme, &st->databuf, &sigpriv, log);
+	struct cloc loc = { .file=st->path.buffer, .line=0 };
+	ok=scheme->loadpriv(scheme, &st->databuf, &sigpriv, log, loc);
 	if (ok) {
 	    if (sigpriv->sethash) {
 		if (!st->defhash) {
