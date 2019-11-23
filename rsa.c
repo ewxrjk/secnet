@@ -356,10 +356,10 @@ static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
 #define RSAPUB_LOADCORE_GETBN(ix,en,what)				\
     if (mpz_init_set_str(&st->en,en##s,10)!=0) {			\
 	LDPUBFATAL(&en##_loc, what " \"%s\" is not a "			\
-		 "decimal number string\n",en##s);			\
+		 "decimal number string",en##s);			\
     }									\
     if (mpz_sizeinbase(&st->en, 256) > RSA_MAX_MODBYTES) {		\
-	LDPUBFATAL(&en##_loc, "implausibly large " what "\n");		\
+	LDPUBFATAL(&en##_loc, "implausibly large " what);		\
     }
 
     RSAPUB_BNS(RSAPUB_LOADCORE_GETBN)
