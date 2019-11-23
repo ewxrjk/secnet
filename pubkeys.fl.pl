@@ -283,7 +283,8 @@ keyset_load(const char *path, struct buffer_if *data_buf,
     if (!pkyyin) {
 	slilog(LI,
 	       errno==ENOENT ? logcl_enoent : M_ERR,
-	       "could not open keyset file %s: %s",
+	       "%scould not open keyset file %s: %s",
+	       logcl_enoent==M_DEBUG && errno==ENOENT ? "expectedly " : "",
 	       path,strerror(errno));
 	goto err;
     }
