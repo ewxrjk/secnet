@@ -48,10 +48,10 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     f = fopen(st->path.buffer,"rb");
     if (!f) {
 	if (errno == ENOENT) {
-	    slilog(log,M_DEBUG,"private key %s not found\n",
+	    slilog(log,M_DEBUG,"private key %s not found",
 		   st->path.buffer);
 	} else {
-	    slilog(log,M_ERR,"failed to open private key file %s\n",
+	    slilog(log,M_ERR,"failed to open private key file %s",
 		   st->path.buffer);
 	}
 	goto out;
@@ -61,12 +61,12 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     buffer_init(&st->databuf,0);
     ssize_t got=fread(st->databuf.base,1,st->databuf.alloclen,f);
     if (ferror(f)) {
-	slilog(log,M_ERR,"failed to read private-key file %s\n",
+	slilog(log,M_ERR,"failed to read private-key file %s",
 	       st->path.buffer);
 	goto out;
     }
     if (!feof(f)) {
-	slilog(log,M_ERR,"private key file %s longer than max %d\n",
+	slilog(log,M_ERR,"private key file %s longer than max %d",
 	       st->path.buffer, (int)st->databuf.alloclen);
 	goto out;
     }
@@ -95,7 +95,7 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 	}
     }
 
-    slilog(log,M_ERR,"private key file %s not loaded (not recognised?)\n",
+    slilog(log,M_ERR,"private key file %s not loaded (not recognised?)",
 	   st->path.buffer);
 
   out:
