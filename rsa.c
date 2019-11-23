@@ -122,7 +122,7 @@ static void emsa_pkcs1(MP_INT *n, MP_INT *m,
     msize=mpz_sizeinbase(n, 16);
 
     if (datalen*2+6>=msize) {
-	fatal("rsa_sign: message too big");
+	fatal("rsa: message too big");
     }
 
     strcpy(buff,"0001");
