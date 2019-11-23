@@ -110,13 +110,22 @@ proc spawn-secnet {location site} {
     global tmp
     global builddir
     global netlinkfh
+    global env
     upvar #0 pids($site) pid
     set cf $tmp/$site.conf
     set ch [open $cf w]
     puts $ch [mkconf $location $site]
     close $ch
     set argl [list $builddir/secnet -dvnc $cf]
-    puts "spawn $argl"
+    puts -nonewline "spawn"
+    foreach k [array names env] {
+	switch -glob $k {
+	    SECNET_TEST_BUILDDIR { }
+	    *SECNET* -
+	    *PRELOAD* { puts -nonewline " $k=$env($k)" }
+	}
+    }
+    puts " $argl"
     set pid [fork]
     if {!$pid} {
 	execl [lindex $argl 0] [lrange $argl 1 end]
