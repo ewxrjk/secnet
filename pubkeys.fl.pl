@@ -238,13 +238,12 @@ static struct pubkeyset_context c[1];
 	}
 	pubkey->sethash(pubkey->st,c->defhash);
     }
-    memcpy(c->building->keys[c->building->nkeys].id.b,
-	   c->grpid,
-           GRPIDSZ);
+    struct peer_pubkey *fill=&c->building->keys[c->building->nkeys];
+    memcpy(fill->id.b,c->grpid,GRPIDSZ);
     assert(ALGIDSZ==1); /* otherwise need htons or htonl or something */
-    c->building->keys[c->building->nkeys].id.b[GRPIDSZ]=
-      c->scheme->algid;
-    c->building->keys[c->building->nkeys++].pubkey=pubkey;
+    fill->id.b[GRPIDSZ]=c->scheme->algid;
+    fill->pubkey=pubkey;
+    c->building->nkeys++;
 !}
 
 !KEYWORD serial
