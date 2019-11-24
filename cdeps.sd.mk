@@ -17,7 +17,9 @@
 
 CDEPS_CFLAGS ?= -MD -MF $(*D)/.$(*F).d
 
-&DEPFILES += $(foreach b,$(patsubst %.o,%,$(&OBJECTS)), \
+&CDEPS_OBJECTS += $(&OBJECTS)
+
+&DEPFILES += $(foreach b,$(patsubst %.o,%,$(&CDEPS_OBJECTS)), \
 		$(dir $b).$(notdir $b).d)
 -include $(&DEPFILES)
 
