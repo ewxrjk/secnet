@@ -15,7 +15,7 @@
 &#	$(RM) -r somethingn
 &# ($(RM) conventionally contains `-f'.)
 
-&CLEAN += & *~ *.tmp
+&CLEAN += & *~ .*~ *.tmp
 &CLEAN += $(&OBJECTS)
 &CLEAN += $(&TARGETS)
 
