@@ -23,9 +23,8 @@ CHECK_SILENT ?= @
 	$(CHECK_SILENT) printf "&/$* "
 	$(CHECK_SILENT) touch $@
 
+&CLEAN += & *.so
+
 &clean::
-	$(RM) -f & *.o *.so
 	$(RM) -rf & tmp
 	$(RM) -rf & d-*
-
-&:include subdirmk/clean.sd.mk

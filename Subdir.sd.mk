@@ -66,7 +66,6 @@ TEST_OBJECTS:=
 endif
 
 &OBJECTS += $(OBJECTS) $(TEST_OBJECTS)
-&:include subdirmk/cdeps.sd.mk
 
 STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 			$(foreach p, /usr /usr/local, \
@@ -192,7 +191,6 @@ install-force:
 clean::
 	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
 	$(RM) -f *.pyc *~ eax-*-test.confirm eax-*-test
-	$(RM) $(&CLEAN)
 	$(RM) -rf __pycache__
 	$(RM) -f msgcode-test.confirm msgcode-test
 

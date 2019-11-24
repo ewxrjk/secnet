@@ -8,7 +8,4 @@ include common.make
 &sites.conf: $(src)/make-secnet-sites &^/sites Subdir.mk
 	$(src)/make-secnet-sites &^/sites &sites.conf
 
-&clean::
-	rm -f *~ ./#*# *.new
-
-&:include subdirmk/clean.sd.mk
+&CLEAN += *.new
