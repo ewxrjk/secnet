@@ -147,6 +147,8 @@ eax-%-test.confirm: eax-%-test eax-%-test.vectors
 	./$< <$(srcdir)/eax-$*-test.vectors >$@.new
 	mv -f $@.new $@
 
+&CDEPS_OBJECTS += msgcode-test.o
+
 msgcode-test: msgcode-test.o
 	$(CC) $(LDFLAGS) $(ALL_CFLAGS) -o $@ $^
 
@@ -188,8 +190,11 @@ install-force:
 	rm -f $(STALE_PYTHON_FILES)
 	$(MAKE) -f main.mk install
 
+&CLEAN += .version.d
+&CLEAN += $(TARGETS) $(&TARGETS_check) $(&TARGETS_fullcheck)
+
 clean::
-	$(RM) -f *.o *.yy.[ch] *.tab.[ch] $(TARGETS) core version.c
+	$(RM) -f *.o *.yy.[ch] *.tab.[ch] core version.c
 	$(RM) -f *.pyc *~ eax-*-test.confirm eax-*-test
 	$(RM) -rf __pycache__
 	$(RM) -f msgcode-test.confirm msgcode-test
