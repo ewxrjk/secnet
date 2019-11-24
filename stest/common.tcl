@@ -161,8 +161,7 @@ proc netlink-readable {location site} {
     switch -exact $site {
 	inside {
 	    puts OK
-	    set ok 1; # what a bodge
-	    return
+	    finish 0
 	}
 	outside {
 	    error "inside rx'd!"
