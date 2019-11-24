@@ -112,7 +112,9 @@ proc spawn-secnet {location site} {
     global netlinkfh
     global env
     global pidmap
+    global readbuf
     upvar #0 pids($site) pid
+    set readbuf($site) {}
     set cf $tmp/$site.conf
     set ch [open $cf w]
     puts $ch [mkconf $location $site]
@@ -156,8 +158,26 @@ proc spawn-secnet {location site} {
 
 proc netlink-readable {location site} {
     global ok
+    upvar #0 readbuf($site) buf
     upvar #0 netlinkfh($site.r) fh
-    read $fh; # empty the buffer
+    while 1 {
+	set x [read $fh]
+	set h [hbytes raw2h $x]
+	if {![hbytes length $h]} return
+	append buf $h
+	#puts "READABLE $site buf=$buf"
+	while {[regexp {^((?:..)*?)c0(.*)$} $buf dummy now buf]} {
+	    #puts "READABLE $site now=$now (buf=$buf)"
+	    regsub -all {^((?:..)*?)dbdc} $now {\1c0} now
+	    regsub -all {^((?:..)*?)dbdd} $now {\1db} now
+	    puts "netlink-got-packet $location $site $now"
+	    netlink-got-packet $location $site $now
+	}
+    }
+}
+
+proc netlink-got-packet {location site data} {
+    if {![hbytes length $data]} return 
     switch -exact $site {
 	inside {
 	    puts OK
