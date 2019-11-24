@@ -649,6 +649,8 @@ void log_from_fd(int fd, cstring_t prefix, struct log_if *log)
 
 void log_module(dict_t *dict)
 {
+    setlinebuf(stderr);
+
     add_closure(dict,"logfile",logfile_apply);
     add_closure(dict,"syslog",syslog_apply);
 }
