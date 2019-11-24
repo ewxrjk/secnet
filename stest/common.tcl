@@ -180,8 +180,15 @@ proc netlink-got-packet {location site data} {
     if {![hbytes length $data]} return 
     switch -exact $site {
 	inside {
-	    puts OK
-	    finish 0
+	    switch -glob $data {
+		45000054ed9d4000fe0166d9ac12e802ac12e80900* {
+		    puts "OK $data"
+		    finish 0
+		}
+		* {
+		    error "unexpected $site $data"
+		}
+	    }
 	}
 	outside {
 	    error "inside rx'd!"
