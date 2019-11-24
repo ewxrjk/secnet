@@ -180,7 +180,7 @@ $message
 ----------------------------------------
     "
     }
-    exit 1
+    finish 1
 }
 
 proc sendpkt {} {
@@ -205,6 +205,11 @@ proc prefix_preload {lib} { prefix_some_path LD_PRELOAD $lib }
 
 set env(UDP_PRELOAD_DIR) $socktmp
 prefix_preload $builddir/stest/udp-preload.so
+
+proc finish {estatus} {
+    puts stderr "FINISHING $estatus"
+    exit $estatus
+}
 
 proc udp-proxy {} {
     global socktmp udpsock
