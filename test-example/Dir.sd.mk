@@ -17,5 +17,6 @@ define privkey
 endef
 
 $(eval $(call privkey,outside,0000000000,outside.key))
+$(eval $(call privkey,inside,0000000000,inside.key))
 
 &CLEAN += *.new
