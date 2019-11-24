@@ -711,6 +711,8 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what,
 	return False;
 
     privkey_found:
+	slog(st,LOG_SIGKEYS,"using private key " SIGKEYID_PR_FMT,
+	     SIGKEYID_PR_VAL(prompt->pubkeys_accepted[ki]));
 	buf_append_uint8(&st->buffer,ki);
     }
 
@@ -1088,9 +1090,13 @@ static bool_t process_msg3_msg4(struct site *st, struct msg *m)
     if (!pubkey->check(pubkey->st,
 		       m->hashstart,m->hashlen,
 		       &m->sig)) {
-	slog(st,LOG_SEC,"msg3/msg4 signature failed check!");
+	slog(st,LOG_SEC,"msg3/msg4 signature failed check!"
+	     " (key " SIGKEYID_PR_FMT ")",
+	     SIGKEYID_PR_VAL(&st->peerkeys_kex->keys[ki].id));
 	return False;
     }
+    slog(st,LOG_SIGKEYS,"verified peer signature with key " SIGKEYID_PR_FMT,
+	 SIGKEYID_PR_VAL(&st->peerkeys_kex->keys[ki].id));
 
     st->remote_adv_mtu=m->remote_mtu;
 
