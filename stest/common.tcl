@@ -217,6 +217,21 @@ proc finish {estatus} {
     exit $estatus
 }
 
+proc reap {} {
+    global pidmap
+    #puts stderr REAPING
+    foreach pid [array names pidmap] {
+	set got [wait -nohang $pid]
+	if {![llength $got]} continue
+	set info $pidmap($pid)
+	unset pidmap($pid)
+	puts stderr "reaped $info: $got"
+	finish 1
+    }
+}
+
+signal -restart trap SIGCHLD { after idle reap }
+
 proc udp-proxy {} {
     global socktmp udpsock
     set u $socktmp/udp
