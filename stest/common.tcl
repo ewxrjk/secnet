@@ -210,6 +210,11 @@ prefix_preload $builddir/stest/udp-preload.so
 
 proc finish {estatus} {
     puts stderr "FINISHING $estatus"
+    signal default SIGCHLD
+    global pidmap
+    foreach pid [array names pidmap] {
+	kill KILL $pid
+    }
     exit $estatus
 }
 
