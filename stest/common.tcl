@@ -111,6 +111,7 @@ proc spawn-secnet {location site} {
     global builddir
     global netlinkfh
     global env
+    global pidmap
     upvar #0 pids($site) pid
     set cf $tmp/$site.conf
     set ch [open $cf w]
@@ -145,6 +146,7 @@ proc spawn-secnet {location site} {
     }
     if {[llength $argl]} { 
 	set pid [fork]
+	set pidmap($pid) "secnet $location/$site"
 	if {!$pid} {
 	    execl [lindex $argl 0] [lrange $argl 1 end]
 	}
