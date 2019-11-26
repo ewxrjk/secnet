@@ -26,4 +26,10 @@
 
 #include "config.h"
 
+#include <stdio.h>
+
+#ifndef HAVE_FMEMOPEN
+extern FILE *fmemopen(void *buf, size_t size, const char *mode);
+#endif
+
 #endif /* osdep_h */

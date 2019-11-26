@@ -11,6 +11,12 @@
 /* Define to 1 to use IPv6 support in system and adns */
 #undef CONFIG_IPV6
 
+/* Define to 1 if you have the `fmemopen' function. */
+#undef HAVE_FMEMOPEN
+
+/* Define to 1 if you have the `funopen' function. */
+#undef HAVE_FUNOPEN
+
 /* Define to 1 if you have the `adns' library (-ladns). */
 #undef HAVE_LIBADNS
 

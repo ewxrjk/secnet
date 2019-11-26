@@ -100,6 +100,8 @@ SECNET_C_GETFUNC(inet_aton,resolv)
 AC_CHECK_LIB(adns,adns_init)
 REQUIRE_HEADER([adns.h])
 
+AC_CHECK_FUNCS([fmemopen funopen])
+
 AC_MSG_NOTICE([Checking requirements for IPv6 support...])
 enable_ipv6=true
 m4_define(NO_IPV6,[enable_ipv6=false])

@@ -25,3 +25,41 @@
 #include "osdep.h"
 #include "secnet.h"
 #include "util.h"
+
+#ifndef HAVE_FMEMOPEN
+# ifdef HAVE_FUNOPEN
+
+struct fmemopen_state {
+    const char *bufp;
+    size_t remain;
+};
+
+static int fmemopen_readfn(void *sst, char *out, int sz)
+{
+    struct fmemopen_state *st=sst;
+    assert(sz>=0);
+    int now=MIN((size_t)sz,st->remain);
+    memcpy(out,st->bufp,now);
+    st->remain-=now;
+    return now;
+}
+static int fmemopen_close(void *sst) { free(sst); return 0; }
+
+FILE *fmemopen(void *buf, size_t size, const char *mode)
+{
+    /* this is just a fake plastic imitation */
+    assert(!strcmp(mode,"r"));
+    struct fmemopen_state *st;
+    NEW(st);
+    st->bufp=buf;
+    st->remain=size;
+    FILE *f=funopen(st,fmemopen_readfn,0,0,fmemopen_close);
+    if (!f) free(st);
+    return f;
+}
+
+# else /* HAVE_FUNOPEN */
+#  error no fmemopen, no funopen, cannot proceed
+# endif
+
+#endif /* HAVE_FMEMOPEN */
