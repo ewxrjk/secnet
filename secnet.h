@@ -45,6 +45,8 @@
 
 #include <bsd/sys/queue.h>
 
+#include "osdep.h"
+
 #define MAX_PEER_ADDRS 5
 /* send at most this many copies; honour at most that many addresses */
 
