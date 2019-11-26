@@ -54,7 +54,7 @@ OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
 	netlink.o rsa.o dh.o serpent.o serpentbe.o \
 	md5.o sha512.o tun.o slip.o sha1.o ipaddr.o log.o \
 	process.o @LIBOBJS@ \
-	hackypar.o
+	hackypar.o base91s/base91.o
 # version.o is handled specially below and in the link rule for secnet.
 
 PYMODULES := ipaddrset.py argparseactionnoyes.py
