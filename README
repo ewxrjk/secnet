@@ -393,14 +393,14 @@ site: dict argument
   resolver (resolver closure)
   random (randomsrc closure)
   key-cache (privcache closure)
-  local-key (rsaprivkey closure): Deprecated; use key-cache instead.
+  local-key (sigprivkey closure): Deprecated; use key-cache instead.
   address (string list): optional, DNS name(s) used to find our peer;
     address literals are supported too if enclosed in `[' `]'.
   port (integer): mandatory if 'address' is specified: the port used
     to contact our peer
   peer-keys (string): path (prefix) for peer public key set file(s);
     see README.make-secnet-sites re `pub' etc.
-  key (rsapubkey closure): our peer's public key (obsolete)
+  key (sigpubkey closure): our peer's public key (obsolete)
   transform (transform closure): how to mangle packets sent between sites
   dh (dh closure)
   hash (hash closure): used for keys whose algorithm (or public
@@ -581,8 +581,8 @@ priv-cache: dict argument
 
 Defines:
   sigscheme algorithm 00 "rsa1"
-  rsa-private (closure => rsaprivkey closure)
-  rsa-public (closure => rsapubkey closure)
+  rsa-private (closure => sigprivkey closure)
+  rsa-public (closure => sigpubkey closure)
 
 rsa1 sigscheme algorithm:
   private key: SSH private key file, version 1, no password

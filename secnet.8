@@ -508,7 +508,7 @@ As above.
 Note that this uses a big-endian variant of the Serpent block cipher
 (which is not compatible with most other Serpent implementations).
 .SS rsa-private
-\fBrsa-private(\fIPATH\fB\fR[, \fICHECK\fR]\fB)\fR => \fIrsaprivkey closure\fR
+\fBrsa-private(\fIPATH\fB\fR[, \fICHECK\fR]\fB)\fR => \fIsigprivkey closure\fR
 .TP
 .I PATH
 String.
@@ -521,7 +521,7 @@ Boolean.
 If \fBtrue\fR (the default) then check that the key is valid.
 
 .SS rsa-public
-\fBrsa-public(\fIKEY\fB, \fIMODULUS\fB)\fR => \fIrsapubkey closure\fR
+\fBrsa-public(\fIKEY\fB, \fIMODULUS\fB)\fR => \fIsigpubkey closure\fR
 .TP
 .I KEY
 String.
@@ -560,7 +560,7 @@ A \fIresolver closure\fR.
 A \fIrandomsource closure\fR.
 .TP
 .B local-key
-An \fIrsaprivkey closure\fR.
+An \fIsigprivkey closure\fR.
 The key used to prove our identity to the peer.
 .TP
 .B address
@@ -574,7 +574,7 @@ Number.
 The port to contact the peer.
 .TP
 .B key
-An \fIrsapubkey closure\fR.
+An \fIsigpubkey closure\fR.
 The key used to verify the peer's identity.
 .TP
 .B transform
