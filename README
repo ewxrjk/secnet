@@ -403,7 +403,8 @@ site: dict argument
   key (rsapubkey closure): our peer's public key (obsolete)
   transform (transform closure): how to mangle packets sent between sites
   dh (dh closure)
-  hash (hash closure)
+  hash (hash closure): used for keys whose algorithm (or public
+    or private key file) does not imply the hash function
   key-lifetime (integer): max lifetime of a session key, in ms
     [one hour; mobile: 2 days]
   setup-retries (integer): max number of times to transmit a key negotiation
