@@ -140,6 +140,74 @@ before going to background.
 'normal' and 'failed' runs output to stdout/stderr before
 backgrounding, then thereafter output only to log destinations.
 
+** Site long-term keys
+
+We use authenticated DH.  Sites identify themselves to each other
+using long-term signing keys.
+
+These signing keys may be for a variety of algorithms.  (An algorithm
+specifies completely how to do a signature and verification.)
+
+Each site may have several keys.  This helps support key rollover and
+algorithm agility.  Several keys of different algorithms can form a
+key group.  Usually a key group consists of keys generated at the same
+time.  A key is identified by a 4-byte group id (invented by its
+publisher and opaque) plus a 1-byte algorithm id (defined by the
+protocol spec for each algorithm).
+
+Keys are published in key sets.  A key set is a collection of key
+groups (including older keys as well as newer ones) published at a
+particular time.  Key sets have their own 4-byte ids; these are
+invented by the publisher but are ordered using sequence number
+arithmetic.  This allows reliers to favour new sets over old ones.
+
+Within each key set, some groups may be marked as `fallback'.  This
+means a group that should be tolerated by a relier only if the relier
+doesn't support any non-fallback keys.
+
+Keys within groups, and groups within sets, are ordered (by the
+publisher of the set), from most to least preferred.
+
+When deciding which public keys to accept, a relier should:
+  Process each group within the key set.
+    Discard unknown algorithms.
+    Choose a preferred algorithm:
+      Earliest in the group
+      (or local config could have algorithm prefererence).
+  Discard empty groups.
+  Discard unneeded fallback groups:
+    If any (non-empty) non-fallback groups found, discard all
+    fallback groups.  Otherwise there are only fallback groups;
+    discard all but first group in the set.
+  Discard any keys exceeding limit on number of keys honoured:
+    Limit is at least 4
+    Discard keys later in the set
+  In wire protocol, offer the resulting subset of keyids to
+  the peer and a allow the signer to select which key to use
+  from that subset.
+
+In configuration and key management, long-term private and public keys
+are octet strings.  Private keys are generally stored in disk files,
+one key per file.  The octet string for a private key must identify
+the algorithm (although actually this is wrong and are going to change
+it later)..  The octet string for a public key need not identify the
+algorithm; when it's loaded the algorithm will be known from context.
+
+The group id 00000000 is special.  It should contain only one key,
+algorithm 00.  Key 0000000000 refers to the rsa1 key promulgated
+before the key rollover/advertisement protocols, or the key which
+should be used by sites running old software.
+
+The key set id 00000000 is special and is considered older than all
+othere key sets (ie this is an exception to the sequence number
+arithmetic).  It is the implied key set id of the rsa1 key
+promulgated before the key rollover/advertisement protocols.
+
+The algorithm 00 is special and refers to the old rsa1 signature
+protocol but unusually does not identify the hash function.  The hash
+function is conventional and must be specified out of band.  In known
+existing installations it is SHA-1.
+
 ** Protocols
 
 *** Protocol environment:
