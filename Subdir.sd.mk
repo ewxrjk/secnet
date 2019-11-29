@@ -112,7 +112,7 @@ secnet:	$(OBJECTS)
 ifneq (,$(wildcard .git/HEAD))
 # If we have (eg) committed, relink and thus regenerate the version
 # with the new info from git describe.
-secnet: Makefile .git/HEAD $(shell sed -n 's#^ref: #.git/#p' .git/HEAD)
+secnet: Makefile .git/HEAD $(wildcard $(shell sed -n 's#^ref: #.git/#p' .git/HEAD))
 secnet: $(wildcard .git/packed-refs)
 endif
 
