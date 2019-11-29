@@ -5,4 +5,5 @@
   (c-basic-offset . 4))
  (python-mode
   (indent-tabs-mode . t)
+  (python-indent-offset . 8)
   (python-indent . 8)))
