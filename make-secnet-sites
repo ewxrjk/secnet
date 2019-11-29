@@ -396,6 +396,15 @@ class num (basetype):
 	def __str__(self):
 		return '%d'%(self.n)
 
+class serial (basetype):
+	def __init__(self,w):
+		self.i=w[1].hexid(4,'serial')
+	def __str__(self):
+		return self.i
+	def forsites(self,version,copy,fs):
+		if version < 2: return []
+		return copy
+
 class address (basetype):
 	"A DNS name and UDP port number"
 	def __init__(self,w):
