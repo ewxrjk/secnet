@@ -85,6 +85,10 @@ if version_info.major == 2:  # for python2
 
 max={'rsa_bits':8200,'name':33,'dh_bits':8200}
 
+def debugrepr(*args):
+	if debug_level > 0:
+		print(repr(args), file=sys.stderr)
+
 class Tainted:
 	def __init__(self,s,tline=None,tfile=None):
 		self._s=s
@@ -229,6 +233,7 @@ def parse_args():
 	global of
 	global prefix
 	global key_prefix
+	global debug_level
 
 	ap = argparse.ArgumentParser(description='process secnet sites files')
 	ap.add_argument('--userv', '-u', action='store_true',
@@ -238,9 +243,11 @@ def parse_args():
 		 help='prefix conf file key names derived from sites data')
 	ap.add_argument('--prefix', '-P', nargs=1,
 			help='set prefix')
+	ap.add_argument('--debug', '-D', action='count', default=0)
 	ap.add_argument('arg',nargs=argparse.REMAINDER)
 	av = ap.parse_args()
-	#print(repr(av), file=sys.stderr)
+	debug_level = av.debug
+	debugrepr('av',av)
 	service = 1 if av.userv else 0
 	prefix = '' if av.prefix is None else av.prefix[0]
 	key_prefix = av.conf_key_prefix

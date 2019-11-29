@@ -34,6 +34,13 @@ USAGE
 	produce Secnet configuration.
 
 
+OPTIONS
+
+	--debug | -D
+
+		Increase amount of debugging output.
+
+
 INPUT SYNTAX
 
 	The input files have a simple line-based syntax.  Blank lines,
