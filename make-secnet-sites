@@ -304,6 +304,8 @@ class basetype:
 	def add(self,obj,w):
 		complain("%s %s already has property %s defined"%
 			(obj.type,obj.name,w[0].raw()))
+	def forsites(self,version,copy,fs):
+		return copy
 
 class conflist:
 	"A list of some kind of configuration type."
@@ -314,6 +316,9 @@ class conflist:
 		self.list.append(self.subtype(w))
 	def __str__(self):
 		return ', '.join(map(str, self.list))
+	def forsites(self,version,copy,fs):
+		most_recent=self.list[len(self.list)-1]
+		return most_recent.forsites(version,copy,fs)
 def listof(subtype):
 	return lambda w: conflist(subtype, w)
 
@@ -602,6 +607,7 @@ def set_property(obj,w):
 		obj.properties[propname].add(obj,w)
 	else:
 		obj.properties[propname]=kw[0](w)
+	return obj.properties[propname]
 
 class FilterState:
 	def __init__(self):
@@ -679,8 +685,11 @@ def pline(il,filterstate,allow_include=False):
 		complain("Not allowed to set VPN properties here")
 		return []
 	else:
-		set_property(current,w)
-		return copyout()
+		prop=set_property(current,w)
+		out=[copyout_core()]
+		out=prop.forsites(output_version,out,filterstate)
+		if len(out)==0: return [indent + '#', copyout_core(), '\n']
+		return [indent + ' '.join(out) + '\n']
 
 	complain("unknown keyword '%s'"%(keyword.raw()))
 
