@@ -605,9 +605,9 @@ def pline(il,filterstate,allow_include=False):
 	w=list([Tainted(x) for x in w])
 	keyword=w[0]
 	current=obstack[len(obstack)-1]
-	copyout=lambda: ['    '*len(obstack) +
-			' '.join([ww.output() for ww in w]) +
-	                '\n']
+	copyout_core=lambda: ' '.join([ww.output() for ww in w])
+	indent='    '*len(obstack)
+	copyout=lambda: [indent + copyout_core() + '\n']
 	if keyword=='end-definitions':
 		keyword.raw_mark_ok()
 		allow_defs=sitelevel.depth
