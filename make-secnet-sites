@@ -120,7 +120,9 @@ class Tainted:
 		if maxlen is None: maxlen=max[what]
 		self._max_ok(what,maxlen)
 		if self._ok is False: return False
-		if bad.search(self._s): return self._bad(what,'bad syntax')
+		if bad.search(self._s):
+			#print(repr(self), file=sys.stderr)
+			return self._bad(what,'bad syntax')
 		return True
 
 	def _rtnval(self, is_ok, ifgood, ifbad=''):
