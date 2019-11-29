@@ -70,6 +70,7 @@ import ipaddress
 sys.path.insert(1,"/usr/local/share/secnet")
 sys.path.insert(1,"/usr/share/secnet")
 import ipaddrset
+import base91
 
 from argparseactionnoyes import ActionNoYes
 
@@ -88,6 +89,12 @@ max={'rsa_bits':8200,'name':33,'dh_bits':8200}
 def debugrepr(*args):
 	if debug_level > 0:
 		print(repr(args), file=sys.stderr)
+
+def base91s_encode(bindata):
+	return base91.encode(bindata).replace('"',"-")
+
+def base91s_decode(string):
+	return base91.decode(string.replace("-",'"'))
 
 class Tainted:
 	def __init__(self,s,tline=None,tfile=None):
