@@ -589,8 +589,15 @@ def set_property(obj,w):
 	else:
 		obj.properties[propname]=kw[0](w)
 
+class FilterState:
+	def __init__(self):
+		self.reset()
+	def reset(self):
+		# called when we enter a new node,
+		# in particular, at the start of each site
+		pass
 
-def pline(il,allow_include=False):
+def pline(il,filterstate,allow_include=False):
 	"Process a configuration file line"
 	global allow_defs, obstack, root
 	w=il.rstrip('\n').split()
@@ -647,6 +654,7 @@ def pline(il,allow_include=False):
 				sys.exit(1)
 			current.children[tname]=nl
 			current=nl
+		filterstate.reset()
 		obstack.append(current)
 		return copyout()
 	if keyword.raw() not in current.allow_properties:
@@ -674,10 +682,11 @@ def pfile(name,lines,allow_include=False):
 	file=name
 	line=0
 	outlines=[]
+	filterstate = FilterState()
 	for i in lines:
 		line=line+1
 		if (i[0]=='#'): continue
-		outlines += pline(i,allow_include=allow_include)
+		outlines += pline(i,filterstate,allow_include=allow_include)
 	return outlines
 
 def outputsites(w):
