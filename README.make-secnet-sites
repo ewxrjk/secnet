@@ -36,6 +36,16 @@ USAGE
 
 OPTIONS
 
+	--output-version NUMBER
+
+		Write backward-compatible sites file output,
+		targeting a particular sites format.  Values of
+		NUMBER that are understood are:
+		    1	The original format, pre signing key
+			negotiation.
+		If NUMBER is higher than make-secnet-sites supports,
+		it writes out what it can.
+
 	--debug | -D
 
 		Increase amount of debugging output.
