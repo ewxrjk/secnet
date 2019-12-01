@@ -479,13 +479,30 @@ class rsakey_newfmt(rsakey):
 			complain('rsa1 key in new format has bad base91')
 		#print(repr(w_inner), file=sys.stderr)
 		rsakey.__init__(self,w_inner)
+
+class pubkey_group(basetype):
+	"Public key group introducer"
+	# appears in the site's list of keys mixed in with the keys
+	def __init__(self,w,fallback):
+		self.i=w[1].hexid(4,'pkg-id')
+		self.fallback=fallback
+	def forsites(self,version,xcopy,fs):
+		fs.pkg=self.i
+		if version < 2: return []
+		return ['pkgf' if self.fallback else 'pkg', self.i]
+	
 def somepubkey(w):
+	#print(repr(w), file=sys.stderr)
 	if w[0]=='pubkey':
 		return rsakey(w)
 	elif w[0]=='pub' and w[1]=='rsa1':
 		return rsakey_newfmt(w)
 	elif w[0]=='pub':
 		return pubkey(w)
+	elif w[0]=='pkg':
+		return pubkey_group(w,False)
+	elif w[0]=='pkgf':
+		return pubkey_group(w,True)
 	else:
 		assert(False)
 
@@ -502,6 +519,8 @@ keywords={
  'restrict-nets':(networks,"Allowable networks"),
  'networks':(networks,"Claimed networks"),
  'serial':(serial,"public key set serial"),
+ 'pkg':(listof(somepubkey),"start of public key group",'pub'),
+ 'pkgf':(listof(somepubkey),"start of fallback public key group",'pub'),
  'pub':(listof(somepubkey),"new style public site key"),
  'pubkey':(listof(somepubkey),"RSA public site key",'pub'),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
@@ -624,6 +643,8 @@ class sitelevel(level):
 	 'networks':None,
 	 'peer':None,
          'serial':None,
+	 'pkg':None,
+	 'pkgf':None,
 	 'pub':None,
 	 'pubkey':None,
 	 'mobile':sp,
@@ -734,7 +755,7 @@ class FilterState:
 	def reset(self):
 		# called when we enter a new node,
 		# in particular, at the start of each site
-		pass
+		self.pkg = '00000000'
 
 def pline(il,filterstate,allow_include=False):
 	"Process a configuration file line"

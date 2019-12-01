@@ -245,7 +245,6 @@ INPUT SYNTAX
 		pkgf indicates a fallback group.
 		May be repeated (with different id values).
 		If not specified, 00000000.
-		Not yet suported in make-secnet-sites.
 
 
 OUTPUT STRUCTURE
