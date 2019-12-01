@@ -76,7 +76,7 @@ from argparseactionnoyes import ActionNoYes
 
 VERSION="0.1.18"
 
-max_version = 1
+max_version = 2
 
 from sys import version_info
 if version_info.major == 2:  # for python2
@@ -420,6 +420,9 @@ class pubkey (basetype):
 		self.d=w[2].base91();
 	def __str__(self):
 		return 'make-public("%s","%s")'%(self.a,self.d)
+	def forsites(self,version,copy,fs):
+		if version < 2: return []
+		return copy
 
 class rsakey (pubkey):
 	"An RSA public key"
