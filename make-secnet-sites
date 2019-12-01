@@ -543,6 +543,7 @@ def moan(msg):
 	"Complain about something in general"
 	global complaints
 	print(msg);
+	if complaints is None: sys.exit(1)
 	complaints=complaints+1
 
 class UntaintedRoot():
