@@ -47,6 +47,16 @@ OPTIONS
 		If NUMBER is higher than make-secnet-sites supports,
 		it writes out what it can.
 
+	--pubkeys-dir PUBKEYS
+
+		Specifies the live pubkeys area pathname.
+		The default is /var/lib/secnet/pubkeys.
+
+		Key files are named
+			PUBKEYS/peer.<mangled-peer-name>[~...]
+		mangled-peer-name is chosen by make-secnet-sites
+			/ => ,
+
 	--debug | -D
 
 		Increase amount of debugging output.
