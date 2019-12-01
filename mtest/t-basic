@@ -2,7 +2,7 @@
 
 source mtest/common.tcl
 
-run-mss --no-conf-key-prefix test-example/sites $tmp/out.conf
+run-mss --no-conf-key-prefix --output-version=1 test-example/sites $tmp/out.conf
 
 set seddery { sed -n 's/^[ \t]*//; /^[^#]/p' }
 diff  mtest/e-basic.conf $tmp/out.conf $seddery

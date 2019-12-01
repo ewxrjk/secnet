@@ -2,7 +2,7 @@
 
 source mtest/common.tcl
 
-run-mss -Ppprefix --no-conf-key-prefix test-example/sites $tmp/out.conf
+run-mss -Ppprefix --no-conf-key-prefix --output-version=1 test-example/sites $tmp/out.conf
 
 diff  mtest/e-basic.conf $tmp/out.conf \
     "sed -e 's/vpn/pprefixvpn/g; s/^all-sites/pprefix&/' | $seddery" \

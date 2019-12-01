@@ -7,7 +7,7 @@ include common.make
 
 &sites.conf: $(src)/make-secnet-sites &^/sites &/Dir.mk
 	mkdir -p &pubkeys
-	$(src)/make-secnet-sites &^/sites $@
+	$(src)/make-secnet-sites --output-version=1 &^/sites $@
 
 &clean::
 	rm -rf &pubkeys
