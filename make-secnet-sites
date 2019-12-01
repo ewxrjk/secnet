@@ -447,9 +447,28 @@ class rsakey (pubkey):
 			return ['pubkey', str(self.l), self.e, self.n]
 		return pubkey.forsites(self,version,xcopy,fs)
 
+class rsakey_newfmt(rsakey):
+	"An old-style RSA public key in new-style sites format"
+	# This is its own class simply to have its own constructor.
+	def __init__(self,w):
+		self.a=w[1].name()
+		assert(self.a == 'rsa1')
+		self.d=w[2].base91()
+		try:
+			w_inner=list(map(Tainted,
+					['X-PUB-RSA1'] +
+					base91s_decode(self.d)
+					.decode('ascii')
+					.split(' ')))
+		except UnicodeDecodeError:
+			complain('rsa1 key in new format has bad base91')
+		#print(repr(w_inner), file=sys.stderr)
+		rsakey.__init__(self,w_inner)
 def somepubkey(w):
 	if w[0]=='pubkey':
 		return rsakey(w)
+	elif w[0]=='pub' and w[1]=='rsa1':
+		return rsakey_newfmt(w)
 	elif w[0]=='pub':
 		return pubkey(w)
 	else:
