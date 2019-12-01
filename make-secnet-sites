@@ -501,6 +501,7 @@ keywords={
  'renegotiate-time':(num,"Time after key setup to begin renegotiation (ms)"),
  'restrict-nets':(networks,"Allowable networks"),
  'networks':(networks,"Claimed networks"),
+ 'serial':(serial,"public key set serial"),
  'pub':(listof(somepubkey),"new style public site key"),
  'pubkey':(listof(somepubkey),"RSA public site key",'pub'),
  'peer':(single_ipaddr,"Tunnel peer IP address"),
@@ -622,6 +623,7 @@ class sitelevel(level):
 	 'address':sp,
 	 'networks':None,
 	 'peer':None,
+         'serial':None,
 	 'pub':None,
 	 'pubkey':None,
 	 'mobile':sp,
@@ -650,6 +652,9 @@ class sitelevel(level):
 		if pubkeys_install:
 			pa=self.pubkeys_path()
 			pw=open(pa+'~tmp','w')
+			if 'serial' in self.properties:
+				pw.write('serial %s\n' %
+					 self.properties['serial'])
 			fs=FilterState()
 			for k in self.properties["pub"].list:
 				debugrepr('pubkeys install', k)

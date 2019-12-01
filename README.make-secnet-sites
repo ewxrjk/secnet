@@ -238,7 +238,6 @@ INPUT SYNTAX
 		Specifies the key set id (8 hex digits representing
 		4 bytes: each pair is the value of the next byte).
 		May appear at most once.  If not present, 00000000.
-		Not yet suported in make-secnet-sites.
 
 	pkg GROUPIDHEX
 	pkgf GROUPIDHEX
