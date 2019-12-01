@@ -232,6 +232,13 @@ class Tainted:
 		ok=self._re_ok(Tainted.bad_base91,what,4096)
 		return self._rtn(ok)
 
+class ArgActionLambda(argparse.Action):
+	def __init__(self, fn, **kwargs):
+		self.fn=fn
+		argparse.Action.__init__(self,**kwargs)
+	def __call__(self,ap,ns,values,option_string):
+		self.fn(values,ns,ap,option_string)
+
 def parse_args():
 	global service
 	global inputfile
