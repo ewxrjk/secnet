@@ -47,6 +47,14 @@ OPTIONS
 		If NUMBER is higher than make-secnet-sites supports,
 		it writes out what it can.
 
+	--pubkeys-install
+
+		Specifies that public keys are to be installed in the
+		live pubkeys area (and not hardcoded in secnet conf
+		files).  With this option, generated site configs
+		refer to keys in PUBKEYS; also, the generated secnet
+		configuration enables live peer public update.
+
 	--pubkeys-dir PUBKEYS
 
 		Specifies the live pubkeys area pathname.

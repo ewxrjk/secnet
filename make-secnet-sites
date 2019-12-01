@@ -254,6 +254,7 @@ def parse_args():
 	global debug_level
 	global output_version
 	global pubkeys_dir
+	global pubkeys_install
 
 	ap = argparse.ArgumentParser(description='process secnet sites files')
 	ap.add_argument('--userv', '-u', action='store_true',
@@ -261,6 +262,8 @@ def parse_args():
 	ap.add_argument('--conf-key-prefix', action=ActionNoYes,
 			default=True,
 		 help='prefix conf file key names derived from sites data')
+	ap.add_argument('--pubkeys-install', action='store_true',
+			help='install public keys in public key directory')
 	ap.add_argument('--pubkeys-dir',  nargs=1,
 			help='public key directory',
 			default=['/var/lib/secnet/pubkeys'])
@@ -279,6 +282,7 @@ def parse_args():
 	key_prefix = av.conf_key_prefix
 	output_version = av.output_version[0]
 	pubkeys_dir = av.pubkeys_dir[0]
+	pubkeys_install = av.pubkeys_install
 	if service:
 		if len(av.arg)!=4:
 			print("Wrong number of arguments")
@@ -428,6 +432,12 @@ class pubkey (basetype):
 	def forsites(self,version,xcopy,fs):
 		if version < 2: return []
 		return ['pub', self.a, self.d]
+	# forsites for properties which are from
+	# keywords with kw[2]=='pub' may not use copy.
+	# This is because the property values can be
+	# written out in sites file format during sites.conf
+	# construction (with --pubkeys-install), in which case
+	# the original input line is no longer available.
 
 class rsakey (pubkey):
 	"An RSA public key"
@@ -622,7 +632,6 @@ class sitelevel(level):
 	 'networks':"Networks claimed by the site",
 	 'hash':"hash function",
 	 'peer':"Gateway address of the site",
-	 'pub':"public key of the site",
 	}
 	def mangle_name(self):
 		return self.name.replace('/',',')
@@ -638,7 +647,20 @@ class sitelevel(level):
 		self.indent(w,ind+2)
 		w.write("name \"%s\";\n"%(np,))
 		self.indent(w,ind+2)
-		w.write("key %s;\n"%str(self.properties["pub"].list[0]))
+		if pubkeys_install:
+			pa=self.pubkeys_path()
+			pw=open(pa+'~tmp','w')
+			fs=FilterState()
+			for k in self.properties["pub"].list:
+				debugrepr('pubkeys install', k)
+				wout=k.forsites(max_version,None,fs)
+				pw.write(' '.join(wout))
+				pw.write('\n')
+			pw.close()
+			os.rename(pa+'~tmp',pa+'~update')
+			w.write("peer-keys \"%s\";\n"%pa);
+		else:
+			w.write("key %s;\n"%str(self.properties["pub"].list[0]))
 		self.output_props(w,ind+2)
 		self.indent(w,ind+2)
 		w.write("link netlink {\n");
