@@ -193,6 +193,17 @@ Usage: secnet [OPTION]...
       --help              display this help and exit
       --version           output version information and exit
 
+* base91s
+
+secnet defines a variant of the base91 encoding `basE91', from
+ http://base91.sourceforge.net/
+
+base91s is the same as baseE91 except that:
+ - in the encoded charset, `"' is replaced with `-'
+ - spaces, newlines etc. and other characters outside the charset
+    are not permitted (although in some places they may be ignored,
+    this is not guaranteed).
+
 * secnet builtin modules
 
 ** resolver
