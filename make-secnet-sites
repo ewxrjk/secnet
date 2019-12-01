@@ -282,6 +282,12 @@ class PkmInstall(PkmBase):
 	def site_finish(self,confw):
 		self._pw.close()
 		os.rename(self._pa+'~tmp',self._pa+'~update')
+		PkmElide.site_finish(self,confw)
+
+class PkmElide(PkmBase):
+	opt = 'elide'
+	help = 'no public keys in sites.conf output nor in directory'
+	def site_finish(self,confw):
 		confw.write("peer-keys \"%s\";\n"%self._pa);
 
 def parse_args():
@@ -314,6 +320,7 @@ def parse_args():
 			help=how().help)
 	add_pkm(PkmInstall)
 	add_pkm(PkmSingle)
+	add_pkm(PkmElide)
 	ap.add_argument('--pubkeys-dir',  nargs=1,
 			help='public key directory',
 			default=['/var/lib/secnet/pubkeys'])

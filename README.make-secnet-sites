@@ -64,6 +64,12 @@ OPTIONS
 		keys defined for any site, in the input.
 		--pubkeys-single is the default.
 
+	--pubkeys-elide
+
+		In the sites.conf output, just write the peer-keys
+		entry referring to keys in PUBKEYS.  But do not write
+		public keys anywhere.
+
 	--pubkeys-dir PUBKEYS
 
 		Specifies the live pubkeys area pathname.
