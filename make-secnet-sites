@@ -459,6 +459,7 @@ class rsakey (pubkey):
 		# compatible with old secnet executables
 	def forsites(self,version,xcopy,fs):
 		if version < 2:
+			if fs.pkg != '00000000': return []
 			return ['pubkey', str(self.l), self.e, self.n]
 		return pubkey.forsites(self,version,xcopy,fs)
 
@@ -696,6 +697,8 @@ class sitelevel(level):
 						break
 					if use is None:
 						use = k
+				elif isinstance(k,pubkey_group):
+					indefault = k.i == '00000000'
 				else:
 					raise RuntimeError('bad '+repr(k))
 			if use is None:
