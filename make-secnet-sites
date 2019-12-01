@@ -420,9 +420,9 @@ class pubkey (basetype):
 		self.d=w[2].base91();
 	def __str__(self):
 		return 'make-public("%s","%s")'%(self.a,self.d)
-	def forsites(self,version,copy,fs):
+	def forsites(self,version,xcopy,fs):
 		if version < 2: return []
-		return copy
+		return ['pub', self.a, self.d]
 
 class rsakey (pubkey):
 	"An RSA public key"
@@ -435,6 +435,8 @@ class rsakey (pubkey):
 		return 'rsa-public("%s","%s")'%(self.e,self.n)
 		# this specialisation means we can generate files
 		# compatible with old secnet executables
+	def forsites(self,version,xcopy,fs):
+		return ['pubkey', str(self.l), self.e, self.n]
 
 def somepubkey(w):
 	if w[0]=='pubkey':
