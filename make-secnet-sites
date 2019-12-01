@@ -431,12 +431,21 @@ class rsakey (pubkey):
 		self.e=w[2].bignum_10('rsa','rsa e')
 		self.n=w[3].bignum_10('rsa','rsa n')
 		if len(w) >= 5: w[4].email()
+		self.a='rsa1'
+		self.d=base91s_encode(b'%d %s %s' %
+				      (self.l,
+				       self.e.encode('ascii'),
+				       self.n.encode('ascii')))
+		# ^ this allows us to use the pubkey.forsites()
+		# method for output in versions>=2
 	def __str__(self):
 		return 'rsa-public("%s","%s")'%(self.e,self.n)
 		# this specialisation means we can generate files
 		# compatible with old secnet executables
 	def forsites(self,version,xcopy,fs):
-		return ['pubkey', str(self.l), self.e, self.n]
+		if version < 2:
+			return ['pubkey', str(self.l), self.e, self.n]
+		return pubkey.forsites(self,version,xcopy,fs)
 
 def somepubkey(w):
 	if w[0]=='pubkey':
