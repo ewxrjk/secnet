@@ -538,9 +538,7 @@ levels={'vpn':vpnlevel, 'location':locationlevel, 'site':sitelevel}
 
 def complain(msg):
 	"Complain about a particular input line"
-	global complaints
-	print(("%s line %d: "%(file,line))+msg)
-	complaints=complaints+1
+	moan(("%s line %d: "%(file,line))+msg)
 def moan(msg):
 	"Complain about something in general"
 	global complaints
