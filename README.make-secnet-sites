@@ -55,6 +55,15 @@ OPTIONS
 		refer to keys in PUBKEYS; also, the generated secnet
 		configuration enables live peer public update.
 
+	--pubkeys-single
+
+		Specifies that one public key per site is to be
+		written directly into the sites.conf output.  If
+		--output-version=1, this is the rsa1 key 0000000000.
+		Otherwise it is an error if there are multiple public
+		keys defined for any site, in the input.
+		--pubkeys-single is the default.
+
 	--pubkeys-dir PUBKEYS
 
 		Specifies the live pubkeys area pathname.

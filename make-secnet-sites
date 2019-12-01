@@ -239,6 +239,51 @@ class ArgActionLambda(argparse.Action):
 	def __call__(self,ap,ns,values,option_string):
 		self.fn(values,ns,ap,option_string)
 
+class PkmBase():
+	def site_start(self,pubkeys_path):
+		self._pa=pubkeys_path
+		self._fs = FilterState()
+	def site_serial(self,serial): pass
+	def write_key(self,k): pass
+	def site_finish(self,confw): pass
+
+class PkmSingle(PkmBase):
+	opt = 'single'
+	help = 'write one public key per site to sites.conf'
+	def site_start(self,pubkeys_path):
+		PkmBase.site_start(self,pubkeys_path)
+		self._outk = []
+	def write_key(self,k):
+		if k.okforonlykey(output_version,self._fs):
+			self._outk.append(k)
+	def site_finish(self,confw):
+		if len(self._outk) == 0:
+			complain("site with no public key");
+		elif len(self._outk) != 1:
+			debugrepr('outk ', self._outk)
+			complain(
+ "site with multiple public keys, without --pubkeys-install (maybe --output-version=1 would help"
+			)
+		else:
+			confw.write("key %s;\n"%str(self._outk[0]))
+
+class PkmInstall(PkmBase):
+	opt = 'install'
+	help = 'install public keys in public key directory'
+	def site_start(self,pubkeys_path):
+		PkmBase.site_start(self,pubkeys_path)
+		self._pw=open(self._pa+'~tmp','w')
+	def site_serial(self,serial):
+		self._pw.write('serial %s\n' % serial)
+	def write_key(self,k):
+		wout=k.forpub(output_version,self._fs)
+		self._pw.write(' '.join(wout))
+		self._pw.write('\n')
+	def site_finish(self,confw):
+		self._pw.close()
+		os.rename(self._pa+'~tmp',self._pa+'~update')
+		confw.write("peer-keys \"%s\";\n"%self._pa);
+
 def parse_args():
 	global service
 	global inputfile
@@ -254,7 +299,7 @@ def parse_args():
 	global debug_level
 	global output_version
 	global pubkeys_dir
-	global pubkeys_install
+	global pubkeys_mode
 
 	ap = argparse.ArgumentParser(description='process secnet sites files')
 	ap.add_argument('--userv', '-u', action='store_true',
@@ -262,8 +307,13 @@ def parse_args():
 	ap.add_argument('--conf-key-prefix', action=ActionNoYes,
 			default=True,
 		 help='prefix conf file key names derived from sites data')
-	ap.add_argument('--pubkeys-install', action='store_true',
-			help='install public keys in public key directory')
+	def add_pkm(how):
+		ap.add_argument('--pubkeys-'+how().opt, action=ArgActionLambda,
+			nargs=0,
+			fn=(lambda v,ns,*x: setattr(ns,'pkm',how)),
+			help=how().help)
+	add_pkm(PkmInstall)
+	add_pkm(PkmSingle)
 	ap.add_argument('--pubkeys-dir',  nargs=1,
 			help='public key directory',
 			default=['/var/lib/secnet/pubkeys'])
@@ -282,7 +332,7 @@ def parse_args():
 	key_prefix = av.conf_key_prefix
 	output_version = av.output_version[0]
 	pubkeys_dir = av.pubkeys_dir[0]
-	pubkeys_install = av.pubkeys_install
+	pubkeys_mode = getattr(av,'pkm',PkmSingle)
 	if service:
 		if len(av.arg)!=4:
 			print("Wrong number of arguments")
@@ -675,40 +725,17 @@ class sitelevel(level):
 		w.write("name \"%s\";\n"%(np,))
 		self.indent(w,ind+2)
 
-		if pubkeys_install:
-			pa=self.pubkeys_path()
-			pw=open(pa+'~tmp','w')
-			if 'serial' in self.properties:
-				pw.write('serial %s\n' %
-					 self.properties['serial'])
-		else:
-			outk = []
+		pkm = pubkeys_mode()
+		debugrepr('pkm ',pkm)
+		pkm.site_start(self.pubkeys_path())
+		if 'serial' in self.properties:
+			pkm.site_serial(self.properties['serial'])
 
-		fs=FilterState()
 		for k in self.properties["pub"].list:
 			debugrepr('pubkeys ', k)
-			if pubkeys_install:
-				wout=k.forpub(output_version,fs)
-				pw.write(' '.join(wout))
-				pw.write('\n')
-			else:
-				if k.okforonlykey(output_version,fs):
-					outk.append(k)
+			pkm.write_key(k)
 
-		if pubkeys_install:
-			pw.close()
-			os.rename(pa+'~tmp',pa+'~update')
-			w.write("peer-keys \"%s\";\n"%pa);
-		else:
-			if len(outk) == 0:
-				complain("site with no public key");
-			elif len(outk) != 1:
-				debugrepr('outk ', outk)
-				complain(
- "site with multiple public keys, without --pubkeys-install (maybe --output-version=1 would help"
-				)
-			else:
-				w.write("key %s;\n"%str(k))
+		pkm.site_finish(w)
 
 		self.output_props(w,ind+2)
 		self.indent(w,ind+2)
