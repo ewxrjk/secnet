@@ -73,10 +73,15 @@ sub inst ($) {
 
 while (<DATA>) {
     s#\{!2(\w+)\}# '{'.(2 * ($subst{$1}//die "$1 ?")).'}' #ge;
-    if (m/^!KEYWORD ([-0-9a-z]+)(\s*\{.*\})?$/) {
+    if (m/^!(KEYWORD|KWALIAS) ([-0-9a-z]+)(\s*\{.*\})?$/) {
 	my $kwt=$2;
-	die if $kw;
-	$kw = $1;
+	if ($1 eq 'KEYWORD') {
+	    die if $kw;
+	    $kw = $kwt;
+	} else {
+	    die if @next_kw;
+	    die unless $kw;
+	}
 	my $xact = $3 // '';
 	$kwid = $kw; $kwid =~ y/-/_/;
 	$in_s = "HK_${kwid}";
@@ -193,6 +198,7 @@ static struct pubkeyset_context c[1];
 %%
 
 !KEYWORD pkg  { c->fallback_skip=0; }
+!KWALIAS pkgf { c->fallback_skip=!!c->building->nkeys; }
 !ARG id [0-9a-f]{!2GRPIDSZ} {
     HEX2BIN_ARRAY(c->grpid);
 !}
