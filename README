@@ -399,7 +399,7 @@ site: dict argument
   port (integer): mandatory if 'address' is specified: the port used
     to contact our peer
   peer-keys (string): path (prefix) for peer public key set file(s);
-    see README.make-secnet-sites re `pub' etc.
+    see README.make-secnet-sites re `pub' etc. and NOTES.peer-keys.
   key (sigpubkey closure): our peer's public key (obsolete)
   transform (transform closure): how to mangle packets sent between sites
   dh (dh closure)
