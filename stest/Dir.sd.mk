@@ -7,6 +7,7 @@
 &DEPS += test-example/sites.conf
 &DEPS += test-example/inside.key
 &DEPS += test-example/outside.key
+&DEPS += test-example/all-privkeys
 
 &:include test-common.sd.mk
 
