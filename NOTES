@@ -188,9 +188,10 @@ When deciding which public keys to accept, a relier should:
 
 In configuration and key management, long-term private and public keys
 are octet strings.  Private keys are generally stored in disk files,
-one key per file.  The octet string for a private key must identify
-the algorithm (although actually this is wrong and are going to change
-it later)..  The octet string for a public key need not identify the
+one key per file.  The octet string for a private key should identify
+the algorithm so that passing the private key to the code for the 
+wrong algorithm does not produce results which would leak or weaken
+the key.  The octet string for a public key need not identify the
 algorithm; when it's loaded the algorithm will be known from context.
 
 The group id 00000000 is special.  It should contain only one key,

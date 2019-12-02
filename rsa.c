@@ -76,7 +76,7 @@ static void verror_tryload(struct load_ctx *l, struct cloc loc,
 			   FILE *maybe_f, bool_t unsup,
 			   const char *message, va_list args)
 {
-    int class=unsup ? M_DEBUG : M_ERR;
+    int class=M_ERR;
     slilog_part(l->u.tryload.log,class,"%s: ",l->what);
     vslilog(l->u.tryload.log,class,message,args);
 }
@@ -442,9 +442,7 @@ bool_t rsa1_loadpub(const struct sigscheme_info *algo,
 }
 
 #define LDFATAL(...)      ({ load_err(l,0,0,0,__VA_ARGS__); goto error_out; })
-#define LDUNSUP(...)      ({ load_err(l,0,0,1,__VA_ARGS__); goto error_out; })
 #define LDFATAL_FILE(...) ({ load_err(l,0,f,0,__VA_ARGS__); goto error_out; })
-#define LDUNSUP_FILE(...) ({ load_err(l,0,f,1,__VA_ARGS__); goto error_out; })
 #define KEYFILE_GET(is)   ({					\
 	uint##is##_t keyfile_get_tmp=keyfile_get_##is(l,f);	\
 	if (!l->postreadcheck(l,f)) goto error_out;		\
@@ -526,7 +524,7 @@ static struct rsapriv *rsa_loadpriv_core(struct load_ctx *l,
     length=strlen(AUTHFILE_ID_STRING)+1;
     b=safe_malloc(length,"rsapriv_apply");
     if (fread(b,length,1,f)!=1 || memcmp(b,AUTHFILE_ID_STRING,length)!=0) {
-	LDUNSUP_FILE("failed to read magic ID"
+	LDFATAL_FILE("failed to read magic ID"
 		     " string from SSH1 private keyfile\n");
     }
     FREE(b);
@@ -534,7 +532,7 @@ static struct rsapriv *rsa_loadpriv_core(struct load_ctx *l,
     cipher_type=fgetc(f);
     KEYFILE_GET(32); /* "Reserved data" */
     if (cipher_type != 0) {
-	LDUNSUP("we don't support encrypted keyfiles\n");
+	LDFATAL("we don't support encrypted keyfiles\n");
     }
 
     /* Read the public key */

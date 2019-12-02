@@ -76,6 +76,9 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     for (const struct sigscheme_info *scheme=sigschemes;
 	 scheme->name;
 	 scheme++) {
+	if (scheme->algid != id->b[GRPIDSZ])
+	    continue;
+
 	st->databuf.start=st->databuf.base;
 	st->databuf.size=got;
 	struct cloc loc = { .file=st->path.buffer, .line=0 };
@@ -94,9 +97,11 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 	    }
 	    goto out;
 	}
+	/* loadpriv will have logged */
+	goto out;
     }
 
-    slilog(log,M_ERR,"private key file %s not loaded (not recognised?)",
+    slilog(log,M_ERR,"private key file %s not loaded (unknown algid)",
 	   st->path.buffer);
 
   out:

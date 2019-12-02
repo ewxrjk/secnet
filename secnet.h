@@ -413,13 +413,13 @@ typedef bool_t sigscheme_loadpriv(const struct sigscheme_info *algo,
 				  struct buffer_if *privkeydata,
 				  struct sigprivkey_if **sigpriv_r,
 				  struct log_if *log, struct cloc loc);
-  /* privkeydata may contain data for any algorithm, not necessarily
-   * this one!  If it is not for this algorithm, return False and do
-   * not log anything (other than at M_DEBUG).  If it *is* for this
-   * algorithm but is wrong, log at M_ERROR.
-   * On entry privkeydata->base==start.  loadpriv may modify base and
-   * size, but not anything else.  So it may use unprepend and
-   * unappend. */
+  /* Ideally, check whether privkeydata contains data for any algorithm.
+   * That avoids security problems if a key file is misidentified (which
+   * might happen if the file is simply renamed).
+   * If there is an error (including that the key data is not for this
+   * algorithm, return False and log an error at M_ERROR.
+   * On entry privkeydata->base==start.  loadpriv may modify
+   * privkeydata, including the contents. */
 
 struct sigscheme_info {
     const char *name;
