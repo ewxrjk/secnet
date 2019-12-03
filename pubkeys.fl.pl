@@ -228,8 +228,9 @@ static struct pubkeyset_context c[1];
 !FINAL {
     if (c->building->nkeys >= MAX_SIG_KEYS) DOSKIP("too many public keys");
     struct sigpubkey_if *pubkey;
+    closure_t *cl;
     bool_t ok=c->scheme->loadpub(c->scheme,c->data_buf,
-				 &pubkey,c->log,c->loc);
+				 &pubkey,&cl,c->log,c->loc);
     if (!ok) break;
     if (pubkey->sethash) {
 	if (!c->defhash) {

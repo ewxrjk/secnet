@@ -404,6 +404,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
 bool_t rsa1_loadpub(const struct sigscheme_info *algo,
 		    struct buffer_if *pubkeydata,
 		    struct sigpubkey_if **sigpub_r,
+		    closure_t **closure_r,
 		    struct log_if *log, struct cloc loc)
 {
     struct rsapub *st=0;
@@ -434,6 +435,7 @@ bool_t rsa1_loadpub(const struct sigscheme_info *algo,
     if (!st) goto error_out;
 
     *sigpub_r=&st->ops;
+    *closure_r=&st->cl;
     return True;
 
  error_out:

@@ -404,10 +404,15 @@ struct sigscheme_info;
 typedef bool_t sigscheme_loadpub(const struct sigscheme_info *algo,
 				 struct buffer_if *pubkeydata,
 				 struct sigpubkey_if **sigpub_r,
+				 closure_t **closure_r,
 				 struct log_if *log, struct cloc loc);
   /* pubkeydata is (supposedly) for this algorithm.
    * loadpub should log an error if it fails.
-   * pubkeydata may be modified (but not freed) */
+   * pubkeydata may be modified (but not freed).
+   * both *sigpub_r and *closure_r must always be written and must
+   * refer to the same object, so on successful return
+   * (*closure_r)->type==CL_SIGPUBKEY
+   * and (*closure_r)->interface==*sigpub_r */
 
 typedef bool_t sigscheme_loadpriv(const struct sigscheme_info *algo,
 				  struct buffer_if *privkeydata,
