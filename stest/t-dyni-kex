@@ -1,7 +1,0 @@
-#! /usr/bin/tclsh
-
-# Dyamic key rollover config on inside only
-
-source stest/common.tcl
-
-test-kex
