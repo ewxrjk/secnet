@@ -577,6 +577,15 @@ priv-cache: dict argument
   privkey-max (integer): optional, maximum size of private key
     file in bytes. [4095]
 
+** pubkeys
+
+Defines:
+  make-public (closure => sigpubkey closure)
+
+make-public: (
+  arg1: sigscheme name
+  arg2: base91s encoded public key data, according to algorithm
+
 ** rsa
 
 Defines:

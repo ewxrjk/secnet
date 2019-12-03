@@ -377,6 +377,7 @@ typedef void init_module(dict_t *dict);
 
 extern void init_builtin_modules(dict_t *dict);
 
+extern init_module pubkeys_init;
 extern init_module resolver_module;
 extern init_module random_module;
 extern init_module udp_module;

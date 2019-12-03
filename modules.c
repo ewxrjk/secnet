@@ -21,6 +21,7 @@
 
 void init_builtin_modules(dict_t *dict)
 {
+    pubkeys_init(dict);
     resolver_module(dict);
     random_module(dict);
     udp_module(dict);
