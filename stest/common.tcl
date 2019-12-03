@@ -85,6 +85,7 @@ exec cat
 "
     switch -glob $privkey {
 	*/ {
+	    set sitesconf sites.conf
 	    append cfg "
 	        key-cache priv-cache({
 		    privkeys \"$builddir/${privkey}priv.\";
@@ -92,11 +93,13 @@ exec cat
 "
 	}
 	* {
+	    set sitesconf sites.conf
 	    append cfg "
 		local-key rsa-private(\"$builddir/$privkey\");
 "
 	}
     }
+    set sitesconf $builddir/test-example/$sitesconf
     
     append cfg $extra($site)
     append cfg "
@@ -119,7 +122,7 @@ exec cat
     file delete -force $pubkeys
     exec cp -rl $builddir/test-example/pubkeys $pubkeys
 
-    set f [open $builddir/test-example/sites.conf r]
+    set f [open $sitesconf r]
     while {[gets $f l] >= 0} {
 	regsub {\"[^\"]*test-example/pubkeys/} $l "\"$pubkeys/" l
 	append cfg $l "\n"
