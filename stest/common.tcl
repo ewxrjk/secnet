@@ -25,6 +25,9 @@ set extra(inside) {
 }
 set extra(outside) {}
 
+set privkey(inside) test-example/inside.key
+set privkey(outside) test-example/outside.key
+
 proc mkconf {location site} {
     global tmp
     global builddir
@@ -32,6 +35,7 @@ proc mkconf {location site} {
     global ports
     global extra
     global netlinkfh
+    upvar #0 privkey($site) privkey
     set pipefp $tmp/$site.netlink
     foreach tr {t r} {
 	file delete $pipefp.$tr
@@ -78,8 +82,22 @@ exec cat
     }
     append cfg ";
 	local-name \"test-example/$location/$site\";
-	local-key rsa-private(\"$builddir/test-example/$site.key\");
 "
+    switch -glob $privkey {
+	*/ {
+	    append cfg "
+	        key-cache priv-cache({
+		    privkeys \"$builddir/${privkey}priv.\";
+                });
+"
+	}
+	* {
+	    append cfg "
+		local-key rsa-private(\"$builddir/$privkey\");
+"
+	}
+    }
+    
     append cfg $extra($site)
     append cfg "
 	log logfile {
