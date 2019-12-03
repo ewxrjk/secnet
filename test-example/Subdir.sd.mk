@@ -6,6 +6,6 @@ include common.make
 	base64 -d <$< >$@.new && mv -f $@.new $@
 
 &sites.conf: $(src)/make-secnet-sites &^/sites Subdir.mk
-	$(src)/make-secnet-sites &^/sites &sites.conf
+	$(src)/make-secnet-sites &^/sites $@
 
 &CLEAN += *.new
