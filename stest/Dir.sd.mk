@@ -4,6 +4,7 @@
 &DEPS += & udp-preload.so
 &DEPS += &^ common.tcl
 &DEPS += secnet
+&DEPS += base91s/base91s
 &DEPS += test-example/sites.conf
 &DEPS += test-example/sites-nonego.conf
 &DEPS += $(test-example_PRIVKEYS)

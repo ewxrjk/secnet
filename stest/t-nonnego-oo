@@ -10,4 +10,15 @@ set privkey(outside) test-example/outside.key
 # There is no -no because the sites file tells a new inside to expect
 # a different key.
 
+proc sitesconf_hook {l} {
+    global builddir
+    # Use `make-public' verb, so we have a test case for it
+    if {[regexp {^(.* key )rsa-public\("(\d+)","(\d+)"\)(;.*)$} \
+	     $l dummy lhs rsa_e rsa_n rhs]} {
+	set b91 [exec $builddir/base91s/base91s -w0 << "42 $rsa_e $rsa_n"]
+	set l "${lhs}make-public(\"rsa1\",\"$b91\")${rhs}"
+    }
+    return $l
+}
+
 test-kex
