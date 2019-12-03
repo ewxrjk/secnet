@@ -28,6 +28,8 @@ set extra(outside) {}
 set privkey(inside) test-example/inside.privkeys/
 set privkey(outside) test-example/outside.privkeys/
 
+proc sitesconf_hook {l} { return $l }
+
 proc mkconf {location site} {
     global tmp
     global builddir
@@ -125,6 +127,7 @@ exec cat
     set f [open $sitesconf r]
     while {[gets $f l] >= 0} {
 	regsub {\"[^\"]*test-example/pubkeys/} $l "\"$pubkeys/" l
+	set l [sitesconf_hook $l]
 	append cfg $l "\n"
     }
     set sites [read $f]
