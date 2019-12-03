@@ -96,13 +96,22 @@ exec cat
 	transform eax-serpent { }, serpent256-cbc { };
     }
 
+    set pubkeys $tmp/$site.pubkeys
+    file delete -force $pubkeys
+    exec cp -rl $builddir/test-example/pubkeys $pubkeys
+
     set f [open $builddir/test-example/sites.conf r]
+    while {[gets $f l] >= 0} {
+	regsub {\"[^\"]*test-example/pubkeys/} $l "\"$pubkeys/" l
+	append cfg $l "\n"
+    }
     set sites [read $f]
     close $f
     append cfg $sites
     append cfg {
 	sites map(site,all-sites);
     }
+
     return $cfg
 }
 

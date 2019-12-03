@@ -6,7 +6,11 @@ include common.make
 	base64 -d <$< >$@.new && mv -f $@.new $@
 
 &sites.conf: $(src)/make-secnet-sites &^/sites &/Dir.mk
+	mkdir -p &pubkeys
 	$(src)/make-secnet-sites &^/sites $@
+
+&clean::
+	rm -rf &pubkeys
 
 define privkey
 &/$1.privkeys/priv.$2: &/$3

@@ -45,6 +45,7 @@ debian/secnet.substvars
 
 test-example/*.key
 test-example/*.privkeys
+test-example/pubkeys
 test-example/sites.conf
 test-example/bogus-setup-request
 build-stamp
