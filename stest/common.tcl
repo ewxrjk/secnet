@@ -54,6 +54,7 @@ exec cat
 "
     close $fakeuh
     set cfg "
+	hash sha1;
 	netlink userv-ipif {
 	    name \"netlink\";
             userv-path \"$fakeuf\";
