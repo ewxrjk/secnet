@@ -49,7 +49,7 @@ struct rsacommon {
 
 struct load_ctx {
     void (*verror)(struct load_ctx *l, struct cloc loc,
-		   FILE *maybe_f, bool_t unsup,
+		   FILE *maybe_f,
 		   const char *message, va_list args);
     bool_t (*postreadcheck)(struct load_ctx *l, FILE *f);
     const char *what;
@@ -63,17 +63,17 @@ struct load_ctx {
 
 static void load_err(struct load_ctx *l,
 		     const struct cloc *maybe_loc, FILE *maybe_f,
-		     bool_t unsup, const char *fmt, ...)
+		     const char *fmt, ...)
 {
     va_list al;
     va_start(al,fmt);
-    l->verror(l, maybe_loc ? *maybe_loc : l->loc, maybe_f,unsup,fmt,al);
+    l->verror(l, maybe_loc ? *maybe_loc : l->loc, maybe_f,fmt,al);
     va_end(al);
 }
 
-FORMAT(printf,5,0)
+FORMAT(printf,4,0)
 static void verror_tryload(struct load_ctx *l, struct cloc loc,
-			   FILE *maybe_f, bool_t unsup,
+			   FILE *maybe_f,
 			   const char *message, va_list args)
 {
     int class=M_ERR;
@@ -82,7 +82,7 @@ static void verror_tryload(struct load_ctx *l, struct cloc loc,
 }
 
 static void verror_cfgfatal(struct load_ctx *l, struct cloc loc,
-			    FILE *maybe_f, bool_t unsup,
+			    FILE *maybe_f,
 			    const char *message, va_list args)
 {
     vcfgfatal_maybefile(maybe_f,l->loc,l->what,message,args);
@@ -329,7 +329,7 @@ static void rsapub_dispose(void *sst) {
     const char *en##s, struct cloc en##_loc,
 
 #define LDPUBFATAL(lc,...) ({			\
-	load_err(l,(lc),0,0,__VA_ARGS__);	\
+	load_err(l,(lc),0,__VA_ARGS__);	\
 	goto error_out;				\
     })
 
@@ -441,8 +441,8 @@ bool_t rsa1_loadpub(const struct sigscheme_info *algo,
     return False;
 }
 
-#define LDFATAL(...)      ({ load_err(l,0,0,0,__VA_ARGS__); goto error_out; })
-#define LDFATAL_FILE(...) ({ load_err(l,0,f,0,__VA_ARGS__); goto error_out; })
+#define LDFATAL(...)      ({ load_err(l,0,0,__VA_ARGS__); goto error_out; })
+#define LDFATAL_FILE(...) ({ load_err(l,0,f,__VA_ARGS__); goto error_out; })
 #define KEYFILE_GET(is)   ({					\
 	uint##is##_t keyfile_get_tmp=keyfile_get_##is(l,f);	\
 	if (!l->postreadcheck(l,f)) goto error_out;		\
@@ -710,7 +710,7 @@ error_out:
 static bool_t postreadcheck_tryload(struct load_ctx *l, FILE *f)
 {
     assert(!ferror(f));
-    if (feof(f)) { load_err(l,0,0,0,"eof mid-integer"); return False; }
+    if (feof(f)) { load_err(l,0,0,"eof mid-integer"); return False; }
     return True;
 }
 
