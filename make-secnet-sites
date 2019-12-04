@@ -314,7 +314,6 @@ class OpBase():
 class OpConf(OpBase):
 	opts = ['--conf']
 	help = 'sites.conf generation mode (default)'
-	def is_service(self): return 0
 	def positional_args(self, av):
 		if len(av.arg)>3:
 			print("Too many arguments")
@@ -334,7 +333,6 @@ class OpConf(OpBase):
 class OpUserv(OpBase):
 	opts = ['--userv','-u']
 	help = 'userv service fragment update mode'
-	def is_service(self): return 1
 	def positional_args(self, av):
 		if len(av.arg)!=4:
 			print("Wrong number of arguments")
@@ -390,7 +388,6 @@ class OpUserv(OpBase):
 
 def parse_args():
 	global opmode
-	global service
 	global prefix
 	global key_prefix
 	global debug_level
@@ -431,7 +428,6 @@ def parse_args():
 	debug_level = av.debug
 	debugrepr('av',av)
 	opmode = getattr(av,'opmode',OpConf)()
-	service = opmode.is_service()
 	prefix = '' if av.prefix is None else av.prefix[0]
 	key_prefix = av.conf_key_prefix
 	output_version = av.output_version[0]
