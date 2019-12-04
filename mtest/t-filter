@@ -1,0 +1,7 @@
+#! /usr/bin/tclsh
+
+source mtest/common.tcl
+
+run-mss --filter --output-version=1 test-example/sites $tmp/out.sites
+
+diff  mtest/e-filter.sites $tmp/out.sites $seddery
