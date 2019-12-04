@@ -293,6 +293,11 @@ class PkmElide(PkmBase):
 class OpBase():
 	# Base case is reading a sites file from self.inputfilee.
 	# And writing a sites file to self.sitesfile.
+	def positional_args(self, av):
+		if len(av.arg)>3:
+			print("Too many arguments")
+			sys.exit(1)
+		(self.inputfile, self.outputfile) = (av.arg + [None]*2)[0:2]
 	def read_in(self):
 		if self.inputfile is None:
 			self.inputlines = pfile("stdin",sys.stdin.readlines())
@@ -316,11 +321,6 @@ class OpBase():
 class OpConf(OpBase):
 	opts = ['--conf']
 	help = 'sites.conf generation mode (default)'
-	def positional_args(self, av):
-		if len(av.arg)>3:
-			print("Too many arguments")
-			sys.exit(1)
-		(self.inputfile, self.outputfile) = (av.arg + [None]*2)[0:2]
 	def check_group(self,group,w): pass
 	def write_out(self):
 		if self.outputfile is None:
