@@ -1,16 +1,16 @@
 USAGE
 
-	make-secnet-sites [-P PREFIX] [--conf] [IN [OUT]]
-	make-secnet-sites -u HEADER GRPDIR SITESFILE GROUP
+	make-secnet-sites [-P PREFIX] [--conf] [IN [OUTCONF]]
+	make-secnet-sites -u|--userv HEADER GRPDIR SITESFILE GROUP
 
 	The `-P' option sets the PREFIX string, mentioned below in
 	`OUTPUT STRUCTURE'; the default is empty.
 
-	In the former mode, `make-secnet-sites' reads a single input
+	In --conf mode, `make-secnet-sites' reads a single input
 	file from IN (defaulting to standard input), and writes a Secnet
-	configuration fragment to OUT (defaulting to standard output).
+	configuration fragment to OUTCONF (defaulting to standard output).
 
-	In the latter, `make-secnet-sites' expects to have been invoked
+	In --userv mode, `make-secnet-sites' expects to have been invoked
 	via GNU Userv.  It verifies that GROUP is listed in the
 	`USERV_GROUP' environment variable.  It then processes the
 	HEADER input, which should say `end-defintions' somewhere, to
