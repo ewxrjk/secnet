@@ -332,6 +332,19 @@ class OpConf(OpBase):
 		if self.outputfile is not None:
 			os.rename(tmp_outputfile,self.outputfile)
 
+class OpFilter(OpBase):
+	opts = ['--filter']
+	help = 'sites file filtering mode'
+	def positional_arXgs(self, av):
+		if len(av.arg)!=1:
+			print("Too many arguments")
+		(self.inputfile,) = (av.arg + [None])[0:1]
+		self.outputfile = None
+	def write_out_heading(self,f):
+		f.write("# --filter --output-version=%d\n"%output_version)
+	def write_out_contents(self,f):
+		for i in self.inputlines: f.write(i)
+
 class OpUserv(OpBase):
 	opts = ['--userv','-u']
 	help = 'userv service fragment update mode'
@@ -408,6 +421,7 @@ def parse_args():
 			fn=(lambda v,ns,*x: setattr(ns,'opmode',how)),
 			help=how().help)
 	add_opmode(OpConf)
+	add_opmode(OpFilter)
 	add_opmode(OpUserv)
 	ap.add_argument('--conf-key-prefix', action=ActionNoYes,
 			default=True,

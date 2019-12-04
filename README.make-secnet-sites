@@ -1,6 +1,7 @@
 USAGE
 
 	make-secnet-sites [-P PREFIX] [--conf] [IN [OUTCONF]]
+	make-secnet-sites --filter [IN [OUT]]
 	make-secnet-sites -u|--userv HEADER GRPDIR SITESFILE GROUP
 
 	The `-P' option sets the PREFIX string, mentioned below in
@@ -9,6 +10,11 @@ USAGE
 	In --conf mode, `make-secnet-sites' reads a single input
 	file from IN (defaulting to standard input), and writes a Secnet
 	configuration fragment to OUTCONF (defaulting to standard output).
+
+	In --filter mode, `make-secnet-sites' reads a single input
+	file from IN (defaulting to standard input), and writes a
+	version of that sites file to OUT (defaulting to standard
+	output).  The output is filtered according to --output-version.
 
 	In --userv mode, `make-secnet-sites' expects to have been invoked
 	via GNU Userv.  It verifies that GROUP is listed in the
