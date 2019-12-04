@@ -4,7 +4,6 @@ source mtest/common.tcl
 
 run-mss -Ppprefix --no-conf-key-prefix test-example/sites $tmp/out.conf
 
-set seddery { sed -n 's/^[ \t]*//; /^[^#]/p' }
 diff  mtest/e-basic.conf $tmp/out.conf \
     "sed -e 's/vpn/pprefixvpn/g; s/^all-sites/pprefix&/' | $seddery" \
     $seddery
