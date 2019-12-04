@@ -73,36 +73,35 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     fclose(f); f=0;
 
     struct sigprivkey_if *sigpriv=0;
-    for (const struct sigscheme_info *scheme=sigschemes;
+    const struct sigscheme_info *scheme;
+    for (scheme=sigschemes;
 	 scheme->name;
-	 scheme++) {
-	if (scheme->algid != id->b[GRPIDSZ])
-	    continue;
-
-	st->databuf.start=st->databuf.base;
-	st->databuf.size=got;
-	struct cloc loc = { .file=st->path.buffer, .line=0 };
-	ok=scheme->loadpriv(scheme, &st->databuf, &sigpriv, log, loc);
-	if (ok) {
-	    if (sigpriv->sethash) {
-		if (!st->defhash) {
-		    slilog(log,M_ERR,
- "private key %s requires `hash' config key for privcache to load",
-			   st->path.buffer);
-		    sigpriv->dispose(sigpriv->st);
-		    sigpriv=0;
-		    goto out;
-		}
-		sigpriv->sethash(sigpriv->st,st->defhash);
-	    }
-	    goto out;
-	}
-	/* loadpriv will have logged */
-	goto out;
-    }
+	 scheme++)
+	if (scheme->algid == id->b[GRPIDSZ])
+	    goto found;
 
     slilog(log,M_ERR,"private key file %s not loaded (unknown algid)",
 	   st->path.buffer);
+    goto out;
+
+ found:
+    st->databuf.start=st->databuf.base;
+    st->databuf.size=got;
+    struct cloc loc = { .file=st->path.buffer, .line=0 };
+    ok=scheme->loadpriv(scheme, &st->databuf, &sigpriv, log, loc);
+    if (!ok) goto out; /* loadpriv will have logged */
+
+    if (sigpriv->sethash) {
+	if (!st->defhash) {
+	    slilog(log,M_ERR,
+ "private key %s requires `hash' config key for privcache to load",
+		   st->path.buffer);
+	    sigpriv->dispose(sigpriv->st);
+	    sigpriv=0;
+	    goto out;
+	}
+	sigpriv->sethash(sigpriv->st,st->defhash);
+    }
 
   out:
     if (f) fclose(f);
