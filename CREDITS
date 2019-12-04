@@ -16,3 +16,4 @@ Simon Tatham - endianness cleanups in transform.c
 Richard Kettlewell, Matthew Vernon, Peter Benie - assorted bugfixes
 "Omnifarious" and "btel" on Stackoverflow - python yes/no arg parsing
 Joachim Henke - basE91 encoding format and the corresponding C library
+Adrien Béraud, Guillaume Jacquenot, SunDwarf - python basE91 library
