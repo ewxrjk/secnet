@@ -1,6 +1,6 @@
 USAGE
 
-	make-secnet-sites [-P PREFIX] [IN [OUT]]
+	make-secnet-sites [-P PREFIX] [--conf] [IN [OUT]]
 	make-secnet-sites -u HEADER GRPDIR SITESFILE GROUP
 
 	The `-P' option sets the PREFIX string, mentioned below in

@@ -312,6 +312,8 @@ class OpBase():
 		os.rename(self.sitesfile+"-tmp",self.sitesfile)
 
 class OpConf(OpBase):
+	opts = ['--conf']
+	help = 'sites.conf generation mode (default)'
 	def is_service(self): return 0
 	def positional_args(self, av):
 		if len(av.arg)>3:
@@ -402,6 +404,7 @@ def parse_args():
 			nargs=0,
 			fn=(lambda v,ns,*x: setattr(ns,'opmode',how)),
 			help=how().help)
+	add_opmode(OpConf)
 	add_opmode(OpUserv)
 	ap.add_argument('--conf-key-prefix', action=ActionNoYes,
 			default=True,
