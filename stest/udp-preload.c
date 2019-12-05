@@ -216,6 +216,7 @@ WRAP(bind) {
     if (!ent) return old_bind(fd,addr,addrlen);
     struct sockaddr_un sun;
     char *p=sun_prep(&sun);
+    if (!p) return -1;
     if (addrport2str(p,addr,addrlen)) return -1;
 //fprintf(stderr,"binding %s\n",sun.sun_path);
     if (unlink(sun.sun_path) && errno!=ENOENT) return -1;
@@ -262,6 +263,7 @@ ssize_t TWRAP(sendto) {
     if (strlen(leaf) > ADDRPORTSTRLEN) { errno=ENAMETOOLONG; return -1; }
     struct sockaddr_un sun;
     char *p=sun_prep(&sun);
+    if (!p) return -1;
     strcpy(p,leaf);
 
     char tbuf[ADDRPORTSTRLEN+1];
