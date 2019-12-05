@@ -164,20 +164,20 @@ static int str2addrport(char *str,
     return 0;
 }
 
-static char *sun_prep(struct sockaddr_un *sun) {
+static int sun_prep(struct sockaddr_un *sun, const char *leaf) {
     const char *dir=getenv("UDP_PRELOAD_DIR");
     if (!dir) { errno=ECHILD; return 0; }
 
     memset(sun,0,sizeof(*sun));
     sun->sun_family=AF_UNIX;
     size_t dl = strlen(dir);
-    if (dl + 1 + ADDRPORTSTRLEN + 1 > sizeof(sun->sun_path)) {
-	errno=ENAMETOOLONG; return 0;
+    if (dl + 1 + strlen(leaf) + 1 > sizeof(sun->sun_path)) {
+	errno=ENAMETOOLONG; return -1;
     }
     strcpy(sun->sun_path,dir);
-    char *p=sun->sun_path+dl;
-    *p++='/';
-    return p;
+    sun->sun_path[dl]='/';
+    strcpy(sun->sun_path+dl+1,leaf);
+    return 0;
 }
 
 WRAP(socket) {
@@ -215,9 +215,9 @@ WRAP(bind) {
     fdinfo *ent=lookup(fd);
     if (!ent) return old_bind(fd,addr,addrlen);
     struct sockaddr_un sun;
-    char *p=sun_prep(&sun);
-    if (!p) return -1;
-    if (addrport2str(p,addr,addrlen)) return -1;
+    char tbuf[ADDRPORTSTRLEN+1];
+    if (addrport2str(tbuf,addr,addrlen)) return -1;
+    if (sun_prep(&sun,tbuf)) return -1;
 //fprintf(stderr,"binding %s\n",sun.sun_path);
     if (unlink(sun.sun_path) && errno!=ENOENT) return -1;
     return old_bind(fd,(const void*)&sun,sizeof(sun));
@@ -262,9 +262,7 @@ ssize_t TWRAP(sendto) {
     if (!leaf) leaf="udp";
     if (strlen(leaf) > ADDRPORTSTRLEN) { errno=ENAMETOOLONG; return -1; }
     struct sockaddr_un sun;
-    char *p=sun_prep(&sun);
-    if (!p) return -1;
-    strcpy(p,leaf);
+    if (sun_prep(&sun,leaf)) return -1;
 
     char tbuf[ADDRPORTSTRLEN+1];
     memset(tbuf,0,sizeof(tbuf));
