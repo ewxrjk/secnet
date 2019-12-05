@@ -1,0 +1,4 @@
+#! /usr/bin/tclsh
+set oldsecnet(inside) 1
+set initiator outside
+source stest/t-nonnego-on
