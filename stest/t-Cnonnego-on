@@ -1,0 +1,3 @@
+#! /usr/bin/tclsh
+set oldsecnet(inside) 1
+source stest/t-nonnego-on
