@@ -28,6 +28,8 @@ set extra(outside) {}
 set privkey(inside) test-example/inside.privkeys/
 set privkey(outside) test-example/outside.privkeys/
 
+set initiator inside
+
 proc sitesconf_hook {l} { return $l }
 
 proc oldsecnet {site} {
@@ -225,9 +227,10 @@ proc netlink-readable {location site} {
 }
 
 proc netlink-got-packet {location site data} {
+    global initiator
     if {![hbytes length $data]} return 
-    switch -exact $site {
-	inside {
+    switch -exact $site!$initiator {
+	inside!inside - outside!outside {
 	    switch -glob $data {
 		45000054ed9d4000fe0166d9ac12e802ac12e80900* {
 		    puts "OK $data"
@@ -238,8 +241,8 @@ proc netlink-got-packet {location site data} {
 		}
 	    }
 	}
-	outside {
-	    error "inside rx'd!"
+	default {
+	    error "$site rx'd! (initiator $initiator)"
 	}
     }
 }
@@ -261,6 +264,7 @@ $message
 
 proc sendpkt {} {
     global netlinkfh
+    global initiator
     set p {
         4500 0054 ed9d 4000 4001 24da ac12 e809
         ac12 e802 0800 1de4 2d96 0001 f1d4 a05d
@@ -269,7 +273,7 @@ proc sendpkt {} {
         2425 2627 2829 2a2b 2c2d 2e2f 3031 3233
         3435 3637
     }
-    puts -nonewline $netlinkfh(inside.t) \
+    puts -nonewline $netlinkfh($initiator.t) \
 	[hbytes h2raw c0[join $p ""]c0]
 }
 
