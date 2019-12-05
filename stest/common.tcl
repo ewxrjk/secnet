@@ -30,6 +30,11 @@ set privkey(outside) test-example/outside.privkeys/
 
 proc sitesconf_hook {l} { return $l }
 
+proc oldsecnet {site} {
+    upvar #0 oldsecnet($site) oldsecnet
+    expr {[info exists oldsecnet] && [set oldsecnet]}
+}
+
 proc mkconf {location site} {
     global tmp
     global builddir
@@ -108,6 +113,11 @@ exec cat
 	log logfile {
 	    prefix \"$site\";
 	    class \"debug\",\"info\",\"notice\",\"warning\",\"error\",\"security\",\"fatal\";
+    "
+    if {[oldsecnet $site]} { append cfg "
+	    filename \"/dev/stderr\";
+    " }
+    append cfg "
 	};
     "
     append cfg {
@@ -153,7 +163,11 @@ proc spawn-secnet {location site} {
     set ch [open $cf w]
     puts $ch [mkconf $location $site]
     close $ch
-    set argl [list $builddir/secnet -dvnc $cf]
+    set secnet $builddir/secnet
+    if {[oldsecnet $site]} {
+	set secnet $env(OLD_SECNET_DIR)/secnet
+    }
+    set argl [list $secnet -dvnc $cf]
     set divertk SECNET_STEST_DIVERT_$site
     puts -nonewline "spawn"
     foreach k [array names env] {
