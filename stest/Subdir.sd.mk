@@ -33,6 +33,6 @@ MAKE_NOTSPECIAL:=$(MAKE)
 
 &check:: $(&DEPS)
 	env -u MAKEFLAGS -u MFLAGS \
-	$(MAKE_NOTSPECIAL) -f main.mk -j$(shell nproc || 1)0 &check-real
+	$(MAKE_NOTSPECIAL) -f main.mk -j$(shell nproc || echo 1)0 &check-real
 
 &:include subdirmk/cdeps.sd.mk
