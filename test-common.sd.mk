@@ -1,7 +1,7 @@
 
 include common.make
 
-&TESTSCRIPTS ?= $(shell echo &^/t-*[0-9a-z])
+&TESTSCRIPTS ?= $(wildcard &^/t-*[0-9a-z])
 &TESTNAMES := $(patsubst t-%,%,$(notdir $(&TESTSCRIPTS)))
 
 &DEPS += $(src)/test-common.tcl
