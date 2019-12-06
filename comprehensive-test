@@ -1,0 +1,40 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+oot_rel=oot-rel.tmp~
+oot_abs=$(cd .. && pwd)/oot-comprehensive-test.tmp~
+
+nproc=$(nproc || echo 1)
+mflags=-j$nproc
+
+for arg in "$@"; do
+    case "$arg" in
+	--oot-abs=*) oot_abs=${arg%*=} ;;
+	*) echo >&2 "unknown arg/option $1"; exit 1;;
+    esac
+done
+
+x () { echo >&2 "x $*"; "$@"; }
+
+srcdir=$(pwd)
+
+build_and_test () {
+    cd "$srcdir"
+    x git clean -xdff
+    if [ "x$1" != x. ]; then
+	rm -rf "$1"
+	mkdir "$1"
+    fi
+    x ./autogen.sh
+    x cd "$1"
+    x "$srcdir/configure" CFLAGS='-O0 -g'
+    x make $mflags all check
+    cd "$srcdir"
+}
+
+build_and_test .
+build_and_test "$oot_rel"
+build_and_test "$oot_abs"
+
+echo "----- $0 ok -----"
