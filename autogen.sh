@@ -20,3 +20,7 @@
 set -e
 autoconf
 autoheader
+# ^ although configure will run autoheader if we didn't, our
+#   objective is for users not to have to have recent autoconf
+#   installed, so we commit config.h.  ./autogen.sh regenerates
+#   the committed files.
