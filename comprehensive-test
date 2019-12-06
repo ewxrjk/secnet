@@ -34,6 +34,25 @@ build_and_test () {
 	x make $mflags clean
 	x make $mflags $t
     done
+    x make $mflags clean
+    if [ "x$1" != x. ]; then
+	 find -type f
+     else
+	 git-ls-files -o
+    fi | perl -ne '
+	s{^\./}{};
+	s{^}{/};
+        next if m{^/ct-files$};
+        next if m{^/autom4te\.cache/};
+        next if m{/Makefile$};
+	next if m{\.mk$};
+	next if m{^/common\.make$};
+	next if m{^/(?:config|\.makefiles)\.stamp$};
+	next if m{^/config\.(?:log|status|h)$};
+        warn "clean in '"$1"' missed $_";
+        $bad=1;
+        END { exit $bad; }
+    '
     cd "$srcdir"
 }
 
