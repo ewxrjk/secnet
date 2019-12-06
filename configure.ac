@@ -44,7 +44,6 @@ AC_PROG_MAKE_SET
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_STDC_HEADERS
-AC_CHECK_HEADERS([stdint.h inttypes.h])
 AC_CHECK_HEADERS([net/if.h net/route.h])
 AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([linux/if_tun.h], [], [], 
@@ -54,11 +53,6 @@ AC_CHECK_HEADERS([linux/if_tun.h], [], [],
 ])
 AC_CHECK_HEADERS([stropts.h sys/sockio.h net/if_tun.h])
 AC_C_BIGENDIAN
-AC_CHECK_SIZEOF(unsigned long long)
-AC_CHECK_SIZEOF(unsigned long)
-AC_CHECK_SIZEOF(unsigned int)
-AC_CHECK_SIZEOF(unsigned short)
-AC_CHECK_SIZEOF(unsigned char)
 AC_PROG_CC_NO_WRITEABLE_STRINGS(WRITESTRINGS)
 
 AC_ARG_ENABLE(hacky-parallel,
@@ -113,53 +107,6 @@ AH_BOTTOM([
 /* -*- c -*- */
 
 /* These used to be in config.h.bot, but are now in configure.in. */
-
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#else
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#else
-#if SIZEOF_UNSIGNED_LONG_LONG==8
-typedef unsigned long long uint64_t;
-typedef long long int64_t;
-#elif SIZEOF_UNSIGNED_LONG==8
-typedef unsigned long uint64_t;
-typedef long int64_t;
-#else
-#error I do not know what to use for a uint64_t.
-#endif
-
-/* Give us an unsigned 32-bit data type. */
-#if SIZEOF_UNSIGNED_LONG==4
-typedef unsigned long uint32_t;
-typedef long int32_t;
-#elif SIZEOF_UNSIGNED_INT==4
-typedef unsigned int uint32_t;
-typedef int int32_t;
-#else
-#error I do not know what to use for a uint32_t.
-#endif
-
-/* An unsigned 16-bit data type. */
-#if SIZEOF_UNSIGNED_INT==2
-typedef unsigned int uint16_t;
-typedef int int16_t;
-#elif SIZEOF_UNSIGNED_SHORT==2
-typedef unsigned short uint16_t;
-typedef short int16_t;
-#else
-#error I do not know what to use for a uint16_t.
-#endif
-
-/* An unsigned 8-bit data type */
-#if SIZEOF_UNSIGNED_CHAR==1
-typedef unsigned char uint8_t;
-#else
-#error I do not know what to use for a uint8_t.
-#endif
-#endif
-#endif
 
 #ifdef __GNUC__
 #define NORETURN(_x) void _x __attribute__ ((noreturn))

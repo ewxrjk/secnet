@@ -89,21 +89,6 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* The size of `unsigned char', as computed by sizeof. */
-#undef SIZEOF_UNSIGNED_CHAR
-
-/* The size of `unsigned int', as computed by sizeof. */
-#undef SIZEOF_UNSIGNED_INT
-
-/* The size of `unsigned long', as computed by sizeof. */
-#undef SIZEOF_UNSIGNED_LONG
-
-/* The size of `unsigned long long', as computed by sizeof. */
-#undef SIZEOF_UNSIGNED_LONG_LONG
-
-/* The size of `unsigned short', as computed by sizeof. */
-#undef SIZEOF_UNSIGNED_SHORT
-
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
@@ -123,53 +108,6 @@
 /* -*- c -*- */
 
 /* These used to be in config.h.bot, but are now in configure.in. */
-
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#else
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#else
-#if SIZEOF_UNSIGNED_LONG_LONG==8
-typedef unsigned long long uint64_t;
-typedef long long int64_t;
-#elif SIZEOF_UNSIGNED_LONG==8
-typedef unsigned long uint64_t;
-typedef long int64_t;
-#else
-#error I do not know what to use for a uint64_t.
-#endif
-
-/* Give us an unsigned 32-bit data type. */
-#if SIZEOF_UNSIGNED_LONG==4
-typedef unsigned long uint32_t;
-typedef long int32_t;
-#elif SIZEOF_UNSIGNED_INT==4
-typedef unsigned int uint32_t;
-typedef int int32_t;
-#else
-#error I do not know what to use for a uint32_t.
-#endif
-
-/* An unsigned 16-bit data type. */
-#if SIZEOF_UNSIGNED_INT==2
-typedef unsigned int uint16_t;
-typedef int int16_t;
-#elif SIZEOF_UNSIGNED_SHORT==2
-typedef unsigned short uint16_t;
-typedef short int16_t;
-#else
-#error I do not know what to use for a uint16_t.
-#endif
-
-/* An unsigned 8-bit data type */
-#if SIZEOF_UNSIGNED_CHAR==1
-typedef unsigned char uint8_t;
-#else
-#error I do not know what to use for a uint8_t.
-#endif
-#endif
-#endif
 
 #ifdef __GNUC__
 #define NORETURN(_x) void _x __attribute__ ((noreturn))
