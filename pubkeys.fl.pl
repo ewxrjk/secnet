@@ -159,6 +159,7 @@ struct pubkeyset_context {
     /* runtime: */
     bool_t had_serial;
     int lno;
+    bool_t fallback_skip;
     const struct sigscheme_info *scheme;
     uint8_t grpid[GRPIDSZ];
     serialt serial;
@@ -191,7 +192,7 @@ static struct pubkeyset_context c[1];
 
 %%
 
-!KEYWORD pkg
+!KEYWORD pkg  { c->fallback_skip=0; }
 !ARG id [0-9a-f]{!2GRPIDSZ} {
     HEX2BIN_ARRAY(c->grpid);
 !}
@@ -199,6 +200,7 @@ static struct pubkeyset_context c[1];
 !}
 !KEYWORD pub
 !ARG algo [-0-9a-z]+ {
+    if (c->fallback_skip) DOSKIP("fallback not needed");
     c->scheme = sigscheme_lookup(yytext);
     if (!c->scheme) DOSKIP("unknown pk algorithm");
 !}
@@ -285,6 +287,7 @@ keyset_load(const char *path, struct buffer_if *data_buf,
     NEW(c->building);
     c->building->nkeys=0;
     c->building->refcount=1;
+    c->fallback_skip=0;
     c->had_serial=0;
     c->lno=1;
     FILLZERO(c->grpid);
