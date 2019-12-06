@@ -43,7 +43,6 @@ fi
 AC_PROG_MAKE_SET
 AC_PROG_CC
 AC_PROG_INSTALL
-AC_STDC_HEADERS
 AC_CHECK_HEADERS([net/if.h net/route.h])
 AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([linux/if_tun.h], [], [], 
