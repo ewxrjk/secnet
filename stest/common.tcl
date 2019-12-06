@@ -159,7 +159,7 @@ proc spawn-secnet {location site} {
     foreach k [array names env] {
 	switch -glob $k {
 	    SECNET_STEST_DIVERT_* -
-	    SECNET_TEST_BUILDDIR { }
+	    SECNET_TEST_BUILDDIR - OLD_SECNET_DIR { }
 	    *SECNET* -
 	    *PRELOAD* { puts -nonewline " $k=$env($k)" }
 	}

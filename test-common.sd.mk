@@ -1,7 +1,11 @@
 
 include common.make
 
-&TESTSCRIPTS ?= $(wildcard &^/t-*[0-9a-z])
+&TESTSCRIPTS ?= $(wildcard &^/t-[a-z]*[0-9a-z])
+ifneq ($(OLD_SECNET_DIR),)
+&TESTSCRIPTS += $(wildcard &^/t-C*[0-9a-z])
+endif
+
 &TESTNAMES := $(patsubst t-%,%,$(notdir $(&TESTSCRIPTS)))
 
 &DEPS += $(src)/test-common.tcl

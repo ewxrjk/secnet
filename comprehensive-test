@@ -15,6 +15,19 @@ for arg in "$@"; do
     esac
 done
 
+case "${OLD_SECNET_DIR:?must be set, perhaps to the empty string}" in
+    ''|/*)
+        ;;
+    ../*)
+	OLD_SECNET_DIR="${PWD%/*}/${OLD_SECNET_DIR#../}"
+	echo >&2 "x OLD_SECNET_DIR=$OLD_SECNET_DIR"
+	;;
+    *)
+	echo >&2 "relative non-.. OLD_SECNET_DIR $OLD_SECNET_DIR !";
+	exit 1
+	;;
+esac
+
 x () { echo >&2 "x $*"; "$@"; }
 
 srcdir=$(pwd)
