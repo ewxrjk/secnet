@@ -30,6 +30,10 @@ build_and_test () {
     x cd "$1"
     x "$srcdir/configure" CFLAGS='-O0 -g'
     x make $mflags all check
+    for t in mtest/check stest/check; do
+	x make $mflags clean
+	x make $mflags $t
+    done
     cd "$srcdir"
 }
 
