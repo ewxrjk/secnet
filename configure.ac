@@ -40,6 +40,27 @@ if test "x$FINK" != x; then
   LDFLAGS="-L$finkdir/lib ${LDFLAGS}"
 fi
 
+# This is quite unpleasant.  It turns out that most header checking
+# macros call AC_INCLUDES_DEFAULT.  By default AC_INCLUDES_DEFAULT
+# implies AC_HEADER_STDC and a bunch of conditional includes.  But
+# these header checks are obsolete as the documentation for
+# AC_HEADER_STDC says.  Instead, define AC_INCLUDES_DEFAULT ourselves.
+# The list of headers below is the list from `(autoconf) Default
+# Includes' (filtered by hand for the modern ones rather than the
+# fallbacks).  We must include $1 because AC_INCLUDES_DEFAULT is
+# called with an argument giving the check-specific haders.
+m4_define([AC_INCLUDES_DEFAULT],[
+          # include <sys/types.h>
+          # include <sys/stat.h>
+          # include <stdlib.h>
+          # include <stddef.h>
+          # include <string.h>
+          # include <inttypes.h>
+          # include <stdint.h>
+          # include <unistd.h>
+$1
+])
+
 AC_PROG_MAKE_SET
 AC_PROG_CC
 AC_PROG_INSTALL
