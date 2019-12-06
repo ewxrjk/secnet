@@ -73,12 +73,14 @@ sub inst ($) {
 
 while (<DATA>) {
     s#\{!2(\w+)\}# '{'.(2 * ($subst{$1}//die "$1 ?")).'}' #ge;
-    if (m/^!KEYWORD ([-0-9a-z]+)$/) {
+    if (m/^!KEYWORD ([-0-9a-z]+)(\s*\{.*\})?$/) {
+	my $kwt=$2;
 	die if $kw;
 	$kw = $1;
+	my $xact = $3 // '';
 	$kwid = $kw; $kwid =~ y/-/_/;
 	$in_s = "HK_${kwid}";
-	$co .= "{L}$kw { BEGIN($in_s); }\n";
+	$co .= "{L}$kwt { BEGIN($in_s); $xact }\n";
 	next;
     }
     if (m/^!ARG (\w+) (\S.*\S) \{\s*$/) {
