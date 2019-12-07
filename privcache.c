@@ -49,6 +49,19 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     struct hash_if *defhash=st->defhash;
     struct buffer_if *databuf=&st->databuf;
 
+    struct sigprivkey_if *sigpriv=0;
+    const struct sigscheme_info *scheme;
+    for (scheme=sigschemes;
+	 scheme->name;
+	 scheme++)
+	if (scheme->algid == id->b[GRPIDSZ])
+	    goto found;
+
+    slilog(log,M_ERR,"private key file %s not loaded (unknown algid)",
+	   path);
+    goto out;
+
+ found:
     f = fopen(path,"rb");
     if (!f) {
 	if (errno == ENOENT) {
@@ -76,19 +89,6 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     }
     fclose(f); f=0;
 
-    struct sigprivkey_if *sigpriv=0;
-    const struct sigscheme_info *scheme;
-    for (scheme=sigschemes;
-	 scheme->name;
-	 scheme++)
-	if (scheme->algid == id->b[GRPIDSZ])
-	    goto found;
-
-    slilog(log,M_ERR,"private key file %s not loaded (unknown algid)",
-	   path);
-    goto out;
-
- found:
     databuf->start=databuf->base;
     databuf->size=got;
     struct cloc loc = { .file=path, .line=0 };
