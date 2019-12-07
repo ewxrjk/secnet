@@ -756,8 +756,9 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     CHECK_AVAIL(msg,m->pklen);
     m->pk=buf_unprepend(msg,m->pklen);
     m->hashlen=msg->start-m->hashstart;
+    struct sigpubkey_if *pubkey=st->pubkey;
 
-    if (!st->pubkey->unpick(st->pubkey->st,msg,&m->sig)) {
+    if (!pubkey->unpick(pubkey->st,msg,&m->sig)) {
 	return False;
     }
 
@@ -904,10 +905,12 @@ static bool_t generate_msg3(struct site *st, const struct msg *prompt)
 
 static bool_t process_msg3_msg4(struct site *st, struct msg *m)
 {
+    struct sigpubkey_if *pubkey=st->pubkey;
+
     /* Check signature and store g^x mod m */
-    if (!st->pubkey->check(st->pubkey->st,
-			   m->hashstart,m->hashlen,
-			   &m->sig)) {
+    if (!pubkey->check(pubkey->st,
+		       m->hashstart,m->hashlen,
+		       &m->sig)) {
 	slog(st,LOG_SEC,"msg3/msg4 signature failed check!");
 	return False;
     }
