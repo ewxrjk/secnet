@@ -80,7 +80,7 @@ static struct sigprivkey_if *uncached_load_file(
     FILE *f=0;
     struct sigprivkey_if *sigpriv=0;
 
-    f = fopen(path,"rb");
+    f=fopen(path,"rb");
     if (!f) {
 	if (errno == ENOENT) {
 	    slilog(log,M_DEBUG,"private key %s not found",
@@ -136,7 +136,7 @@ static struct sigprivkey_if *uncached_load_file(
 static struct sigprivkey_if *privcache_lookup(void *sst,
 					      const struct sigkeyid *id,
 					      struct log_if *log) {
-    struct privcache *st = sst;
+    struct privcache *st=sst;
     int was;
     struct ent result;
 
@@ -148,10 +148,10 @@ static struct sigprivkey_if *privcache_lookup(void *sst,
     }
 
     if (st->used < st->alloc) {
-	was = st->used;
+	was=st->used;
 	st->used++;
     } else {
-	was = st->used-1;
+	was=st->used-1;
 	if (st->ents[was].sigpriv) {
 	    st->ents[was].sigpriv->dispose(st->ents[was].sigpriv->st);
 	}
@@ -162,7 +162,7 @@ static struct sigprivkey_if *privcache_lookup(void *sst,
 
  found:
     memmove(&st->ents[1], &st->ents[0], sizeof(st->ents[0]) * was);
-    st->ents[0] = result;
+    st->ents[0]=result;
     return result.sigpriv;
 }
 
