@@ -101,8 +101,9 @@ sub write_makefile ($$) {
 default: all
 \$(filter-out all,\$(MAKECMDGOALS)) all: run-main.mk
 	\@:
+subdirmk_targets:=\$(or \$(MAKECMDGOALS),all)
 Makefile run-main.mk:
-	\$(MAKE) -C $cd -f main.mk \$(addprefix ${dir_prefix},\$(or \$(MAKECMDGOALS),all))
+	\$(MAKE) -C $cd -f main.mk \$(addprefix ${dir_prefix},\$(subdirmk_targets))
 .SUFFIXES:
 .PHONY:	run-main.mk
 END
