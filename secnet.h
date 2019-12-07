@@ -418,6 +418,7 @@ typedef bool_t sigscheme_loadpub(const struct sigscheme_info *algo,
 typedef bool_t sigscheme_loadpriv(const struct sigscheme_info *algo,
 				  struct buffer_if *privkeydata,
 				  struct sigprivkey_if **sigpriv_r,
+				  closure_t **closure_r,
 				  struct log_if *log, struct cloc loc);
   /* Ideally, check whether privkeydata contains data for any algorithm.
    * That avoids security problems if a key file is misidentified (which

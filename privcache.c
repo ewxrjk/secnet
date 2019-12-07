@@ -37,11 +37,13 @@ struct privcache {
     struct hash_if *defhash;
 };
 
-static struct sigprivkey_if *uncached_load_file(
+static bool_t uncached_load_file(
 			   const struct sigscheme_info *scheme,
 			   const char *path,
 			   struct buffer_if *databuf,
 			   struct hash_if *defhash,
+			   struct sigprivkey_if **sigpriv_r,
+			   closure_t **closure_r,
 			   struct log_if *log);
 
 static struct sigprivkey_if *uncached_get(struct privcache *st,
@@ -61,19 +63,26 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 	   path);
     return 0;
 
- found:
-    return uncached_load_file(scheme,
+ found:;
+    struct sigprivkey_if *sigpriv;
+    closure_t *cl;
+    bool_t ok=uncached_load_file(scheme,
 			      path,
 			      &st->databuf,
 			      st->defhash,
+			      &sigpriv,
+			      &cl,
 			      log);
+    return ok ? sigpriv : 0;
 }
 
-static struct sigprivkey_if *uncached_load_file(
+static bool_t uncached_load_file(
 			   const struct sigscheme_info *scheme,
 			   const char *path,
 			   struct buffer_if *databuf,
 			   struct hash_if *defhash,
+			   struct sigprivkey_if **sigpriv_r,
+			   closure_t **closure_r,
 			   struct log_if *log)
 {
     bool_t ok=False;
@@ -110,7 +119,7 @@ static struct sigprivkey_if *uncached_load_file(
     databuf->start=databuf->base;
     databuf->size=got;
     struct cloc loc = { .file=path, .line=0 };
-    ok=scheme->loadpriv(scheme, databuf, &sigpriv, log, loc);
+    ok=scheme->loadpriv(scheme, databuf, &sigpriv, closure_r, log, loc);
     if (!ok) goto error_out; /* loadpriv will have logged */
 
     if (sigpriv->sethash) {
@@ -122,10 +131,11 @@ static struct sigprivkey_if *uncached_load_file(
 	}
 	sigpriv->sethash(sigpriv->st,defhash);
     }
+    *sigpriv_r=sigpriv;
 
   out:
     if (f) fclose(f);
-    return ok ? sigpriv : 0;
+    return ok;
 
  error_out:
     if (sigpriv) sigpriv->dispose(sigpriv->st);

@@ -719,6 +719,7 @@ static bool_t postreadcheck_tryload(struct load_ctx *l, FILE *f)
 bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
 		     struct buffer_if *privkeydata,
 		     struct sigprivkey_if **sigpriv_r,
+		     closure_t **closure_r,
 		     struct log_if *log, struct cloc loc)
 {
     FILE *f=0;
@@ -747,6 +748,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     if (f) fclose(f);
     if (!st) return False;
     *sigpriv_r=&st->ops;
+    *closure_r=&st->cl;
     return True;
 }
 
