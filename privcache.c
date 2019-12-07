@@ -46,6 +46,7 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     sprintf(st->path.write_here, SIGKEYID_PR_FMT, SIGKEYID_PR_VAL(id));
 
     const char *path=st->path.buffer;
+    struct hash_if *defhash=st->defhash;
 
     f = fopen(path,"rb");
     if (!f) {
@@ -94,7 +95,7 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     if (!ok) goto out; /* loadpriv will have logged */
 
     if (sigpriv->sethash) {
-	if (!st->defhash) {
+	if (!defhash) {
 	    slilog(log,M_ERR,
  "private key %s requires `hash' config key for privcache to load",
 		   path);
@@ -102,7 +103,7 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 	    sigpriv=0;
 	    goto out;
 	}
-	sigpriv->sethash(sigpriv->st,st->defhash);
+	sigpriv->sethash(sigpriv->st,defhash);
     }
 
   out:
