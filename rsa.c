@@ -328,11 +328,10 @@ static void rsapub_dispose(void *sst) {
 #define RSAPUB_LOADCORE_DEFBN(ix,en,what) \
     const char *en##s, struct cloc en##_loc,
 
-#define LDPUBFATAL(enloc,...) \
-    cfgfatal(enloc, "rsa-public", __VA_ARGS__)
+#define LDPUBFATAL(lc,...) ({load_err(l,&lc,0,0,__VA_ARGS__); goto error_out;})
 
 static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
-				       struct cloc overall_loc)
+				       struct load_ctx *l)
 {
     struct rsapub *st;
 
@@ -348,7 +347,7 @@ static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
     st->ops.check=rsa_sig_check;
     st->ops.hash=0;
     st->ops.dispose=rsapub_dispose;
-    st->loc=overall_loc;
+    st->loc=l->loc;
     RSAPUB_BNS(RSAPUB_INIT_ST_BN)
 
 #define RSAPUB_LOADCORE_GETBN(ix,en,what)				\
@@ -372,6 +371,11 @@ static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
 static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
 			    list_t *args)
 {
+    struct load_ctx l[1];
+    l->verror=verror_cfgfatal;
+    l->postreadcheck=0;
+    l->what="rsa-public";
+    l->loc=loc;
 
 #define RSAPUB_APPLY_GETBN(ix,en,what)				\
     item_t *en##i;						\
@@ -389,7 +393,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     RSAPUB_BNS(RSAPUB_APPLY_GETBN)
 
     struct rsapub *st=rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_PASSBN)
-				       loc);
+				       l);
 
     return new_closure(&st->cl);
 }
