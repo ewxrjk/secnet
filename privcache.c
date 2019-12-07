@@ -89,7 +89,7 @@ static struct sigprivkey_if *uncached_load_file(
 	    slilog(log,M_ERR,"failed to open private key file %s",
 		   path);
 	}
-	goto out;
+	goto error_out;
     }
 
     setbuf(f,0);
@@ -98,12 +98,12 @@ static struct sigprivkey_if *uncached_load_file(
     if (ferror(f)) {
 	slilog(log,M_ERR,"failed to read private-key file %s",
 	       path);
-	goto out;
+	goto error_out;
     }
     if (!feof(f)) {
 	slilog(log,M_ERR,"private key file %s longer than max %d",
 	       path, (int)databuf->alloclen);
-	goto out;
+	goto error_out;
     }
     fclose(f); f=0;
 
@@ -111,7 +111,7 @@ static struct sigprivkey_if *uncached_load_file(
     databuf->size=got;
     struct cloc loc = { .file=path, .line=0 };
     ok=scheme->loadpriv(scheme, databuf, &sigpriv, log, loc);
-    if (!ok) goto out; /* loadpriv will have logged */
+    if (!ok) goto error_out; /* loadpriv will have logged */
 
     if (sigpriv->sethash) {
 	if (!defhash) {
@@ -120,7 +120,7 @@ static struct sigprivkey_if *uncached_load_file(
 		   path);
 	    sigpriv->dispose(sigpriv->st);
 	    sigpriv=0;
-	    goto out;
+	    goto error_out;
 	}
 	sigpriv->sethash(sigpriv->st,defhash);
     }
@@ -128,6 +128,10 @@ static struct sigprivkey_if *uncached_load_file(
   out:
     if (f) fclose(f);
     return ok ? sigpriv : 0;
+
+ error_out:
+    ok=False;
+    goto out;
 }
 
 static struct sigprivkey_if *privcache_lookup(void *sst,
