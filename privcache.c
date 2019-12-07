@@ -126,7 +126,7 @@ static bool_t uncached_load_file(
     if (sigpriv->sethash) {
 	if (!defhash) {
 	    slilog(log,M_ERR,
- "private key %s requires `hash' config key for privcache to load",
+ "private key %s requires `hash' config key to load",
 		   path);
 	    goto error_out;
 	}
@@ -219,7 +219,36 @@ static list_t *privcache_apply(closure_t *self, struct cloc loc,
     return new_closure(&st->cl);
 }
 
+static list_t *loadprivate_apply(closure_t *self, struct cloc loc,
+			       dict_t *context, list_t *args)
+{
+    CL_GET_STR_ARG(0,algname,"algorithm name");
+    CL_GET_STR_ARG(1,path,"private key path");
+
+    const struct sigscheme_info *sch=sigscheme_lookup(algname);
+    if (!sch) cfgfatal(algname_i->loc,"load-private",
+		       "unknown algorithm `%s'",algname);
+
+    struct buffer_if databuf;
+    buffer_new(&databuf,DEFAULT_MAXPRIV_BYTES);
+    BUF_ALLOC(&databuf,"load-private data buf");
+
+    struct hash_if *defhash=
+	    find_cl_if(context,"hash",CL_HASH,False,"load-private",loc);
+
+    struct sigprivkey_if *sigpriv;
+    closure_t *cl;
+    bool_t ok=
+	uncached_load_file(sch,path,&databuf,defhash,&sigpriv,&cl,system_log);
+    if (!ok) cfgfatal(loc,"load-private","private key loading failed");
+
+    BUF_FREE(&databuf);
+    buffer_destroy(&databuf);
+    return new_closure(cl);
+}
+
 void privcache_module(dict_t *dict)
 {
     add_closure(dict,"priv-cache",privcache_apply);
+    add_closure(dict,"load-private",loadprivate_apply);
 }
