@@ -660,7 +660,21 @@ class sitelevel(level):
 			os.rename(pa+'~tmp',pa+'~update')
 			w.write("peer-keys \"%s\";\n"%pa);
 		else:
-			w.write("key %s;\n"%str(self.properties["pub"].list[0]))
+			use = None
+			indefault = True
+			for k in self.properties["pub"].list:
+				debugrepr('pub write', (use,indefault,k))
+				if isinstance(k,pubkey):
+					if indefault:
+						use = k
+						break
+					if use is None:
+						use = k
+				else:
+					raise RuntimeError('bad '+repr(k))
+			if use is None:
+				complain("site with no public key");
+			w.write("key %s;\n"%str(use))
 		self.output_props(w,ind+2)
 		self.indent(w,ind+2)
 		w.write("link netlink {\n");
