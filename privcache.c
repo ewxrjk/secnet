@@ -37,19 +37,19 @@ struct privcache {
     struct hash_if *defhash;
 };
 
+static struct sigprivkey_if *uncached_load_file(
+			   const struct sigscheme_info *scheme,
+			   const char *path,
+			   struct buffer_if *databuf,
+			   struct hash_if *defhash,
+			   struct log_if *log);
+
 static struct sigprivkey_if *uncached_get(struct privcache *st,
 			   const struct sigkeyid *id, struct log_if *log)
 {
-    bool_t ok=False;
-    FILE *f=0;
-
     sprintf(st->path.write_here, SIGKEYID_PR_FMT, SIGKEYID_PR_VAL(id));
 
     const char *path=st->path.buffer;
-    struct hash_if *defhash=st->defhash;
-    struct buffer_if *databuf=&st->databuf;
-
-    struct sigprivkey_if *sigpriv=0;
     const struct sigscheme_info *scheme;
     for (scheme=sigschemes;
 	 scheme->name;
@@ -59,9 +59,27 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 
     slilog(log,M_ERR,"private key file %s not loaded (unknown algid)",
 	   path);
-    goto out;
+    return 0;
 
  found:
+    return uncached_load_file(scheme,
+			      path,
+			      &st->databuf,
+			      st->defhash,
+			      log);
+}
+
+static struct sigprivkey_if *uncached_load_file(
+			   const struct sigscheme_info *scheme,
+			   const char *path,
+			   struct buffer_if *databuf,
+			   struct hash_if *defhash,
+			   struct log_if *log)
+{
+    bool_t ok=False;
+    FILE *f=0;
+    struct sigprivkey_if *sigpriv=0;
+
     f = fopen(path,"rb");
     if (!f) {
 	if (errno == ENOENT) {
