@@ -21,6 +21,7 @@
 #include "util.h"
 
 #define DEFAULT_SIZE 5
+#define DEFAULT_MAXPRIV_BYTES 4095
 
 struct ent {
     struct sigkeyid id;
@@ -207,7 +208,7 @@ static list_t *privcache_apply(closure_t *self, struct cloc loc,
     st->used=0;
 
     int32_t buflen=dict_read_number(dict,"privkey-max",False,"privcache",loc,
-				    4095);
+				    DEFAULT_MAXPRIV_BYTES);
     buffer_new(&st->databuf,buflen+1);
 
     const char *path=dict_read_string(dict,"privkeys",True,"privcache",loc);
