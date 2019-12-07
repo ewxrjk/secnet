@@ -85,7 +85,7 @@ static void verror_cfgfatal(struct load_ctx *l, struct cloc loc,
 			    FILE *maybe_f,
 			    const char *message, va_list args)
 {
-    vcfgfatal_maybefile(maybe_f,l->loc,l->what,message,args);
+    vcfgfatal_maybefile(maybe_f,l->loc,l->what,message,args,"");
 }
 
 struct rsapriv {

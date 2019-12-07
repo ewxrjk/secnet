@@ -130,7 +130,8 @@ void fatal_perror_status(int status, const char *message, ...)
 }
 
 void vcfgfatal_maybefile(FILE *maybe_f /* or 0 */, struct cloc loc,
-			 cstring_t facility, const char *message, va_list args)
+			 cstring_t facility, const char *message, va_list args,
+			 const char *suffix)
 {
     enter_phase(PHASE_SHUTDOWN);
 
@@ -152,6 +153,7 @@ void vcfgfatal_maybefile(FILE *maybe_f /* or 0 */, struct cloc loc,
     }
     
     vMessage(M_FATAL,message,args);
+    Message(M_FATAL,"%s",suffix);
     exit(current_phase);
 }
 
@@ -161,7 +163,7 @@ void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, cstring_t facility,
     va_list args;
 
     va_start(args,message);
-    vcfgfatal_maybefile(maybe_f,loc,facility,message,args);
+    vcfgfatal_maybefile(maybe_f,loc,facility,message,args,0);
     va_end(args);
 }    
 
@@ -170,7 +172,7 @@ void cfgfatal(struct cloc loc, cstring_t facility, const char *message, ...)
     va_list args;
 
     va_start(args,message);
-    vcfgfatal_maybefile(0,loc,facility,message,args);
+    vcfgfatal_maybefile(0,loc,facility,message,args,"");
     va_end(args);
 }
 

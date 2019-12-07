@@ -818,7 +818,7 @@ extern NORETURN(cfgfatal(struct cloc loc, cstring_t facility,
 extern void cfgfile_postreadcheck(struct cloc loc, FILE *f);
 extern NORETURN(vcfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
 				    cstring_t facility, const char *message,
-				    va_list))
+				    va_list, const char *suffix))
     FORMAT(printf,4,0);
 extern NORETURN(cfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
 				   cstring_t facility,
