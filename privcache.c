@@ -47,6 +47,7 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 
     const char *path=st->path.buffer;
     struct hash_if *defhash=st->defhash;
+    struct buffer_if *databuf=&st->databuf;
 
     f = fopen(path,"rb");
     if (!f) {
@@ -61,8 +62,8 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     }
 
     setbuf(f,0);
-    buffer_init(&st->databuf,0);
-    ssize_t got=fread(st->databuf.base,1,st->databuf.alloclen,f);
+    buffer_init(databuf,0);
+    ssize_t got=fread(databuf->base,1,databuf->alloclen,f);
     if (ferror(f)) {
 	slilog(log,M_ERR,"failed to read private-key file %s",
 	       path);
@@ -70,7 +71,7 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     }
     if (!feof(f)) {
 	slilog(log,M_ERR,"private key file %s longer than max %d",
-	       path, (int)st->databuf.alloclen);
+	       path, (int)databuf->alloclen);
 	goto out;
     }
     fclose(f); f=0;
@@ -88,10 +89,10 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     goto out;
 
  found:
-    st->databuf.start=st->databuf.base;
-    st->databuf.size=got;
+    databuf->start=databuf->base;
+    databuf->size=got;
     struct cloc loc = { .file=path, .line=0 };
-    ok=scheme->loadpriv(scheme, &st->databuf, &sigpriv, log, loc);
+    ok=scheme->loadpriv(scheme, databuf, &sigpriv, log, loc);
     if (!ok) goto out; /* loadpriv will have logged */
 
     if (sigpriv->sethash) {
