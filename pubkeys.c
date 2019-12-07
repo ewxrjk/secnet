@@ -77,9 +77,12 @@ static list_t *makepublic_apply(closure_t *self, struct cloc loc,
     buf.size += base91s_decode_end(&b91,buf.start+buf.size);
     assert(buf.size <= buf.alloclen);
 
+    struct cfgfile_log log;
+    cfgfile_log_init(&log,loc,"make-public");
+
     struct sigpubkey_if *pubkey;
     closure_t *cl;
-    bool_t ok=sch->loadpub(sch,&buf,&pubkey,&cl,system_log,loc);
+    bool_t ok=sch->loadpub(sch,&buf,&pubkey,&cl,&log.log,loc);
     if (!ok) cfgfatal(loc,"make-public","public key loading failed");
 
     if (pubkey->sethash) {
