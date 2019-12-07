@@ -176,6 +176,12 @@ void cfgfatal(struct cloc loc, cstring_t facility, const char *message, ...)
     va_end(args);
 }
 
+void cfgfile_log__vmsg(void *sst, int class, const char *message, va_list args)
+{
+    struct cfgfile_log *st=sst;
+    vcfgfatal_maybefile(0,st->loc,st->facility,message,args,"\n");
+}
+
 void cfgfile_postreadcheck(struct cloc loc, FILE *f)
 {
     assert(loc.file);

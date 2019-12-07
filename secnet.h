@@ -640,6 +640,22 @@ FORMAT(printf,3,4);
 extern void vslilog_part(struct log_if *lf, int class, const char *message,
 			 va_list) FORMAT(printf,3,0);
 
+void cfgfile_log__vmsg(void *sst, int class, const char *message, va_list);
+struct cfgfile_log {
+    struct log_if log;
+    /* private fields */
+    struct cloc loc;
+    const char *facility;
+};
+static inline void cfgfile_log_init(struct cfgfile_log *cfl,
+				    struct cloc loc, const char *facility)
+{
+    cfl->log.st=cfl;
+    cfl->log.vlogfn=cfgfile_log__vmsg;
+    cfl->loc=loc;
+    cfl->facility=facility;
+}
+
 /* SITE interface */
 
 /* Pretty much a placeholder; allows starting and stopping of processing,
