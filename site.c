@@ -650,6 +650,7 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what,
     if (type_is_msg34(type)) {
 	buf_append_uint16(&st->buffer,st->mtu_target);
     }
+    struct sigprivkey_if *privkey=st->privkey;
     append_string_xinfo_done(&st->buffer,&xia);
 
     buf_append_string(&st->buffer,st->remotename);
@@ -670,10 +671,10 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what,
     buf_append_string(&st->buffer,dhpub);
     free(dhpub);
 
-    bool_t ok=st->privkey->sign(st->privkey->st,
-				st->buffer.start,
-				st->buffer.size,
-				&st->buffer);
+    bool_t ok=privkey->sign(privkey->st,
+			    st->buffer.start,
+			    st->buffer.size,
+			    &st->buffer);
     if (!ok) goto fail;
     return True;
 
