@@ -45,14 +45,16 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 
     sprintf(st->path.write_here, SIGKEYID_PR_FMT, SIGKEYID_PR_VAL(id));
 
-    f = fopen(st->path.buffer,"rb");
+    const char *path=st->path.buffer;
+
+    f = fopen(path,"rb");
     if (!f) {
 	if (errno == ENOENT) {
 	    slilog(log,M_DEBUG,"private key %s not found",
-		   st->path.buffer);
+		   path);
 	} else {
 	    slilog(log,M_ERR,"failed to open private key file %s",
-		   st->path.buffer);
+		   path);
 	}
 	goto out;
     }
@@ -62,12 +64,12 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     ssize_t got=fread(st->databuf.base,1,st->databuf.alloclen,f);
     if (ferror(f)) {
 	slilog(log,M_ERR,"failed to read private-key file %s",
-	       st->path.buffer);
+	       path);
 	goto out;
     }
     if (!feof(f)) {
 	slilog(log,M_ERR,"private key file %s longer than max %d",
-	       st->path.buffer, (int)st->databuf.alloclen);
+	       path, (int)st->databuf.alloclen);
 	goto out;
     }
     fclose(f); f=0;
@@ -81,13 +83,13 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 	    goto found;
 
     slilog(log,M_ERR,"private key file %s not loaded (unknown algid)",
-	   st->path.buffer);
+	   path);
     goto out;
 
  found:
     st->databuf.start=st->databuf.base;
     st->databuf.size=got;
-    struct cloc loc = { .file=st->path.buffer, .line=0 };
+    struct cloc loc = { .file=path, .line=0 };
     ok=scheme->loadpriv(scheme, &st->databuf, &sigpriv, log, loc);
     if (!ok) goto out; /* loadpriv will have logged */
 
@@ -95,7 +97,7 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
 	if (!st->defhash) {
 	    slilog(log,M_ERR,
  "private key %s requires `hash' config key for privcache to load",
-		   st->path.buffer);
+		   path);
 	    sigpriv->dispose(sigpriv->st);
 	    sigpriv=0;
 	    goto out;
