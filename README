@@ -392,7 +392,8 @@ site: dict argument
    them.
   resolver (resolver closure)
   random (randomsrc closure)
-  local-key (rsaprivkey closure)
+  key-cache (privcache closure)
+  local-key (rsaprivkey closure): Deprecated; use key-cache instead.
   address (string list): optional, DNS name(s) used to find our peer;
     address literals are supported too if enclosed in `[' `]'.
   port (integer): mandatory if 'address' is specified: the port used

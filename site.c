@@ -316,7 +316,8 @@ struct site {
     struct resolver_if *resolver;
     struct log_if *log;
     struct random_if *random;
-    struct sigprivkey_if *privkey;
+    struct privcache_if *privkeys;
+    struct sigprivkey_if *privkey_fixed;
     struct sigpubkey_if *pubkey;
     struct transform_if **transforms;
     int ntransforms;
@@ -520,6 +521,13 @@ static void dispose_transform(struct transform_inst_if **transform_var)
     type=buf_unprepend_uint32((b)); \
     if (type!=(t)) return False; } while(0)
 
+static _Bool type_is_msg23(uint32_t type)
+{
+    switch (type) {
+	case LABEL_MSG2: case CASES_MSG3_KNOWN: return True;
+	default: return False;
+    }
+}
 static _Bool type_is_msg34(uint32_t type)
 {
     switch (type) {
@@ -549,7 +557,11 @@ struct msg {
     char *pk;
     int32_t hashlen;
     struct alg_msg_data sig;
+    int n_pubkeys_accepted_nom; /* may be > MAX_SIG_KEYS ! */
+    const struct sigkeyid *pubkeys_accepted[MAX_SIG_KEYS];
 };
+
+static const struct sigkeyid keyid_zero;
 
 static int32_t wait_timeout(struct site *st) {
     int32_t t = st->wait_timeout_mean;
@@ -632,6 +644,7 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what,
 {
     string_t dhpub;
     unsigned minor;
+    int ki;
 
     st->retries=st->setup_retries;
     BUF_ALLOC(&st->buffer,what);
@@ -650,7 +663,52 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what,
     if (type_is_msg34(type)) {
 	buf_append_uint16(&st->buffer,st->mtu_target);
     }
-    struct sigprivkey_if *privkey=st->privkey;
+    if (type_is_msg23(type)) {
+	/* The code to advertise a public key acceptance list will
+	 * come in a moment.  But right now we must add the byte
+	 * indicating which key advertised by our peer we used, which
+	 * comes after the public key acceptance list.  So for now,
+	 * explicitly advertise a list with just 0000000000. */
+	buf_append_uint8(&st->buffer,1);
+	BUF_ADD_OBJ(append,&st->buffer,keyid_zero);
+    }
+    struct sigprivkey_if *privkey=0;
+    if (type_is_msg34(type)) {
+	assert(prompt->n_pubkeys_accepted_nom>0);
+	for (ki=0;
+	     ki<prompt->n_pubkeys_accepted_nom && ki<MAX_SIG_KEYS;
+	     ki++) {
+	    const struct sigkeyid *kid=prompt->pubkeys_accepted[ki];
+	    if (st->privkeys) {
+		privkey=st->privkeys->lookup(st->privkeys->st,kid,st->log);
+		if (privkey) goto privkey_found;
+	    } else {
+		if (sigkeyid_equal(&keyid_zero,kid)) {
+		    privkey=st->privkey_fixed;
+		    goto privkey_found;
+		}
+	    }
+	}
+	uint32_t class = slog_start(st,LOG_ERROR);
+	if (class) {
+	    slilog_part(st->log,class,"no suitable private key, peer wanted");
+	    for (ki=0;
+		 ki<prompt->n_pubkeys_accepted_nom && ki<MAX_SIG_KEYS;
+		 ki++) {
+		slilog_part(st->log,class, " " SIGKEYID_PR_FMT,
+			    SIGKEYID_PR_VAL(prompt->pubkeys_accepted[ki]));
+	    }
+	    if (prompt->n_pubkeys_accepted_nom > MAX_SIG_KEYS)
+		slilog_part(st->log,class," +%d",
+			    prompt->n_pubkeys_accepted_nom - MAX_SIG_KEYS);
+	    slilog_part(st->log,class,"\n");
+	}
+	return False;
+
+    privkey_found:
+	buf_append_uint8(&st->buffer,ki);
+    }
+
     append_string_xinfo_done(&st->buffer,&xia);
 
     buf_append_string(&st->buffer,st->remotename);
@@ -703,6 +761,7 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
 {
     unsigned minor;
 
+    m->n_pubkeys_accepted_nom=-1;
     m->capab_transformnum=-1;
     m->hashstart=msg->start;
     CHECK_AVAIL(msg,4);
@@ -720,6 +779,18 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     if (type_is_msg34(type) && m->remote.extrainfo.size) {
 	CHECK_AVAIL(&m->remote.extrainfo,2);
 	m->remote_mtu=buf_unprepend_uint16(&m->remote.extrainfo);
+    }
+    if (type_is_msg23(type) && m->remote.extrainfo.size) {
+	m->n_pubkeys_accepted_nom = buf_unprepend_uint8(&m->remote.extrainfo);
+	if (!m->n_pubkeys_accepted_nom) return False;
+	for (int ki_nom=0; ki_nom<m->n_pubkeys_accepted_nom; ki_nom++) {
+	    CHECK_AVAIL(&m->remote.extrainfo,KEYIDSZ);
+	    struct sigkeyid *kid = buf_unprepend(&m->remote.extrainfo,KEYIDSZ);
+	    if (ki_nom<MAX_SIG_KEYS) m->pubkeys_accepted[ki_nom] = kid;
+	}
+    } else {
+	m->n_pubkeys_accepted_nom = 1;
+	m->pubkeys_accepted[0] = &keyid_zero;
     }
     if (!unpick_name(msg,&m->local)) return False;
     if (type==LABEL_PROD) {
@@ -2237,7 +2308,14 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
     struct hash_if *hash=0;
-    st->privkey=find_cl_if(dict,"local-key",CL_SIGPRIVKEY,True,"site",loc);
+
+    st->privkeys=find_cl_if(dict,"key-cache",CL_PRIVCACHE,False,"site",loc);
+    if (!st->privkeys) {
+	st->privkey_fixed=
+	    find_cl_if(dict,"local-key",CL_SIGPRIVKEY,True,"site",loc);
+	SETUP_SETHASH(st->privkey_fixed);
+    }
+
     st->addresses=dict_read_string_array(dict,"address",False,"site",loc,0);
     if (st->addresses)
 	st->remoteport=dict_read_number(dict,"port",True,"site",loc,0);
@@ -2248,7 +2326,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
 
-    SETUP_SETHASH(st->privkey);
     SETUP_SETHASH(st->pubkey);
 
 #define DEFAULT(D) (st->peer_mobile || st->local_mobile	\
