@@ -101,6 +101,12 @@ exec cat
                 });
 "
 	}
+	{load-private *} {
+	    set sitesconf sites-nonego.conf
+	    append cfg "
+		local-key load-private(\"[lindex $privkey 1]\",\"$builddir/[lindex $privkey 2]\");
+"
+	}
 	* {
 	    set sitesconf sites-nonego.conf
 	    append cfg "

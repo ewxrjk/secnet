@@ -3,8 +3,8 @@
 source stest/common.tcl
 
 # `non-negotiating' ends:
-set privkey(inside) test-example/inside.key
-set privkey(outside) test-example/outside.key
+set privkey(inside) {load-private rsa1 test-example/inside.key}
+set privkey(outside) {load-private rsa1 test-example/outside.key}
 # So old, old; ie -oo
 
 # There is no -no because the sites file tells a new inside to expect
