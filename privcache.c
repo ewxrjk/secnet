@@ -118,8 +118,6 @@ static struct sigprivkey_if *uncached_load_file(
 	    slilog(log,M_ERR,
  "private key %s requires `hash' config key for privcache to load",
 		   path);
-	    sigpriv->dispose(sigpriv->st);
-	    sigpriv=0;
 	    goto error_out;
 	}
 	sigpriv->sethash(sigpriv->st,defhash);
@@ -130,6 +128,7 @@ static struct sigprivkey_if *uncached_load_file(
     return ok ? sigpriv : 0;
 
  error_out:
+    if (sigpriv) sigpriv->dispose(sigpriv->st);
     ok=False;
     goto out;
 }
