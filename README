@@ -398,7 +398,9 @@ site: dict argument
     address literals are supported too if enclosed in `[' `]'.
   port (integer): mandatory if 'address' is specified: the port used
     to contact our peer
-  key (rsapubkey closure): our peer's public key
+  peer-keys (string): path (prefix) for peer public key set file(s);
+    see README.make-secnet-sites re `pub' etc.
+  key (rsapubkey closure): our peer's public key (obsolete)
   transform (transform closure): how to mangle packets sent between sites
   dh (dh closure)
   hash (hash closure)

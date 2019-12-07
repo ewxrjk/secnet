@@ -187,6 +187,7 @@ INPUT SYNTAX
 		site level, but optional.
 
 	Properties which can also appear in public key files.
+	(named by `peer-keys' key to secnet sites closure.)
 	These are acceptable to make-secnet-sites only at
 	site level.  See also `Site long-term keys' in NOTES.
 

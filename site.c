@@ -43,6 +43,7 @@
 #include "util.h"
 #include "unaligned.h"
 #include "magic.h"
+#include "pubkeys.h"
 
 #define SETUP_BUFFER_LEN 2048
 
@@ -318,7 +319,6 @@ struct site {
     struct random_if *random;
     struct privcache_if *privkeys;
     struct sigprivkey_if *privkey_fixed;
-    struct sigpubkey_if *pubkey;
     struct transform_if **transforms;
     int ntransforms;
     struct dh_if *dh;
@@ -347,6 +347,8 @@ struct site {
     int resolving_n_results_all;
     int resolving_n_results_stored;
     struct comm_addr resolving_results[MAX_PEER_ADDRS];
+    const char *peerkeys_path;
+    struct peer_keyset *peerkeys_current, *peerkeys_kex;
 
     /* The currently established session */
     struct data_key current;
@@ -559,6 +561,7 @@ struct msg {
     struct alg_msg_data sig;
     int n_pubkeys_accepted_nom; /* may be > MAX_SIG_KEYS ! */
     const struct sigkeyid *pubkeys_accepted[MAX_SIG_KEYS];
+    int signing_key_index;
 };
 
 static const struct sigkeyid keyid_zero;
@@ -664,13 +667,11 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what,
 	buf_append_uint16(&st->buffer,st->mtu_target);
     }
     if (type_is_msg23(type)) {
-	/* The code to advertise a public key acceptance list will
-	 * come in a moment.  But right now we must add the byte
-	 * indicating which key advertised by our peer we used, which
-	 * comes after the public key acceptance list.  So for now,
-	 * explicitly advertise a list with just 0000000000. */
-	buf_append_uint8(&st->buffer,1);
-	BUF_ADD_OBJ(append,&st->buffer,keyid_zero);
+	buf_append_uint8(&st->buffer,st->peerkeys_kex->nkeys);
+	for (ki=0; ki<st->peerkeys_kex->nkeys; ki++) {
+	    struct peer_pubkey *pk = &st->peerkeys_kex->keys[ki];
+	    BUF_ADD_OBJ(append,&st->buffer,pk->id);
+	}
     }
     struct sigprivkey_if *privkey=0;
     if (type_is_msg34(type)) {
@@ -763,6 +764,7 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
 
     m->n_pubkeys_accepted_nom=-1;
     m->capab_transformnum=-1;
+    m->signing_key_index=-1;
     m->hashstart=msg->start;
     CHECK_AVAIL(msg,4);
     m->dest=buf_unprepend_uint32(msg);
@@ -791,6 +793,11 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     } else {
 	m->n_pubkeys_accepted_nom = 1;
 	m->pubkeys_accepted[0] = &keyid_zero;
+    }
+    if (type_is_msg34(type) && m->remote.extrainfo.size) {
+	m->signing_key_index=buf_unprepend_uint8(&m->remote.extrainfo);
+    } else {
+	m->signing_key_index=0;
     }
     if (!unpick_name(msg,&m->local)) return False;
     if (type==LABEL_PROD) {
@@ -827,8 +834,13 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     CHECK_AVAIL(msg,m->pklen);
     m->pk=buf_unprepend(msg,m->pklen);
     m->hashlen=msg->start-m->hashstart;
-    struct sigpubkey_if *pubkey=st->pubkey;
 
+    if (m->signing_key_index < 0 ||
+	m->signing_key_index >= st->peerkeys_kex->nkeys) {
+	return False;
+    }
+    struct sigpubkey_if *pubkey=
+	st->peerkeys_kex->keys[m->signing_key_index].pubkey;
     if (!pubkey->unpick(pubkey->st,msg,&m->sig)) {
 	return False;
     }
@@ -884,6 +896,12 @@ static bool_t check_msg(struct site *st, uint32_t type, struct msg *m,
 
 static bool_t kex_init(struct site *st)
 {
+    keyset_dispose(&st->peerkeys_kex);
+    if (!st->peerkeys_current) {
+	slog(st,LOG_SETUP_INIT,"no peer public keys, abandoning key setup");
+	return False;
+    }
+    st->peerkeys_kex = keyset_dup(st->peerkeys_current);
     st->random->generate(st->random->st,NONCELEN,st->localN);
     return True;
 }
@@ -976,9 +994,25 @@ static bool_t generate_msg3(struct site *st, const struct msg *prompt)
 
 static bool_t process_msg3_msg4(struct site *st, struct msg *m)
 {
-    struct sigpubkey_if *pubkey=st->pubkey;
-
     /* Check signature and store g^x mod m */
+    int ki;
+
+    if (m->signing_key_index >= 0) {
+	if (m->signing_key_index >= st->peerkeys_kex->nkeys)
+	    return False;
+	ki=m->signing_key_index;
+    } else {
+	for (ki=0; ki<st->peerkeys_kex->nkeys; ki++)
+	    if (sigkeyid_equal(&keyid_zero,&st->peerkeys_kex->keys[ki].id))
+		goto found;
+	/* not found */
+	slog(st,LOG_ERROR,
+	     "peer signed with keyid zero, which we do not accept");
+	return False;
+    found:;
+    }
+    struct sigpubkey_if *pubkey=st->peerkeys_kex->keys[ki].pubkey;
+
     if (!pubkey->check(pubkey->st,
 		       m->hashstart,m->hashlen,
 		       &m->sig)) {
@@ -1609,6 +1643,7 @@ static void enter_state_run(struct site *st)
 
     st->setup_session_id=0;
     transport_peers_clear(st,&st->setup_peers);
+    keyset_dispose(&st->peerkeys_kex);
     FILLZERO(st->localN);
     FILLZERO(st->remoteN);
     dispose_transform(&st->new_transform);
@@ -2233,6 +2268,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->ops.st=st;
     st->ops.control=site_control;
     st->ops.status=site_status;
+    st->peerkeys_path=0;
+    st->peerkeys_current=st->peerkeys_kex=0;
 
     /* First parameter must be a dict */
     item=list_elem(args,0);
@@ -2316,17 +2353,36 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	SETUP_SETHASH(st->privkey_fixed);
     }
 
+    struct sigpubkey_if *fixed_pubkey
+	=find_cl_if(dict,"key",CL_SIGPUBKEY,False,"site",loc);
+    st->peerkeys_path=dict_read_string(dict,"peer-keys",fixed_pubkey==0,
+				       "site",loc);
+    if (st->peerkeys_path) {
+	st->peerkeys_current=keyset_load(st->peerkeys_path,
+					 &st->scratch,st->log,M_ERR);
+	if (fixed_pubkey) {
+	    fixed_pubkey->dispose(fixed_pubkey->st);
+	}
+    } else {
+	assert(fixed_pubkey);
+	SETUP_SETHASH(fixed_pubkey);
+	NEW(st->peerkeys_current);
+	st->peerkeys_current->refcount=1;
+	st->peerkeys_current->nkeys=1;
+	st->peerkeys_current->keys[0].id=keyid_zero;
+	st->peerkeys_current->keys[0].pubkey=fixed_pubkey;
+	slog(st,LOG_SIGKEYS,
+	     "using old-style fixed peer public key (no `peer-keys')");
+    }
+
     st->addresses=dict_read_string_array(dict,"address",False,"site",loc,0);
     if (st->addresses)
 	st->remoteport=dict_read_number(dict,"port",True,"site",loc,0);
     else st->remoteport=0;
-    st->pubkey=find_cl_if(dict,"key",CL_SIGPUBKEY,True,"site",loc);
 
     GET_CLOSURE_LIST("transform",transforms,ntransforms,CL_TRANSFORM);
 
     st->dh=find_cl_if(dict,"dh",CL_DH,True,"site",loc);
-
-    SETUP_SETHASH(st->pubkey);
 
 #define DEFAULT(D) (st->peer_mobile || st->local_mobile	\
                     ? DEFAULT_MOBILE_##D : DEFAULT_##D)
