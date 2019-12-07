@@ -265,6 +265,13 @@ async_linebuf_read(struct pollfd *pfd, struct buffer_if *buf,
 
 /*----- some handy macros -----*/
 
+#define CL_GET_STR_ARG(ix,vn,what)					\
+    item_t *vn##_i=list_elem(args,ix);					\
+    if (!vn##_i) cfgfatal(loc,"make-public","need " what);		\
+    if (vn##_i->type!=t_string) cfgfatal(vn##_i->loc,"make-public",	\
+				    what "must be string");		\
+    const char *vn=vn##_i->data.string
+
 #define MINMAX(ae,be,op) ({			\
 	typeof((ae)) a=(ae);			\
 	typeof((be)) b=(be);			\

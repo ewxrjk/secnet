@@ -49,15 +49,8 @@ const struct sigscheme_info *sigscheme_lookup(const char *name)
 static list_t *makepublic_apply(closure_t *self, struct cloc loc,
 				dict_t *context, list_t *args)
 {
-#define ARG(ix,vn,what)							\
-    item_t *vn##_i=list_elem(args,ix);					\
-    if (!vn##_i) cfgfatal(loc,"make-public","need " what);		\
-    if (vn##_i->type!=t_string) cfgfatal(vn##_i->loc,"make-public",	\
-				    what "must be string");		\
-    const char *vn=vn##_i->data.string
-
-    ARG(0,algname,"algorithm name");
-    ARG(1,b91d,"base91s-encoded public key");
+    CL_GET_STR_ARG(0,algname,"algorithm name");
+    CL_GET_STR_ARG(1,b91d,"base91s-encoded public key");
 
     const struct sigscheme_info *sch=sigscheme_lookup(algname);
     if (!sch) cfgfatal(algname_i->loc,"make-public",
