@@ -236,10 +236,13 @@ static list_t *loadprivate_apply(closure_t *self, struct cloc loc,
     struct hash_if *defhash=
 	    find_cl_if(context,"hash",CL_HASH,False,"load-private",loc);
 
+    struct cfgfile_log log;
+    cfgfile_log_init(&log,loc,"load-private");
+
     struct sigprivkey_if *sigpriv;
     closure_t *cl;
     bool_t ok=
-	uncached_load_file(sch,path,&databuf,defhash,&sigpriv,&cl,system_log);
+	uncached_load_file(sch,path,&databuf,defhash,&sigpriv,&cl,&log.log);
     if (!ok) cfgfatal(loc,"load-private","private key loading failed");
 
     BUF_FREE(&databuf);
