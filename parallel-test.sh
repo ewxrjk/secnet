@@ -16,8 +16,14 @@ for f in d.*; do
     rm $f/secnet
     mv $f/secnet.new $f/secnet
 done
+here=$(git rev-parse HEAD)
+us=${0%/*}
+log=$us/at-$here.log
+>$log
 for x in `seq 1 500`; do
     echo $x
-    make -j -f ${0%/*}/parallel-test.make
+    echo >>$log $x
+    make -j -f $us/parallel-test.make >$us/dump/at-$here.log 2>&1
+    echo >>$log "$x ok"
 done
 echo ok
