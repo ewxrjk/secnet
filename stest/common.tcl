@@ -350,6 +350,8 @@ proc udp-relay {data src sock args} {
 }
 
 proc adj-after {timeout args} {
+    upvar #0 env(SECNET_STEST_TIMEOUT_MUL) mul
+    if {[info exists mul]} { set timeout [expr {$timeout * $mul}] }
     eval after $timeout $args
 }
 
