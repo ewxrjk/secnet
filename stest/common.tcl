@@ -201,6 +201,7 @@ proc spawn-secnet {location site} {
 	    * {
 		puts " $argl"
 		set argl [split $env($divertk)]
+		puts "... $argl"
 	    }
 	}
     }
