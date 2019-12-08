@@ -254,6 +254,11 @@ sub process_subtree ($$) {
 	}
 	print O "\n";
     }
+    if (@targets) {
+	print O ".PHONY:";
+	print O " ${dir_prefix}${_}" foreach @targets;
+	print O "\n";
+    }
 
     return @targets;
 }
