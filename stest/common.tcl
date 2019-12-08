@@ -186,18 +186,20 @@ proc spawn-secnet {location site} {
 	    *PRELOAD* { puts -nonewline " $k=$env($k)" }
 	}
     }
-    puts " $argl"
     if {[info exists env($divertk)]} {
 	switch -glob $env($divertk) {
 	    i {
+		puts " $argl"
 		puts -nonewline "run ^ command, hit return "
 		flush stdout
 		gets stdin
 		set argl {}
 	    }
 	    0 - "" {
+		puts " $argl"
 	    }
 	    * {
+		puts " $argl"
 		set argl [split $env($divertk)]
 	    }
 	}
