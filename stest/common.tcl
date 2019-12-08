@@ -349,14 +349,18 @@ proc udp-relay {data src sock args} {
     }
 }
 
+proc adj-after {timeout args} {
+    eval after $timeout $args
+}
+
 proc test-kex {} {
     udp-proxy
     spawn-secnet in inside
     spawn-secnet out outside
 
-    after 500 sendpkt
-    after 1000 sendpkt
-    after 5000 timed-out
+    adj-after 500 sendpkt
+    adj-after 1000 sendpkt
+    adj-after 5000 timed-out
 
     vwait ok
 }
