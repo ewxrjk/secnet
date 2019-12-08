@@ -416,6 +416,23 @@ static struct flagstr message_class_table[]={
     { NULL, 0 }
 };
 
+static void logfile_file_init(struct logfile *st, FILE *f, const char *desc)
+{
+    st->cl.description=desc;
+    st->cl.type=CL_LOG;
+    st->cl.apply=NULL;
+    st->cl.interface=&st->ops;
+    st->ops.st=st;
+    st->ops.vlogfn=logfile_vlog;
+    st->ops.buff[0]=0;
+    st->f=f;
+    st->logfile=0;
+    st->prefix="";
+    st->forked=0;
+    st->loc.file=0;
+    st->loc.line=-1;
+}
+
 static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
 			     list_t *args)
 {
@@ -428,17 +445,8 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
        become a daemon. */
     
     NEW(st);
-    st->cl.description="logfile";
-    st->cl.type=CL_LOG;
-    st->cl.apply=NULL;
-    st->cl.interface=&st->ops;
-    st->ops.st=st;
-    st->ops.vlogfn=logfile_vlog;
-    st->ops.buff[0]=0;
     st->loc=loc;
-    st->f=stderr;
-    st->prefix="";
-    st->forked=0;
+    logfile_file_init(st,stderr,"logfile");
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict) {
