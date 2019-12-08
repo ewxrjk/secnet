@@ -44,10 +44,10 @@ main.mk $(SUBDIRMK_MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp
 # This filtering arranges that we can often run config.status to
 # generate only particular output files.  We look for *inputs* that
 # have changed.  If the only inputs that have changed are ones that we
-# know affect only one output (Subdir.mk.in and regen.mk.in), we pass
+# know affect only one output (Subdir.sd.mk and *.mk.in), we pass
 # config.status the corresponding output file names.  Otherwise we
 # pass nothing and config.status does them all.  We need to mention
-# regen.mk.in twice because if $(top_srcdir) is `.', make elides the
+# Subdir.sd.mk twice because if $(top_srcdir) is `.', make elides the
 # directory part from $?.
 	./$(CONFIG_STATUS) $(if					\
 		$(filter-out Subdir.sd.mk %/Subdir.sd.mk	\
