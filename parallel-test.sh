@@ -20,7 +20,7 @@ here=$(git rev-parse HEAD)
 us=${0%/*}
 log=$us/at-$here.log
 >$log
-for x in `seq 1 500`; do
+for x in `seq 1 ${1-500}`; do
     echo $x
     echo >>$log $x
     make -j -f $us/parallel-test.make >$us/dump/at-$here.log 2>&1
