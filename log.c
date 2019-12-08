@@ -49,12 +49,7 @@ FORMAT(printf,2,0)
 static void vMessage(uint32_t class, const char *message, va_list args)
 {
 
-    if (system_log) {
-	/* Messages go to the system log interface */
-	vslilog_part(system_log, class, message, args);
-    } else {
-	vMessageFallback(class,message,args);
-    }
+    vslilog_part(system_log, class, message, args);
 }  
 
 void Message(uint32_t class, const char *message, ...)
