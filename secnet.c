@@ -493,6 +493,7 @@ int main(int argc, char **argv)
 {
     dict_t *config;
 
+    log_early_init();
     phase_hooks_init();
 
     enter_phase(PHASE_GETOPTS);

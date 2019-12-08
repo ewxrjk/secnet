@@ -663,6 +663,16 @@ void log_from_fd(int fd, cstring_t prefix, struct log_if *log)
 		      prefix);
 }
 
+static struct logfile startup_log;
+void log_early_init(void)
+{
+    logfile_file_init(&startup_log,stderr,"startup");
+    system_log=&startup_log.ops;;
+}
+
+/* for the benefit of main, really */
+void logfile_init_file(struct logfile *st, FILE *f);
+
 void log_module(dict_t *dict)
 {
     setlinebuf(stderr);

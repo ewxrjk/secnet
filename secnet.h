@@ -657,6 +657,8 @@ static inline void cfgfile_log_init(struct cfgfile_log *cfl,
     cfl->facility=facility;
 }
 
+void log_early_init(void);
+
 /* SITE interface */
 
 /* Pretty much a placeholder; allows starting and stopping of processing,
