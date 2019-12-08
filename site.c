@@ -2358,8 +2358,18 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	cfgfatal(loc,"site","parameter must be a dictionary\n");
     
     dict=item->data.dict;
+    st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
+    st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
+				       log_event_table,"site");
+
     st->localname=dict_read_string(dict, "local-name", True, "site", loc);
     st->remotename=dict_read_string(dict, "name", True, "site", loc);
+
+    st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
+			    "site_apply");
+    sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
+
+    /* Now slog is working */
 
     st->keepalive=dict_read_bool(dict,"keepalive",False,"site",loc,False);
 
@@ -2422,7 +2432,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
 
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
-    st->log=find_cl_if(dict,"log",CL_LOG,True,"site",loc);
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
     st->defhash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
@@ -2502,15 +2511,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 		 "renegotiate-time must be less than key-lifetime\n");
     }
 
-    st->log_events=string_list_to_word(dict_lookup(dict,"log-events"),
-				       log_event_table,"site");
-
     st->resolving_count=0;
     st->allow_send_prod=0;
-
-    st->tunname=safe_malloc(strlen(st->localname)+strlen(st->remotename)+5,
-			    "site_apply");
-    sprintf(st->tunname,"%s<->%s",st->localname,st->remotename);
 
     /* The information we expect to see in incoming messages of type 1 */
     /* fixme: lots of unchecked overflows here, but the results are only
