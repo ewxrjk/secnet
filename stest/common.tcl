@@ -177,7 +177,7 @@ proc spawn-secnet {location site} {
     }
     set argl [list $secnet -dvnc $cf]
     set divertk SECNET_STEST_DIVERT_$site
-    puts -nonewline "spawn"
+    puts "spawn:"
     foreach k [array names env] {
 	switch -glob $k {
 	    SECNET_STEST_DIVERT_* -
