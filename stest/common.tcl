@@ -188,8 +188,9 @@ proc spawn-secnet {location site} {
     }
     if {[info exists env($divertk)]} {
 	switch -glob $env($divertk) {
-	    i {
-		puts " $argl"
+	    i - {i *} {
+		regsub {^i} $env($divertk) {} divert_prefix
+		puts "$divert_prefix $argl"
 		puts -nonewline "run ^ command, hit return "
 		flush stdout
 		gets stdin
