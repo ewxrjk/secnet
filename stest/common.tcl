@@ -198,10 +198,13 @@ proc spawn-secnet {location site} {
 	    0 - "" {
 		puts " $argl"
 	    }
-	    * {
+	    /* - ./* {
 		puts " $argl"
 		set argl [split $env($divertk)]
 		puts "... $argl"
+	    }
+	    * {
+		error "$divertk not understood"
 	    }
 	}
     }
