@@ -61,6 +61,16 @@ static string_t dh_makepublic(void *sst, uint8_t *secret, int32_t secretlen)
     return r;
 }
 
+static int32_t write_mpbin(MP_INT *a, uint8_t *buffer,
+				     int32_t buflen)
+{
+    char *hb = write_mpstring(a);
+    int32_t len;
+    hex_decode(buffer, buflen, &len, hb, True);
+    free(hb);
+    return len;
+}
+
 static dh_makeshared_fn dh_makeshared;
 static void dh_makeshared(void *sst, uint8_t *secret, int32_t secretlen,
 			  cstring_t rempublic, uint8_t *sharedsecret,

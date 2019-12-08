@@ -183,15 +183,6 @@ char *write_mpstring(MP_INT *a)
     return buff;
 }
 
-int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen)
-{
-    char *hb = write_mpstring(a);
-    int32_t len;
-    hex_decode(buffer, buflen, &len, hb, True);
-    free(hb);
-    return len;
-}
-
 #define DEFINE_SETFDFLAG(fn,FL,FLAG)					\
 void fn(int fd) {							\
     int r=fcntl(fd, F_GET##FL);						\

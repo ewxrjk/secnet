@@ -148,9 +148,6 @@ extern void read_mpbin(MP_INT *a, uint8_t *bin, int binsize);
 extern char *write_mpstring(MP_INT *a);
   /* Convert a MP_INT into a hex string */
 
-extern int32_t write_mpbin(MP_INT *a, uint8_t *buffer, int32_t buflen);
-  /* Convert a MP_INT into a buffer; return length; truncate if necessary */
-
 extern struct log_if *init_log(list_t *loglist);
 
 extern void send_nak(const struct comm_addr *dest, uint32_t our_index,
