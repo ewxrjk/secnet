@@ -61,14 +61,16 @@ static string_t dh_makepublic(void *sst, uint8_t *secret, int32_t secretlen)
     return r;
 }
 
-static int32_t write_mpbin(MP_INT *a, uint8_t *buffer,
-				     int32_t buflen)
+static void write_mpbin_anomalous(MP_INT *a, uint8_t *buffer,
+				  int32_t buflen)
+    /* If the BN is smaller than buflen, pads it *at the wrong end* */
 {
     char *hb = write_mpstring(a);
     int32_t len;
     hex_decode(buffer, buflen, &len, hb, True);
+    if (len<buflen)
+	memset(buffer+len,0,buflen-len);
     free(hb);
-    return len;
 }
 
 static dh_makeshared_fn dh_makeshared;
@@ -88,7 +90,7 @@ static void dh_makeshared(void *sst, uint8_t *secret, int32_t secretlen,
 
     mpz_powm_sec(&c, &b, &a, &st->p);
 
-    write_mpbin(&c,sharedsecret,buflen);
+    write_mpbin_anomalous(&c,sharedsecret,buflen);
 
     mpz_clear(&a);
     mpz_clear(&b);
