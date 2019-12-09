@@ -151,11 +151,11 @@ sub process_input_mk ($$$$$$$$$) {
 	    $buffering_output='';
 	}
 	for (;;) {
-	    unless (s{^(.*?)(\\)?(?=$esc)}{}) { o $_; last; }
+	    unless (s{^(.*?)$esc}{}) { o $_; last; }
 	    o $1;
-	    if ($2) { s#^$esc##; o $$esclitr; next; }
-	    s{^$esc}{} or die "$_ ?";
-	    if (s{^$esc}{}) { o "$$esclitr$$esclitr" }
+	    if (s{^\\$esc}{}) { o "$$esclitr" }
+	    elsif (s{^\\\$}{}) { o '$' }
+	    elsif (s{^$esc}{}) { o "$$esclitr$$esclitr" }
 	    elsif (s{^TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
 		my $t = $1 // 'all';
 		o target_varname($var_prefix, $t);
