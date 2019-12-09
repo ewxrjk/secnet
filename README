@@ -251,6 +251,9 @@ So pathname syntax is a subset of:
 &\&		=>	&		general escaping mechanism
 &\$		=>	$
 
+&$VARIABLE	=>	$(sub_dir_VARIABLE)	or $(TOP_VARIABLE)
+	VARIABLE is ASCII starting with a letter and matching \w+
+
 & thing thing... &
 &^ thing thing... &
 &~ thing thing... &

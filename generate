@@ -162,6 +162,7 @@ sub process_input_mk ($$$$$$$$$) {
 		$targets->{$t} //= [ ];
 	    }
 	    elsif (m{^(?=$caps_re)}) { o $var_prefix }
+	    elsif (s{^\$([A-Za-z]\w+)}{}) { o "\$(${var_prefix}$1)" }
 	    elsif (s{^([~^]?)(?=$lc_re)}{}) { o $pfxmap{$1} }
 	    elsif (s{^_}{}) { o $var_prefix }
 	    elsif (s{^=}{}) { o $var_prefix_name }
