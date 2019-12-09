@@ -19,7 +19,7 @@
 &CLEAN += $(&OBJECTS)
 &CLEAN += $(&TARGETS)
 
-# &TARGETS_clean
+&TARGETS_clean +=
 
 &/clean::
 	$(RM) $(&CLEAN)

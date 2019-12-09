@@ -295,7 +295,8 @@ So pathname syntax is a subset of:
 		NEWQUOTE:changequote &	set escape back to &
 
 &TARGETS_things
-	Handled specially.  If mentioned, declares that this
+	Handled specially.  If mentioned at the start of a line
+	(possibly following whitespace), declares that this
 	subdir ought to have a target `things'.  The rule will be
 		&/things:: $(&TARGETS_things)
 
@@ -309,9 +310,9 @@ So pathname syntax is a subset of:
 	which recursively implies this directory's `things'.
 
 	Must be spelled exactly &TARGETS_things.  &_TARGETS_things,
-	for example, is not magic.  But mentioning &TARGETS_things in
-	a #-comment *does* work because the & filter does not care
-	about comments.
+	for example, is not magic.  To make the target exist
+	without providing any prerequisites for it, write a line
+	containing just `&TARGETS_things +='.
 
 	`all' is extra special: every directory has an `all'
 	target, which corresponds to &TARGETS.
