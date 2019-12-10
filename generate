@@ -137,11 +137,14 @@ sub process_input_mk ($$$$$$$$$) {
     }
     $input_files{$f}++;
 
+    my %srcdirmap = (
+		  '^' => "\$(top_srcdir)${dir_suffix}",
+		  '~' => "\$(top_srcdir)",
+		    );
     my %pfxmap = (
 		  ''  => $dir_prefix,
-		  '^' => "\$(top_srcdir)${dir_suffix}/",
-		  '~' => "\$(top_srcdir)/",
 		 );
+    $pfxmap{$_} = $srcdirmap{$_}.'/' foreach keys %srcdirmap;
 
     while (<$input>) {
 	if (s#^\s*$esc\:##) {
@@ -161,9 +164,10 @@ sub process_input_mk ($$$$$$$$$) {
 	    elsif (m{^(?=$caps_re)}) { o $var_prefix }
 	    elsif (s{^([~^]?)(?=$lc_re)}{}) { o $pfxmap{$1} }
 	    elsif (s{^_}{}) { o $var_prefix }
-	    elsif (s{^=_}{}) { o $var_prefix }
+	    elsif (s{^=}{}) { o $var_prefix_name }
 	    elsif (s{^([~^]?)/}{}) { o $pfxmap{$1} }
-	    elsif (s{^=/}{}) { o $dir_name }
+	    elsif (s{^\.}{}) { o $dir_name }
+	    elsif (s{^([~^])\.}{}) { o $srcdirmap{$1} }
 	    elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die;
 		my $after='';
