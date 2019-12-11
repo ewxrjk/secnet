@@ -176,9 +176,6 @@ sub process_input_mk ($$$$$$$$) {
 	    } elsif (s{^![ \t]+}{}) {
 		o $_;
 		$_ = '';
-	    } elsif (s{^!(\S+)(?:[ \t]+|$)}{}) {
-		$$esclitr = $1;
-		$set_esc->();
 	    } else {
 		die "bad escape $$esclitr$_ ";
 	    }
@@ -192,6 +189,9 @@ sub process_input_mk ($$$$$$$$) {
 				 $var_prefix, $targets,
 				 $subf, $esclitr, $1);
 		o "\n";
+	    } elsif (m#^changequote\s+(\S+)\s+$#) {
+		$$esclitr = $1;
+		$set_esc->();
 	    } else {
 		die "unknown directive $_ ";
 	    }

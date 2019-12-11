@@ -266,11 +266,11 @@ So pathname syntax is a subset of:
 &#	delete everything to end of line
 	(useful if the RHS contains unrecognised & constructions)
 
-&!STUFF
+&:changequote STUFF
 	changes the escape sequence from & to literally STUFF
 	STUFF may be any series of of non-whitespace characters,
-	and is terminated by EOL or lwsp.  &!STUFF and the lwsp
-	are discarded.
+	and is terminated by EOL or lwsp.  The whole line is
+	discarded.
 
 	After this, write STUFF instead of &, everywhere.
 	The effect is global and lasts until the next setting.
@@ -278,9 +278,9 @@ So pathname syntax is a subset of:
 	it back before using &:include.
 
 	Notably
-		STUFFSTUFF	=>	STUFFSTUFF
-		\STUFF		=>	STUFF
-		STUFF!&		set escape back to &
+		STUFFSTUFF		=> STUFFSTUFF
+		\STUFF			=> STUFF
+		STUFF:changequote &	=> set escape back to &
 
 &TARGETS_things
 	Handled specially.  If mentioned, declares that this
