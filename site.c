@@ -663,10 +663,7 @@ static bool_t generate_msg(struct site *st, uint32_t type, cstring_t what,
 
     struct xinfoadd xia;
     append_string_xinfo_start(&st->buffer,&xia,st->localname);
-    if ((st->local_capabilities & st->early_capabilities) ||
-	(type != LABEL_MSG1)) {
-	buf_append_uint32(&st->buffer,st->local_capabilities);
-    }
+    buf_append_uint32(&st->buffer,st->local_capabilities);
     if (type_is_msg34(type)) {
 	buf_append_uint16(&st->buffer,st->mtu_target);
     }

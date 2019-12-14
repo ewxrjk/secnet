@@ -284,14 +284,11 @@ Capability flag bits must be in one the following two categories:
 
 1. Early capability flags must be advertised in MSG1 or MSG2, as
    applicable.  If MSG3 or MSG4 advertise any "early" capability bits,
-   MSG1 or MSG3 (as applicable) must have advertised them too.  Sadly,
-   advertising an early capability flag will produce MSG1s which are
-   not understood by versions of secnet which predate the capability
-   mechanism.
+   MSG1 or MSG3 (as applicable) must have advertised them too.
 
-2. Late capability flags are advertised in MSG2 or MSG3, as
-   applicable.  They may also appear in MSG1, but this is not
-   guaranteed.  MSG4 must advertise the same set as MSG2.
+2. Late capability flags may be advertised only in MSG2 or MSG3, as
+   applicable.  They are only in MSG1 with newer secnets; older
+   versions omit them.  MSG4 must advertise the same set as MSG2.
 
 Currently, the low 16 bits are allocated for negotiating bulk-crypto
 transforms.  Bits 8 to 15 are used by Secnet as default capability
