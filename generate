@@ -165,6 +165,7 @@ sub process_input_mk ($$$$$$$$$) {
 	    o $1;
 	    if (s{^\\$esc}{}) { o "$$esclitr" }
 	    elsif (s{^\\\$}{}) { o '$' }
+	    elsif (s{^\\\s+$}{}) { }
 	    elsif (s{^$esc}{}) { o "$$esclitr$$esclitr" }
 	    elsif (m{^(?=$caps_re)}) { o $var_prefix }
 	    elsif (s{^\$([A-Za-z]\w+)}{}) { o "\$(${var_prefix}$1)" }

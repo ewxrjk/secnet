@@ -7,5 +7,8 @@
 &TARGETS_sometarget1
 &TARGETS_sometarget2
 
+line &\
+joining
+
 # doctests:
 &:include &doctest.sd.mk

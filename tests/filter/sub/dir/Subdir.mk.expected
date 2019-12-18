@@ -7,6 +7,8 @@ sub/dir/
 sub_dir_TARGETS_sometarget1
 sub_dir_TARGETS_sometarget2
 
+line joining
+
 # doctests:
 
 sub/dir/all:: $(sub_dir_TARGETS)
