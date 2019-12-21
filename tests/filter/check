@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+cd tests/filter
+../../generate
+files=$(find -name \*.expected)
+for f in $files; do diff -u $f ${f%.expected}.tmp; done
+
+echo ok.

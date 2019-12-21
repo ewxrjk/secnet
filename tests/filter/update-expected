@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# Usual approach to updating the expected outputs is
+#   tests/filter/check
+#   tests/filter/update-expected
+#   selectively git-add the things that are right, after inspecting them
+
+set -e
+files=$(find tests/filter -name \*.tmp)
+for f in $files; do cp $f ${f%.tmp}.expected; done
