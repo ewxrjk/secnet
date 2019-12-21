@@ -282,7 +282,7 @@ sub process_tree() {
     foreach my $input (sort keys %input_files) {
 	o "MAKEFILE_TEMPLATES += $input\n";
     }
-    o "include \$(SUBDIRMK_MAKEFILES)";
+    o "include \$(SUBDIRMK_MAKEFILES)\n";
 }
 
 build_tree();
