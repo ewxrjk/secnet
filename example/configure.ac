@@ -16,6 +16,7 @@ m4_include([subdirmk/subdirmk.ac])
 SUBDIRMK_SUBDIRS([lib])
 SUBDIRMK_SUBDIRS([lib/t src])
 
+# This is a hook for subdirmk's test suite.
 if test -f $srcdir/lib/for-test.mk.in; then
    SUBDIRMK_MAKEFILES([lib/for-test.mk])
 fi

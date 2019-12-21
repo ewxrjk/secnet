@@ -10,4 +10,5 @@
 &libtoy.a:	$(&OBJECTS)
 	$(AR) rc $@ $^
 
+# This is a hook for subdirmk's test suite.
 -include &^/lib/for-test.mk

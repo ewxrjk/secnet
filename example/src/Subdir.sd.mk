@@ -11,4 +11,5 @@
 &toy: $(&OBJECTS) $(&LIBS)
 	$(LINK) $^
 
+# This is a hook for subdirmk's test suite.
 &:-include src/for-test.sd.mk
