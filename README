@@ -293,6 +293,7 @@ So pathname syntax is a subset of:
 	Notably
 		NEWQUOTENEWQUOTE	=> NEWQUOTENEWQUOTE
 		NEWQUOTE\NEWQUOTE	=> NEWQUOTE
+		NEWQUOTE\$		=> $
 		NEWQUOTE:changequote &	set escape back to &
 
 &TARGETS_things
