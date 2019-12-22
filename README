@@ -288,7 +288,7 @@ So pathname syntax is a subset of:
 	Notably
 		STUFFSTUFF		=> STUFFSTUFF
 		STUFF\STUFF		=> STUFF
-		STUFF:changequote &	=> set escape back to &
+		STUFF:changequote &	set escape back to &
 
 &TARGETS_things
 	Handled specially.  If mentioned, declares that this
