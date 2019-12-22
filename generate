@@ -32,8 +32,8 @@ our @subdirs = @ARGV;
 
 s{/+$}{} foreach @subdirs;
 
-our $root = [ '.', [ ] ];
-# each node is [ 'relative subdir name', \@children ]
+our $root = [ '.', [ ], 1 ];
+# each node is [ 'relative subdir name', \@children, $mentioned ]
 
 sub build_tree () {
     foreach my $subdir (@subdirs) {
@@ -47,6 +47,7 @@ sub build_tree () {
 	    }
 	    $node = $c;
 	}
+	$node->[2] = 1;
     }
 }
 
@@ -244,8 +245,18 @@ sub process_subtree ($$) {
     }
     start_output_file("${dir_prefix}Subdir.mk.tmp");
 
-    filter_subdir_mk($dir_prefix, $dir_suffix, $dir_name,
-		     $var_prefix, \%targets);
+    if ($node->[2]) {
+	filter_subdir_mk($dir_prefix, $dir_suffix, $dir_name,
+			 $var_prefix, \%targets);
+    } else {
+	my $sdmk = "${dir_prefix}Subdir.sd.mk";
+	if (stat $sdmk) {
+	    die "$sdmk unexpectedly exists (${dir_prefix} not mentioned)";
+	} elsif ($!==ENOENT) {
+	} else {
+	    die "stat $sdmk: $!";
+	}
+    }
 
     o "\n";
 
