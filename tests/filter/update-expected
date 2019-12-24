@@ -6,5 +6,13 @@
 #   selectively git-add the things that are right, after inspecting them
 
 set -e
-files=$(find tests/filter -name \*.tmp)
-for f in $files; do cp $f ${f%.tmp}.expected; done
+files=$(find tests/filter -name \*.expected.tmp)
+for f in $files; do
+	perl -pe '
+		(s/\n//, $stripnl=0) if $stripnl;
+		next unless /^# doctest starts/../^# doctest ends/;
+		$_="";
+		$stripnl=1;
+	' \
+		<${f%.expected.tmp}.tmp >${f%.tmp}
+done

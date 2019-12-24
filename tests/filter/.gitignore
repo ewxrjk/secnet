@@ -1,2 +1,5 @@
 Makefile
 *.mk.tmp
+*.mk.expected.tmp
+doctest.sd.mk
+doctest.mk.part

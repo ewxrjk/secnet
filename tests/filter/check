@@ -2,8 +2,19 @@
 set -e
 
 cd tests/filter
+
+expand <../../README | ./extract-doctest . >/dev/null
+
 ../../generate sub/dir
 files=$(find -name \*.expected)
-for f in $files; do diff -u $f ${f%.expected}.tmp; done
+for f in $files; do
+	sed <$f >$f.tmp '
+		/^# doctests:/ {
+			r '"${f%/*}/doctest.mk.part"'
+			a
+		}
+	'
+	diff -u $f.tmp ${f%.expected}.tmp
+done
 
 echo ok.

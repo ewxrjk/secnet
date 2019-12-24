@@ -7,5 +7,6 @@ SUBDIRMK_MAKEFILES += Subdir.mk
 SUBDIRMK_MAKEFILES += sub/Subdir.mk
 SUBDIRMK_MAKEFILES += sub/dir/Subdir.mk
 MAKEFILE_TEMPLATES += ./Subdir.sd.mk
+MAKEFILE_TEMPLATES += ./doctest.sd.mk
 MAKEFILE_TEMPLATES += ./sub/dir/Subdir.sd.mk
 include $(SUBDIRMK_MAKEFILES)
