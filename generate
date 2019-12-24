@@ -213,8 +213,19 @@ sub process_input_mk ($$$$) {
 	}
 	for (;;) {
 	    die if $ddbl && defined $buffering_output;
-	    unless (s{^(.*?)$esc}{}) { od $_; last; }
+	    unless (@nest && $nest[0][0] eq 'Eval'
+		    ? s{^(.*?)($esc|[{}])}{}
+		    : s{^(.*?)($esc)}{}) { od $_; last; }
 	    od $1;
+	    if ($2 eq '{') {
+		$ddbl++;
+		next;
+	    } elsif ($2 eq '}') {
+		next if --$ddbl;
+		$pop_nest->('Eval');
+		od '}}';
+		next;
+	    }
 	    if (s{^\\$esc}{}) { od "$$esclitr" }
 	    elsif (s{^\\\$}{}) { oud '$' }
 	    elsif (s{^\\\s+$}{}) { }
@@ -231,7 +242,11 @@ sub process_input_mk ($$$$) {
 	    elsif (s{^\$\+}{}) { $ddbl=1; }
 	    elsif (s{^\$\(}{}) { die unless $ddbl; oud "\$("; }
 	    elsif (s{^\$(\d+)}{}) { die unless $ddbl; oud "\$($1)"; }
-	    elsif (s{^([~^]?)(?=[ \t])}{}) {
+	    elsif (s{^\$\{}{}) {
+		die if $ddbl;
+		od '${eval ${call ';
+		$push_nest->('Eval',1);
+	    } elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die;
 		my $after='';
 		if (m{([ \t])$esc}) { ($_,$after) = ($`, $1.$'); }

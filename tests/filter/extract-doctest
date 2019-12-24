@@ -56,6 +56,9 @@ while (<>) {
 	    $e->{OutTop} = $1 eq 'nothing' ? '' : $1;
 	} elsif (# parse: expect other wordish things to be comments
 		 m{^(?!or\b)\w{2,} }) {
+	} elsif (# adhoc: slightly special case for $(eval $(call
+		 m{^\$\{.*}) {
+	    $e->{Out} .= ' '.$&;
 	} elsif (m/^$/) {
 	} else {
 	    confess "unk rhs $_ ?";
@@ -140,6 +143,8 @@ sub writeout ($) {
 		      my ($e) = @_;
 		      # adhoc: skip &:macro in already-doubling part
 		      return 0 if $e->{In} =~ m{^\&\:macro};
+		      # adhoc: skip &${ ie eval in already-doubling part
+		      return 0 if $e->{In} =~ m{^\&\$\{};
 		      return 0 if $e->{CQ};
 		      return $e->{DD} || !grep {
 			  # If there are two entries with the same In,
