@@ -60,6 +60,7 @@ our $writing_output;
 our $buffering_output;
 our %output_files;
 our %input_files;
+our @output_makefiles;
 
 sub close_any_output_file() {
     return unless defined $writing_output;
@@ -233,6 +234,7 @@ sub process_subtree ($$) {
     my $dir_name = join '/', @$path ? @$path : '.';
     my $var_prefix = join '', map { "${_}_" } @$path ? @$path : qw(TOP);
 
+    push @output_makefiles, "${dir_prefix}Subdir.mk";
     write_makefile($dir_prefix, scalar @$path);
 
     my %targets = (all => []);
@@ -286,9 +288,8 @@ sub process_tree() {
     }
     o "SUBDIRMK_MAKEFILES :=\n";
     o "MAKEFILE_TEMPLATES :=\n";
-    o "SUBDIRMK_MAKEFILES += Subdir.mk\n";
-    foreach my $subdir (@subdirs) {
-	o "SUBDIRMK_MAKEFILES += $subdir/Subdir.mk\n";
+    foreach my $mf (@output_makefiles) {
+	o "SUBDIRMK_MAKEFILES += $mf\n";
     }
     foreach my $input (sort keys %input_files) {
 	o "MAKEFILE_TEMPLATES += $input\n";
