@@ -110,16 +110,16 @@ sub write_permode ($$$$$;$$) {
 	$rubric =~ s/\&/AMP /g;
 	$rubric =~ s/\$/DOLLAR /g;
 	$rubric =~ s/NEWQUOTE/NEW_QUOTE /g;
-	my $f = $e->{In} =~ m/\n/
-	        ? "\n# %s:\n%s\n\n"
-		: "%-30s: %s.\n";
+	my ($f,$prubric) = $rubric =~ m/^(.*)\n/
+	        ? ("\n# %s:\n%s\n\n", $1)
+		: ("%-30s: %s .\n", $rubric);
 	my $o;
 	$o = $e->{OutTop} if $dir_prefix eq '';
 	$o //= $e->{Out};
 	$o =~ s{/sub/dir}{} if $dir_prefix eq '' && !defined $e->{OutTop};
 	$o = $omap->($o, $e);
-	oi sprintf $f, $rubric, $e->{In};
-	oo sprintf $f, $rubric, $o;
+	oi sprintf $f, $prubric, $e->{In};
+	oo sprintf $f, $prubric, $o;
     }
     oi $end;
     oh "${senl}# ----- $what ends -----\n";
