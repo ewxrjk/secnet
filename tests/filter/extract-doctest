@@ -56,6 +56,9 @@ while (<>) {
 	    $e->{OutTop} = $1 eq 'nothing' ? '' : $1;
 	} elsif (# parse: expect other wordish things to be comments
 		 m{^(?!or\b)\w{2,} }) {
+	} elsif (m/^$/) {
+	} else {
+	    confess "unk rhs $_ ?";
 	}
 	$e->{CQ} = $in_changequote;
     } else {
