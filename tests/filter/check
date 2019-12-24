@@ -2,7 +2,7 @@
 set -e
 
 cd tests/filter
-../../generate
+../../generate sub/dir
 files=$(find -name \*.expected)
 for f in $files; do diff -u $f ${f%.expected}.tmp; done
 

@@ -4,5 +4,7 @@ abs_top_srcdir=@abs_top_srcdir@
 SUBDIRMK_MAKEFILES :=
 MAKEFILE_TEMPLATES :=
 SUBDIRMK_MAKEFILES += Subdir.mk
+SUBDIRMK_MAKEFILES += sub/dir/Subdir.mk
 MAKEFILE_TEMPLATES += ./Subdir.sd.mk
+MAKEFILE_TEMPLATES += ./sub/dir/Subdir.sd.mk
 include $(SUBDIRMK_MAKEFILES)
