@@ -10,6 +10,7 @@ sub_dir_TARGETS_sometarget2
 line joining
 
 # doctests:
+# Perdir in sub/dir
 
 sub/dir/all:: $(sub_dir_TARGETS)
 sub/dir/sometarget1:: $(sub_dir_TARGETS_sometarget1)
