@@ -114,11 +114,26 @@ Makefile run-main.mk:
 END
 }
 
-sub process_input_mk ($$$$$$$$$);
-sub process_input_mk ($$$$$$$$$) {
-    my ($dir_prefix, $dir_suffix, $dir_name,
-	$var_prefix, $var_prefix_name, $targets,
-	$f, $esclitr, $enoent_ok) = @_;
+our ($dir_prefix, $dir_suffix, $dir_name,
+     $var_prefix, $var_prefix_name);
+
+sub dir_prefix ($) {
+    my ($path) = @_;
+    join '', map { "$_/" } @$path;
+}
+
+sub set_dir_vars ($) {
+    my ($path) = @_;
+    $dir_prefix = dir_prefix($path);
+    $dir_suffix = join '', map { "/$_" } @$path;
+    $dir_name = join '/', @$path ? @$path : '.';
+    $var_prefix_name = join '_', @$path ? @$path : qw(TOP);
+    $var_prefix = "${var_prefix_name}_";
+}
+
+sub process_input_mk ($$$$);
+sub process_input_mk ($$$$) {
+    my ($targets, $f, $esclitr, $enoent_ok) = @_;
 
     my $caps_re = qr{[A-Z]};
     my $lc_re = qr{[a-z]};
@@ -196,9 +211,7 @@ sub process_input_mk ($$$$$$$$$) {
 	    $buffering_output=undef;
 	    if (m#^(-?)include\s+(\S+)\s+$#) {
 		my $subf = "$srcdir/$2";
-		process_input_mk($dir_prefix, $dir_suffix, $dir_name,
-				 $var_prefix, $var_prefix_name, $targets,
-				 $subf, $esclitr, $1);
+		process_input_mk($targets, $subf, $esclitr, $1);
 		o "\n";
 	    } else {
 		die "internal error buffering directive $_ ";
@@ -209,9 +222,8 @@ sub process_input_mk ($$$$$$$$$) {
     close $input or die "close $f: $!\n";
 }
 
-sub filter_subdir_mk ($$$$$$) {
-    my ($dir_prefix, $dir_suffix, $dir_name,
-	$var_prefix, $var_prefix_name, $targets) = @_;
+sub filter_subdir_mk ($) {
+    my ($targets) = @_;
 
     #use Data::Dumper;
     #print STDERR "filter @_\n";
@@ -220,9 +232,7 @@ sub filter_subdir_mk ($$$$$$) {
 
     my $pi = sub {
 	my ($f, $enoentok) = @_;
-	process_input_mk($dir_prefix, $dir_suffix, $dir_name,
-			 $var_prefix, $var_prefix_name, $targets,
-			 "${srcdir}/$f", \$esclit, $enoentok);
+	process_input_mk($targets, "${srcdir}/$f", \$esclit, $enoentok);
     };
     $pi->("${dir_prefix}Subdir.sd.mk", 0);
     $pi->("Perdir.sd.mk",              1);
@@ -237,11 +247,9 @@ sub process_subtree ($$) {
     #use Data::Dumper;
     #print STDERR Dumper(\@_);
 
-    my $dir_prefix = join '', map { "$_/" } @$path;
-    my $dir_suffix = join '', map { "/$_" } @$path;
-    my $dir_name = join '/', @$path ? @$path : '.';
-    my $var_prefix_name = join '_', @$path ? @$path : qw(TOP);
-    my $var_prefix = "${var_prefix_name}_";
+    my $dir_prefix = dir_prefix($path);
+    # ^ this is the only var which we need before we come back from
+    #   the recursion.
 
     push @output_makefiles, "${dir_prefix}Subdir.mk";
     write_makefile($dir_prefix, scalar @$path);
@@ -254,11 +262,12 @@ sub process_subtree ($$) {
 	push @{ $targets{$_} }, $child_subdir foreach
 	    process_subtree($child, \@childpath);
     }
+
+    set_dir_vars($path);
     start_output_file("${dir_prefix}Subdir.mk.tmp");
 
     if ($node->[2]) {
-	filter_subdir_mk($dir_prefix, $dir_suffix, $dir_name,
-			 $var_prefix, $var_prefix_name, \%targets);
+	filter_subdir_mk(\%targets);
     } else {
 	my $sdmk = "${dir_prefix}Subdir.sd.mk";
 	if (stat $sdmk) {
