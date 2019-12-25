@@ -9,7 +9,9 @@ expand <../../README | ./extract-doctest . >/dev/null
 ../../generate sub/dir
 files=$(find -name \*.expected)
 for f in $files; do
-	sed <$f >$f.tmp '
+	i=$f
+	o=$f.tmp
+	sed <$i >$o '
 		/^# doctests:/ {
 			r '"${f%/*}/doctest.mk.part"'
 			a
