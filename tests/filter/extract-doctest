@@ -129,9 +129,9 @@ sub writeout ($) {
 		  '','','', 'normal',
 		 sub { !$_[0]{CQ} } );
     write_permode($dir_prefix,
-		  "&:changequote NEWQUOTE",
-		  "NEWQUOTE:changequote &",
-		  "\n",
+		  "&:changequote NEWQUOTE\n",
+		  "NEWQUOTE:changequote &\n",
+		  "",
 		  'changequote',
 		  sub { $_[0]{CQ} } );
     oh "# doctest ends\n";
