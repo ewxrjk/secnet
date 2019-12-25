@@ -114,10 +114,10 @@ Makefile run-main.mk:
 END
 }
 
-sub process_input_mk ($$$$$$$$);
-sub process_input_mk ($$$$$$$$) {
+sub process_input_mk ($$$$$$$$$);
+sub process_input_mk ($$$$$$$$$) {
     my ($dir_prefix, $dir_suffix, $dir_name,
-	$var_prefix, $targets,
+	$var_prefix, $var_prefix_name, $targets,
 	$f, $esclitr, $enoent_ok) = @_;
 
     my $caps_re = qr{[A-Z]};
@@ -186,7 +186,7 @@ sub process_input_mk ($$$$$$$$) {
 	    if (m#^(-?)include\s+(\S+)\s+$#) {
 		my $subf = "$srcdir/$2";
 		process_input_mk($dir_prefix, $dir_suffix, $dir_name,
-				 $var_prefix, $targets,
+				 $var_prefix, $var_prefix_name, $targets,
 				 $subf, $esclitr, $1);
 		o "\n";
 	    } elsif (m#^changequote\s+(\S+)\s+$#) {
@@ -201,9 +201,9 @@ sub process_input_mk ($$$$$$$$) {
     close $input or die "close $f: $!\n";
 }
 
-sub filter_subdir_mk ($$$$$) {
+sub filter_subdir_mk ($$$$$$) {
     my ($dir_prefix, $dir_suffix, $dir_name,
-	$var_prefix, $targets) = @_;
+	$var_prefix, $var_prefix_name, $targets) = @_;
 
     #use Data::Dumper;
     #print STDERR "filter @_\n";
@@ -213,7 +213,7 @@ sub filter_subdir_mk ($$$$$) {
     my $pi = sub {
 	my ($f, $enoentok) = @_;
 	process_input_mk($dir_prefix, $dir_suffix, $dir_name,
-			 $var_prefix, $targets,
+			 $var_prefix, $var_prefix_name, $targets,
 			 "${srcdir}/$f", \$esclit, $enoentok);
     };
     $pi->("${dir_prefix}Subdir.sd.mk", 0);
@@ -232,7 +232,8 @@ sub process_subtree ($$) {
     my $dir_prefix = join '', map { "$_/" } @$path;
     my $dir_suffix = join '', map { "/$_" } @$path;
     my $dir_name = join '/', @$path ? @$path : '.';
-    my $var_prefix = join '', map { "${_}_" } @$path ? @$path : qw(TOP);
+    my $var_prefix_name = join '_', @$path ? @$path : qw(TOP);
+    my $var_prefix = "${var_prefix_name}_";
 
     push @output_makefiles, "${dir_prefix}Subdir.mk";
     write_makefile($dir_prefix, scalar @$path);
@@ -249,7 +250,7 @@ sub process_subtree ($$) {
 
     if ($node->[2]) {
 	filter_subdir_mk($dir_prefix, $dir_suffix, $dir_name,
-			 $var_prefix, \%targets);
+			 $var_prefix, $var_prefix_name, \%targets);
     } else {
 	my $sdmk = "${dir_prefix}Subdir.sd.mk";
 	if (stat $sdmk) {
