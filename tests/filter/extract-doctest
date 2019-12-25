@@ -41,8 +41,8 @@ while (<>) {
     # parse: rely on looking for => (and .. on subsequent lines)
     next unless m{\=\>} or ($cent and m{ \.\. });
     my $mapop = '=>';
-    # adhoc: special case STUFF here so we recognise things in changequote
-    if (s{^(\s*)(\&\S+|STUFF\S+|\$)\s+(\=\>|\.\.)\s+(\S+)\s+}{} ||
+    # adhoc: special case NEWQUOTE here so we recognise things in changequote
+    if (s{^(\s*)(\&\S+|NEWQUOTE\S+|\$)\s+(\=\>|\.\.)\s+(\S+)\s+}{} ||
 	s{^()(\&\:\w+(?: \S+)*)\s{2,}(\=\>)\s{2,}($withspcs)$}{} ||
         $cent && s{^()($withspcs)\s{2,}(\.\.)\s{2,}($withspcs)$}{}) {
 	# adhoc: expected indented iff in changequote part
@@ -104,6 +104,7 @@ sub write_permode ($$$$$;$$) {
 	my $rubric = $e->{In};
 	$rubric =~ s/\&/AMP /g;
 	$rubric =~ s/\$/DOLLAR /g;
+	$rubric =~ s/NEWQUOTE/NEW_QUOTE /g;
 	my $f = $e->{In} =~ m/\n/
 	        ? "\n# %s:\n%s\n\n"
 		: "%-30s: %s.\n";
@@ -128,8 +129,8 @@ sub writeout ($) {
 		  '','','', 'normal',
 		 sub { !$_[0]{CQ} } );
     write_permode($dir_prefix,
-		  "&:changequote STUFF",
-		  "STUFF:changequote &",
+		  "&:changequote NEWQUOTE",
+		  "NEWQUOTE:changequote &",
 		  "\n",
 		  'changequote',
 		  sub { $_[0]{CQ} } );
