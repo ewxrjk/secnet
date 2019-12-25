@@ -6,11 +6,11 @@
 #
 # $(srcdir)/subdirmk/generate [--srcdir=SRCDIR] [--] SUBDIR...
 #
-# generates in each subdirectory	from in each subdirectory
-#     Subdir.mk.tmp			    Subdir.sd.mk
-#     Makefile                          and included files
-# and in toplevel			and in toplevel
-#     main.mk.tmp			    Perdir.sd.mk
+# generates in each subdirectory
+#     Subdir.mk.tmp
+#     Makefile
+# and in toplevel
+#     main.mk.tmp
 
 use strict;
 use POSIX;
