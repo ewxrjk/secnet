@@ -299,8 +299,22 @@ sub process_subtree ($$) {
     return @targets;
 }
 
+sub process_final ($) {
+    my ($otargets) = @_;
+    set_dir_vars([]);
+    push @output_makefiles, "Final.mk";
+    start_output_file("Final.mk.tmp");
+    my %ntargets;
+    my $esclit='&';
+    process_input_mk(\%ntargets, "${srcdir}/Final.sd.mk", \$esclit, 1);
+    delete $ntargets{$_} foreach @$otargets;
+    my @ntargets = sort keys %ntargets;
+    die "late new targets @ntargets" if @ntargets;
+}
+
 sub process_tree() {
-    process_subtree($root, [ ]);
+    my @targets = process_subtree($root, [ ]);
+    process_final(\@targets);
     start_output_file("main.mk.tmp");
     foreach my $v (qw(top_srcdir abs_top_srcdir)) {
 	o "$v=\@$v@\n";

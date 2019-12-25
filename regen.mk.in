@@ -55,14 +55,16 @@ main.mk $(SUBDIRMK_MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp
 # This filtering arranges that we can often run config.status to
 # generate only particular output files.  We look for *inputs* that
 # have changed.  If the only inputs that have changed are ones that we
-# know affect only one output (Subdir.sd.mk and *.mk.in), we pass
-# config.status the corresponding output file names.  Otherwise we
-# pass nothing and config.status does them all.  We need to mention
-# Subdir.sd.mk twice because if $(top_srcdir) is `.', make elides the
-# directory part from $?.
+# know affect only one output (Subdir.sd.mk, Final.sd.mk and *.mk.in),
+# we pass config.status the corresponding output file names.
+# Otherwise we pass nothing and config.status does them all.  We need
+# to mention Subdir.sd.mk twice because if $(top_srcdir) is `.', make
+# elides the directory part from $?.  Similarly but not identically
+# Final.sd.mk.
 	$(SUBDIRMK_REGEN_NDEBUG): REGEN STAMP WANTS DEPS=$?
 	./$(CONFIG_STATUS) $(if					\
 		$(filter-out Subdir.sd.mk %/Subdir.sd.mk	\
+			     Final.sd.mk $(top_srcdir)/Final.sd.mk \
 			     %.mk.in				\
 			, $?),,					\
 		$(patsubst $(top_srcdir)/%,%, $(sort		\
