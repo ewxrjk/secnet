@@ -3,7 +3,13 @@
 
 sub/dir/
 
+# sub_dir_TARGETS_notarget += 42
+sub_dir_TARGETS_sometarget1
+sub_dir_TARGETS_sometarget2
+
 # doctests:
 
 sub/dir/all:: $(sub_dir_TARGETS)
-.PHONY: sub/dir/all
+sub/dir/sometarget1:: $(sub_dir_TARGETS_sometarget1)
+sub/dir/sometarget2:: $(sub_dir_TARGETS_sometarget2)
+.PHONY: sub/dir/all sub/dir/sometarget1 sub/dir/sometarget2

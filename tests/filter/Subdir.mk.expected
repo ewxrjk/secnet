@@ -3,4 +3,6 @@
 # doctests:
 
 all:: $(TOP_TARGETS) sub/all
-.PHONY: all
+sometarget1:: $(TOP_TARGETS_sometarget1) sub/sometarget1
+sometarget2:: $(TOP_TARGETS_sometarget2) sub/sometarget2
+.PHONY: all sometarget1 sometarget2
