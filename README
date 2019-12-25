@@ -268,9 +268,10 @@ So pathname syntax is a subset of:
 	recognised at start of line only (possibly after lwsp)
 	args are processed for &
 
-&:include filename		filename should usually be foo.sd.mk
+&:include filename		filename should usually be [&]foo.sd.mk
 &:-include filename		tolerate nonexistent file
 	filenames are relative to $(top_srcdir)
+	RHS is &-expanded
 
 &!<lwsp>	disables & until EOL (and then disappears)
 

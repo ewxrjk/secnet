@@ -147,8 +147,14 @@ sub process_input_mk ($$$$$$$$$) {
     $pfxmap{$_} = $srcdirmap{$_}.'/' foreach keys %srcdirmap;
 
     while (<$input>) {
-	if (s#^\s*$esc\:##) {
+	if (s#^\s*$esc\:changequote\s+(\S+)\s+$##) {
+	    $$esclitr = $1;
+	    $set_esc->();
+	    next;
+	} elsif (s#^\s*$esc\:(?=(-?)include)##) {
 	    $buffering_output='';
+	} elsif (m#^\s*$esc\:([a-z][-0-9a-z_]*)#) {
+	    die "unknown directive $1";
 	}
 	for (;;) {
 	    unless (s{^(.*?)$esc}{}) { o $_; last; }
@@ -194,11 +200,8 @@ sub process_input_mk ($$$$$$$$$) {
 				 $var_prefix, $var_prefix_name, $targets,
 				 $subf, $esclitr, $1);
 		o "\n";
-	    } elsif (m#^changequote\s+(\S+)\s+$#) {
-		$$esclitr = $1;
-		$set_esc->();
 	    } else {
-		die "unknown directive $_ ";
+		die "internal error buffering directive $_ ";
 	    }
 	}
     }
