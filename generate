@@ -78,6 +78,10 @@ sub o {
     print O @_ or die "error writing $writing_output.tmp: $!\n";
 }
 
+sub od { # maybe $-doubled
+    o @_;
+}
+
 sub start_output_file ($) {
     close_any_output_file();
     ($writing_output) = @_;
@@ -172,35 +176,35 @@ sub process_input_mk ($$$$) {
 	    die "unknown directive $1";
 	} elsif (s{^\s*${esc}TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
 	    my $t = $1 // 'all';
-	    o target_varname($var_prefix, $t);
+	    od target_varname($var_prefix, $t);
 	    $targets->{$t} //= [ ];
 	}
 	for (;;) {
-	    unless (s{^(.*?)$esc}{}) { o $_; last; }
-	    o $1;
-	    if (s{^\\$esc}{}) { o "$$esclitr" }
-	    elsif (s{^\\\$}{}) { o '$' }
+	    unless (s{^(.*?)$esc}{}) { od $_; last; }
+	    od $1;
+	    if (s{^\\$esc}{}) { od "$$esclitr" }
+	    elsif (s{^\\\$}{}) { od '$' }
 	    elsif (s{^\\\s+$}{}) { }
-	    elsif (s{^$esc}{}) { o "$$esclitr$$esclitr" }
-	    elsif (m{^(?=$caps_re)}) { o $var_prefix }
-	    elsif (s{^\$([A-Za-z]\w+)}{}) { o "\$(${var_prefix}$1)" }
-	    elsif (s{^([~^]?)(?=$lc_re)}{}) { o $pfxmap{$1} }
-	    elsif (s{^_}{}) { o $var_prefix }
-	    elsif (s{^=}{}) { o $var_prefix_name }
-	    elsif (s{^([~^]?)/}{}) { o $pfxmap{$1} }
-	    elsif (s{^\.}{}) { o $dir_name }
-	    elsif (s{^([~^])\.}{}) { o $srcdirmap{$1} }
+	    elsif (s{^$esc}{}) { od "$$esclitr$$esclitr" }
+	    elsif (m{^(?=$caps_re)}) { od $var_prefix }
+	    elsif (s{^\$([A-Za-z]\w+)}{}) { od "\$(${var_prefix}$1)" }
+	    elsif (s{^([~^]?)(?=$lc_re)}{}) { od $pfxmap{$1} }
+	    elsif (s{^_}{}) { od $var_prefix }
+	    elsif (s{^=}{}) { od $var_prefix_name }
+	    elsif (s{^([~^]?)/}{}) { od $pfxmap{$1} }
+	    elsif (s{^\.}{}) { od $dir_name }
+	    elsif (s{^([~^])\.}{}) { od $srcdirmap{$1} }
 	    elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die;
 		my $after='';
 		if (m{([ \t])$esc}) { ($_,$after) = ($`, $1.$'); }
 		s{(?<=[ \t])(?=\S)(?!\\\s*$)}{$prefix}g;
-		o $_;
+		od $_;
 		$_ = $after;
 	    } elsif (s{^\#}{}) {
 		$_ = '';
 	    } elsif (s{^![ \t]+}{}) {
-		o $_;
+		od $_;
 		$_ = '';
 	    } else {
 		die "bad escape $$esclitr$_ ";
@@ -212,7 +216,7 @@ sub process_input_mk ($$$$) {
 	    if (m#^(-?)include\s+(\S+)\s+$#) {
 		my $subf = "$srcdir/$2";
 		process_input_mk($targets, $subf, $esclitr, $1);
-		o "\n";
+		od "\n";
 	    } else {
 		die "internal error buffering directive $_ ";
 	    }
