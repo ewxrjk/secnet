@@ -230,7 +230,7 @@ sub filter_subdir_mk ($$$$$$) {
 
 sub process_subtree ($$);
 sub process_subtree ($$) {
-    # => list of descendants (in form SUBDIR/)
+    # => list of targets (in form SUBDIR/)
     # recursive, children first
     my ($node, $path) = @_;
 
