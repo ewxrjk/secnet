@@ -61,6 +61,8 @@ while (<>) {
 	    confess "unk rhs $_ ?";
 	}
 	$e->{CQ} = $in_changequote;
+	# adhoc: rely on this specific section title
+	$e->{DD} = $csection =~ m{^while dollar[- ]doubling}i;
     } else {
 	confess "$_ ?";
     }
@@ -130,7 +132,26 @@ sub writeout ($) {
     oh "# doctest starts $dir_prefix\n";
     write_permode($dir_prefix,
 		  '','','', 'normal',
-		 sub { !$_[0]{CQ} } );
+		 sub { !$_[0]{DD} && !$_[0]{CQ} } );
+    write_permode($dir_prefix,
+		  '&$+', '&$-', "\n",
+		  'dollar doubling',
+		  sub {
+		      my ($e) = @_;
+		      return 0 if $e->{CQ};
+		      return $e->{DD} || !grep {
+			  # If there are two entries with the same In,
+			  # use only the one from the `while dollar
+			  # doubling' section.  So entries there override
+			  # entries in the rest o the file.
+			  $_ ne $e && $_->{In} eq $e->{In}
+		      } @exp;
+		  },
+		  sub {
+		      $_=$_[0];
+		      s/\$/\$\$/g unless $_[1]{DD};
+		      $_;
+		  } );
     write_permode($dir_prefix,
 		  "&:changequote NEWQUOTE\n",
 		  "NEWQUOTE:changequote &\n",
