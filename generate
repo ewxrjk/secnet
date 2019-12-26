@@ -250,7 +250,7 @@ sub process_input_mk ($$$$) {
 	for (;;) {
 	    err 'cannot $-double &-processed RHS of directive'
 		if $ddbl && defined $buffering_output;
-	    unless ($nest[0][0] eq 'Eval'
+	    unless ($nest[0][0] eq 'eval'
 		    ? s{^(.*?)($esc|[{}])}{}
 		    : s{^(.*?)($esc)}{}) { od $_; last; }
 	    od $1;
@@ -259,7 +259,7 @@ sub process_input_mk ($$$$) {
 		next;
 	    } elsif ($2 eq '}') {
 		next if --$ddbl;
-		$pop_nest->('Eval');
+		$pop_nest->('eval');
 		od '}}';
 		next;
 	    }
@@ -282,7 +282,7 @@ sub process_input_mk ($$$$) {
 	    elsif (s{^\$\{}{}) {
 		err 'macro invocation cannot be re-$-doubled' if $ddbl;
 		od '${eval ${call ';
-		$push_nest->('Eval',1, '&${...}');
+		$push_nest->('eval',1, '&${...}');
 	    } elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die "internal error ($1?)";
 		my $after='';
