@@ -384,16 +384,16 @@ sub process_subtree ($$) {
     my @targets = sort keys %targets;
     foreach my $target (@targets) {
 	my $target_varname = target_varname($var_prefix, $target);
-	print O "${dir_prefix}${target}:: \$($target_varname)";
+	oraw "${dir_prefix}${target}:: \$($target_varname)";
 	foreach my $child_subdir (@{ $targets{$target} }) {
-	    print O " $child_subdir/$target";
+	    oraw " $child_subdir/$target";
 	}
-	print O "\n";
+	oraw "\n";
     }
     if (@targets) {
-	print O ".PHONY:";
-	print O " ${dir_prefix}${_}" foreach @targets;
-	print O "\n";
+	oraw ".PHONY:";
+	oraw " ${dir_prefix}${_}" foreach @targets;
+	oraw "\n";
     }
 
     return @targets;
