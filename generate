@@ -235,7 +235,7 @@ sub process_input_mk ($$$$) {
 	    $set_esc->();
 	    next;
 	} elsif (s#^\s*$esc\:endm\s+$##) {
-	    $pop_nest->('Macro');
+	    $pop_nest->('macro');
 	    od "endef\n";
 	    next;
 	} elsif (s#^\s*$esc\:(?=(-?)include|macro)##) {
@@ -309,7 +309,7 @@ sub process_input_mk ($$$$) {
 		od "\n";
 	    } elsif (m#^macro\s+(\S+)\s+$#) {
 		od "define $1\n";
-		$push_nest->('Macro', 1);
+		$push_nest->('macro', 1, '&:macro');
 	    } else {
 		die "internal error ($_?)";
 	    }
