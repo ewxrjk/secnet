@@ -180,7 +180,7 @@ sub process_input_mk ($$$$) {
     $pfxmap{$_} = $srcdirmap{$_}.'/' foreach keys %srcdirmap;
 
     local $ddbl;
-    my @nest;
+    my @nest = (['']);
 
     my $push_nest = sub {
 	my ($nk, $nndbl) = @_;
@@ -213,7 +213,7 @@ sub process_input_mk ($$$$) {
 	}
 	for (;;) {
 	    die if $ddbl && defined $buffering_output;
-	    unless (@nest && $nest[0][0] eq 'Eval'
+	    unless ($nest[0][0] eq 'Eval'
 		    ? s{^(.*?)($esc|[{}])}{}
 		    : s{^(.*?)($esc)}{}) { od $_; last; }
 	    od $1;
@@ -277,7 +277,7 @@ sub process_input_mk ($$$$) {
 	    }
 	}
     }
-    die "unclosed $nest[0][0]" if @nest;
+    die "unclosed $nest[0][0]" if $nest[0][0];
     $input->error and die "read $f: $!\n";
     close $input or die "close $f: $!\n";
 }
