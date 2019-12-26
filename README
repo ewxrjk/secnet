@@ -20,7 +20,7 @@ style is not very ergonomic.  The main difficulties are:
 
 `subdirmk' is an attempt to solve these problems (and it also slightly
 alleviates some of the boilerplate needed to support out-of-tree
-builds well).
+builds well, and helps a bit with metaprogramming and rule writing).
 
 Basic approach
 --------------
@@ -163,7 +163,8 @@ Substitution syntax
 
 In general & expands to the subdirectory name when used for a
 filename, and to the subdirectory name with / replaced with _ for
-variable names.
+variable names.  (If your variables start with capital letters and
+your filenames with lowercase.  Otherwise, use &/ or &_.)
 
 Note that & is processed *even in makefile comments*.  The substitutor
 does not understand make syntax, or shell syntax, at all.  However,
@@ -202,13 +203,13 @@ In general:
     ^   pathname of this subdirectory in source tree
     ~   pathname of top level of source tree
     /	terminates the path escape } needed if next is
-    _   terminates the var escape  } not lwsp or space)
+    _   terminates the var escape  } not letter or space)
     .   terminates path escape giving dir name (excluding /)
     =	terminates var escape giving only prefix part (rarely needed)
   lwsp  starts multi-word processing (see below)
 
 So pathname syntax is a subset of:
-    '&' [ '^' | '~' ] [ lc | '/' | '.' | '=' ]
+    '&' [ '^' | '~' ] [ lc | '/' | '.' ]
 
 &&		=>	&&		for convenience in shell runes
 
@@ -249,7 +250,8 @@ So pathname syntax is a subset of:
 	discarded.
 
 	After this, write NEWQUOTE instead of &, everywhere.
-	The effect is global and lasts until the next setting.
+	The effect is unscoped and lasts until the next setting,
+	or until the end of the current directory's Suffix.sd.mk.
 	It takes effect on &:include'd files too, so maybe set
 	it back before using &:include.
 
@@ -389,7 +391,7 @@ Incorporating this into your project
 Use `git-subtree' to merge the subdirmk/ directory.  You may find it
 useful to symlink the DEVELOPER-CERTIFICATE file (git can store
 symlinks as symlinks - just `git add' the link).  And you probably
-want to mention the situation in your top-level COPYING.
+want to mention the situation in your top-level COPYING and HACKING.
 
 Symlink autogen.sh into your project toplevel.
 
@@ -418,9 +420,10 @@ Makefile.in and rename it to Dir.sd.mk, and add the appropriate
 stuff to configure.ac, and fix everything up.  Leave the existing
 $(MAKE) -C for your existing subdirectories alone.  Then you can
 convert individual subdirectories, or classes of subdirectories, at
-your leisure.  (You must be /sure/ that each subdirectory will be
-entered only once at a time, but your existing recursive make descent
-system should already do that or you already have concurrency bugs.)
+your leisure.  (You must be /sure/ that each recursive (non-subdirmk)
+subdirectory will be entered only once at a time, but your existing
+recursive make descent system should already do that or you already
+have concurrency bugs.)
 
 Aside from this, be very wary of any invocation of $(MAKE) anywhere.
 This is a frequent source of concurrency bugs in recursive make build
