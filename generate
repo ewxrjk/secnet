@@ -241,7 +241,7 @@ sub process_input_mk ($$$$) {
 	} elsif (s#^\s*$esc\:(?=(-?)include|macro)##) {
 	    $buffering_output='';
 	} elsif (m#^\s*$esc\:([a-z][-0-9a-z_]*)#) {
-	    err "unknown directive &:$1";
+	    err "unknown directive &:$1 or bad argumnt syntax";
 	} elsif (s{^\s*${esc}TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
 	    my $t = $1 // 'all';
 	    od target_varname($var_prefix, $t);
@@ -311,7 +311,7 @@ sub process_input_mk ($$$$) {
 		od "define $1\n";
 		$push_nest->('macro', 1, '&:macro');
 	    } else {
-		die "internal error ($_?)";
+		err "bad directive argument syntax";
 	    }
 	}
     }
