@@ -158,47 +158,6 @@ If you `include subdirmk/regen.mk', dependency management and
 automatic regeneration for all of this template substitution, and for
 config.status etc. is done for you.
 
-Tables of file reference syntaxes
----------------------------------
-
-In a nonrecursive makefile supporting out of tree builds there are
-three separate important distinctions between different file
-locations:
-
- (i) In the build tree, or in the source tree ?
-
- (ii) In (or relative to) the subdirectory to which this Dir.sd.mk
-     relates, or relative to the project's top level ?
-
- (iii) Absolute or relative pathname ?  Usually relative pathnames
-     suffice.  Where an absolute pathname is needed, it can be built
-     out of &/ and an appropriate make variable such as $(PWD).
-
-Path construction &-expansions are built from the following:
-
-                      Relative paths in...
-                      build     source
-                                                       
-  This directory      &         &^
-  Top level           .         &~
-
-In more detail, with all the various options laid out:
-
-      Recommended     Relative paths in...   Absolute paths in...
-             for      build     source       build         source
-                                                       
-  This       lc       &file     &^file       $(PWD)/&file  $(abs_src)/&file
-  directory  any      &/file    &^/file      $(PWD)/&/file $(abs_src)/&/file
-             several  & f g h   &^ f g h     $(addprefix...)
-                                             
-  Top        lc       file      &~file
-  level      any      file      &~/file      $(PWD)/file   $(abs_src)/file
-             .mk.in   file      $(src)/file  $(PWD)/file   $(abs_src)/file
-             several  f g h     &~ f g h     $(addprefix...)
-
-(This assumes you have appropriate make variables src, PWD and
-abs_src.)
-
 Substitution syntax
 -------------------
 
@@ -363,6 +322,47 @@ $	=>	$$	including $'s produced by other
 &$NN	=>	$(NN)	where N are digits
 &$(	=>	$(
 
+
+Tables of file reference syntaxes
+---------------------------------
+
+In a nonrecursive makefile supporting out of tree builds there are
+three separate important distinctions between different file
+locations:
+
+ (i) In the build tree, or in the source tree ?
+
+ (ii) In (or relative to) the subdirectory to which this Dir.sd.mk
+     relates, or relative to the project's top level ?
+
+ (iii) Absolute or relative pathname ?  Usually relative pathnames
+     suffice.  Where an absolute pathname is needed, it can be built
+     out of &/ and an appropriate make variable such as $(PWD).
+
+Path construction &-expansions are built from the following:
+
+                      Relative paths in...
+                      build     source
+                                                       
+  This directory      &         &^
+  Top level           .         &~
+
+In more detail, with all the various options laid out:
+
+      Recommended     Relative paths in...   Absolute paths in...
+             for      build     source       build         source
+                                                       
+  This       lc       &file     &^file       $(PWD)/&file  $(abs_src)/&file
+  directory  any      &/file    &^/file      $(PWD)/&/file $(abs_src)/&/file
+             several  & f g h   &^ f g h     $(addprefix...)
+                                             
+  Top        lc       file      &~file
+  level      any      file      &~/file      $(PWD)/file   $(abs_src)/file
+             .mk.in   file      $(src)/file  $(PWD)/file   $(abs_src)/file
+             several  f g h     &~ f g h     $(addprefix...)
+
+(This assumes you have appropriate make variables src, PWD and
+abs_src.)
 
 Subdirectory and variable naming
 --------------------------------
