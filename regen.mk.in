@@ -5,7 +5,7 @@
 
 # Usage:
 #   include subdirmk/regen.mk
-# (probably in toplevel Subdir.sd.mk)
+# (probably in toplevel Dir.sd.mk)
 #
 # Arranges that config.status is automatically rerun to update
 # makefiles from templates, whenever a template *.sd.mk or *.mk.in is
@@ -55,15 +55,15 @@ main.mk $(SUBDIRMK_MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp
 # This filtering arranges that we can often run config.status to
 # generate only particular output files.  We look for *inputs* that
 # have changed.  If the only inputs that have changed are ones that we
-# know affect only one output (Subdir.sd.mk, Final.sd.mk and *.mk.in),
+# know affect only one output (Dir.sd.mk, Final.sd.mk and *.mk.in),
 # we pass config.status the corresponding output file names.
 # Otherwise we pass nothing and config.status does them all.  We need
-# to mention Subdir.sd.mk twice because if $(top_srcdir) is `.', make
+# to mention Dir.sd.mk twice because if $(top_srcdir) is `.', make
 # elides the directory part from $?.  Similarly but not identically
 # Final.sd.mk.
 	$(SUBDIRMK_REGEN_NDEBUG): REGEN STAMP WANTS DEPS=$?
 	./$(CONFIG_STATUS) $(if					\
-		$(filter-out Subdir.sd.mk %/Subdir.sd.mk	\
+		$(filter-out Dir.sd.mk %/Dir.sd.mk		\
 			     Final.sd.mk $(top_srcdir)/Final.sd.mk \
 			     %.mk.in				\
 			, $?),,					\

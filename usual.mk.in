@@ -5,7 +5,7 @@
 
 # Usage:
 #   include subdirmk/usual.mk
-# (probably in toplevel Subdir.sd.mk)
+# (probably in toplevel Dir.sd.mk)
 #
 # Provides various conventional `make' variables, and a
 # rule for compiling C programs.

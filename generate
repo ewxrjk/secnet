@@ -7,7 +7,7 @@
 # $(srcdir)/subdirmk/generate [--srcdir=SRCDIR] [--] SUBDIR...
 #
 # generates in each subdirectory
-#     Subdir.mk.tmp
+#     Dir.mk.tmp
 #     Makefile
 # and in toplevel
 #     main.mk.tmp
@@ -333,9 +333,9 @@ sub filter_subdir_mk ($) {
 	my ($f, $enoentok) = @_;
 	process_input_mk($targets, "${srcdir}/$f", \$esclit, $enoentok);
     };
-    $pi->("Prefix.sd.mk",              1);
-    $pi->("${dir_prefix}Subdir.sd.mk", 0);
-    $pi->("Suffix.sd.mk",              1);
+    $pi->("Prefix.sd.mk",           1);
+    $pi->("${dir_prefix}Dir.sd.mk", 0);
+    $pi->("Suffix.sd.mk",           1);
 }
 
 sub process_subtree ($$);
@@ -351,7 +351,7 @@ sub process_subtree ($$) {
     # ^ this is the only var which we need before we come back from
     #   the recursion.
 
-    push @output_makefiles, "${dir_prefix}Subdir.mk";
+    push @output_makefiles, "${dir_prefix}Dir.mk";
     write_makefile($dir_prefix, scalar @$path);
 
     my %targets = (all => []);
@@ -364,12 +364,12 @@ sub process_subtree ($$) {
     }
 
     set_dir_vars($path);
-    start_output_file("${dir_prefix}Subdir.mk.tmp");
+    start_output_file("${dir_prefix}Dir.mk.tmp");
 
     if ($node->[2]) {
 	filter_subdir_mk(\%targets);
     } else {
-	my $sdmk = "${dir_prefix}Subdir.sd.mk";
+	my $sdmk = "${dir_prefix}Dir.sd.mk";
 	if (stat $sdmk) {
 	    die
  "subdirmk: $sdmk unexpectedly exists (${dir_prefix} not mentioned on subdirmk/generate command line, maybe directory is missing from SUBDIRMK_SUBDIRS)";

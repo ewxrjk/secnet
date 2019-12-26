@@ -37,7 +37,7 @@ reset_times () {
 reset_times
 echo 'for-check-1:' >>../src/for-test.sd.mk
 make -j4 for-check-1
-grep '^for-check-1:' src/Subdir.mk || false
+grep '^for-check-1:' src/Dir.mk || false
 
 : ----- for-check-2 -----
 reset_times

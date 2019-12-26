@@ -21,7 +21,7 @@
 .makefiles.stamp
 /main.mk
 Makefile
-Subdir.mk
+Dir.mk
 Final.mk
 *.tmp
 
