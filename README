@@ -83,14 +83,15 @@ targets may be in run in parallel: there is only one `make' invocation
 at a time.  There is no sequencing between subdirectories, only been
 individual targets (as specified according to their dependencies).
 
-You can define other per-directory recursive targets too: simply
-mention (usually, by setting) the variable &TARGETS_zonk, or whatever.
-This will create a src/zonk target (for appropriate value of src/).
-Unlike `all', these other targets only exist in areas of the project
-where at least something mentions them.  So for example, if
-&TARGETS_zonk is mentioned in src but not lib, `make zonk' in
-lib will fail.  If you want to make a target exist everywhere,
-mention its name in Prefix.sd.mk or Suffix.sd.mk (see below).
+You can define other per-directory recursive targets too: set the
+variable &TARGETS_zonk, or whatever (being sure to write &TARGETS_zonk
+at the start of a line).  This will create a src/zonk target (for
+appropriate value of src/).  Unlike `all', these other targets only
+exist in areas of the project where at least something mentions them.
+So for example, if &TARGETS_zonk is set in src but not lib, `make
+zonk' in lib will fail.  If you want to make a target exist
+everywhere, += it with nothing in Prefix.sd.mk or Suffix.sd.mk (see
+below).
 
 Prefix.sd.mk, Suffix.sd.mk, inclusion
 -------------------------------------
