@@ -322,6 +322,10 @@ $	=>	$$	including $'s produced by other
 &$NN	=>	$(NN)	where N are digits
 &$(	=>	$(
 
+A few contexts do not support $-doubling, such as directive arguments
+or places where this might imply $-quadrupling.  (There is no way to
+get $-quadrupling.)
+
 
 Tables of file reference syntaxes
 ---------------------------------
