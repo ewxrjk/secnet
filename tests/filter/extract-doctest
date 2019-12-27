@@ -106,20 +106,20 @@ sub write_permode ($$$$$;$$) {
     oh "${senl}# ----- $what starts -----\n";
     foreach my $e (@exp) {
 	next unless $filter->($e);
-	my $rubric = $e->{In};
-	$rubric =~ s/\&/AMP /g;
-	$rubric =~ s/\$/DOLLAR /g;
-	$rubric =~ s/NEWQUOTE/NEW_QUOTE /g;
-	my ($f,$prubric) = $rubric =~ m/^(.*)\n/
+	my $desc = $e->{In};
+	$desc =~ s/\&/AMP /g;
+	$desc =~ s/\$/DOLLAR /g;
+	$desc =~ s/NEWQUOTE/NEW_QUOTE /g;
+	my ($f,$pdesc) = $desc =~ m/^(.*)\n/
 	        ? ("\n# %s:\n%s\n\n", $1)
-		: ("%-30s: %s .\n", $rubric);
+		: ("%-30s: %s .\n", $desc);
 	my $o;
 	$o = $e->{OutTop} if $dir_prefix eq '';
 	$o //= $e->{Out};
 	$o =~ s{/sub/dir}{} if $dir_prefix eq '' && !defined $e->{OutTop};
 	$o = $omap->($o, $e);
-	oi sprintf $f, $prubric, $e->{In};
-	oo sprintf $f, $prubric, $o;
+	oi sprintf $f, $pdesc, $e->{In};
+	oo sprintf $f, $pdesc, $o;
     }
     oi $end;
     oh "${senl}# ----- $what ends -----\n";
