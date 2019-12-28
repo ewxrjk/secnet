@@ -173,14 +173,32 @@ sub set_dir_vars ($) {
 
 our $err_file;
 
+our @warn_ena_dfl = map { $_ => 1 } qw(
+    local+global
+    single-char-var
+    unknown-warning
+);
+our %warn_ena = @warn_ena_dfl;
+
+our $warned;
+our %warn_unk;
+
 sub err ($) {
     my ($m) = @_;
     die "subdirmk: ${err_file}:$.: $m\n";
 }
 
-sub wrn ($) {
-    my ($m) = @_;
-    print STDERR "subdirmk: warning: ${err_file}:$.: $m\n";
+sub wrncore ($$) {
+    my ($wk,$m) = @_;
+    return 0 unless $warn_ena{$wk} // warn "internal error $wk ?";
+    $warned++;
+    print STDERR "subdirmk: warning ($wk): $m\n";
+    return 1;
+}
+
+sub wrn ($$) {
+    my ($wk,$m) = @_;
+    wrncore($wk, "${err_file}:$.: $m");
 }
 
 sub ddbl_only ($) {
@@ -257,6 +275,20 @@ sub process_input_mk ($$$$) {
 	    $pop_nest->('macro');
 	    od "endef\n";
 	    next;
+	} elsif (s#^\s*$esc\:warn\s+(\S.*)$##) {
+	    foreach my $wk (split /\s+/, $1) {
+		my $yes = $wk !~ s{^!}{};
+		if (defined $warn_ena{$wk}) {
+		    $warn_ena{$wk} = $yes;
+		    next;
+		} elsif ($yes) {
+		    wrn 'unknown-warning',
+			"unknown warning $wk requested";
+		} else {
+		    $warn_unk{$wk} //= "$f:$.";
+		}
+	    }
+	    next;
 	} elsif (s#^\s*$esc\:(?=(-?)include|macro)##) {
 	    $buffering_output='';
 	} elsif (m#^\s*$esc\:([a-z][-0-9a-z_]*)#) {
@@ -289,7 +321,7 @@ sub process_input_mk ($$$$) {
 		od $2;
 		if (s{^\$}{}) { od $&; }
 		elsif (m{^[a-zA-Z]\w}) {
-		    wrn
+		    wrn 'single-char-var',
 		    'possibly confusing unbracketed single-char $-expansion';
 		}
 		elsif (m{^\(($esc)?([^()\$]+)\)} ||
@@ -402,6 +434,7 @@ sub process_subtree ($$) {
 	my @childpath = (@$path, $child->[0]);
 	my $child_subdir = join '/', @childpath;
 	mkdir $child_subdir or $!==EEXIST or die "mkdir $child_subdir: $!\n";
+	local %warn_ena = @warn_ena_dfl;
 	push @{ $targets{$_} }, $child_subdir foreach
 	    process_subtree($child, \@childpath);
     }
@@ -480,7 +513,7 @@ sub print_varref_warnings () {
     foreach my $vn (sort keys %varref) {
 	my $vv = $varref{$vn};
 	next unless $vv->{''} && $vv->{1};
-	print STDERR "subdirmk: warning: saw both $vn and &$vn\n";
+	wrncore 'local+global', "saw both $vn and &$vn" or return;
 	foreach my $amp ('', 1) {
 	    printf STDERR " saw %s%s at %s\n",
 		($amp ? '&' : ''), $vn, $_
@@ -491,7 +524,16 @@ sub print_varref_warnings () {
     }
 }
 
+sub print_warning_warnings () {
+    return unless $warned;
+    foreach my $wk (sort keys %warn_unk) {
+	wrncore 'unknown-warning',
+	    "$warn_unk{$wk}: attempt to suppress unknown warning(s) \`$wk'";
+    }
+}
+
 build_tree();
 process_tree();
 print_varref_warnings();
+print_warning_warnings();
 install_output_files();

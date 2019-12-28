@@ -269,6 +269,14 @@ So pathname syntax is a subset of:
 	`all' is extra special: every directory has an `all'
 	target, which corresponds to &TARGETS.
 
+&:warn [!]WARNTAG ...
+	Suppress (with !) or re-enable (without !) warnings tagged
+	WARNTAG (see section `Warnings', below).  The suppression list
+	is reset at the start of processing in each subdirectory.
+	Warnings that appear at the end of processing are controlled
+	by the final warning state after processing all the toplevel
+	input files (including Final.sd.mk).
+
 &:changequote NEWQUOTE
 	changes the escape sequence from & to literally NEWQUOTE
 	NEWQUOTE may be any series of of non-whitespace characters,
@@ -372,6 +380,31 @@ In more detail, with all the various options laid out:
 
 (This assumes you have appropriate make variables src, PWD and
 abs_src.)
+
+Warnings
+--------
+
+subdirmk's `generate' program, which does the acual &-substitution,
+can produce some warnings about your .sd.mk files.  These can be
+suppressed with the &:warn directive.  The warning tags are:
+
+    local+global
+	The same VARNAME was used both with and without an & prefix.
+	This can be confusing.  Also, if you avoid this then you will
+	get a warning iff you accidentally leave off a needed &.
+
+    single-char-var
+	A variable expansion like $FBAR.  make's expansion rules
+	interpret this as $(F)BAR.  It's normally better to write
+	it this way, at least if the variable expansion is followed
+	by more letters.  Note that &$FOO works differently to
+	raw make: it expands to $(sub_dir_FOO).
+
+    unknown-warning
+	&:warn was used to try to enable a warning that this version
+	of subdirmk does not understand.  (Note that an attempt to
+	*dis*able an unknown warning is only reported if some other
+	warning was issued which might have been disabled.)
 
 Subdirectory and variable naming
 --------------------------------

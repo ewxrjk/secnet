@@ -1,5 +1,5 @@
-subdirmk: warning: ./Dir.sd.mk:8: possibly confusing unbracketed single-char $-expansion
-subdirmk: warning: saw both WARN and &WARN
+subdirmk: warning (single-char-var): ./Dir.sd.mk:8: possibly confusing unbracketed single-char $-expansion
+subdirmk: warning (local+global): saw both WARN and &WARN
  saw WARN at ./Dir.sd.mk:6
  saw WARN at ./Dir.sd.mk:9
  saw &WARN at ./Dir.sd.mk:7
