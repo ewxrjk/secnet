@@ -474,6 +474,8 @@ sub process_tree() {
     oraw "include \$(SUBDIRMK_MAKEFILES)\n";
 }
 
+sub flmap ($) { local ($_) = @_; s{:(\d+)$}{ sprintf ":%10d", $1 }e; $_; }
+
 sub print_varref_warnings () {
     foreach my $vn (sort keys %varref) {
 	my $vv = $varref{$vn};
@@ -482,7 +484,9 @@ sub print_varref_warnings () {
 	foreach my $amp ('', 1) {
 	    printf STDERR " saw %s%s at %s\n",
 		($amp ? '&' : ''), $vn, $_
-		foreach sort keys %{ $vv->{$amp} };
+		foreach
+		sort { flmap($a) cmp flmap($b) }
+		keys %{ $vv->{$amp} };
 	}
     }
 }
