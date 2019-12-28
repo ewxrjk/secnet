@@ -289,9 +289,15 @@ sub process_input_mk ($$$$) {
 		}
 	    }
 	    next;
+	} elsif (s#^\s*$esc\:local\+global\s+(\S.*)$##) {
+	    foreach my $vn (split /\s+/, $1) {
+		$vn =~ s{^$esc}{};
+		$varref{$vn}{NoWarn} = 1;
+	    }
+	    next;
 	} elsif (s#^\s*$esc\:(?=(-?)include|macro)##) {
 	    $buffering_output='';
-	} elsif (m#^\s*$esc\:([a-z][-0-9a-z_]*)#) {
+	} elsif (m#^\s*$esc\:([a-z][-+0-9a-z_]*)#) {
 	    err "unknown directive &:$1 or bad argumnt syntax";
 	} elsif (s{^\s*${esc}TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
 	    my $t = $1 // 'all';
@@ -513,6 +519,7 @@ sub print_varref_warnings () {
     foreach my $vn (sort keys %varref) {
 	my $vv = $varref{$vn};
 	next unless $vv->{''} && $vv->{1};
+	next if $vv->{NoWarn};
 	wrncore 'local+global', "saw both $vn and &$vn" or return;
 	foreach my $amp ('', 1) {
 	    printf STDERR " saw %s%s at %s\n",

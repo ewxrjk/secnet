@@ -10,6 +10,10 @@ WARN += 3
 # $(&WARN)
 # &$WARN
 
+&:local+global NOWARN1 &NOWARN2
+# &$NOWARN1 $(NOWARN1)
+# &$NOWARN2 $(NOWARN2)
+
 &${ some-macro, 42, $x, { &$- $(foreach something) } }
 
 # doctests:

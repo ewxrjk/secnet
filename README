@@ -277,6 +277,11 @@ So pathname syntax is a subset of:
 	by the final warning state after processing all the toplevel
 	input files (including Final.sd.mk).
 
+&:local+global [&]VARIABLE ...
+	Suppresses the warning about seeing both VARIABLE and
+	&VARIABLE.  Any & specified in the RHS is redundant: this
+	always affects both versions identically.
+
 &:changequote NEWQUOTE
 	changes the escape sequence from & to literally NEWQUOTE
 	NEWQUOTE may be any series of of non-whitespace characters,
@@ -392,6 +397,8 @@ suppressed with the &:warn directive.  The warning tags are:
 	The same VARNAME was used both with and without an & prefix.
 	This can be confusing.  Also, if you avoid this then you will
 	get a warning iff you accidentally leave off a needed &.
+	(You can suppress this warning for a particular VARNAME with
+	the &:local+global directive.)
 
     single-char-var
 	A variable expansion like $FBAR.  make's expansion rules
