@@ -19,6 +19,22 @@ print "$0 @ARGV\n" or die $!;
 
 our $srcdir='.';
 
+# error handling methods:
+#
+# Error in input file, while $err_file and $. set, eg in most of
+# process_input_mk:
+#         err "message";
+#
+# Other input or usage errors:
+#         die "$0: $file:$lno: problem\n";
+#         die "$0: some problem not locatable in that way\n";
+#
+# System call error (not ENOENT) accessing input/output files:
+#         die "description of problem eg maybe erbing noun: $!\n";
+#
+# Bug detedcted in `generate':
+#         die "internal error (some information)?"; # or similar
+
 while (@ARGV && $ARGV[0] =~ m/^-/) {
     $_ = shift @ARGV;
     last if $_ eq '--';
@@ -149,6 +165,19 @@ sub set_dir_vars ($) {
     $var_prefix = "${var_prefix_name}_";
 }
 
+our $err_file;
+
+sub err ($) {
+    my ($m) = @_;
+    die "$0: ${err_file}:$.: $m\n";
+}
+
+sub ddbl_only ($) {
+    my ($e) = @_;
+    return if $ddbl;
+    err "escape &$e is valid only during \$-doubling";
+}
+
 sub process_input_mk ($$$$);
 sub process_input_mk ($$$$) {
     my ($targets, $f, $esclitr, $enoent_ok) = @_;
@@ -169,6 +198,8 @@ sub process_input_mk ($$$$) {
 	return;
     }
     $input_files{$f}++;
+
+    local $err_file=$f;
 
     my %srcdirmap = (
 		  '^' => "\$(top_srcdir)${dir_suffix}",
