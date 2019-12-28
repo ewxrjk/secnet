@@ -176,6 +176,11 @@ sub err ($) {
     die "subdirmk: ${err_file}:$.: $m\n";
 }
 
+sub wrn ($) {
+    my ($m) = @_;
+    print STDERR "subdirmk: warning: ${err_file}:$.: $m\n";
+}
+
 sub ddbl_only ($) {
     my ($e) = @_;
     return if $ddbl;
