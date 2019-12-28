@@ -263,7 +263,9 @@ sub process_input_mk ($$$$) {
 	    err "unknown directive &:$1 or bad argumnt syntax";
 	} elsif (s{^\s*${esc}TARGETS(?:_([0-9a-zA-Z_]+))?(?=\W)}{}) {
 	    my $t = $1 // 'all';
-	    od target_varname($var_prefix, $t);
+	    my $vn = target_varname($var_prefix, $t);
+	    $note_varref->($vn,1);
+	    od $vn;
 	    $targets->{$t} //= [ ];
 	}
 	for (;;) {
@@ -297,7 +299,10 @@ sub process_input_mk ($$$$) {
 	    elsif (s{^\\\s+$}{}) { }
 	    elsif (s{^$esc}{}) { od "$$esclitr$$esclitr" }
 	    elsif (m{^(?=$caps_re)}) { od $var_prefix }
-	    elsif (s{^\$([A-Za-z]\w+)}{}) { od "\$(${var_prefix}$1)" }
+	    elsif (s{^\$([A-Za-z]\w+)}{}) {
+		$note_varref->($1,1);
+		od "\$(${var_prefix}$1)";
+	    }
 	    elsif (s{^([~^]?)(?=$lc_re)}{}) { od $pfxmap{$1} }
 	    elsif (s{^_}{}) { od $var_prefix }
 	    elsif (s{^=}{}) { od $var_prefix_name }
@@ -306,13 +311,17 @@ sub process_input_mk ($$$$) {
 	    elsif (s{^([~^])\.}{}) { od $srcdirmap{$1} }
 	    elsif (s{^\$\-}{}) { $ddbl=undef; }
 	    elsif (s{^\$\+}{}) { $ddbl=1; }
-	    elsif (s{^\$\(}{}) { ddbl_only($&); oud "\$("; }
+	    elsif (s{^\$\(}{}) {
+		ddbl_only($&); oud "\$(";
+		$note_varref->($2,!!$1) if m{^($esc)?([^()\$]+\))};
+	    }
 	    elsif (s{^\$(\d+)}{}) { ddbl_only($&); oud "\$($1)"; }
 	    elsif (s{^\$\{}{}) {
 		err 'macro invocation cannot be re-$-doubled' if $ddbl;
 		od '${eval ${call ';
 		$evalcall_brackets = 1;
 		$push_nest->('eval',1, '&${...}');
+		$note_varref->($2,!!$1) if m{^\s*($esc)?([^,{}\$]+)};
 	    } elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die "internal error ($1?)";
 		my $after='';
