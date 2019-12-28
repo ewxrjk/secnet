@@ -235,8 +235,11 @@ So pathname syntax is a subset of:
 
 &:include filename		filename should usually be [&]foo.sd.mk
 &:-include filename		tolerate nonexistent file
-	filenames are relative to $(top_srcdir)
-	RHS is &-expanded
+	RHS is &-expanded but filenames are relative to the top
+	srcdir.  This implies that unqualified names are like &~/
+	whereas &/ is like &^/.  &^ and &~ do not work here because
+	they expand to constructions involving literally
+	`$(top_srcdir)', but the RHS is not make-expanded.
 
 &!<lwsp>	disables & until EOL (and then disappears)
 
