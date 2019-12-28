@@ -270,8 +270,8 @@ sub process_input_mk ($$$$) {
 	    err 'cannot $-double &-processed RHS of directive'
 		if $ddbl && defined $buffering_output;
 	    unless ($nest[0][0] eq 'eval'
-		    ? s{^(.*?)($esc|[{}])}{}
-		    : s{^(.*?)($esc)}{}) { od $_; last; }
+		    ? s{^(.*?)($esc|\$|[{}])}{}
+		    : s{^(.*?)($esc|\$)}{}) { od $_; last; }
 	    od $1;
 	    if ($2 eq '{') {
 		od $2;
@@ -282,6 +282,14 @@ sub process_input_mk ($$$$) {
 		next if --$evalcall_brackets;
 		$pop_nest->('eval');
 		od '}';
+		next;
+	    } elsif ($2 eq '$') {
+		od $2;
+		if (s{^\$}{}) { od $&; }
+		elsif (m{^\(($esc)?([^()\$]+)\)} ||
+		       m{^\{($esc)?([^{}\$]+)\}}) {
+		    $note_varref->($2,!!$1);
+	        }
 		next;
 	    }
 	    if (s{^\\$esc}{}) { od "$$esclitr" }
