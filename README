@@ -342,6 +342,10 @@ suppressed with the &:warn directive.  The warning tags are:
 	*dis*able an unknown warning is only reported if some other
 	warning was issued which might have been disabled.)
 
+
+Guides, hints, and further explanations
+=======================================
+
 Global definitions
 ------------------
 
@@ -352,6 +356,7 @@ file you `include' and declare using SUBDIRMK_MAKEFILES.
 If you need different settings of variables like CC for different
 subdirectories, you should probably do that with target-specific
 variable settings.  See the info node `(make) Target-specific'.
+
 
 Directory templates `.sd.mk' vs plain autoconf templates `.mk.in'
 --------------------------------------------------------------------
@@ -497,7 +502,7 @@ will clear up the problem.
 
 
 Legal information
------------------
+=================
 
 subdirmk is
  Copyright 2019 Mark Wooding
