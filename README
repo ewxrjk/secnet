@@ -346,6 +346,68 @@ suppressed with the &:warn directive.  The warning tags are:
 Guides, hints, and further explanations
 =======================================
 
+Incorporating this into your project
+------------------------------------
+
+Use `git-subtree' to merge the subdirmk/ directory.  You may find it
+useful to symlink the DEVELOPER-CERTIFICATE file (git can store
+symlinks as symlinks - just `git add' the link).  And you probably
+want to mention the situation in your top-level COPYING and HACKING.
+
+Symlink autogen.sh into your project toplevel.
+
+In your configure.ac, say
+
+  m4_include([subdirmk/subdirmk.ac])
+  SUBDIRMK_SUBDIRS([...list of subdirectories in relative syntax...])
+
+Write a Dir.sd.mk in each directory.  The toplevel one should
+probably contain:
+
+  include subdirmk/usual.mk
+  include subdirmk/regen.mk
+
+Write a Suffix.sd.mk in the toplevel, if you want.  It should probably
+have:
+
+  &:include subdirmk/cdeps.sd.mk
+  &:include subdirmk/clean.sd.mk
+
+
+Hints
+-----
+
+You can convert your project incrementally.  Start with the top-level
+Makefile.in and rename it to Dir.sd.mk, and add the appropriate
+stuff to configure.ac, and fix everything up.  Leave the existing
+$(MAKE) -C for your existing subdirectories alone.  Then you can
+convert individual subdirectories, or classes of subdirectories, at
+your leisure.  (You must be /sure/ that each recursive (non-subdirmk)
+subdirectory will be entered only once at a time, but your existing
+recursive make descent system should already do that or you already
+have concurrency bugs.)
+
+Aside from this, be very wary of any invocation of $(MAKE) anywhere.
+This is a frequent source of concurrency bugs in recursive make build
+systems.  When combined with nonrecursive make it's all in the same
+directory and there is nothing stopping the different invocations
+ending up trying to make the same targets at the same time. That
+causes hideous racy lossage.  There are ways to get this to work
+reliably but it is advanced stuff.
+
+If you make syntax errors, or certain kinds of other errors, in your
+makefiles, you may find that just `make' is broken now and cannot get
+far enough to regenerate a working set of makefiles.  If this happens
+just rerun ./config.status by hand.
+
+If you go back and forth between different versions of your code you
+can sometimes find that `make' complains that one of your Subdir.sd.mk
+files is missing: typically, if iot was used and therefore a
+dependency in some other version of your code.  If you run `make
+clean' (or `make realclean') these dependencies are suppressed, which
+will clear up the problem.
+
+
 Global definitions
 ------------------
 
@@ -439,66 +501,6 @@ project) are best avoided.
 
 If you name your variables in ALL CAPS and your subdirectories in
 lower case with `-' rather than `_', there will be no confusion.
-
-Incorporating this into your project
-------------------------------------
-
-Use `git-subtree' to merge the subdirmk/ directory.  You may find it
-useful to symlink the DEVELOPER-CERTIFICATE file (git can store
-symlinks as symlinks - just `git add' the link).  And you probably
-want to mention the situation in your top-level COPYING and HACKING.
-
-Symlink autogen.sh into your project toplevel.
-
-In your configure.ac, say
-
-  m4_include([subdirmk/subdirmk.ac])
-  SUBDIRMK_SUBDIRS([...list of subdirectories in relative syntax...])
-
-Write a Dir.sd.mk in each directory.  The toplevel one should
-probably contain:
-
-  include subdirmk/usual.mk
-  include subdirmk/regen.mk
-
-Write a Suffix.sd.mk in the toplevel, if you want.  It should probably
-have:
-
-  &:include subdirmk/cdeps.sd.mk
-  &:include subdirmk/clean.sd.mk
-
-Hints
------
-
-You can convert your project incrementally.  Start with the top-level
-Makefile.in and rename it to Dir.sd.mk, and add the appropriate
-stuff to configure.ac, and fix everything up.  Leave the existing
-$(MAKE) -C for your existing subdirectories alone.  Then you can
-convert individual subdirectories, or classes of subdirectories, at
-your leisure.  (You must be /sure/ that each recursive (non-subdirmk)
-subdirectory will be entered only once at a time, but your existing
-recursive make descent system should already do that or you already
-have concurrency bugs.)
-
-Aside from this, be very wary of any invocation of $(MAKE) anywhere.
-This is a frequent source of concurrency bugs in recursive make build
-systems.  When combined with nonrecursive make it's all in the same
-directory and there is nothing stopping the different invocations
-ending up trying to make the same targets at the same time. That
-causes hideous racy lossage.  There are ways to get this to work
-reliably but it is advanced stuff.
-
-If you make syntax errors, or certain kinds of other errors, in your
-makefiles, you may find that just `make' is broken now and cannot get
-far enough to regenerate a working set of makefiles.  If this happens
-just rerun ./config.status by hand.
-
-If you go back and forth between different versions of your code you
-can sometimes find that `make' complains that one of your Subdir.sd.mk
-files is missing: typically, if iot was used and therefore a
-dependency in some other version of your code.  If you run `make
-clean' (or `make realclean') these dependencies are suppressed, which
-will clear up the problem.
 
 
 Legal information
