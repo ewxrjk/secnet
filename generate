@@ -152,6 +152,8 @@ Makefile run-main.mk:
 END
 }
 
+our %varref;
+
 our ($dir_prefix, $dir_suffix, $dir_name,
      $var_prefix, $var_prefix_name);
 
@@ -233,6 +235,13 @@ sub process_input_mk ($$$$) {
 	err "unexpectedly closed $nk in middle of $nest[0][0] ($nest[0][2])"
 	    unless $nest[0][0] eq $nk;
 	$ddbl = (shift @nest)[1];
+    };
+
+    # Our detection of variable settings does not have to be completely
+    # accurate, since it is only going to be used for advice to the user.
+    my $note_varref = sub {
+	my ($vn,$amp) = @_;
+	$varref{$vn}{$amp}{"$f:$."} = 1;
     };
 
     while (<$input>) {
@@ -440,6 +449,20 @@ sub process_tree() {
     oraw "include \$(SUBDIRMK_MAKEFILES)\n";
 }
 
+sub print_varref_warnings () {
+    foreach my $vn (sort keys %varref) {
+	my $vv = $varref{$vn};
+	next unless $vv->{''} && $vv->{1};
+	print STDERR "subdirmk: warning: saw both $vn and &$vn\n";
+	foreach my $amp ('', 1) {
+	    printf STDERR " saw %s%s at %s\n",
+		($amp ? '&' : ''), $vn, $_
+		foreach sort keys %{ $vv->{$amp} };
+	}
+    }
+}
+
 build_tree();
 process_tree();
+print_varref_warnings();
 install_output_files();
