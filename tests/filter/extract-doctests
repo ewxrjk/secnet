@@ -3,10 +3,10 @@
 # script for extracting doctests from README
 #
 # usage:
-#   expand <README | tests/filter/extract-doctest tests/filter/
+#   expand <README | tests/filter/extract-doctests tests/filter/
 # writes:
-#   tests/filter/doctest.mk.part
-#   tests/filter/sub/dir/doctest.mk.part
+#   tests/filter/doctests.mk.part
+#   tests/filter/sub/dir/doctests.mk.part
 #
 # Relies on some properties of the way README is laid out.
 # See comments below marked `parse:' and `adhoc:'.
@@ -130,9 +130,9 @@ sub write_permode ($$$$$;$$) {
     
 sub writeout ($) {
     my ($dir_prefix) = @_;
-    open I, '>', "$outdir/${dir_prefix}doctest.sd.mk" or die $!;
-    open O, '>', "$outdir/${dir_prefix}doctest.mk.part" or die $!;
-    oh "# doctest starts $dir_prefix\n";
+    open I, '>', "$outdir/${dir_prefix}doctests.sd.mk" or die $!;
+    open O, '>', "$outdir/${dir_prefix}doctests.mk.part" or die $!;
+    oh "# doctests start $dir_prefix\n";
     write_permode($dir_prefix,
 		  '','','', 'normal',
 		 sub { !$_[0]{DD} && !$_[0]{CQ} } );
@@ -165,7 +165,7 @@ sub writeout ($) {
 		  "",
 		  'changequote',
 		  sub { $_[0]{CQ} } );
-    oh "# doctest ends\n";
+    oh "# doctests end\n";
     close I or die $!;
 }
 

@@ -4,7 +4,7 @@ set -o pipefail
 
 cd tests/filter
 
-expand <../../README | ./extract-doctest . >/dev/null
+expand <../../README | ./extract-doctests . >/dev/null
 
 ../../generate sub/dir
 files=$(find -name \*.expected)
@@ -13,7 +13,7 @@ for f in $files; do
 	o=$f.tmp
 	sed <$i >$o '
 		/^# doctests:/ {
-			r '"${f%/*}/doctest.mk.part"'
+			r '"${f%/*}/doctests.mk.part"'
 			a
 		}
 	'

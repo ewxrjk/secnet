@@ -11,7 +11,7 @@ MAKEFILE_TEMPLATES += ./Dir.sd.mk
 MAKEFILE_TEMPLATES += ./Final.sd.mk
 MAKEFILE_TEMPLATES += ./Prefix.sd.mk
 MAKEFILE_TEMPLATES += ./Suffix.sd.mk
-MAKEFILE_TEMPLATES += ./doctest.sd.mk
+MAKEFILE_TEMPLATES += ./doctests.sd.mk
 MAKEFILE_TEMPLATES += ./sub/dir/Dir.sd.mk
-MAKEFILE_TEMPLATES += ./sub/dir/doctest.sd.mk
+MAKEFILE_TEMPLATES += ./sub/dir/doctests.sd.mk
 include $(SUBDIRMK_MAKEFILES)

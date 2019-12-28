@@ -11,4 +11,4 @@ line &\
 joining
 
 # doctests:
-&:include &doctest.sd.mk
+&:include &doctests.sd.mk
