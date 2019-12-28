@@ -24,6 +24,9 @@ CONFIG_STATUS	?= config.status
 CONFIGURE_ACS	+= $(CONFIGURE_AC)
 CONFIGURE_ACS	+= subdirmk/subdirmk.ac
 
+# To turn on debugging here, export SUBDIRMK_REGEN_NDEBUG=''
+SUBDIRMK_REGEN_NDEBUG ?= @
+
 $(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
 	cd $(top_srcdir) && autoconf
 
@@ -36,7 +39,8 @@ MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
 	))
 
 main.mk $(SUBDIRMK_MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp
-		@:
+	$(SUBDIRMK_REGEN_NDEBUG): REGEN STAMP CAUSES TARGET=$@
+
 .makefiles.stamp:						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
@@ -49,6 +53,7 @@ main.mk $(SUBDIRMK_MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp
 # pass nothing and config.status does them all.  We need to mention
 # Subdir.sd.mk twice because if $(top_srcdir) is `.', make elides the
 # directory part from $?.
+	$(SUBDIRMK_REGEN_NDEBUG): REGEN STAMP WANTS DEPS=$?
 	./$(CONFIG_STATUS) $(if					\
 		$(filter-out Subdir.sd.mk %/Subdir.sd.mk	\
 			     %.mk.in				\

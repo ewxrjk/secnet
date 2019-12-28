@@ -3,6 +3,9 @@ set -ex
 
 cd example
 
+SUBDIRMK_REGEN_NDEBUG=''
+export SUBDIRMK_REGEN_NDEBUG
+
 #----- in-tree build -----
 
 git clean -xdff
