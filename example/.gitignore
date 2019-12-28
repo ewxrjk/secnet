@@ -22,9 +22,11 @@
 /main.mk
 Makefile
 Subdir.mk
+Final.mk
 *.tmp
 
 #----- For our tests -----
 /build
+/for-test-final.sd.mk
 /src/for-test.sd.mk
 /lib/for-test.mk.in

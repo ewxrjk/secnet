@@ -13,6 +13,7 @@ mkdir build
 cd build
 >>../src/for-test.sd.mk
 >>../lib/for-test.mk.in
+>>../for-test-final.sd.mk
 .././autogen.sh && ../configure
 make -j4 all check
 
@@ -43,5 +44,11 @@ reset_times
 echo 'for-check-2:' >>../lib/for-test.mk.in
 make -j4 for-check-2
 grep '^for-check-2:' lib/for-test.mk || false
+
+: ----- for-check-3 -----
+reset_times
+echo 'for-check-3:' >>../for-test-final.sd.mk
+make -j4 for-check-3
+grep '^for-check-3:' Final.mk
 
 echo ok.
