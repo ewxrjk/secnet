@@ -245,6 +245,10 @@ sub process_input_mk ($$$$) {
     };
 
     while (<$input>) {
+	if (m#^\s*($esc)?(\w+)\s*(?:=|\+=|\?=|:=)# ||
+	    m#^\s*(?:$esc\:macro|define)\s+($esc)?(\S+)\s#) {
+	    $note_varref->($2,!!$1);
+	}
 	if (s#^\s*$esc\:changequote\s+(\S+)\s+$##) {
 	    $$esclitr = $1;
 	    $set_esc->();
