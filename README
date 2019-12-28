@@ -331,6 +331,15 @@ Dollar doubling and macro assistance
 &$-		Stops dollar-doubling
 	Both are idempotent and local to the file or context.
 
+Sometimes we will show $'s being doubled inside another construct.
+This means the content of the construct is $-doubled: $-doubling is
+locally enabled, and restored afterwards.
+
+&:macro NAME	=>	define NAME
+STUFF $ THINGS	..	STUFF $$ THINGS
+&:endm		..	endef
+	NAME is processed for &
+
 While dollar-doubling:
 - - - - - - - - - - -
 

@@ -138,6 +138,8 @@ sub writeout ($) {
 		  'dollar doubling',
 		  sub {
 		      my ($e) = @_;
+		      # adhoc: skip &:macro in already-doubling part
+		      return 0 if $e->{In} =~ m{^\&\:macro};
 		      return 0 if $e->{CQ};
 		      return $e->{DD} || !grep {
 			  # If there are two entries with the same In,

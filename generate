@@ -180,13 +180,29 @@ sub process_input_mk ($$$$) {
     $pfxmap{$_} = $srcdirmap{$_}.'/' foreach keys %srcdirmap;
 
     local $ddbl;
+    my @nest;
+
+    my $push_nest = sub {
+	my ($nk, $nndbl) = @_;
+	unshift @nest, [ $nk, $ddbl ];
+	$ddbl = $nndbl;
+    };
+    my $pop_nest = sub {
+	my ($nk) = @_;
+	die unless $nest[0][0] eq $nk;
+	$ddbl = (shift @nest)[1];
+    };
 
     while (<$input>) {
 	if (s#^\s*$esc\:changequote\s+(\S+)\s+$##) {
 	    $$esclitr = $1;
 	    $set_esc->();
 	    next;
-	} elsif (s#^\s*$esc\:(?=(-?)include)##) {
+	} elsif (s#^\s*$esc\:endm\s+$##) {
+	    $pop_nest->('Macro');
+	    od "endef\n";
+	    next;
+	} elsif (s#^\s*$esc\:(?=(-?)include|macro)##) {
 	    $buffering_output='';
 	} elsif (m#^\s*$esc\:([a-z][-0-9a-z_]*)#) {
 	    die "unknown directive $1";
@@ -238,6 +254,9 @@ sub process_input_mk ($$$$) {
 		my $subf = "$srcdir/$2";
 		process_input_mk($targets, $subf, $esclitr, $1);
 		od "\n";
+	    } elsif (m#^macro\s+(\S+)\s+$#) {
+		od "define $1\n";
+		$push_nest->('Macro', 1);
 	    } else {
 		die "internal error buffering directive $_ ";
 	    }
