@@ -97,12 +97,16 @@ sub write_makefile ($$) {
     #print STDERR "write_makefile @_\n";
     start_output_file("${dir_prefix}Makefile");
     my $cd = $depth ? join('/', ('..',) x $depth) : '.';
+    my $suppress_templates=
+	'$(if $(filter-out clean real-clean, $(subdirmk_targets)),,'.
+	' MAKEFILE_TEMPLATES=)';
     o <<END;
 default: all
-\$(MAKECMDGOALS) all: run-main.mk
+\$(filter-out all,\$(MAKECMDGOALS)) all: run-main.mk
 	\@:
+subdirmk_targets:=\$(or \$(MAKECMDGOALS),all)
 Makefile run-main.mk:
-	\$(MAKE) -C $cd -f main.mk \$(addprefix ${dir_prefix},\$(or \$(MAKECMDGOALS),all))
+	\$(MAKE) -C $cd -f main.mk \$(addprefix ${dir_prefix},\$(subdirmk_targets))$suppress_templates
 .SUFFIXES:
 .PHONY:	run-main.mk
 END
