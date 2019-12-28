@@ -296,7 +296,8 @@ sub process_input_mk ($$$$) {
 		od $_;
 		$_ = '';
 	    } else {
-		err "bad &-escape \`$$esclitr$_'";
+		m{^.{0,5}};
+		err "bad &-escape \`$$esclitr$&'";
 	    }
 	}
 	if (defined $buffering_output) {
