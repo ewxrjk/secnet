@@ -288,6 +288,10 @@ sub process_input_mk ($$$$) {
 	    } elsif ($2 eq '$') {
 		od $2;
 		if (s{^\$}{}) { od $&; }
+		elsif (m{^[a-zA-Z]\w}) {
+		    wrn
+		    'possibly confusing unbracketed single-char $-expansion';
+		}
 		elsif (m{^\(($esc)?([^()\$]+)\)} ||
 		       m{^\{($esc)?([^{}\$]+)\}}) {
 		    $note_varref->($2,!!$1);
