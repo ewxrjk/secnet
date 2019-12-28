@@ -361,8 +361,9 @@ In your configure.ac, say
   m4_include([subdirmk/subdirmk.ac])
   SUBDIRMK_SUBDIRS([...list of subdirectories in relative syntax...])
 
-Write a Dir.sd.mk in each directory.  The toplevel one should
-probably contain:
+Write a Dir.sd.mk in each directory.  See the substitution syntax
+reference, above, and the example/ directory here.  The toplevel
+Dir.sd.mk should probably contain:
 
   include subdirmk/usual.mk
   include subdirmk/regen.mk
