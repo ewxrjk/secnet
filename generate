@@ -198,6 +198,8 @@ sub wrncore ($$) {
 
 sub wrn ($$) {
     my ($wk,$m) = @_;
+    our %warn_dedupe;
+    return 0 if $warn_dedupe{$err_file,$.,$wk,$m}++;
     wrncore($wk, "${err_file}:$.: $m");
 }
 
