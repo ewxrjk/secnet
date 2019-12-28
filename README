@@ -216,7 +216,7 @@ STUFF $ THINGS	..	STUFF $$ THINGS
 
 &${..$..} =>	${eval ${call ..$$..}}
 	(matches { } pairs to find the end)
-	content is $-doubled (unless it contains $- to turn that off)
+	content is $-doubled (unless it contains &$- to turn that off)
 
 	Together &:macro and &${...} provide a more reasonable macro
 	facility than raw make.  They solve the problem that make
@@ -300,7 +300,9 @@ includes.  So if you want to get in early and set global variables,
 put them near the top of Dir.sd.mk.
 
 The file Final.sd.mk in the toplevel directory is processed and
-included after all the other files.
+the result included after all the other files.  Its subdirmk
+filtering context inherits warning suppressions from the toplevel's
+Dir.sd.mk etc., but not anything else.
 
 subdirmk's filter script itself sets (only) these variables:
   top_srcdir
