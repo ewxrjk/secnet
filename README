@@ -218,14 +218,13 @@ STUFF $ THINGS	..	STUFF $$ THINGS
 	(matches { } pairs to find the end)
 	content is $-doubled (unless it contains &$- to turn that off)
 
-	Together &:macro and &${...} provide a more reasonable macro
-	facility than raw make.  They solve the problem that make
-	expansions cannot directly generate multiple rules, variable,
-	etc.; instead, `$(eval )' must be used, but that re-expands
-	the argument, meaning that all the literal text must be
-	$-doubled.  This applies to the macro text and to the
-	arguments.  Also `$(eval $(call ...))' is an unfortunate syntax.
-	Hence &:macro and &${...}.
+Together &:macro and &${...} provide a more reasonable macro facility
+than raw make.  They solve the problem that make expansions cannot
+directly generate multiple rules, variable, etc.; instead, `$(eval )'
+must be used, but that re-expands the argument, meaning that all the
+literal text must be $-doubled.  This applies to the macro text and to
+the arguments.  Also `$(eval $(call ...))' is an unfortunate syntax.
+Hence &:macro and &${...}.
 
 While dollar-doubling:
 - - - - - - - - - - -
