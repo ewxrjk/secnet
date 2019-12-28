@@ -1,5 +1,7 @@
 # subdirectory test cases
 
+&:warn !some-unknown-warning
+
 &:changequote &
 &/
 

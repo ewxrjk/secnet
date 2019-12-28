@@ -2,6 +2,7 @@
 # Prefix in sub/dir
 # subdirectory test cases
 
+
 sub/dir/
 
 # sub_dir_TARGETS_notarget += 42
