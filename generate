@@ -216,6 +216,7 @@ sub process_input_mk ($$$$) {
 
     local $ddbl;
     my @nest = (['']);
+    my $evalcall_brackets;
 
     my $push_nest = sub {
 	my ($nk, $nndbl, $what) = @_;
@@ -256,11 +257,11 @@ sub process_input_mk ($$$$) {
 	    od $1;
 	    if ($2 eq '{') {
 		od $2;
-		$ddbl++;
+		$evalcall_brackets++;
 		next;
 	    } elsif ($2 eq '}') {
 		od $2;
-		next if --$ddbl;
+		next if --$evalcall_brackets;
 		$pop_nest->('eval');
 		od '}';
 		next;
@@ -284,6 +285,7 @@ sub process_input_mk ($$$$) {
 	    elsif (s{^\$\{}{}) {
 		err 'macro invocation cannot be re-$-doubled' if $ddbl;
 		od '${eval ${call ';
+		$evalcall_brackets = 1;
 		$push_nest->('eval',1, '&${...}');
 	    } elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die "internal error ($1?)";
