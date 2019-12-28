@@ -277,6 +277,7 @@ sub process_input_mk ($$$$) {
 	    }
 	}
     }
+    die "unclosed $nest[0][0]" if @nest;
     $input->error and die "read $f: $!\n";
     close $input or die "close $f: $!\n";
 }
