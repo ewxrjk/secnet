@@ -218,14 +218,14 @@ sub process_input_mk ($$$$) {
     my @nest = (['']);
 
     my $push_nest = sub {
-	my ($nk, $nndbl) = @_;
-	unshift @nest, [ $nk, $ddbl ];
+	my ($nk, $nndbl, $what) = @_;
+	unshift @nest, [ $nk, $ddbl, $what, $. ];
 	$ddbl = $nndbl;
     };
     my $pop_nest = sub {
 	my ($nk) = @_;
-	die unless $nest[0][0] eq $nk;
-	# ^ xxx need better message
+	err "unexpectedly closed $nk in middle of $nest[0][0] ($nest[0][2])"
+	    unless $nest[0][0] eq $nk;
 	$ddbl = (shift @nest)[1];
     };
 
@@ -282,7 +282,7 @@ sub process_input_mk ($$$$) {
 	    elsif (s{^\$\{}{}) {
 		err 'macro invocation cannot be re-$-doubled' if $ddbl;
 		od '${eval ${call ';
-		$push_nest->('Eval',1);
+		$push_nest->('Eval',1, '&${...}');
 	    } elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die "internal error ($1?)";
 		my $after='';
@@ -314,7 +314,8 @@ sub process_input_mk ($$$$) {
 	    }
 	}
     }
-    die "unclosed $nest[0][0]" if $nest[0][0];
+    die "subdirmk: $f:$nest[0][3]: unclosed $nest[0][0] ($nest[0][2])\n"
+	if $nest[0][0];
     $input->error and die "read $f: $!\n";
     close $input or die "close $f: $!\n";
 }
