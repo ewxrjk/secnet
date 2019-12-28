@@ -26,8 +26,11 @@ our $srcdir='.';
 #         err "message";
 #
 # Other input or usage errors:
-#         die "$0: $file:$lno: problem\n";
-#         die "$0: some problem not locatable in that way\n";
+#         die "subdirmk: $file:$lno: problem\n";
+#         die "subdirmk: some problem not locatable in that way\n";
+#
+# Usage error:
+#         die "subdirmk $0: explanation of problem\n";
 #
 # System call error (not ENOENT) accessing input/output files:
 #         die "description of problem eg maybe erbing noun: $!\n";
@@ -41,7 +44,7 @@ while (@ARGV && $ARGV[0] =~ m/^-/) {
     if (s/^--srcdir=//) {
 	$srcdir=$';
     } else {
-	die "$0: unknown option \`$_'\n";
+	die "subdirmk $0: unknown option \`$_'\n";
     }
 }
 our @subdirs = @ARGV;
@@ -170,7 +173,7 @@ our $err_file;
 
 sub err ($) {
     my ($m) = @_;
-    die "$0: ${err_file}:$.: $m\n";
+    die "subdirmk: ${err_file}:$.: $m\n";
 }
 
 sub ddbl_only ($) {
@@ -367,7 +370,7 @@ sub process_subtree ($$) {
 	my $sdmk = "${dir_prefix}Subdir.sd.mk";
 	if (stat $sdmk) {
 	    die
- "$0: $sdmk unexpectedly exists (${dir_prefix} not mentioned on subdirmk/generate command line, maybe directory is missing from SUBDIRMK_SUBDIRS)";
+ "subdirmk: $sdmk unexpectedly exists (${dir_prefix} not mentioned on subdirmk/generate command line, maybe directory is missing from SUBDIRMK_SUBDIRS)";
 	} elsif ($!==ENOENT) {
 	} else {
 	    die "stat $sdmk: $!\n";
@@ -404,7 +407,7 @@ sub process_final ($) {
     process_input_mk(\%ntargets, "${srcdir}/Final.sd.mk", \$esclit, 1);
     delete $ntargets{$_} foreach @$otargets;
     my @ntargets = sort keys %ntargets;
-    die "$0: Final.sd.mk may not introduce new top-level targets".
+    die "subdirmk: Final.sd.mk may not introduce new top-level targets".
 	" (@ntargets)\n" if @ntargets;
 }
 
