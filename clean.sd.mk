@@ -5,7 +5,7 @@
 
 &# Usage:
 &#   &:include subdirmk/clean.sd.mk
-&# (probably in Perdir.sd.mk)
+&# (probably in Suffix.sd.mk)
 &#
 &# Provides a per-directory `clean' target, which deletes all the files
 &# in &CLEAN.  &OBJECTS, &DEPFILES and &TARGETS are automatically deleted.

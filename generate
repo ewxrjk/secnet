@@ -234,8 +234,9 @@ sub filter_subdir_mk ($) {
 	my ($f, $enoentok) = @_;
 	process_input_mk($targets, "${srcdir}/$f", \$esclit, $enoentok);
     };
+    $pi->("Prefix.sd.mk",              1);
     $pi->("${dir_prefix}Subdir.sd.mk", 0);
-    $pi->("Perdir.sd.mk",              1);
+    $pi->("Suffix.sd.mk",              1);
 }
 
 sub process_subtree ($$);

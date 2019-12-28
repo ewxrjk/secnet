@@ -5,7 +5,7 @@
 
 &# Usage:
 &#   &:include subdirmk/cdeps.sd.mk
-&# (probably in Perdir.sd.mk)
+&# (probably in Suffix.sd.mk)
 &#
 &# Arranges for automatic #include dependency tracking for
 &# C compilation.  The compiler is asked to write the dependencies to
