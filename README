@@ -398,6 +398,10 @@ suppressed with the &:warn directive.  The warning tags are:
 	The same VARNAME was used both with and without an & prefix.
 	This can be confusing.  Also, if you avoid this then you will
 	get a warning iff you accidentally leave off a needed &.
+	The generation of this warning depends on scanning your
+	makefile for things that look like variable references, which
+	subdirmk does not do completely perfectly.  Exciting make
+	syntax may evade this warning, or require suppressions.
 	(You can suppress this warning for a particular VARNAME with
 	the &:local+global directive.)
 
