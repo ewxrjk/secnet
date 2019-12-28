@@ -267,7 +267,6 @@ So pathname syntax is a subset of:
 
 &:<directive> <args>....
 	recognised at start of line only (possibly after lwsp)
-	args are processed for &
 
 &:include filename		filename should usually be [&]foo.sd.mk
 &:-include filename		tolerate nonexistent file
