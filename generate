@@ -255,12 +255,14 @@ sub process_input_mk ($$$$) {
 		    : s{^(.*?)($esc)}{}) { od $_; last; }
 	    od $1;
 	    if ($2 eq '{') {
+		od $2;
 		$ddbl++;
 		next;
 	    } elsif ($2 eq '}') {
+		od $2;
 		next if --$ddbl;
 		$pop_nest->('eval');
-		od '}}';
+		od '}';
 		next;
 	    }
 	    if (s{^\\$esc}{}) { od "$$esclitr" }
