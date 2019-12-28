@@ -311,6 +311,37 @@ subdirmk's filter script itself sets (only) these variables:
 You are likely to want to define $(PWD), and shorter names for
 top_srdir and abs_top_srcdir (we suggest $(src) and $(abs_src)).
 
+Warnings
+--------
+
+subdirmk's `generate' program, which does the acual &-substitution,
+can produce some warnings about your .sd.mk files.  These can be
+suppressed with the &:warn directive.  The warning tags are:
+
+    local+global
+	The same VARNAME was used both with and without an & prefix.
+	This can be confusing.  Also, if you avoid this then you will
+	get a warning iff you accidentally leave off a needed &.
+	The generation of this warning depends on scanning your
+	makefile for things that look like variable references, which
+	subdirmk does not do completely perfectly.  Exciting make
+	syntax may evade this warning, or require suppressions.
+	(You can suppress this warning for a particular VARNAME with
+	the &:local+global directive.)
+
+    single-char-var
+	A variable expansion like $FBAR.  make's expansion rules
+	interpret this as $(F)BAR.  It's normally better to write
+	it this way, at least if the variable expansion is followed
+	by more letters.  Note that &$FOO works differently to
+	raw make: it expands to $(sub_dir_FOO).
+
+    unknown-warning
+	&:warn was used to try to enable a warning that this version
+	of subdirmk does not understand.  (Note that an attempt to
+	*dis*able an unknown warning is only reported if some other
+	warning was issued which might have been disabled.)
+
 Global definitions
 ------------------
 
@@ -388,36 +419,6 @@ In more detail, with all the various options laid out:
 (This assumes you have appropriate make variables src, PWD and
 abs_src.)
 
-Warnings
---------
-
-subdirmk's `generate' program, which does the acual &-substitution,
-can produce some warnings about your .sd.mk files.  These can be
-suppressed with the &:warn directive.  The warning tags are:
-
-    local+global
-	The same VARNAME was used both with and without an & prefix.
-	This can be confusing.  Also, if you avoid this then you will
-	get a warning iff you accidentally leave off a needed &.
-	The generation of this warning depends on scanning your
-	makefile for things that look like variable references, which
-	subdirmk does not do completely perfectly.  Exciting make
-	syntax may evade this warning, or require suppressions.
-	(You can suppress this warning for a particular VARNAME with
-	the &:local+global directive.)
-
-    single-char-var
-	A variable expansion like $FBAR.  make's expansion rules
-	interpret this as $(F)BAR.  It's normally better to write
-	it this way, at least if the variable expansion is followed
-	by more letters.  Note that &$FOO works differently to
-	raw make: it expands to $(sub_dir_FOO).
-
-    unknown-warning
-	&:warn was used to try to enable a warning that this version
-	of subdirmk does not understand.  (Note that an attempt to
-	*dis*able an unknown warning is only reported if some other
-	warning was issued which might have been disabled.)
 
 Subdirectory and variable naming
 --------------------------------
