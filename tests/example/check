@@ -19,9 +19,17 @@ make -j4 all check
 : ----- testing rebuild on input change -----
 
 reset_times () {
+	cd ..
+
+	find ! -path './build/*' -type f -print0 \
+	| xargs -0 \
+	touch -hmd 'now -2000 seconds' --
+
+	cd build
+
 	find -type f -print0 \
 	| xargs -0 \
-	touch -hmd 'now -1 seconds' --
+	touch -hmd 'now -1000 seconds' --
 }
 
 : ----- for-check-1 -----
