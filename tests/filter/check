@@ -12,6 +12,8 @@ rc=$?
 set -e
 if [ $rc != 0 ]; then cat stderr.tmp; exit 1; fi
 
+ok=true
+
 files=$(find -name \*.expected)
 for f in $files; do
 	i=$f
@@ -22,7 +24,9 @@ for f in $files; do
 			a
 		}
 	'
-	diff -u $f.tmp ${f%.expected}.tmp
+	diff -u $f.tmp ${f%.expected}.tmp || ok=false
 done
+
+$ok
 
 echo ok.
