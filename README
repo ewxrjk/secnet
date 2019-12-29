@@ -233,8 +233,8 @@ $	=>	$$	including $'s produced by other
 			 &-expansions not mentioned here
 
 &\$	=>	$
-&$NN	=>	$(NN)	where N are digits
 &$(	=>	$(
+&$NN	=>	$(NN)	where N are digits
 
 A few contexts do not support $-doubling, such as directive arguments
 or places where this might imply $-quadrupling.  (There is no way to
