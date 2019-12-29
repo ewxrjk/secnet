@@ -55,7 +55,7 @@ while (<>) {
 	    s{^or (\S+)$}{}) {
 	    $e->{OutTop} = $1 eq 'nothing' ? '' : $1;
 	} elsif (# parse: expect other wordish things to be comments
-		 m{^(?!or\b)\w{2,} }) {
+		 m{^(?!or\b)\(?\w{2,} }) {
 	} elsif (# adhoc: slightly special case for $(eval $(call
 		 m{^\$\{.*}) {
 	    $e->{Out} .= ' '.$&;
