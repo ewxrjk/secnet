@@ -263,8 +263,8 @@ sub process_input_mk ($$$$) {
     # accurate, since it is only going to be used for advice to the user.
     my $note_varref = sub {
 	my ($vn,$amp) = @_;
-	return if $varref_exp{$vn}{$amp};
-	$varref{$vn}{$amp}{"$f:$."} = 1;
+	my $exp = !!$varref_exp{$vn}{$amp};
+	$varref{$vn}{$exp}{$amp}{"$f:$."} = 1;
     };
 
     while (<$input>) {
@@ -530,15 +530,20 @@ sub flmap ($) { local ($_) = @_; s{:(\d+)$}{ sprintf ":%10d", $1 }e; $_; }
 sub print_varref_warnings () {
     foreach my $vn (sort keys %varref) {
 	my $vv = $varref{$vn};
-	next unless $vv->{''} && $vv->{1};
+	next unless $vv->{''}{''} && $vv->{''}{1};
 	wrncore 'local+global', "saw both $vn and &$vn" or return;
+	foreach my $exp ('', 1) {
 	foreach my $amp ('', 1) {
-	    printf STDERR " saw %s%s at %s\n",
+	    printf STDERR
+		($exp
+		 ? " expectedly saw %s%s at %s\n"
+		 : " saw %s%s at %s\n"),
 		($amp ? '&' : ''), $vn, $_
 		foreach
 		sort { flmap($a) cmp flmap($b) }
-		keys %{ $vv->{$amp} };
+		keys %{ $vv->{$exp}{$amp} };
 	}
+        }
     }
 }
 

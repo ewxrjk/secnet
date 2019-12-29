@@ -4,6 +4,7 @@ subdirmk: warning (broken-var-ref): ./Dir.sd.mk:19: broken $&... expansion; you 
 subdirmk: warning (local+global): saw both NOWARN1 and &NOWARN1
  saw NOWARN1 at ./sub/dir/Dir.sd.mk:21
  saw &NOWARN1 at ./Dir.sd.mk:14
+ expectedly saw NOWARN1 at ./Dir.sd.mk:14
 subdirmk: warning (local+global): saw both WARN and &WARN
  saw WARN at ./Dir.sd.mk:6
  saw WARN at ./Dir.sd.mk:9
@@ -14,4 +15,5 @@ subdirmk: warning (local+global): saw both WARN and &WARN
  saw &WARN at ./Dir.sd.mk:11
  saw &WARN at ./sub/dir/Dir.sd.mk:15
  saw &WARN at ./sub/dir/Dir.sd.mk:24
+ expectedly saw &WARN at ./sub/dir/Dir.sd.mk:18
 subdirmk: warning (unknown-warning): ./sub/dir/Dir.sd.mk:3: attempt to suppress unknown warning(s) `some-unknown-warning'
