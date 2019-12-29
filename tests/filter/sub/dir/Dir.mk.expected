@@ -18,6 +18,8 @@ WARN += 5
 
 $(NOWARN1)
 
+sub_dir_WARN += 6
+
 # doctests:
 # Suffix in sub/dir
 

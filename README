@@ -174,10 +174,11 @@ So pathname syntax is a subset of:
 	by the final warning state after processing all the toplevel
 	input files (including Final.sd.mk).
 
-&:local+global [&]VARIABLE ...
+&:local+global [!][&]VARIABLE ...
 	Suppresses any warnings relating to forthcoming mentions
 	to VARIABLE or &VARIABLE, as applicable.  Scope ends at
 	the end of the current directory's Suffix.sd.mk.
+	Prefixing with ! removes [&]VARIABLE from the suppresion list.
 
 &:changequote NEWQUOTE
 	changes the escape sequence from & to literally NEWQUOTE

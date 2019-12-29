@@ -20,5 +20,8 @@ WARN += 5
 
 $(NOWARN1)
 
+&:local+global !&WARN
+&WARN += 6
+
 # doctests:
 &:include &doctests.sd.mk

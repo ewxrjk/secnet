@@ -13,4 +13,5 @@ subdirmk: warning (local+global): saw both WARN and &WARN
  saw &WARN at ./Dir.sd.mk:10
  saw &WARN at ./Dir.sd.mk:11
  saw &WARN at ./sub/dir/Dir.sd.mk:15
+ saw &WARN at ./sub/dir/Dir.sd.mk:24
 subdirmk: warning (unknown-warning): ./sub/dir/Dir.sd.mk:3: attempt to suppress unknown warning(s) `some-unknown-warning'

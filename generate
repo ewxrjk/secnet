@@ -296,8 +296,9 @@ sub process_input_mk ($$$$) {
 	    next;
 	} elsif (s#^\s*$esc\:local\+global\s+(\S.*)$##) {
 	    foreach my $vn (split /\s+/, $1) {
+		my $pos = !($vn =~ s{^!}{});
 		my $amp = $vn =~ s{^$esc}{};
-		$varref_exp{$vn}{!!$amp} = 1;
+		$varref_exp{$vn}{!!$amp} = $pos;
 	    }
 	    next;
 	} elsif (s#^\s*$esc\:(?=(-?)include|macro)##) {
