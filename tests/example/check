@@ -26,12 +26,12 @@ make -j4 all check
 
 #----- testing rebuild on input change -----
 
-echo '# for-check 1' >>../src/for-test.sd.mk
-make -j4
-grep '^# for-check 1' src/Subdir.mk || false
+echo 'for-check-1:' >>../src/for-test.sd.mk
+make -j4 for-check-1
+grep '^for-check-1:' src/Subdir.mk || false
 
-echo '# for-check 2' >>../lib/for-test.mk.in
-make -j4
-grep '^# for-check 2' lib/for-test.mk || false
+echo 'for-check-2:' >>../lib/for-test.mk.in
+make -j4 for-check-2
+grep '^for-check-2:' lib/for-test.mk || false
 
 echo ok.
