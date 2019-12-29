@@ -33,7 +33,8 @@ $(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
 $(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
 	./$(CONFIG_STATUS) --recheck
 
-# Normally, generate will add all the inputs to MAKEFILE_TEMPLATES.
+# generate will add all its own inputs and outputs to these variables
+SUBDIRMK_MAKEFILES += @_SUBDIRMK_MAKEFILES@
 MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
 	@_SUBDIRMK_MAKEFILES@ \
 	))
