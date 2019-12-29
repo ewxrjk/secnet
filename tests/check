@@ -1,6 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
+j=$(nproc 2>/dev/null || echo 1)
+j=$(( $j * 5 / 4 + 1 ))
+
 x () { echo "$@"; "$@"; }
-x ${MAKE-make} -f tests/tests.mk -j8
+x ${MAKE-make} -f tests/tests.mk -j$j
 echo 'ok.'
