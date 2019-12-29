@@ -26,12 +26,20 @@ make -j4 all check
 
 : ----- testing rebuild on input change -----
 
+reset_times () {
+	find -type f -print0 \
+	| xargs -0 \
+	touch -hmd 'now -1 seconds' --
+}
+
 : ----- for-check-1 -----
+reset_times
 echo 'for-check-1:' >>../src/for-test.sd.mk
 make -j4 for-check-1
 grep '^for-check-1:' src/Subdir.mk || false
 
 : ----- for-check-2 -----
+reset_times
 echo 'for-check-2:' >>../lib/for-test.mk.in
 make -j4 for-check-2
 grep '^for-check-2:' lib/for-test.mk || false
