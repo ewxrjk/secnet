@@ -1,10 +1,9 @@
 #!/bin/sh
 set -ex
 
-cd example
+. tests/build-common
 
-SUBDIRMK_REGEN_NDEBUG=''
-export SUBDIRMK_REGEN_NDEBUG
+cd example
 
 : ----- in-tree build -----
 
