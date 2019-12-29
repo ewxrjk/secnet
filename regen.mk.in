@@ -13,6 +13,12 @@
 #
 # If you add includes to configure.ac, add them to CONFIGURE_ACS.
 #
+# Makefiles updated by config.status and passed to SUBDIRMK_MAKEFILES
+# in configure.ac are automatically handled too.  If you have other
+# files updated by config.status (eg, the output of autoheader) you
+# need to put them in CONFIG_STATUS_OUTPUTS (before your inclusion
+# of regen.mk).
+#
 # Also provides a `realclean::' target at the toplevel which deletes
 # the autoconf output.  This may be made into a recursive target
 # by mentioning &TARGETS_realclean in appropriate .sd.mk.
