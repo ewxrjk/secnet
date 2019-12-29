@@ -20,8 +20,8 @@
 # of regen.mk).
 #
 # Also provides a `realclean::' target at the toplevel which deletes
-# the autoconf output.  This may be made into a recursive target
-# by mentioning &TARGETS_realclean in appropriate .sd.mk.
+# the autoconf output.  (This is suitable for being part of a recursive
+# target creaed by setting &TARGETS_realclean in appropriate .sd.mk.)
 
 CONFIGURE	?= configure
 CONFIGURE_AC	?= $(CONFIGURE).ac
