@@ -1,6 +1,5 @@
 #!/bin/sh
-set -ex
+set -e
 
-tests/filter/check
-tests/intree/check
-tests/example/check
+${MAKE-make} -f tests/tests.mk -j8
+echo 'ok.'
