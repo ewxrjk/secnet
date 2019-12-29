@@ -175,9 +175,9 @@ So pathname syntax is a subset of:
 	input files (including Final.sd.mk).
 
 &:local+global [&]VARIABLE ...
-	Suppresses the warning about seeing both VARIABLE and
-	&VARIABLE.  Any & specified in the RHS is redundant: this
-	always affects both versions identically.
+	Suppresses any warnings relating to forthcoming mentions
+	to VARIABLE or &VARIABLE, as applicable.  Scope ends at
+	the end of the current directory's Suffix.sd.mk.
 
 &:changequote NEWQUOTE
 	changes the escape sequence from & to literally NEWQUOTE

@@ -153,6 +153,7 @@ END
 }
 
 our %varref;
+our %varref_exp;
 
 our ($dir_prefix, $dir_suffix, $dir_name,
      $var_prefix, $var_prefix_name);
@@ -262,6 +263,7 @@ sub process_input_mk ($$$$) {
     # accurate, since it is only going to be used for advice to the user.
     my $note_varref = sub {
 	my ($vn,$amp) = @_;
+	return if $varref_exp{$vn}{$amp};
 	$varref{$vn}{$amp}{"$f:$."} = 1;
     };
 
@@ -294,8 +296,8 @@ sub process_input_mk ($$$$) {
 	    next;
 	} elsif (s#^\s*$esc\:local\+global\s+(\S.*)$##) {
 	    foreach my $vn (split /\s+/, $1) {
-		$vn =~ s{^$esc}{};
-		$varref{$vn}{NoWarn} = 1;
+		my $amp = $vn =~ s{^$esc}{};
+		$varref_exp{$vn}{!!$amp} = 1;
 	    }
 	    next;
 	} elsif (s#^\s*$esc\:(?=(-?)include|macro)##) {
@@ -435,6 +437,8 @@ sub process_subtree ($$) {
     #use Data::Dumper;
     #print STDERR Dumper(\@_);
 
+    local %varref_exp;
+
     my $dir_prefix = dir_prefix($path);
     # ^ this is the only var which we need before we come back from
     #   the recursion.
@@ -526,7 +530,6 @@ sub print_varref_warnings () {
     foreach my $vn (sort keys %varref) {
 	my $vv = $varref{$vn};
 	next unless $vv->{''} && $vv->{1};
-	next if $vv->{NoWarn};
 	wrncore 'local+global', "saw both $vn and &$vn" or return;
 	foreach my $amp ('', 1) {
 	    printf STDERR " saw %s%s at %s\n",

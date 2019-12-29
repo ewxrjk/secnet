@@ -11,6 +11,11 @@ sub_dir_TARGETS_sometarget2
 
 line joining
 
+sub_dir_WARN += 4
+WARN += 4
+sub_dir_WARN += 5 # this warning suppressed, precisely
+WARN += 5
+
 # doctests:
 # Suffix in sub/dir
 

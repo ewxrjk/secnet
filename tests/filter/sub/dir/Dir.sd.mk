@@ -12,5 +12,11 @@
 line &\
 joining
 
+&WARN += 4
+WARN += 4
+&:local+global &WARN
+&WARN += 5 # this warning suppressed, precisely
+WARN += 5
+
 # doctests:
 &:include &doctests.sd.mk
