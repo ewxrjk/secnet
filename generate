@@ -350,7 +350,7 @@ sub process_input_mk ($$$$) {
 	    elsif (m{^(?=$caps_re)}) { od $var_prefix }
 	    elsif (s{^\$([A-Za-z]\w+)}{}) {
 		$note_varref->($1,1);
-		od "\$(${var_prefix}$1)";
+		od "\${${var_prefix}$1}";
 	    }
 	    elsif (s{^([~^]?)(?=$lc_re)}{}) { od $pfxmap{$1} }
 	    elsif (s{^_}{}) { od $var_prefix }

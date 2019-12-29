@@ -114,7 +114,7 @@ So pathname syntax is a subset of:
 &\$		=>	$		provided for $-doubling regimes
 &\NEWLINE				eats the newline and vanishes
 
-&$VARIABLE	=>	$(sub_dir_VARIABLE)	or $(TOP_VARIABLE)
+&$VARIABLE	=>	${sub_dir_VARIABLE}	or ${TOP_VARIABLE}
 	VARIABLE is ASCII starting with a letter and matching \w+
 
 & thing thing... &
@@ -334,7 +334,7 @@ suppressed with the &:warn directive.  The warning tags are:
 	interpret this as $(F)BAR.  It's normally better to write
 	it this way, at least if the variable expansion is followed
 	by more letters.  Note that &$FOO works differently to
-	raw make: it expands to $(sub_dir_FOO).
+	raw make: it expands to ${sub_dir_FOO}.
 
     broken-var-ref
         An attempt at variable expansion looking like $&...
