@@ -3,11 +3,12 @@ set -ex
 
 . tests/build-common
 
-cd example
+make_copy example
+
+cd tests/example/example
 
 : ----- out of tree build -----
 
-git clean -xdff
 mkdir build
 cd build
 >>../src/for-test.sd.mk
