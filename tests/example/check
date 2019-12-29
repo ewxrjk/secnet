@@ -6,7 +6,7 @@ cd example
 SUBDIRMK_REGEN_NDEBUG=''
 export SUBDIRMK_REGEN_NDEBUG
 
-#----- in-tree build -----
+: ----- in-tree build -----
 
 git clean -xdff
 ./autogen.sh && ./configure
@@ -14,7 +14,7 @@ make -j4 all check
 make -j4 clean
 make -j4 all check
 
-#----- out of tree build -----
+: ----- out of tree build -----
 
 git clean -xdff
 mkdir build
@@ -24,12 +24,14 @@ cd build
 .././autogen.sh && ../configure
 make -j4 all check
 
-#----- testing rebuild on input change -----
+: ----- testing rebuild on input change -----
 
+: ----- for-check-1 -----
 echo 'for-check-1:' >>../src/for-test.sd.mk
 make -j4 for-check-1
 grep '^for-check-1:' src/Subdir.mk || false
 
+: ----- for-check-2 -----
 echo 'for-check-2:' >>../lib/for-test.mk.in
 make -j4 for-check-2
 grep '^for-check-2:' lib/for-test.mk || false
