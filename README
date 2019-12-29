@@ -411,7 +411,7 @@ far enough to regenerate a working set of makefiles.  If this happens
 just rerun ./config.status by hand.
 
 If you go back and forth between different versions of your code you
-can sometimes find that `make' complains that one of your Subdir.sd.mk
+can sometimes find that `make' complains that one of your Dir.sd.mk
 files is missing: typically, if iot was used and therefore a
 dependency in some other version of your code.  If you run `make
 clean' (or `make realclean') these dependencies are suppressed, which
