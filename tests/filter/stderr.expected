@@ -1,5 +1,6 @@
 subdirmk: warning (unknown-warning): ./Prefix.sd.mk:2: unknown warning many-requests-for-unknown-warning requested
 subdirmk: warning (single-char-var): ./Dir.sd.mk:8: possibly confusing unbracketed single-char $-expansion
+subdirmk: warning (broken-var-ref): ./Dir.sd.mk:19: broken $&... expansion; you probably meant &$
 subdirmk: warning (local+global): saw both WARN and &WARN
  saw WARN at ./Dir.sd.mk:6
  saw WARN at ./Dir.sd.mk:9

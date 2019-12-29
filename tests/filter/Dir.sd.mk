@@ -16,5 +16,7 @@ WARN += 3
 
 &${ some-macro, 42, $x, { &$- $(foreach something) } }
 
+$&FBAR
+
 # doctests:
 &:include &doctests.sd.mk

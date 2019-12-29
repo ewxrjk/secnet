@@ -336,6 +336,11 @@ suppressed with the &:warn directive.  The warning tags are:
 	by more letters.  Note that &$FOO works differently to
 	raw make: it expands to $(sub_dir_FOO).
 
+    broken-var-ref
+        An attempt at variable expansion looking like $&...
+	You probably expected this to mean $(TOP_F)BAR but it
+	expands to $TOP_FBAR which make thinks means $(T)OP_FBAR.
+
     unknown-warning
 	&:warn was used to try to enable a warning that this version
 	of subdirmk does not understand.  (Note that an attempt to

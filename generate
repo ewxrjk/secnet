@@ -177,6 +177,7 @@ our @warn_ena_dfl = map { $_ => 1 } qw(
     local+global
     single-char-var
     unknown-warning
+    broken-var-ref
 );
 our %warn_ena = @warn_ena_dfl;
 
@@ -331,6 +332,10 @@ sub process_input_mk ($$$$) {
 		elsif (m{^[a-zA-Z]\w}) {
 		    wrn 'single-char-var',
 		    'possibly confusing unbracketed single-char $-expansion';
+		}
+		elsif (m{^$esc}) {
+		    wrn 'broken-var-ref',
+		    'broken $&... expansion; you probably meant &$';
 		}
 		elsif (m{^\(($esc)?([^()\$]+)\)} ||
 		       m{^\{($esc)?([^{}\$]+)\}}) {

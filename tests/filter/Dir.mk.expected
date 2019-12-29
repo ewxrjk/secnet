@@ -17,6 +17,8 @@ TOP_WARN += 3
 
 ${eval ${call  some-macro, 42, $$x, {  $(foreach something) } }}
 
+$TOP_FBAR
+
 # doctests:
 # Suffix in .
 
