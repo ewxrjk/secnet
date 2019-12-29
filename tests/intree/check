@@ -1,0 +1,15 @@
+#!/bin/sh
+set -ex
+
+. tests/build-common
+
+make_copy intree
+
+cd tests/intree/example
+
+./autogen.sh && ./configure
+make -j4 all check
+make -j4 clean
+make -j4 all check
+
+echo ok.

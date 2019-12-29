@@ -2,4 +2,5 @@
 set -ex
 
 tests/filter/check
+tests/intree/check
 tests/example/check

@@ -2,3 +2,12 @@
 SUBDIRMK_REGEN_NDEBUG=''
 export SUBDIRMK_REGEN_NDEBUG
 
+make_copy () {
+	rm -rf tests/$1/example
+	mkdir tests/$1/example
+	git ls-files -z example \
+	| xargs -0 \
+	sh -xec 'rsync -R -l "$@" tests/'$1'/' x
+	rm tests/$1/example/subdirmk
+	ln -sf ../../.. tests/$1/example/subdirmk
+}
