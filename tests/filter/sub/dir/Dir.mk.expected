@@ -16,6 +16,8 @@ WARN += 4
 sub_dir_WARN += 5 # this warning suppressed, precisely
 WARN += 5
 
+$(NOWARN1)
+
 # doctests:
 # Suffix in sub/dir
 

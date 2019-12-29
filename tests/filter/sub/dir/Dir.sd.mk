@@ -18,5 +18,7 @@ WARN += 4
 &WARN += 5 # this warning suppressed, precisely
 WARN += 5
 
+$(NOWARN1)
+
 # doctests:
 &:include &doctests.sd.mk
