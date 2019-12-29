@@ -11,4 +11,4 @@
 	$(AR) rc $@ $^
 
 # This is a hook for subdirmk's test suite.
--include &^/lib/for-test.mk
+-include &for-test.mk
