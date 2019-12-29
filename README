@@ -205,6 +205,10 @@ Dollar doubling and macro assistance
 &$-		Stops dollar-doubling
 	Both are idempotent and local to the file or context.
 
+This is useful both for make macrology involving $(eval ...), and
+possibly for helping write complicated recipes involving shell
+variables, inline Perl code, etc.
+
 Sometimes we will show $'s being doubled inside another construct.
 This means the content of the construct is $-doubled: $-doubling is
 locally enabled, and restored afterwards.
@@ -233,8 +237,8 @@ $	=>	$$	including $'s produced by other
 			 &-expansions not mentioned here
 
 &\$	=>	$
-&$(	=>	$(
-&$NN	=>	$(NN)	where N are digits
+&$(	=>	${	(expands to { } so it is useable for shell too)
+&$NN	=>	${NN}	where N are digits
 
 A few contexts do not support $-doubling, such as directive arguments
 or places where this might imply $-quadrupling.  (There is no way to
