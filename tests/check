@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
 
-${MAKE-make} -f tests/tests.mk -j8
+x () { echo "$@"; "$@"; }
+x ${MAKE-make} -f tests/tests.mk -j8
 echo 'ok.'
