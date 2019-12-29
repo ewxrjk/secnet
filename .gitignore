@@ -47,6 +47,7 @@ test-example/*.key
 test-example/*.privkeys
 test-example/pubkeys
 test-example/sites.conf
+test-example/sites-nonego.conf
 test-example/bogus-setup-request
 build-stamp
 

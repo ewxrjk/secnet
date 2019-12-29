@@ -93,7 +93,7 @@ exec cat
 "
 	}
 	* {
-	    set sitesconf sites.conf
+	    set sitesconf sites-nonego.conf
 	    append cfg "
 		local-key rsa-private(\"$builddir/$privkey\");
 "

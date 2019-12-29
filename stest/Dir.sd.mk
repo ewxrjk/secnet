@@ -5,6 +5,7 @@
 &DEPS += &^ common.tcl
 &DEPS += secnet
 &DEPS += test-example/sites.conf
+&DEPS += test-example/sites-nonego.conf
 &DEPS += test-example/inside.key
 &DEPS += test-example/outside.key
 &DEPS += test-example/all-privkeys
