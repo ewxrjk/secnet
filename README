@@ -88,13 +88,13 @@ empty string).
 
 &=		=>	sub_dir				or TOP
 
-&^lc		=>	$(top_srcdir)/sub/dir/lc
-&^/		=>	$(top_srcdir)/sub/dir/
-&^.		=>	$(top_srcdir)/sub/dir
+&^lc		=>	${top_srcdir}/sub/dir/lc
+&^/		=>	${top_srcdir}/sub/dir/
+&^.		=>	${top_srcdir}/sub/dir
 
-&~lc		=>	$(top_srcdir)/lc
-&~/		=>	$(top_srcdir)/
-&~.		=>	$(top_srcdir)
+&~lc		=>	${top_srcdir}/lc
+&~/		=>	${top_srcdir}/
+&~.		=>	${top_srcdir}
 
 In general:
     ^   pathname of this subdirectory in source tree

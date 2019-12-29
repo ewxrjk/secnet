@@ -234,8 +234,8 @@ sub process_input_mk ($$$$) {
     local $err_file=$f;
 
     my %srcdirmap = (
-		  '^' => "\$(top_srcdir)${dir_suffix}",
-		  '~' => "\$(top_srcdir)",
+		  '^' => "\${top_srcdir}${dir_suffix}",
+		  '~' => "\${top_srcdir}",
 		    );
     my %pfxmap = (
 		  ''  => $dir_prefix,
