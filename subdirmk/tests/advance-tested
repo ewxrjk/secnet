@@ -1,0 +1,39 @@
+#!/bin/bash
+# subdirmk - test suite runner helper script
+# Copyright various contributors - see top level README.
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
+
+set -e
+
+branch=$(git symbolic-ref -q HEAD || test $? = 1)
+base=$(git merge-base tested HEAD)
+
+git branch -D test-failed 2>&1 ||:
+
+case "$branch" in
+refs/heads/tested|refs/heads/test-failed)
+	echo >&2 "unexpectedly on branch $branch"; exit 1 ;;
+refs/heads/*)
+	branch=${branch#refs/heads/} ;;
+*)
+	branch='';
+esac
+
+restore-branch () {
+	if [ "$branch" ]; then git checkout $branch; fi
+}
+
+git checkout --detach
+git clean -xdff
+
+if ! git rebase --exec 'tests/check && git branch -f tested' $base; then
+	git branch -f test-failed
+	git rebase --abort
+	echo >&2 '^ ignore previous message from git-rebase!'
+	echo >&2 'Test failed, made local branch ref test-failed'
+	restore-branch
+	exit 1
+fi
+
+restore-branch
