@@ -1,7 +1,7 @@
-# test cases for generate script
-
-# some blank/comment lines to make "saw WARN" come out with 1-
-# and 2-digit line numbers
+&# subdirmk - test cases for generate script
+&# Copyright various contributors - see top level README.
+&# SPDX-License-Identifier: LGPL-2.0-or-later
+&# There is NO WARRANTY.
 
 WARN += 3
 &WARN += 3

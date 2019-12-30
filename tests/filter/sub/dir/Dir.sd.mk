@@ -1,4 +1,7 @@
-# subdirectory test cases
+&# subdirmk - subdirectory test cases
+&# Copyright various contributors - see top level README.
+&# SPDX-License-Identifier: LGPL-2.0-or-later
+&# There is NO WARRANTY.
 
 &:warn !some-unknown-warning
 
