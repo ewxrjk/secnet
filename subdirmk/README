@@ -183,7 +183,7 @@ In more detail, with all the various options laid out:
              for      build     source       build         source
                                                        
   This       lc       &file     &^file       $(PWD)/&file  $(abs_src)/&file
-  directory  any      &/file    &^/file      $(PWD)&/file  $(abs_src)/&/file
+  directory  any      &/file    &^/file      $(PWD)/&file  $(abs_src)/&/file
              several  & f g h   &^ f g h     $(addprefix...)
                                              
   Top        lc       file      &~file
