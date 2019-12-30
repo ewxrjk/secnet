@@ -16,17 +16,17 @@ include common.make
 &clean::
 	rm -rf &pubkeys
 
-define privkey
-&/$1.privkeys/priv.$2: &/$3
-	mkdir -p $$(dir $$@) && cp $$< $$@.tmp && mv -f $$@.tmp $$@
-&PRIVKEYS += &/$3 &/$1.privkeys/priv.$2
+&:macro &privkey
+&/&$1.privkeys/priv.&$2: &/&$3
+	mkdir -p $(dir $@) && cp $< $@.tmp && mv -f $@.tmp $@
+&PRIVKEYS += &/&$3 &/&$1.privkeys/priv.&$2
 &clean::
-	rm -rf &/$1.privkeys
-endef
+	rm -rf &/&$1.privkeys
+&:endm
 
-$(eval $(call privkey,outside,5dc36a4700,rsa1-sites2.key))
-$(eval $(call privkey,outside,0000000000,outside.key))
-$(eval $(call privkey,inside,0000000000,inside.key))
+&${&privkey,outside,5dc36a4700,rsa1-sites2.key}
+&${&privkey,outside,0000000000,outside.key}
+&${&privkey,inside,0000000000,inside.key}
 
 &all-privkeys:: $(&PRIVKEYS)
 
