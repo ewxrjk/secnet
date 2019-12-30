@@ -44,6 +44,8 @@ CPPFLAGS:=@CPPFLAGS@ -DDATAROOTDIR='"$(datarootdir)"' $(EXTRA_CPPFLAGS)
 LDFLAGS:=@LDFLAGS@ $(EXTRA_LDFLAGS)
 LDLIBS:=@LIBS@ $(EXTRA_LDLIBS)
 
+&:local+global OBJECTS TARGETS
+
 TARGETS:=secnet
 
 OBJECTS:=secnet.o util.o conffile.yy.o conffile.tab.o conffile.o modules.o \
@@ -171,7 +173,7 @@ installdirs:
 install: installdirs
 	set -e; ok=true; for f in $(STALE_PYTHON_FILES); do \
 		if test -e $$f; then \
-			echo >\&2 "ERROR: $$f still exists "\
+			echo >&\&2 "ERROR: $$f still exists "\
 				"- try \`make install-force'"; \
 			ok=false; \
 		fi; \
@@ -208,9 +210,10 @@ distclean::	realclean
 
 include subdirmk/regen.mk
 
+&:warn !single-char-var
 # Release checklist:
 #
-#  0. Use this checklist from Subdir.sd.mk
+#  0. Use this checklist from Dir.sd.mk
 #
 #  1. Check that the tree has what you want
 #

@@ -7,7 +7,7 @@ include common.make
 &DEPS += $(src)/test-common.tcl
 &DEPS += common.make
 &DEPS += $(src)/test-common.sd.mk
-&DEPS += &/Subdir.mk
+&DEPS += &/Dir.mk
 
 &check-real: $(foreach t,$(&TESTNAMES),&d-$t/ok)
 
@@ -18,8 +18,8 @@ CHECK_SILENT ?= @
 	$(CHECK_SILENT) export SECNET_TEST_BUILDDIR=$(topbuilddir); \
 	 export PYTHONBYTECODEBASE=/dev/null; \
 	 cd $(src) && \
-	 &/t-$* >$(topbuilddir)/&/d-$*/log 2>\&1 \
-	 || { cat $(topbuilddir)/&/d-$*/log >\&2; false; }
+	 &/t-$* >$(topbuilddir)/&/d-$*/log 2>&\&1 \
+	 || { cat $(topbuilddir)/&/d-$*/log >&\&2; false; }
 	$(CHECK_SILENT) printf "&/$* "
 	$(CHECK_SILENT) touch $@
 

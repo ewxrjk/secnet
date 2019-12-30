@@ -1,0 +1,23 @@
+#!/bin/sh
+# subdirmk - part of the test suite
+#  Copyright 2019 Mark Wooding
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
+#
+# Usual approach to updating the expected outputs is
+#   tests/filter/check
+#   tests/filter/update-expected
+#   selectively git-add the things that are right, after inspecting them
+
+set -e
+files=$(find tests/filter -name \*.expected.tmp)
+for f in $files; do
+	perl -pe '
+		(s/\n//, $stripnl=0) if $stripnl;
+		next unless /^# doctests start/../^# doctests end/;
+		$_="";
+		$stripnl=1;
+	' \
+		<${f%.expected.tmp}.tmp >${f%.tmp}
+done

@@ -2,10 +2,11 @@
 #  Copyright 2019 Mark Wooding
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
 
 # Usage:
 #   include subdirmk/regen.mk
-# (probably in toplevel Subdir.sd.mk)
+# (probably in toplevel Dir.sd.mk)
 #
 # Arranges that config.status is automatically rerun to update
 # makefiles from templates, whenever a template *.sd.mk or *.mk.in is
@@ -13,9 +14,15 @@
 #
 # If you add includes to configure.ac, add them to CONFIGURE_ACS.
 #
+# Makefiles updated by config.status and passed to SUBDIRMK_MAKEFILES
+# in configure.ac are automatically handled too.  If you have other
+# files updated by config.status (eg, the output of autoheader) you
+# need to put them in CONFIG_STATUS_OUTPUTS (before your inclusion
+# of regen.mk).
+#
 # Also provides a `realclean::' target at the toplevel which deletes
-# the autoconf output.  This may be made into a recursive target
-# by mentioning &TARGETS_realclean in appropriate .sd.mk.
+# the autoconf output.  (This is suitable for being part of a recursive
+# target creaed by setting &TARGETS_realclean in appropriate .sd.mk.)
 
 CONFIGURE	?= configure
 CONFIGURE_AC	?= $(CONFIGURE).ac
@@ -24,19 +31,24 @@ CONFIG_STATUS	?= config.status
 CONFIGURE_ACS	+= $(CONFIGURE_AC)
 CONFIGURE_ACS	+= subdirmk/subdirmk.ac
 
+# To turn on debugging here, export SUBDIRMK_REGEN_NDEBUG=''
+SUBDIRMK_REGEN_NDEBUG ?= @
+
 $(top_srcdir)/$(CONFIGURE): $(addprefix $(top_srcdir)/,$(CONFIGURE_ACS))
 	cd $(top_srcdir) && autoconf
 
 $(CONFIG_STATUS): $(top_srcdir)/$(CONFIGURE)
 	./$(CONFIG_STATUS) --recheck
 
-# Normally, generate will add all the inputs to MAKEFILE_TEMPLATES.
+# generate will add all its own inputs and outputs to these variables
+SUBDIRMK_MAKEFILES += @_SUBDIRMK_MAKEFILES@
 MAKEFILE_TEMPLATES += $(addprefix $(top_srcdir)/, $(addsuffix .in, \
 	@_SUBDIRMK_MAKEFILES@ \
 	))
 
 main.mk $(SUBDIRMK_MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp
-		@:
+	$(SUBDIRMK_REGEN_NDEBUG): REGEN STAMP CAUSES TARGET=$@
+
 .makefiles.stamp:						\
 		$(top_srcdir)/subdirmk/generate			\
 		$(CONFIG_STATUS)				\
@@ -44,13 +56,16 @@ main.mk $(SUBDIRMK_MAKEFILES) $(CONFIG_STATUS_OUTPUTS): .makefiles.stamp
 # This filtering arranges that we can often run config.status to
 # generate only particular output files.  We look for *inputs* that
 # have changed.  If the only inputs that have changed are ones that we
-# know affect only one output (Subdir.sd.mk and *.mk.in), we pass
-# config.status the corresponding output file names.  Otherwise we
-# pass nothing and config.status does them all.  We need to mention
-# Subdir.sd.mk twice because if $(top_srcdir) is `.', make elides the
-# directory part from $?.
+# know affect only one output (Dir.sd.mk, Final.sd.mk and *.mk.in),
+# we pass config.status the corresponding output file names.
+# Otherwise we pass nothing and config.status does them all.  We need
+# to mention Dir.sd.mk twice because if $(top_srcdir) is `.', make
+# elides the directory part from $?.  Similarly but not identically
+# Final.sd.mk.
+	$(SUBDIRMK_REGEN_NDEBUG): REGEN STAMP WANTS DEPS=$?
 	./$(CONFIG_STATUS) $(if					\
-		$(filter-out Subdir.sd.mk %/Subdir.sd.mk	\
+		$(filter-out Dir.sd.mk %/Dir.sd.mk		\
+			     Final.sd.mk $(top_srcdir)/Final.sd.mk \
 			     %.mk.in				\
 			, $?),,					\
 		$(patsubst $(top_srcdir)/%,%, $(sort		\

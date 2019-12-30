@@ -2,10 +2,11 @@
 #  Copyright 2019 Mark Wooding
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
 
 &# Usage:
 &#   &:include subdirmk/clean.sd.mk
-&# (probably in Perdir.sd.mk)
+&# (probably in Suffix.sd.mk)
 &#
 &# Provides a per-directory `clean' target, which deletes all the files
 &# in &CLEAN.  &OBJECTS, &DEPFILES and &TARGETS are automatically deleted.
@@ -19,7 +20,7 @@
 &CLEAN += $(&OBJECTS)
 &CLEAN += $(&TARGETS)
 
-# &TARGETS_clean
+&TARGETS_clean +=
 
 &/clean::
 	$(RM) $(&CLEAN)

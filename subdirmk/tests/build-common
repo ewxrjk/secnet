@@ -1,0 +1,23 @@
+# subdirmk - part of the test suite
+#  Copyright 2019 Mark Wooding
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
+
+SUBDIRMK_REGEN_NDEBUG=''
+export SUBDIRMK_REGEN_NDEBUG
+
+make_copy () {
+	rm -rf tests/$1/example
+	mkdir tests/$1/example
+
+	git ls-files -z example \
+	| xargs -0 \
+	sh -xec 'rsync -R -l "$@" tests/'$1'/' x
+
+	rm tests/$1/example/subdirmk
+
+	git ls-files -z :. :!example \
+	| xargs -0 \
+	sh -xec 'rsync -R -l "$@" tests/'$1'/example/subdirmk' x
+}

@@ -29,8 +29,9 @@ autom4te.cache
 TAGS
 
 .makefiles.stamp
-Subdir.mk
+Dir.mk
 /main.mk
+/Final.mk
 
 debian/files
 debian/secnet.debhelper.log

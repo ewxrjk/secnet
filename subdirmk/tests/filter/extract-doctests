@@ -1,0 +1,176 @@
+#!/usr/bin/perl -w
+# subdirmk - script for extracting doctests from README
+#  Copyright 2019 Mark Wooding
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
+#
+# usage:
+#   expand <README | tests/filter/extract-doctests tests/filter/
+# writes:
+#   tests/filter/doctests.mk.part
+#   tests/filter/sub/dir/doctests.mk.part
+#
+# Relies on some properties of the way README is laid out.
+# See comments below marked `parse:' and `adhoc:'.
+
+use strict;
+use Carp;
+use Data::Dumper;
+
+our @exp;
+# $exp[]{In}
+# $exp[]{Out}
+# $exp[]{OutTop}
+
+my $cent;
+my $in_changequote;
+my $lastl;
+my $csection;
+my $withspcs = qr{\S+(?: \S+)*};
+
+my $outdir = shift @ARGV // confess;
+
+while (<>) {
+    # adhoc: rely on structure of indented examples in &:changequote part
+    $in_changequote = (m{^\&\:changequote}...m{^\S}) && m{^\s};
+    if (m{^-----|^- - - - -}) {
+	# parse: rely on underlines for (sub)section headings
+	$csection = $lastl;
+	next;
+    }
+    $lastl = $_;
+    my $e = { L => $. };
+    # parse: rely on looking for => (and .. on subsequent lines)
+    next unless m{\=\>} or ($cent and m{ \.\. });
+    my $mapop = '=>';
+    # adhoc: special case NEWQUOTE here so we recognise things in changequote
+    if (s{^(\s*)(\&\S+|NEWQUOTE\S+|\$)\s+(\=\>|\.\.)\s+(\S+)\s+}{} ||
+	s{^()(\&\:\w+(?: \S+)*)\s{2,}(\=\>)\s{2,}($withspcs)$}{} ||
+        $cent && s{^()($withspcs)\s{2,}(\.\.)\s{2,}($withspcs)$}{}) {
+	# adhoc: expected indented iff in changequote part
+	confess if length($1) xor $in_changequote;
+	$mapop = $3;
+	confess if !$cent && $mapop ne '=>';
+	$e->{In} = $2;
+	$e->{Out} = $4;
+	if (# adhoc: `or ...' introduces the `at toplevel' expansion
+	    s{^or (\S+)$}{}) {
+	    $e->{OutTop} = $1 eq 'nothing' ? '' : $1;
+	} elsif (# parse: expect other wordish things to be comments
+		 m{^(?!or\b)\(?\w{2,} }) {
+	} elsif (# adhoc: slightly special case for $(eval $(call
+		 m{^\$\{.*}) {
+	    $e->{Out} .= ' '.$&;
+	} elsif (m/^$/) {
+	} else {
+	    confess "unk rhs $_ ?";
+	}
+	$e->{CQ} = $in_changequote;
+	# adhoc: rely on this specific section title
+	$e->{DD} = $csection =~ m{^while dollar[- ]doubling}i;
+    } else {
+	confess "$_ ?";
+    }
+    if ($mapop eq '=>') {
+	if ($e->{In} =~ m/\bNN\b/) {
+	    # adhoc: special case NN in examples
+	    confess if defined $cent->{OutTop};
+	    foreach my $nn (0..11, 999) {
+		my $f = { %$e };
+		foreach my $k (qw(In Out)) {
+		    $f->{$k} = $e->{$k};
+		    ($f->{$k} =~ s/\bNN\b/$nn/g) == 1 or confess;
+		}
+		push @exp, $f;
+	    }
+	    $cent=undef;
+	} else {
+	    push @exp, $e;
+	    $cent=$e;
+	}
+    } elsif ($mapop eq '..') {
+	confess if defined $cent->{OutTop};
+	foreach my $k (qw(In Out)) {
+	    $cent->{$k} .= "\n".$e->{$k};
+	}
+    }
+}
+
+print Dumper(\@exp);
+
+sub oi { print I @_ or die $!; }
+sub oo { print O @_ or die $!; }
+sub oh { oi @_; oo @_; }
+
+sub write_permode ($$$$$;$$) {
+    my ($dir_prefix, $start, $end, $senl, $what,
+	$filter, $omap) = @_;
+    $filter //= sub { 1 };
+    $omap //= sub { $_[0] };
+    oi $start;
+    oh "${senl}# ----- $what starts -----\n";
+    foreach my $e (@exp) {
+	next unless $filter->($e);
+	my $desc = $e->{In};
+	$desc =~ s/\&/AMP /g;
+	$desc =~ s/\$/DOLLAR /g;
+	$desc =~ s/NEWQUOTE/NEW_QUOTE /g;
+	my ($f,$pdesc) = $desc =~ m/^(.*)\n/
+	        ? ("\n# %s:\n%s\n\n", $1)
+		: ("%-30s: %s .\n", $desc);
+	my $o;
+	$o = $e->{OutTop} if $dir_prefix eq '';
+	$o //= $e->{Out};
+	$o =~ s{/sub/dir}{} if $dir_prefix eq '' && !defined $e->{OutTop};
+	$o = $omap->($o, $e);
+	oi sprintf $f, $pdesc, $e->{In};
+	oo sprintf $f, $pdesc, $o;
+    }
+    oi $end;
+    oh "${senl}# ----- $what ends -----\n";
+}
+    
+sub writeout ($) {
+    my ($dir_prefix) = @_;
+    open I, '>', "$outdir/${dir_prefix}doctests.sd.mk" or die $!;
+    open O, '>', "$outdir/${dir_prefix}doctests.mk.part" or die $!;
+    oh "# doctests start $dir_prefix\n";
+    write_permode($dir_prefix,
+		  '','','', 'normal',
+		 sub { !$_[0]{DD} && !$_[0]{CQ} } );
+    write_permode($dir_prefix,
+		  '&$+', '&$-', "\n",
+		  'dollar doubling',
+		  sub {
+		      my ($e) = @_;
+		      # adhoc: skip &:macro in already-doubling part
+		      return 0 if $e->{In} =~ m{^\&\:macro};
+		      # adhoc: skip &${ ie eval in already-doubling part
+		      return 0 if $e->{In} =~ m{^\&\$\{};
+		      return 0 if $e->{CQ};
+		      return $e->{DD} || !grep {
+			  # If there are two entries with the same In,
+			  # use only the one from the `while dollar
+			  # doubling' section.  So entries there override
+			  # entries in the rest o the file.
+			  $_ ne $e && $_->{In} eq $e->{In}
+		      } @exp;
+		  },
+		  sub {
+		      $_=$_[0];
+		      s/\$/\$\$/g unless $_[1]{DD};
+		      $_;
+		  } );
+    write_permode($dir_prefix,
+		  "&:changequote NEWQUOTE\n",
+		  "NEWQUOTE:changequote &\n",
+		  "",
+		  'changequote',
+		  sub { $_[0]{CQ} } );
+    oh "# doctests end\n";
+    close I or die $!;
+}
+
+writeout('');
+writeout('sub/dir/');

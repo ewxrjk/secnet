@@ -1,0 +1,21 @@
+#!/bin/sh
+# subdirmk - part of the test suite
+#  Copyright 2019 Mark Wooding
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
+
+set -ex
+
+. tests/build-common
+
+make_copy intree
+
+cd tests/intree/example
+
+./autogen.sh && ./configure
+make -j4 all check
+make -j4 clean
+make -j4 all check
+
+echo ok.

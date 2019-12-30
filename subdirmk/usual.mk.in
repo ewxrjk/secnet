@@ -2,10 +2,11 @@
 #  Copyright 2019 Mark Wooding
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
 
 # Usage:
 #   include subdirmk/usual.mk
-# (probably in toplevel Subdir.sd.mk)
+# (probably in toplevel Dir.sd.mk)
 #
 # Provides various conventional `make' variables, and a
 # rule for compiling C programs.

@@ -2,10 +2,11 @@
 #  Copyright 2019 Mark Wooding
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
 
 &# Usage:
 &#   &:include subdirmk/cdeps.sd.mk
-&# (probably in Perdir.sd.mk)
+&# (probably in Suffix.sd.mk)
 &#
 &# Arranges for automatic #include dependency tracking for
 &# C compilation.  The compiler is asked to write the dependencies to

@@ -2344,7 +2344,7 @@ ac_config_headers="$ac_config_headers config.h"
 
 
 
-  ac_config_files="$ac_config_files main.mk:main.mk.tmp Subdir.mk:Subdir.mk.tmp"
+  ac_config_files="$ac_config_files main.mk:main.mk.tmp Dir.mk:Dir.mk.tmp Final.mk:Final.mk.tmp"
 
 
 
@@ -2360,15 +2360,15 @@ ac_config_headers="$ac_config_headers config.h"
 
 
   subdirmk_subdirs="$subdirmk_subdirs 'test-example/'"
-  ac_config_files="$ac_config_files test-example/Subdir.mk:test-example/Subdir.mk.tmp"
+  ac_config_files="$ac_config_files test-example/Dir.mk:test-example/Dir.mk.tmp"
 
 
   subdirmk_subdirs="$subdirmk_subdirs 'mtest/'"
-  ac_config_files="$ac_config_files mtest/Subdir.mk:mtest/Subdir.mk.tmp"
+  ac_config_files="$ac_config_files mtest/Dir.mk:mtest/Dir.mk.tmp"
 
 
   subdirmk_subdirs="$subdirmk_subdirs 'stest/'"
-  ac_config_files="$ac_config_files stest/Subdir.mk:stest/Subdir.mk.tmp"
+  ac_config_files="$ac_config_files stest/Dir.mk:stest/Dir.mk.tmp"
 
 
 
@@ -5437,12 +5437,13 @@ do
   case $ac_config_target in
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "main.mk") CONFIG_FILES="$CONFIG_FILES main.mk:main.mk.tmp" ;;
-    "Subdir.mk") CONFIG_FILES="$CONFIG_FILES Subdir.mk:Subdir.mk.tmp" ;;
+    "Dir.mk") CONFIG_FILES="$CONFIG_FILES Dir.mk:Dir.mk.tmp" ;;
+    "Final.mk") CONFIG_FILES="$CONFIG_FILES Final.mk:Final.mk.tmp" ;;
     "subdirmk/regen.mk") CONFIG_FILES="$CONFIG_FILES subdirmk/regen.mk:subdirmk/regen.mk.in" ;;
     "subdirmk/usual.mk") CONFIG_FILES="$CONFIG_FILES subdirmk/usual.mk:subdirmk/usual.mk.in" ;;
-    "test-example/Subdir.mk") CONFIG_FILES="$CONFIG_FILES test-example/Subdir.mk:test-example/Subdir.mk.tmp" ;;
-    "mtest/Subdir.mk") CONFIG_FILES="$CONFIG_FILES mtest/Subdir.mk:mtest/Subdir.mk.tmp" ;;
-    "stest/Subdir.mk") CONFIG_FILES="$CONFIG_FILES stest/Subdir.mk:stest/Subdir.mk.tmp" ;;
+    "test-example/Dir.mk") CONFIG_FILES="$CONFIG_FILES test-example/Dir.mk:test-example/Dir.mk.tmp" ;;
+    "mtest/Dir.mk") CONFIG_FILES="$CONFIG_FILES mtest/Dir.mk:mtest/Dir.mk.tmp" ;;
+    "stest/Dir.mk") CONFIG_FILES="$CONFIG_FILES stest/Dir.mk:stest/Dir.mk.tmp" ;;
     "common.make") CONFIG_FILES="$CONFIG_FILES common.make:common.make.in" ;;
     "default") CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
 

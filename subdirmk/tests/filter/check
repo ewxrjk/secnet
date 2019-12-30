@@ -1,0 +1,38 @@
+#!/bin/bash
+# subdirmk - part of the test suite
+#  Copyright 2019 Mark Wooding
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
+
+set -e
+set -o pipefail
+
+cd tests/filter
+
+expand <../../README | ./extract-doctests . >/dev/null
+
+set +e
+../../generate sub/dir 2>stderr.tmp
+rc=$?
+set -e
+if [ $rc != 0 ]; then cat stderr.tmp; exit 1; fi
+
+ok=true
+
+files=$(find -name \*.expected)
+for f in $files; do
+	i=$f
+	o=$f.tmp
+	sed <$i >$o '
+		/^# doctests:/ {
+			r '"${f%/*}/doctests.mk.part"'
+			a
+		}
+	'
+	diff -u $f.tmp ${f%.expected}.tmp || ok=false
+done
+
+$ok
+
+echo ok.

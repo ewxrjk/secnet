@@ -2,6 +2,7 @@
 #  Copyright 2019 Mark Wooding
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
 
 #----- Build artifacts -----
 *.a
@@ -21,10 +22,12 @@
 .makefiles.stamp
 /main.mk
 Makefile
-Subdir.mk
+Dir.mk
+Final.mk
 *.tmp
 
 #----- For our tests -----
 /build
+/for-test-final.sd.mk
 /src/for-test.sd.mk
 /lib/for-test.mk.in

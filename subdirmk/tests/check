@@ -1,27 +1,15 @@
-#!/bin/sh
-set -ex
+#!/bin/bash
+# subdirmk - toplevel invocation script for the test suite
+#  Copyright 2019 Mark Wooding
+#  Copyright 2019 Ian Jackson
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
 
-cd example
-git clean -xdff
-./autogen.sh && ./configure
-make -j4 all check
-make -j4 clean
-make -j4 all check
+set -e
 
-git clean -xdff
-mkdir build
-cd build
->>../src/for-test.sd.mk
->>../lib/for-test.mk.in
-.././autogen.sh && ../configure
-make -j4 all check
+j=$(nproc 2>/dev/null || echo 1)
+j=$(( $j * 5 / 4 + 1 ))
 
-echo '# for-check 1' >>../src/for-test.sd.mk
-make -j4
-grep '^# for-check 1' src/Subdir.mk || false
-
-echo '# for-check 2' >>../lib/for-test.mk.in
-make -j4
-grep '^# for-check 2' lib/for-test.mk || false
-
-echo ok.
+x () { echo "$@"; "$@"; }
+x ${MAKE-make} -f tests/tests.mk -j$j
+echo 'ok.'

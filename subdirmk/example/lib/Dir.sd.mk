@@ -2,6 +2,7 @@
 #  Copyright 2019 Mark Wooding
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
 
 &TARGETS	+= & libtoy.a
 
@@ -10,4 +11,5 @@
 &libtoy.a:	$(&OBJECTS)
 	$(AR) rc $@ $^
 
--include &^/lib/for-test.mk
+# This is a hook for subdirmk's test suite.
+-include &for-test.mk
