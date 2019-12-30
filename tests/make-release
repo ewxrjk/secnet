@@ -1,0 +1,49 @@
+#!/bin/sh
+# subdirmk - release script
+# Copyright various contributors - see top level README.
+# SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
+
+set -e
+
+fail () { echo >&2 "error: $*"; $dryrun exit 1; }
+
+case "$1" in
+-n)	dryrun=: ; shift ;;
+-*)	fail "unknown option $1" ;;
+esac
+
+x () { echo >&2 " $*"; $dryrun "$@"; }
+
+head=$(git rev-parse HEAD~0)
+for branch in master tested; do
+	bv=$(git rev-parse refs/heads/$branch)
+	test $bv = $head || fail "error: HEAD=$head, $branch=$bv"
+done
+
+status=$(git status --porcelain --ignored)
+if [ "$status" ]; then
+	printf >&2 '%s\n' "$status"
+	fail 'tree not sufficiently clean'
+fi
+
+v="$1"
+
+case "$v" in
+subdirmk/*) v=${v#subdirmk/} ;;
+esac
+
+case "$v" in
+[0-9]*.*) ;;
+*) fail 'bad version' ;;
+esac
+
+tag=subdirmk/$v
+key=0x559AE46C2D6B6D3265E7CBA1E3E3392348B50D39
+
+export GPG_TTY=`tty` # wtf
+x git tag -s -u $key -m "subdirmk $v" $tag
+
+x git push origin master $tag
+
+$dryrun echo 'done.'
