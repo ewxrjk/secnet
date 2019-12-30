@@ -2,6 +2,7 @@
 #  Copyright 2019 Mark Wooding
 #  Copyright 2019 Ian Jackson
 # SPDX-License-Identifier: LGPL-2.0-or-later
+# There is NO WARRANTY.
 
 &:include subdirmk/cdeps.sd.mk
 &:include subdirmk/clean.sd.mk
