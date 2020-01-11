@@ -219,7 +219,7 @@ STUFF $ THINGS	..	STUFF $$ THINGS
 &:endm		..	endef
 	NAME is processed for &
 
-&${..$..} =>	${eval ${call ..$$..}}
+&${..$..}	=>	${eval ${call ..$$..}}
 	(matches { } pairs to find the end)
 	content is $-doubled (unless it contains &$- to turn that off)
 
