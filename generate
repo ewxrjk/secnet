@@ -371,11 +371,11 @@ sub process_input_mk ($$$$) {
 		$note_varref->($2,!!$1) if m{^($esc)?([^()\$]+\))};
 	    }
 	    elsif (s{^\$(\d+)}{}) { ddbl_only($&); oud "\${$1}"; }
-	    elsif (s{^\$\{}{}) {
+	    elsif (s{^\{}{}) {
 		err 'macro invocation cannot be re-$-doubled' if $ddbl;
 		od '${eval ${call ';
 		$evalcall_brackets = 1;
-		$push_nest->('eval',1, '&${...}');
+		$push_nest->('eval',1, '&{...}');
 		$note_varref->($2,!!$1) if m{^\s*($esc)?([^,{}\$]+)};
 	    } elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die "internal error ($1?)";

@@ -147,7 +147,7 @@ sub writeout ($) {
 		      # adhoc: skip &:macro in already-doubling part
 		      return 0 if $e->{In} =~ m{^\&\:macro};
 		      # adhoc: skip &${ ie eval in already-doubling part
-		      return 0 if $e->{In} =~ m{^\&\$\{};
+		      return 0 if $e->{In} =~ m{^\&\{};
 		      return 0 if $e->{CQ};
 		      return $e->{DD} || !grep {
 			  # If there are two entries with the same In,
