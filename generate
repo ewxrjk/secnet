@@ -371,6 +371,8 @@ sub process_input_mk ($$$$) {
 		$note_varref->($2,!!$1) if m{^($esc)?([^()\$]+\))};
 	    }
 	    elsif (s{^\$(\d+)}{}) { ddbl_only($&); oud "\${$1}"; }
+	    elsif (s{^\(\s*$esc(?=$lc_re)}{}) { od "\$(call ${var_prefix}" }
+	    elsif (s{^\(\s*(?=\S)}{}        ) { od "\$(call "              }
 	    elsif (s{^\{}{}) {
 		err 'macro invocation cannot be re-$-doubled' if $ddbl;
 		od '${eval ${call ';

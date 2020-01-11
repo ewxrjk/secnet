@@ -222,6 +222,7 @@ STUFF $ THINGS	..	STUFF $$ THINGS
 &{..$..}	=>	${eval ${call ..$$..}}
 	(matches { } pairs to find the end)
 	content is $-doubled (unless it contains &$- to turn that off)
+	cf &(...), see "Convenience syntax for eval", below.
 
 Together &:macro and &${...} provide a more reasonable macro facility
 than raw make.  They solve the problem that make expansions cannot
@@ -244,6 +245,18 @@ $	=>	$$	including $'s produced by other
 A few contexts do not support $-doubling, such as directive arguments
 or places where this might imply $-quadrupling.  (There is no way to
 get $-quadrupling.)
+
+Convenience syntax for eval
+- - - - - - - - - - - - - -
+
+&(thing		=>	$(call thing
+&( thing	=>	$(call thing
+	and specially:
+&(&lc		=>	$(call sub_dir_lc	or $(call TOP_lc
+&( &lc		=>	$(call sub_dir_lc	or $(call TOP_lc
+	even though lc would normally be thought a filename
+
+Unlike &{...}, this does not involve any dollar-doubling.
 
 
 Invocation, "recursive" per-directory targets
