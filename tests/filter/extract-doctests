@@ -46,7 +46,7 @@ while (<>) {
     my $mapop = '=>';
     # adhoc: special case NEWQUOTE here so we recognise things in changequote
     if (s{^()(\&\:\w+(?: \S+)*)\s{2,}(\=\>)\s{2,}($withspcs)$}{} ||
-        s{^(\s*)(\&\S+|NEWQUOTE\S+|\$)\s+(\=\>|\.\.)\s+(\S+)\s+}{} ||
+        s{^(\s*)(\&$withspcs|NEWQUOTE\S+|\$)\s+(\=\>|\.\.)\s+($withspcs)\s+}{} ||
 	$cent && s{^()($withspcs)\s{2,}(\.\.)\s{2,}($withspcs)$}{}) {
 	# adhoc: expected indented iff in changequote part
 	confess if length($1) xor $in_changequote;
@@ -55,13 +55,10 @@ while (<>) {
 	$e->{In} = $2;
 	$e->{Out} = $4;
 	if (# adhoc: `or ...' introduces the `at toplevel' expansion
-	    s{^or (\S+)$}{}) {
+	    s{^or ($withspcs)$}{}) {
 	    $e->{OutTop} = $1 eq 'nothing' ? '' : $1;
 	} elsif (# parse: expect other wordish things to be comments
 		 m{^(?!or\b)\(?\w{2,} }) {
-	} elsif (# adhoc: slightly special case for $(eval $(call
-		 m{^\$\{.*}) {
-	    $e->{Out} .= ' '.$&;
 	} elsif (m/^$/) {
 	} else {
 	    confess "unk rhs $_ (In=\"$e->{In}\" out=\"$e->{Out}\"?";
