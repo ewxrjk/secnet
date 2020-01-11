@@ -45,9 +45,9 @@ while (<>) {
     next unless m{\=\>} or ($cent and m{ \.\. });
     my $mapop = '=>';
     # adhoc: special case NEWQUOTE here so we recognise things in changequote
-    if (s{^(\s*)(\&\S+|NEWQUOTE\S+|\$)\s+(\=\>|\.\.)\s+(\S+)\s+}{} ||
-	s{^()(\&\:\w+(?: \S+)*)\s{2,}(\=\>)\s{2,}($withspcs)$}{} ||
-        $cent && s{^()($withspcs)\s{2,}(\.\.)\s{2,}($withspcs)$}{}) {
+    if (s{^()(\&\:\w+(?: \S+)*)\s{2,}(\=\>)\s{2,}($withspcs)$}{} ||
+        s{^(\s*)(\&\S+|NEWQUOTE\S+|\$)\s+(\=\>|\.\.)\s+(\S+)\s+}{} ||
+	$cent && s{^()($withspcs)\s{2,}(\.\.)\s{2,}($withspcs)$}{}) {
 	# adhoc: expected indented iff in changequote part
 	confess if length($1) xor $in_changequote;
 	$mapop = $3;
