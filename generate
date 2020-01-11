@@ -367,7 +367,7 @@ sub process_input_mk ($$$$) {
 	    elsif (s{^\$\-}{}) { $ddbl=undef; }
 	    elsif (s{^\$\+}{}) { $ddbl=1; }
 	    elsif (s{^\$\(}{}) {
-		ddbl_only($&); oud "\${";
+		ddbl_only($&); oud "\$(";
 		$note_varref->($2,!!$1) if m{^($esc)?([^()\$]+\))};
 	    }
 	    elsif (s{^\$(\d+)}{}) { ddbl_only($&); oud "\${$1}"; }

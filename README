@@ -239,7 +239,7 @@ $	=>	$$	including $'s produced by other
 			 &-expansions not mentioned here
 
 &\$	=>	$
-&$(	=>	${	(expands to { } so it is useable for shell too)
+&$(	=>	$(
 &$NN	=>	${NN}	where N are digits
 
 A few contexts do not support $-doubling, such as directive arguments
