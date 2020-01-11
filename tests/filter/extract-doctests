@@ -64,7 +64,7 @@ while (<>) {
 	    $e->{Out} .= ' '.$&;
 	} elsif (m/^$/) {
 	} else {
-	    confess "unk rhs $_ ?";
+	    confess "unk rhs $_ (In=\"$e->{In}\" out=\"$e->{Out}\"?";
 	}
 	$e->{CQ} = $in_changequote;
 	# adhoc: rely on this specific section title
