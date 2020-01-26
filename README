@@ -130,6 +130,10 @@ So pathname syntax is a subset of:
 &:<directive> <args>....
 	recognised at start of line only (possibly after lwsp)
 
+&:		=>	&:
+	for make multiple targets syntax
+	recognised anywhere *except* start of line
+
 &:include filename		filename should usually be [&]foo.sd.mk
 &:-include filename		tolerate nonexistent file
 	RHS is &-expanded but filenames are relative to the top

@@ -350,6 +350,7 @@ sub process_input_mk ($$$$) {
 		next;
 	    }
 	    if (s{^\\$esc}{}) { od "$$esclitr" }
+	    elsif (s{^:}{}) { od "$$esclitr:" }
 	    elsif (s{^\\\$}{}) { oud '$' }
 	    elsif (s{^\\\s+$}{}) { }
 	    elsif (s{^$esc}{}) { od "$$esclitr$$esclitr" }
