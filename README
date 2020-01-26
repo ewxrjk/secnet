@@ -166,6 +166,9 @@ So pathname syntax is a subset of:
 	`all' is extra special: every directory has an `all'
 	target, which corresponds to &TARGETS.
 
+Directives
+- - - - -
+
 &:warn [!]WARNTAG ...
 	Suppress (with !) or re-enable (without !) warnings tagged
 	WARNTAG (see section `Warnings', below).  The suppression list
