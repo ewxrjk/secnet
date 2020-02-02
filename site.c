@@ -2617,6 +2617,8 @@ static void transport_peers_debug(struct site *st, transport_peers *dst,
 
 static void transport_peers_expire(struct site *st, transport_peers *peers) {
     /* peers must be sorted first */
+    if (st->local_mobile) return;
+
     int previous_peers=peers->npeers;
     struct timeval oldest;
     oldest.tv_sec  = tv_now->tv_sec - st->mobile_peer_expiry;
