@@ -198,7 +198,7 @@ extern item_t *list_elem(list_t *l, int32_t index);
 extern list_t *new_closure(closure_t *cl);
 extern void add_closure(dict_t *dict, cstring_t name, apply_fn apply);
 extern void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
-			bool_t fail_if_invalid, cstring_t desc,
+			bool_t required, cstring_t desc,
 			struct cloc loc);
 extern item_t *dict_find_item(dict_t *dict, cstring_t key, bool_t required,
 			      cstring_t desc, struct cloc loc);

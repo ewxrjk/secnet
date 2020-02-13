@@ -655,20 +655,18 @@ void add_closure(dict_t *dict, cstring_t name, apply_fn apply)
 }
 
 void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
-		 bool_t fail_if_invalid, cstring_t desc, struct cloc loc)
+		 bool_t required, cstring_t desc, struct cloc loc)
 {
     item_t *i;
     closure_t *cl;
 
-    i = dict_find_item(dict,name,fail_if_invalid,desc,loc);
+    i = dict_find_item(dict,name,required,desc,loc);
     if (!i) return NULL;
     if (i->type!=t_closure) {
-	if (!fail_if_invalid) return NULL;
 	cfgfatal(loc,desc,"\"%s\" must be a closure\n",name);
     }
     cl=i->data.closure;
     if (cl->type!=type) {
-	if (!fail_if_invalid) return NULL;
 	cfgfatal(loc,desc,"\"%s\" is the wrong type of closure\n",name);
     }
     return cl->interface;
