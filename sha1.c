@@ -314,9 +314,11 @@ struct sha1 {
     struct hash_if ops;
 };
 
+static struct sha1 st[1];
+struct hash_if *const sha1_hash_if = &st->ops;
+
 void sha1_module(dict_t *dict)
 {
-    struct sha1 *st;
     cstring_t testinput="abcdbcdecdefdefgefghfghigh"
 	"ijhijkijkljklmklmnlmnomnopnopq";
     uint8_t expected[20]=
@@ -328,7 +330,6 @@ void sha1_module(dict_t *dict)
     uint8_t digest[20];
     int i;
 
-    NEW(st);
     st->cl.description="sha1";
     st->cl.type=CL_HASH;
     st->cl.apply=NULL;

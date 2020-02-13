@@ -786,6 +786,8 @@ struct hash_if {
     hash_final_fn *final;
 };
 
+extern struct hash_if *const sha1_hash_if; /* for where this is hardcoded */
+
 /* BUFFER interface */
 
 struct buffer_if {
