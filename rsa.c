@@ -53,6 +53,7 @@ struct load_ctx {
 		   const char *message, va_list args);
     bool_t (*postreadcheck)(struct load_ctx *l, FILE *f);
     const char *what;
+    dict_t *deprdict; /* used only to look up hash */
     struct cloc loc;
     union {
 	struct {
@@ -378,6 +379,7 @@ static list_t *rsapub_apply(closure_t *self, struct cloc loc, dict_t *context,
     l->verror=verror_cfgfatal;
     l->postreadcheck=0;
     l->what="rsa-public";
+    l->deprdict=context;
     l->loc=loc;
 
 #define RSAPUB_APPLY_GETBN(ix,en,what)				\
@@ -413,6 +415,7 @@ bool_t rsa1_loadpub(const struct sigscheme_info *algo,
     l->verror=verror_tryload;
     l->postreadcheck=0;
     l->what="rsa1_loadpub";
+    l->deprdict=0;
     l->loc=loc;
     l->u.tryload.log=log;
 
@@ -735,6 +738,7 @@ bool_t rsa1_loadpriv(const struct sigscheme_info *algo,
     l->what="rsa1priv load";
     l->verror=verror_tryload;
     l->postreadcheck=postreadcheck_tryload;
+    l->deprdict=0;
     l->loc=loc;
     l->u.tryload.log=log;
 
@@ -770,6 +774,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     l->what="rsa-private";
     l->verror=verror_cfgfatal;
     l->postreadcheck=postreadcheck_apply;
+    l->deprdict=context;
     l->loc=loc;
 
     /* Argument is filename pointing to SSH1 private key file */
