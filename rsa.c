@@ -128,23 +128,22 @@ struct rsapub {
 
 static const char *hexchars="0123456789abcdef";
 
-static void rsa_sethash(struct rsacommon *c, struct hash_if *hash,
+static void rsa_sethash(struct load_ctx *l,
+			struct rsacommon *c,
 			const struct hash_if **in_ops)
 {
-    free(c->hashbuf);
+    struct hash_if *hash=0;
+    if (l->deprdict)
+	hash=find_cl_if(l->deprdict,"hash",CL_HASH,False,"site",l->loc);
+    if (!hash)
+	hash=sha1_hash_if;
     c->hashbuf=safe_malloc(hash->hlen, "generate_msg");
     *in_ops=hash;
 }
-static void rsa_pub_sethash(void *sst, struct hash_if *hash)
-{
-    struct rsapub *st=sst;
-    rsa_sethash(&st->common, hash, &st->ops.hash);
-}
-static void rsa_priv_sethash(void *sst, struct hash_if *hash)
-{
-    struct rsapriv *st=sst;
-    rsa_sethash(&st->common, hash, &st->ops.hash);
-}
+
+static void rsa_pub_sethash(void *sst, struct hash_if *hash) { }
+static void rsa_priv_sethash(void *sst, struct hash_if *hash) { }
+
 static void rsacommon_dispose(struct rsacommon *c)
 {
     free(c->hashbuf);
@@ -364,6 +363,8 @@ static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
     }
 
     RSAPUB_BNS(RSAPUB_LOADCORE_GETBN)
+
+    rsa_sethash(l,&st->common,&st->ops.hash);
 
     return st;
 
@@ -634,6 +635,8 @@ static struct rsapriv *rsa_loadpriv_core(struct load_ctx *l,
     if (ferror(f)) {
 	fatal_perror("rsa-private (%s:%d): ferror",loc.file,loc.line);
     }
+
+    rsa_sethash(l,&st->common,&st->ops.hash);
 
     /*
      * Now verify the validity of the key, and set up the auxiliary

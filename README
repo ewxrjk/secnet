@@ -403,8 +403,6 @@ site: dict argument
   key (sigpubkey closure): our peer's public key (obsolete)
   transform (transform closure): how to mangle packets sent between sites
   dh (dh closure)
-  hash (hash closure): used for keys whose algorithm (or public
-    or private key file) does not imply the hash function
   key-lifetime (integer): max lifetime of a session key, in ms
     [one hour; mobile: 2 days]
   setup-retries (integer): max number of times to transmit a key negotiation
@@ -605,6 +603,11 @@ rsa-private: string[,bool]
 rsa-public: string,string
   arg1: encryption key (decimal)
   arg2: modulus (decimal)
+
+The sigscheme is hardcoded to use sha1.  Both rsa-private and
+rsa-public look for the following config key in their context:
+  hash (hash closure): hash function [sha1]
+
 
 ** dh
 
