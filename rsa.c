@@ -141,9 +141,6 @@ static void rsa_sethash(struct load_ctx *l,
     *in_ops=hash;
 }
 
-static void rsa_pub_sethash(void *sst, struct hash_if *hash) { }
-static void rsa_priv_sethash(void *sst, struct hash_if *hash) { }
-
 static void rsacommon_dispose(struct rsacommon *c)
 {
     free(c->hashbuf);
@@ -344,7 +341,6 @@ static struct rsapub *rsa_loadpub_core(RSAPUB_BNS(RSAPUB_LOADCORE_DEFBN)
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
-    st->ops.sethash=rsa_pub_sethash;
     st->common.hashbuf=NULL;
     st->ops.unpick=rsa_sig_unpick;
     st->ops.check=rsa_sig_check;
@@ -508,7 +504,6 @@ static struct rsapriv *rsa_loadpriv_core(struct load_ctx *l,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
-    st->ops.sethash=rsa_priv_sethash;
     st->common.hashbuf=NULL;
     st->ops.sign=rsa_sign;
     st->ops.hash=0;

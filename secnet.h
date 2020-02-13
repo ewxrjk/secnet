@@ -506,7 +506,6 @@ struct random_if {
 
 /* SIGPUBKEY interface */
 
-typedef void sig_sethash_fn(void *st, struct hash_if *hash);
 typedef void sig_dispose_fn(void *st);
 
 typedef bool_t sig_unpick_fn(void *sst, struct buffer_if *msg,
@@ -515,7 +514,6 @@ typedef bool_t sig_checksig_fn(void *st, uint8_t *data, int32_t datalen,
 			       const struct alg_msg_data *sig);
 struct sigpubkey_if {
     void *st;
-    sig_sethash_fn *sethash; /* must be called before use, if non-0 */
     sig_unpick_fn *unpick;
     sig_checksig_fn *check;
     const struct hash_if *hash;
@@ -530,7 +528,6 @@ typedef bool_t sig_makesig_fn(void *st, uint8_t *data, int32_t datalen,
 			      struct buffer_if *msg);
 struct sigprivkey_if {
     void *st;
-    sig_sethash_fn *sethash; /* must be called before use, if non-0 */
     sig_makesig_fn *sign;
     const struct hash_if *hash;
     sig_dispose_fn *dispose;
@@ -541,8 +538,7 @@ struct sigprivkey_if {
 typedef struct sigprivkey_if *privcache_lookup_fn(void *st,
 					   const struct sigkeyid *id,
 					   struct log_if*);
-  /* Return is valid only until you return from the current event!
-   * You do not need to call ->sethash. */
+  /* Return is valid only until you return from the current event! */
 
 struct privcache_if {
     void *st;

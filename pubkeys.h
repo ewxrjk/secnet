@@ -26,7 +26,7 @@
 
 struct peer_pubkey {
     struct sigkeyid id;
-    struct sigpubkey_if *pubkey; /* does not need ->sethash calling */
+    struct sigpubkey_if *pubkey;
 };
 
 struct peer_keyset {
@@ -38,8 +38,7 @@ struct peer_keyset {
 
 extern struct peer_keyset *
 keyset_load(const char *path, struct buffer_if *data_buf,
-	    struct log_if *log, int logcl_enoent,
-	    struct hash_if *defhash);
+	    struct log_if *log, int logcl_enoent);
 
 extern void keyset_dispose(struct peer_keyset **ks);
 

@@ -78,12 +78,6 @@ static list_t *makepublic_apply(closure_t *self, struct cloc loc,
     bool_t ok=sch->loadpub(sch,&buf,&pubkey,&cl,&log.log,loc);
     if (!ok) cfgfatal(loc,"make-public","public key loading failed");
 
-    if (pubkey->sethash) {
-	struct hash_if *defhash=
-	    find_cl_if(context,"hash",CL_HASH,True,"make-public",loc);
-	pubkey->sethash(pubkey->st,defhash);
-    }
-
     BUF_FREE(&buf);
     buffer_destroy(&buf);
     return new_closure(cl);

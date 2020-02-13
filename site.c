@@ -318,7 +318,6 @@ struct site {
     int ncomms;
     struct resolver_if *resolver;
     struct log_if *log;
-    struct hash_if *defhash;
     struct random_if *random;
     struct privcache_if *privkeys;
     struct sigprivkey_if *privkey_fixed;
@@ -902,7 +901,7 @@ static void peerkeys_maybe_incorporate(struct site *st, const char *file,
 				       int logcl_enoent)
 {
     struct peer_keyset *atsuffix=
-	keyset_load(file,&st->scratch,st->log,logcl_enoent,st->defhash);
+	keyset_load(file,&st->scratch,st->log,logcl_enoent);
     if (!atsuffix) return;
 
     if (st->peerkeys_current &&
@@ -2315,18 +2314,6 @@ static void site_childpersist_clearkeys(void *sst, uint32_t newphase)
        crypto operations, but that's a task for another day. */
 }
 
-static void setup_sethash(struct site *st, dict_t *dict,
-			  struct cloc loc,
-			  sig_sethash_fn *sethash, void *sigkey_st) {
-    if (!st->defhash)
-	cfgfatal(loc,"site","other settings imply `hash' key is needed");
-    sethash(sigkey_st,st->defhash);
-}
-#define SETUP_SETHASH(k) do{						\
-    if ((k)->sethash)							\
-        setup_sethash(st,dict,loc, (k)->sethash,(k)->st);	\
-}while(0)
-
 static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 			  list_t *args)
 {
@@ -2431,13 +2418,10 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->resolver=find_cl_if(dict,"resolver",CL_RESOLVER,True,"site",loc);
     st->random=find_cl_if(dict,"random",CL_RANDOMSRC,True,"site",loc);
 
-    st->defhash=find_cl_if(dict,"hash",CL_HASH,True,"site",loc);
-
     st->privkeys=find_cl_if(dict,"key-cache",CL_PRIVCACHE,False,"site",loc);
     if (!st->privkeys) {
 	st->privkey_fixed=
 	    find_cl_if(dict,"local-key",CL_SIGPRIVKEY,True,"site",loc);
-	SETUP_SETHASH(st->privkey_fixed);
     }
 
     struct sigpubkey_if *fixed_pubkey
@@ -2448,14 +2432,12 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	pathprefix_template_init(&st->peerkeys_tmpl,st->peerkeys_path,
 				 PEERKEYS_SUFFIX_MAXLEN + 1 /* nul */);
 	st->peerkeys_current=keyset_load(st->peerkeys_path,
-					 &st->scratch,st->log,M_ERR,
-					 st->defhash);
+					 &st->scratch,st->log,M_ERR);
 	if (fixed_pubkey) {
 	    fixed_pubkey->dispose(fixed_pubkey->st);
 	}
     } else {
 	assert(fixed_pubkey);
-	SETUP_SETHASH(fixed_pubkey);
 	NEW(st->peerkeys_current);
 	st->peerkeys_current->refcount=1;
 	st->peerkeys_current->nkeys=1;

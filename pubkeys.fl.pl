@@ -161,7 +161,6 @@ struct pubkeyset_context {
     /* filled in during setup: */
     struct cloc loc; /* line is runtime */
     struct log_if *log;
-    struct hash_if *defhash;
     struct buffer_if *data_buf;
     struct peer_keyset *building;
     /* runtime: */
@@ -232,13 +231,6 @@ static struct pubkeyset_context c[1];
     bool_t ok=c->scheme->loadpub(c->scheme,c->data_buf,
 				 &pubkey,&cl,c->log,c->loc);
     if (!ok) break;
-    if (pubkey->sethash) {
-	if (!c->defhash) {
-	    pubkey->dispose(pubkey->st);
-	    DOSKIP("public key requires default hash to load");
-	}
-	pubkey->sethash(pubkey->st,c->defhash);
-    }
     struct peer_pubkey *fill=&c->building->keys[c->building->nkeys];
     memcpy(fill->id.b,c->grpid,GRPIDSZ);
     assert(ALGIDSZ==1); /* otherwise need htons or htonl or something */
@@ -291,11 +283,9 @@ static struct pubkeyset_context c[1];
 
 extern struct peer_keyset *
 keyset_load(const char *path, struct buffer_if *data_buf,
-	    struct log_if *log, int logcl_enoent,
-	    struct hash_if *defhash) {
+	    struct log_if *log, int logcl_enoent) {
     assert(!c->building);
     c->log=log;
-    c->defhash=defhash;
     c->loc.file=path;
     pkyyin = fopen(path, "r");
     if (!pkyyin) {

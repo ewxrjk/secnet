@@ -35,14 +35,12 @@ struct privcache {
     struct pathprefix_template path;
     struct ent *ents;
     struct buffer_if databuf;
-    struct hash_if *defhash;
 };
 
 static bool_t uncached_load_file(
 			   const struct sigscheme_info *scheme,
 			   const char *path,
 			   struct buffer_if *databuf,
-			   struct hash_if *defhash,
 			   struct sigprivkey_if **sigpriv_r,
 			   closure_t **closure_r,
 			   struct log_if *log);
@@ -70,7 +68,6 @@ static struct sigprivkey_if *uncached_get(struct privcache *st,
     bool_t ok=uncached_load_file(scheme,
 			      path,
 			      &st->databuf,
-			      st->defhash,
 			      &sigpriv,
 			      &cl,
 			      log);
@@ -81,7 +78,6 @@ static bool_t uncached_load_file(
 			   const struct sigscheme_info *scheme,
 			   const char *path,
 			   struct buffer_if *databuf,
-			   struct hash_if *defhash,
 			   struct sigprivkey_if **sigpriv_r,
 			   closure_t **closure_r,
 			   struct log_if *log)
@@ -123,15 +119,6 @@ static bool_t uncached_load_file(
     ok=scheme->loadpriv(scheme, databuf, &sigpriv, closure_r, log, loc);
     if (!ok) goto error_out; /* loadpriv will have logged */
 
-    if (sigpriv->sethash) {
-	if (!defhash) {
-	    slilog(log,M_ERR,
- "private key %s requires `hash' config key to load",
-		   path);
-	    goto error_out;
-	}
-	sigpriv->sethash(sigpriv->st,defhash);
-    }
     *sigpriv_r=sigpriv;
 
   out:
@@ -194,7 +181,6 @@ static list_t *privcache_apply(closure_t *self, struct cloc loc,
     st->ents=0;
     st->path.buffer=0;
     st->used=st->alloc=0;
-    st->defhash=0;
 
     item=list_elem(args,0);
     if (!item || item->type!=t_dict)
@@ -214,8 +200,6 @@ static list_t *privcache_apply(closure_t *self, struct cloc loc,
     const char *path=dict_read_string(dict,"privkeys",True,"privcache",loc);
     pathprefix_template_init(&st->path,path,KEYIDSZ*2);
 
-    st->defhash=find_cl_if(dict,"hash",CL_HASH,False,"site",loc);
-
     return new_closure(&st->cl);
 }
 
@@ -233,16 +217,13 @@ static list_t *loadprivate_apply(closure_t *self, struct cloc loc,
     buffer_new(&databuf,DEFAULT_MAXPRIV_BYTES);
     BUF_ALLOC(&databuf,"load-private data buf");
 
-    struct hash_if *defhash=
-	    find_cl_if(context,"hash",CL_HASH,False,"load-private",loc);
-
     struct cfgfile_log log;
     cfgfile_log_init(&log,loc,"load-private");
 
     struct sigprivkey_if *sigpriv;
     closure_t *cl;
     bool_t ok=
-	uncached_load_file(sch,path,&databuf,defhash,&sigpriv,&cl,&log.log);
+	uncached_load_file(sch,path,&databuf,&sigpriv,&cl,&log.log);
     if (!ok) cfgfatal(loc,"load-private","private key loading failed");
 
     BUF_FREE(&databuf);
