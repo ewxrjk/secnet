@@ -5,21 +5,16 @@ secnet (0.6.0~) unstable; urgency=medium
     this fixes transitions between IPv6-only and IPv4-only networks.
   * make-secnet-sites: Tainted: Fix a lot of bad return values
     (which would result in assertions rather than nice error messages).
+  * Fix hash algo confusion in mixed sha1/md5 configurations (see below).
 
-  Minor incompatible changes:
+  Incompatible changes:
+  * site: Always advertise all capabilities, even in MSG1.  This is
+    incompatible with secnets earlier than 0.3.0 (September 2013), which
+    are all quite badly broken and should have been upgraded long ago.
   * Drop support for using the same loaded rsa key with multiple different
     hash algorithms (which was broken in 0.5.0).  Right now we support
     only `sha1' and `md5' so everyone should be using `sha1'.
     Installations which specified `md5' aywhere may need config changes.
-  * site: Always advertise all capabilities, even in MSG1.
-    This is incompatible with secnets earlier than 0.3.0 (September 2013);
-    all older versions are quite broken in other ways.
-
-  secnet logging improvements:
-  * Make stderr line buffered and log to it by default.
-  * Do not log differently with --nodetach
-  * New `prefix' option to `logfile' closure
-  * Tidy and simplify some messages
 
   Major new featureset (use of which is not adviseable yet):
   * New facilities for negotiating about the signing keys to use for
@@ -29,24 +24,39 @@ secnet (0.6.0~) unstable; urgency=medium
     possible but rather complex.  Further machinery is planned;
     for now, retain your existing config which should keep working.
     In summary:
-       - secnet: new `privcache' closure
-       - secnet: `key-cache' and `peer-keys' keys on site closures
-       - secnet: new file format for peer public keysets
-       - new `make-public' verb
-       - make-secnet-sites `pub', `pkg', `serial', etc. keywords
-       - make-secnet-sites --filter, --pubkeys-*, --output-version
+       - secnet: new `privcache' closure;
+       - secnet: `key-cache' and `peer-keys' keys on site closures;
+       - secnet: new file format for peer public keysets;
+       - secnet: new `make-public' config operator;
+       - make-secnet-sites `pub', `pkg', `serial', etc. keywords;
+       - make-secnet-sites --filter, --pubkeys-*, --output-version.
+
+  More minor (logging) improvements:
+  * Make stderr line buffered and log to it by default.
+  * Do not log differently with --nodetach.
+  * New `prefix' option to `logfile' closure.
+  * Tidy and simplify some messages.
 
   Supporting changes:
-  * Many substantial internal refactorings in secnet
-  * Many substantial internal refactorings in make-secnet-sites
-  * Imported subtrees for base91-c and base91-python
-  * New portablity code, etc.: osdep.[ch], fmemopen reimplementation
-  * Explicitly define oddly-rotated dh padding arrangement (write_mpbin)
+  * Many substantial internal refactorings in secnet.
+  * Many substantial internal refactorings in make-secnet-sites.
+  * make-secnet-sites option parsing totally replaced.
+  * Imported subtrees for base91-c and base91-python.
+  * New portablity code, etc.: osdep.[ch], fmemopen reimplementation.
+  * Explicitly define oddly-rotated dh padding arrangement (write_mpbin).
+
+  Build system and packaging:
+  * Do not fail to build from git when HEAD refers to a packed ref.
+  * Update to subdirmk 0.3.
+  * Many makefile fixes (esp. to clean and cdeps).
+  * configure.ac: Drop or suppress some very obsolete checks.
+  * autogen.sh: Write a comment about need for autoheader.
+  * dir-locals: Provide python-indent-offset too.
 
   Test suite bugfixes:
-  * stest: Use stderr, not tty, for logging
-  * stest/udp-preload.c: Fix error handling of sun_prep
-  * stest: Fix breakage if nproc is not installed
+  * stest: Use stderr, not tty, for logging.
+  * stest/udp-preload.c: Fix error handling of sun_prep.
+  * stest: Fix breakage if nproc is not installed.
 
   Test suite improvements:
   * New tests, including tests for new features.
@@ -57,14 +67,6 @@ secnet (0.6.0~) unstable; urgency=medium
   * stest: Print a lot more output about what we are doing.
   * stest: Better support for cwd with longish pathname.
   * stest: More flexibility, env var hooks, etc.
-
-  Build system and administrivia
-  * Do not fail to build from git when HEAD refers to a packed ref
-  * Update to subdirmk 0.3
-  * Many makefile fixes (esp. to clean and cdeps)
-  * configure.ac: Drop or suppress some very obsolete checks
-  * autogen.sh: Write a comment about need for autoheader
-  * dir-locals: Provide python-indent-offset too
 
  --
 
