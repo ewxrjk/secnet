@@ -57,6 +57,11 @@ test suite
   * stest: Allow SECNET_STEST_DIVERT_*='i <some stuff>'
   * stest: Print spawn rune on a line by itself
   * test-example: Use subdirmk's new &:macro feature
+  * comprehensive-test script added
+  * pretest-to-tested script added
+stest/udp-preload: Be more relaxed about paths
+stest/udp-preload.c: Fix error handling of sun_prep
+stest: Fix breakage if nproc is not installed
 
 administrivia
   * dir-locals: Provide python-indent-offset too
@@ -72,6 +77,9 @@ build system
   * parallel bisect scripts: Better logging
   * parallel bisect scripts: Honour $1 as iteration count
   * build system: Fix race bug in recheck target
+  * subdirmk 0.3, other makefile fixes
+build system: Add some missing clean and cdeps hooks
+build system: Cope if HEAD refers to a packed ref
 
 make-secnet-sites tainting
   * make-secnet-sites: Tainted: Fix a lot of bad return values
@@ -249,7 +257,7 @@ secnet (0.5.1) unstable; urgency=medium
   * Release checklist update.
 
   documentation:
-  * Creit Mark Wooding properly in CREDITS.
+  * Credit Mark Wooding properly in CREDITS.
   * Include DEVELOPER-CERTIFICATE.
 
   tests:
