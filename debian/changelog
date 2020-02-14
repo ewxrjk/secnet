@@ -1,6 +1,205 @@
-secnet (0.5.2~) unstable; urgency=medium
+secnet (0.6.0~) unstable; urgency=medium
 
-  * 
+  * secnet: Make stderr line buffered
+  * logfile: Log to stderr by default (`filename' key now optional)
+  * logfile: Do not log differently with --nodetach
+  * logfile: New `prefix' option.
+
+internal refactorings in secnet
+
+test suite
+  * stest: Use stderr, not tty, for logging
+  * stest: Use new `prefix' option.
+  * stest: Add debug logs
+  * tests, mtest: Provide and use `prexec' for helping with debugging
+  * stest: Print the secnet runes we run
+  * stest: Print the special env vars we pass to secnet
+  * stest: Don't prefix ./ with another ./, in socktmp
+  * stest: Support not running secnet ourselves
+  * stest: Replace the call to `exit 1' with a new proc `finish'
+  * stest: Record the pids of of the secnets we spawn
+  * stest: Kill our child secnets when we call finish
+  * stest: Use `finish' for success exits
+  * stest: If one of our secnets dies, call the test a failure
+  * stest: Decode the slip packets that come via fake netlink
+  * stest: Check that received packet is as expected
+  * stest: Drop a redundant test
+  * mtest/t-prefix: Drop redundant setting of seddery
+  * test-example: Rules for making a privkeys directory
+  * test-example: Make privkeys by default
+  * test-example: Add the inside.key to the privcache too
+  * test-example: Add a 2nd rsa1 key
+  * stest: Transfer pubkeys from test-example
+  * stest: Provide a global `hash' key
+  * stest: Honour new privkey() hash
+  * tests: Pass --output-version=1 to make-secnet-sites
+  * test-example: Provide a new-style public key set for site outside
+  * test-example: Make sites.conf variable, in principle
+  * test-example: Generate new style sites.conf
+  * test-example: Test new long-term key arrangements
+  * test-example: all-privkeys: Define, and indirect through, a variable
+  * stest: Fix an entry in &DEPS
+  * mtest: Use --pubkeys-elide instead of --output-version
+  * stest: Honour new sitesconf_hook
+  * stest/t-nonnego-oo: Use `make-public' verb
+  * test-common: Use $(wildcard ) rather than $(shell echo )
+  * test-common: Framework for compatibility tests
+  * stest: Machinery for runing an old secnet if a test wants
+  * sest/t-Cnonnego-on: New test
+  * stest: Make it possible to have kex initiated by `outside'
+  * stest/t-Cnonnego-onr: New test
+  * stest: Add test for load-private
+  * stest: Introduce adj-after
+  * stest: Honour SECNET_STEST_TIMEOUT_MUL to multiply timeouts
+  * stest: Move puts $argl into divert branches
+  * stest: When SECNET_STEST_DIVERT_* set, print diverted command too
+  * stest: Require SECNET_STEST_DIVERT_* paths to start / or ./
+  * stest: Allow SECNET_STEST_DIVERT_*='i <some stuff>'
+  * stest: Print spawn rune on a line by itself
+  * test-example: Use subdirmk's new &:macro feature
+
+administrivia
+  * dir-locals: Provide python-indent-offset too
+  * Provide osdep.[ch], currently empty
+  * portability: Provide implementation of fmemopen
+
+build system
+  * configure.ac: Drop checks for systems lacking stdint.h
+  * configure.ac: Drop AC_STDC_HEADERS
+  * configure.ac: Do not check for lack of standard headers
+  * autogen.sh: Write a comment about need for autoheader
+  * parallel bisect scripts: ad-hoc
+  * parallel bisect scripts: Better logging
+  * parallel bisect scripts: Honour $1 as iteration count
+  * build system: Fix race bug in recheck target
+
+make-secnet-sites tainting
+  * make-secnet-sites: Tainted: Fix a lot of bad return values
+
+config
+  * conffile: find_cl_if: fix fail_if_invalid==False
+  * config: Reject rather than silently ignoring wrong closure values
+
+bugfixes
+  * rsa: emsa_pkcs1: Fix a message
+  * site: Move earlier all things needed for slog
+  * dh: Fix mpz padding bug in use of write_mpbin
+  * mobile sites: Do not ever expire peer addresses
+
+new signature scheme key handling
+  * pubkey handling: Document key sets, id, etc. plan
+  * sigkey handling: Introduce sigkeyid type
+  * sigkey handling: define MAX_SIG_KEYS
+  * sigkey handling: Introduce serialt type
+  * sigpubkey/sigprivkey: Provide a hash_if
+  * sigpubkey/sigprivkey: Provide a dispose() method
+  * sigscheme: Interface for signature schemes
+  * privcache: New closure for signature key handling
+  * privcache: Use new pathprefix_template facility
+  * privcache: Better debug
+  * privcache: Remove some spurious \n in messages
+  * site: New SIGKEYS log class, at level INFO, enabled by default
+  * NOTES: Add protocol elements for public key negotiation
+  * site: generate_msg: Introduce `privkey' variable
+  * site: Introduce `pubkey' variable (twice)
+  * site: Be able to use multiple private keys
+  * site: Read public peer keys from key file
+  * site: Update peer keys from ~update file
+  * site: Write an argument for the soundness of key file update
+  * site: key update soundness argument: deal with concurrency
+  * site: Reserve <peer-keys>~tmp for make-secnet-sites
+  * site: Remove a spurious \n in a message
+  * secnet: Provide `make-public' verb
+
+base91
+  * README: Introduce spec for "base91s" encoding
+  * B91 C DUMMY SYMLINK - WILL BE SUBTREE MERGE
+  * base91: CREDITS: Add information about C library
+  * base91: Build the C basE91 code with our own renaming
+  * base91: Patch the C version for our charset change
+  * base91: Link it into secnet
+  * BASE91 PYTHON DUMMY SYMLINK - WILL BE SUBTREE MERGE
+  * base91: CREDITS: Add information about Python library
+  * base91: Python: make `import' work
+  * pubkeys: Provide parser (and spec) for peer pubkeys files
+  * pubkeys: Provide ability to add extra action to KEYWORD
+  * pubkeys: Provide `fallback_skip' variable
+  * pubkeys: Introduce `pkgf' fallback groups
+  * pubkeys: Print file path in some log messages
+  * pubkeys: Move path and lno into a struct cloc
+  * pubkeys: Pass a cloc to loadpub
+  * pubkeys: Improve debug message for expected ENOENT
+  * pubkeys: Better debug logging for syntax errors
+  * pubkeys: Do not mind missing serial
+
+rsa1
+  [stuff to support new scheme]
+  * rsa1: Drop filename from two error messages
+  * rsa: Strip a couple of spurious newlines from pub key messages
+
+NEEDS FIX/CHECK
+  * README: Document new semantics for `hash'
+  * privcache; uncached_load_file: Introduce error_out
+
+  * docs: Fix rsapriv/rsapub closure names
+  * docs: Move peer-keys documentation into a README file
+
+mss
+  * make-secnet-sites: Deduplicate `complain'
+  * make-secnet-sites: Tolerate late `complain'
+  * make-secnet-sites: Write output to ...~tmp~ and rename
+  * make-secnet-sites: Tainted.name: take `what'
+  * make-secnet-sites: Tainted: Provide hexid and base91
+  * make-secnet-sites: set_property: Break out kw
+  * make-secnet-sites: set_property: Break out propname
+  * make-secnet-sites: set_property: Support "aliases"
+  * make-secnet-sites: pubkeys: Allow multiple
+  * make-secnet-sites: Provide --debug and debugrepr
+  * make-secnet-sites: Tainted: Provide some commented-out debug
+  * make-secnet-sites: Introduce FilterState
+  * make-secnet-sites: pline: Break up `copyout'
+  * make-secnet-sites: Provide base91s_encode and base91s_decode
+  * make-secnet-sites: Provide --output-version option
+  * make-secnet-sites: Allow properties to control output to sites
+  * make-secnet-sites: Provide ArgActionLambda
+  * make-secnet-sites: Provide `serial' property class
+  * make-secnet-sites: Prepare for multiple public key types
+  * make-secnet-sites: Support new `pub' directive
+  * make-secnet-sites: Make the `pub' key name primary
+  * make-secnet-sites: Do not write `pub' entries in v1 output
+  * make-secnet-sites: Do not use `copy' in pubkey forsites
+  * make-secnet-sites: Write rsa1 keys as `pub rsa1 ...' in >=v2
+  * make-secnet-sites: Handle `pub rsa1' properties specially
+  * make-secnet-sites: Add new pubkeys-dir option, and pubkey paths
+  * make-secnet-sites: New --pubkeys-install option
+  * make-secnet-sites: Without --pubkeys-install, write appropriate key
+  * make-secnet-sites: Support `serial'
+  * make-secnet-sites: Support `pkg' and `pkgf'
+  * make-secnet-sites: In v1 output, ignore keys for non-0 groups
+  * make-secnet-sites: Rework with new `inpub' class
+  * make-secnet-sites: Rework --pubkeys-MODE, provide --pubkeys-single
+  * make-secnet-sites: New --pubkeys-elide mode
+  * make-secnet-sites: Declare `pubkey' directive old
+
+  * make-secnet-sites: Introduce new OpMod classes
+  * make-secnet-sites: Refactor operational code into OpModes
+  * make-secnet-sites: Move sites file writing into OpBase
+  * make-secnet-sites: OpBase.read_in: save read lines
+  * make-secnet-sites: Provide explicit --conf mode option
+  * make-secnet-sites: Abolish now-obsolete `service' variable
+  * make-secnet-sites: OpBase.write_out: Tolerate sitesfile is None
+  * make-secnet-sites: OpBase.write_out: Move heading back into OpUserv
+  * make-secnet-sites: OpUserv: Rename sitesfile to outputfile
+  * make-secnet-sites: OpConf: Move positional_args to OpBase
+  * README.make-secnet-sites: Slightly restructure mode docs
+  * make-secnet-sites: Provide --filter mode
+  * mtest/t-filter: New test for --filter mode
+
+other changes
+  * site: Always advertise all capabilities
+  * rsa: Bring hash selection in-house
+  * sig: Abolish sethash and defhash everywhere
+
 
  --
 
