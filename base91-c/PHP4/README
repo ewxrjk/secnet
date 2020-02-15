@@ -1,0 +1,40 @@
+base91_encode -- Encodes data with basE91
+
+	string base91_encode ( string data )
+
+base91_encode() returns data encoded with basE91. This encoding is designed to
+make binary data survive transport through transport layers that are not 8-bit
+clean, such as mail bodies.
+
+basE91-encoded data takes at most 23% more space than the original data.
+
+Example:
+<?php
+  require_once 'base91.php';
+  $str = 'This is an encoded string';
+  echo base91_encode($str);
+?>
+
+This example will produce:
+
+nX,<:WRT%yV%!5:maref3+1RrUb64^M
+
+-----
+
+base91_decode -- Decodes data encoded with basE91
+
+	string base91_decode ( string encoded_data )
+
+base91_decode() decodes encoded_data ignoring non-alphabet characters and
+returns the original data. The returned data may be binary.
+
+Example:
+<?php
+  require_once 'base91.php';
+  $str = 'nX,<:WRT%yV%!5:maref3+1RrUb64^M';
+  echo base91_decode($str);
+?>
+
+This example will produce:
+
+This is an encoded string
