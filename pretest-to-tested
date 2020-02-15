@@ -4,9 +4,15 @@
 # example runes in main tree:
 #  git-branch -f pretest && git-branch -f tested `git-merge-base HEAD tested` && git-checkout wip
 
+stl=''
+for subtree in base91-c subdirmk base91-python; do
+    st=$(git-subtree split -P $subtree pretest)
+    stl+=" ^$st"
+done
+
 set -e
 while true; do
-    next=$(git-rev-list --reverse tested..pretest | head -n1)
+    next=$(git-rev-list --reverse $stl tested..pretest | head -n1)
     if [ "x$next" = x ]; then break; fi
     git checkout "$next"
     ./comprehensive-test
