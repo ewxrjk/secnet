@@ -129,17 +129,6 @@ TESTDIRS=stest mtest
 &TARGETS_fullcheck += msgcode-test.confirm
 
 RECHECK_RM += $(&TARGETS_check)
-RECHECK_RM += $(addsuffix /d-*, $(TESTDIRS));
-# Really the eval below should come very late, so that subdirs can add
-# their stuff to RECHECK_RM, but we do not have a way to do that with
-# subdirmk yet.  So we embed ad-hoc knowledge about TESTDIRS.
-
-# This contrives to delete things before make starts, if the user
-# said "recheck".  The alternative is having recheck be a target
-# which contains the rm's and then runs $(MAKE) again but then
-# we recursively re-enter make in parallel, which is Bad.
-$(eval $(if $(filter recheck,$(MAKECMDGOALS)), \
-	$(shell set -x; rm -rf $(RECHECK_RM) )))
 
 recheck: check
 

@@ -15,6 +15,8 @@ endif
 
 &check-real: $(foreach t,$(&TESTNAMES),&d-$t/ok)
 
+RECHECK_RM += &d-*
+
 CHECK_SILENT ?= @
 
 &d-%/ok: &^/t-% $(&DEPS)
