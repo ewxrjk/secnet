@@ -187,11 +187,9 @@ static void parse_options(int argc, char **argv)
 static void setup(dict_t *config)
 {
     list_t *l;
-    item_t *site;
     dict_t *system;
     struct passwd *pw;
     struct cloc loc;
-    int i;
 
     l=dict_lookup(config,"system");
 
@@ -226,6 +224,12 @@ static void setup(dict_t *config)
 	      "that secnet retain root privileges while running.",
 	      require_root_privileges_explanation);
     }
+}
+
+static void start_sites(dict_t *config) {
+    int i;
+    list_t *l;
+    item_t *site;
 
     /* Go along site list, starting sites */
     l=dict_lookup(config,sites_key);
@@ -504,6 +508,7 @@ int main(int argc, char **argv)
 
     enter_phase(PHASE_SETUP);
     setup(config);
+    start_sites(config);
 
     if (just_check_config) {
 	Message(M_INFO,"configuration file check complete\n");
