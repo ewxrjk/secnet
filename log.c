@@ -455,7 +455,7 @@ static list_t *logfile_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->level=string_list_to_word(dict_lookup(dict,"class"),
 				       message_class_table,"logfile");
 
-    add_hook(PHASE_GETRESOURCES,logfile_phase_hook,st);
+    add_hook(PHASE_DAEMONIZE,logfile_phase_hook,st);
     add_hook(PHASE_CHILDPERSIST,logfile_childpersist_hook,st);
 
     return new_closure(&st->cl);
@@ -567,7 +567,7 @@ static list_t *syslog_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->facility=string_to_word(facstr,loc,
 				syslog_facility_table,"syslog");
     st->open=False;
-    add_hook(PHASE_GETRESOURCES,syslog_phase_hook,st);
+    add_hook(PHASE_DAEMONIZE,syslog_phase_hook,st);
     add_hook(PHASE_CHILDPERSIST,syslog_phase_hook,st);
 
     return new_closure(&st->cl);
