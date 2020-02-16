@@ -350,6 +350,7 @@ sub process_input_mk ($$$$) {
 		next;
 	    }
 	    if (s{^\\$esc}{}) { od "$$esclitr" }
+	    elsif (s{^:}{}) { od "$$esclitr:" }
 	    elsif (s{^\\\$}{}) { oud '$' }
 	    elsif (s{^\\\s+$}{}) { }
 	    elsif (s{^$esc}{}) { od "$$esclitr$$esclitr" }
@@ -367,15 +368,17 @@ sub process_input_mk ($$$$) {
 	    elsif (s{^\$\-}{}) { $ddbl=undef; }
 	    elsif (s{^\$\+}{}) { $ddbl=1; }
 	    elsif (s{^\$\(}{}) {
-		ddbl_only($&); oud "\${";
+		ddbl_only($&); oud "\$(";
 		$note_varref->($2,!!$1) if m{^($esc)?([^()\$]+\))};
 	    }
 	    elsif (s{^\$(\d+)}{}) { ddbl_only($&); oud "\${$1}"; }
-	    elsif (s{^\$\{}{}) {
+	    elsif (s{^\(\s*$esc(?=$lc_re)}{}) { od "\$(call ${var_prefix}" }
+	    elsif (s{^\(\s*(?=\S)}{}        ) { od "\$(call "              }
+	    elsif (s{^\{}{}) {
 		err 'macro invocation cannot be re-$-doubled' if $ddbl;
 		od '${eval ${call ';
 		$evalcall_brackets = 1;
-		$push_nest->('eval',1, '&${...}');
+		$push_nest->('eval',1, '&{...}');
 		$note_varref->($2,!!$1) if m{^\s*($esc)?([^,{}\$]+)};
 	    } elsif (s{^([~^]?)(?=[ \t])}{}) {
 		my $prefix = $pfxmap{$1} // die "internal error ($1?)";

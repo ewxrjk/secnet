@@ -24,9 +24,9 @@ include common.make
 	rm -rf &/&$1.privkeys
 &:endm
 
-&${&privkey,outside,5dc36a4700,rsa1-sites2.key}
-&${&privkey,outside,0000000000,outside.key}
-&${&privkey,inside,0000000000,inside.key}
+&{&privkey,outside,5dc36a4700,rsa1-sites2.key}
+&{&privkey,outside,0000000000,outside.key}
+&{&privkey,inside,0000000000,inside.key}
 
 &all-privkeys:: $(&PRIVKEYS)
 

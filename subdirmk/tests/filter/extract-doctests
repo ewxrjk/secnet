@@ -45,9 +45,9 @@ while (<>) {
     next unless m{\=\>} or ($cent and m{ \.\. });
     my $mapop = '=>';
     # adhoc: special case NEWQUOTE here so we recognise things in changequote
-    if (s{^(\s*)(\&\S+|NEWQUOTE\S+|\$)\s+(\=\>|\.\.)\s+(\S+)\s+}{} ||
-	s{^()(\&\:\w+(?: \S+)*)\s{2,}(\=\>)\s{2,}($withspcs)$}{} ||
-        $cent && s{^()($withspcs)\s{2,}(\.\.)\s{2,}($withspcs)$}{}) {
+    if (s{^()(\&\:\w+(?: \S+)*)\s{2,}(\=\>)\s{2,}($withspcs)$}{} ||
+        s{^(\s*)(\&$withspcs|NEWQUOTE\S+|\$)\s+(\=\>|\.\.)\s+($withspcs)\s+}{} ||
+	$cent && s{^()($withspcs)\s{2,}(\.\.)\s{2,}($withspcs)$}{}) {
 	# adhoc: expected indented iff in changequote part
 	confess if length($1) xor $in_changequote;
 	$mapop = $3;
@@ -55,16 +55,13 @@ while (<>) {
 	$e->{In} = $2;
 	$e->{Out} = $4;
 	if (# adhoc: `or ...' introduces the `at toplevel' expansion
-	    s{^or (\S+)$}{}) {
+	    s{^or ($withspcs)$}{}) {
 	    $e->{OutTop} = $1 eq 'nothing' ? '' : $1;
 	} elsif (# parse: expect other wordish things to be comments
 		 m{^(?!or\b)\(?\w{2,} }) {
-	} elsif (# adhoc: slightly special case for $(eval $(call
-		 m{^\$\{.*}) {
-	    $e->{Out} .= ' '.$&;
 	} elsif (m/^$/) {
 	} else {
-	    confess "unk rhs $_ ?";
+	    confess "unk rhs $_ (In=\"$e->{In}\" out=\"$e->{Out}\"?";
 	}
 	$e->{CQ} = $in_changequote;
 	# adhoc: rely on this specific section title
@@ -147,7 +144,7 @@ sub writeout ($) {
 		      # adhoc: skip &:macro in already-doubling part
 		      return 0 if $e->{In} =~ m{^\&\:macro};
 		      # adhoc: skip &${ ie eval in already-doubling part
-		      return 0 if $e->{In} =~ m{^\&\$\{};
+		      return 0 if $e->{In} =~ m{^\&\{};
 		      return 0 if $e->{CQ};
 		      return $e->{DD} || !grep {
 			  # If there are two entries with the same In,
