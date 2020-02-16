@@ -102,6 +102,28 @@ REQUIRE_HEADER([adns.h])
 
 AC_CHECK_FUNCS([fmemopen funopen])
 
+dnl gcc 4.9.2 (jessie) requires -std=gnu11 to cope with for (int i=...
+dnl but we do not want to pass that everywhere because we don't want
+dnl to nail down the C dialect this way.  Why oh why oh why.
+m4_define([for_gcc_std],[
+void x(void) { for (int i=0; i<1; i++) { } }
+])
+AC_CACHE_CHECK([required gcc -std flag],[secnet_cv_gcc_std_flag],[
+    secnet_cv_gcc_std_flag=""
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE(for_gcc_std)],[],[
+        old_cflags="$CFLAGS"
+	CFLAGS="$CFLAGS -std=gnu11"
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE(for_gcc_std)],[
+	    secnet_cv_gcc_std_flag=" -std=gnu11"
+	],[
+	    AC_MSG_RESULT([failure!])
+	    AC_MSG_ERROR([cannot get test program to compile],1)
+	])
+	CFLAGS="$old_cflags"
+    ])
+])
+CFLAGS="$CFLAGS$secnet_cv_gcc_std_flag"
+
 AC_MSG_NOTICE([Checking requirements for IPv6 support...])
 enable_ipv6=true
 m4_define(NO_IPV6,[enable_ipv6=false])

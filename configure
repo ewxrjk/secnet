@@ -4132,6 +4132,54 @@ fi
 done
 
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking required gcc -std flag" >&5
+$as_echo_n "checking required gcc -std flag... " >&6; }
+if ${secnet_cv_gcc_std_flag+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    secnet_cv_gcc_std_flag=""
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+void x(void) { for (int i=0; i<1; i++) { } }
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+
+        old_cflags="$CFLAGS"
+	CFLAGS="$CFLAGS -std=gnu11"
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+void x(void) { for (int i=0; i<1; i++) { } }
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+	    secnet_cv_gcc_std_flag=" -std=gnu11"
+
+else
+
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: failure!" >&5
+$as_echo "failure!" >&6; }
+	    as_fn_error 1 "cannot get test program to compile" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	CFLAGS="$old_cflags"
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $secnet_cv_gcc_std_flag" >&5
+$as_echo "$secnet_cv_gcc_std_flag" >&6; }
+CFLAGS="$CFLAGS$secnet_cv_gcc_std_flag"
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: Checking requirements for IPv6 support..." >&5
 $as_echo "$as_me: Checking requirements for IPv6 support..." >&6;}
 enable_ipv6=true
