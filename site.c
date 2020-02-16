@@ -2289,7 +2289,7 @@ static void site_startup(void *vst)
     enter_state_run(st);
 }
 
-static void site_phase_hook(void *sst, uint32_t newphase)
+static void site_phase_shutdown_hook(void *sst, uint32_t newphase)
 {
     struct site *st=sst;
 
@@ -2551,7 +2551,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     enter_state_stop(st);
 
-    add_hook(PHASE_SHUTDOWN,site_phase_hook,st);
+    add_hook(PHASE_SHUTDOWN,site_phase_shutdown_hook,st);
     add_hook(PHASE_CHILDPERSIST,site_childpersist_clearkeys,st);
 
     return new_closure(&st->cl);
