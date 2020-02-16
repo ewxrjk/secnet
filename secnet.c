@@ -329,8 +329,6 @@ static void run(void)
     struct pollfd *fds=0;
     int allocdfds=0, shortfall=0;
 
-    Message(M_NOTICE,"%s [%d]: starting\n",version,secnet_pid);
-
     do {
 	if (gettimeofday(&tv_now_global, NULL)!=0) {
 	    fatal_perror("main loop: gettimeofday");
@@ -517,6 +515,7 @@ int main(int argc, char **argv)
 
     enter_phase(PHASE_DAEMONIZE);
     become_daemon();
+    Message(M_NOTICE,"%s [%d]: starting\n",version,secnet_pid);
     
     enter_phase(PHASE_GETRESOURCES);
     /* Appropriate phase hooks will have been run */
