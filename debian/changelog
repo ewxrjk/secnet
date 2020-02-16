@@ -1,4 +1,4 @@
-secnet (0.6.0~) unstable; urgency=medium
+secnet (0.6.0) unstable; urgency=medium
 
   Bugfixes:
   * mobile sites: Do not ever expire peer addresses.  In practice
@@ -68,7 +68,7 @@ secnet (0.6.0~) unstable; urgency=medium
   * stest: Better support for cwd with longish pathname.
   * stest: More flexibility, env var hooks, etc.
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 16 Feb 2020 12:48:13 +0000
 
 secnet (0.5.1) unstable; urgency=medium
 
