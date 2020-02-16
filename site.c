@@ -257,6 +257,7 @@ typedef struct {
 } transport_peers;
 
 /* Basic operations on transport peer address sets */
+static void transport_peers_init(struct site *st, transport_peers *peers);
 static void transport_peers_clear(struct site *st, transport_peers *peers);
 static int transport_peers_valid(transport_peers *peers);
 static void transport_peers_copy(struct site *st, transport_peers *dst,
@@ -2512,8 +2513,8 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->chosen_transform=0;
     st->current.key_timeout=0;
     st->auxiliary_key.key_timeout=0;
-    transport_peers_clear(st,&st->peers);
-    transport_peers_clear(st,&st->setup_peers);
+    transport_peers_init(st,&st->peers);
+    transport_peers_init(st,&st->setup_peers);
     /* XXX mlock these */
     st->dhsecret=safe_malloc(st->dh->len,"site:dhsecret");
     st->sharedsecretlen=st->sharedsecretallocd=0;
@@ -2728,6 +2729,9 @@ static void transport_data_msgok(struct site *st, const struct comm_addr *a) {
 
 static int transport_peers_valid(transport_peers *peers) {
     return peers->npeers;
+}
+static void transport_peers_init(struct site *st, transport_peers *peers) {
+    peers->npeers= 0;
 }
 static void transport_peers_clear(struct site *st, transport_peers *peers) {
     peers->npeers= 0;
