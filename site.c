@@ -2283,11 +2283,10 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
     return False;
 }
 
-static void site_control(void *vst, bool_t run)
+static void site_startup(void *vst)
 {
     struct site *st=vst;
-    if (run) enter_state_run(st);
-    else enter_state_stop(st);
+    enter_state_run(st);
 }
 
 static void site_phase_hook(void *sst, uint32_t newphase)
@@ -2331,7 +2330,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->cl.apply=NULL;
     st->cl.interface=&st->ops;
     st->ops.st=st;
-    st->ops.control=site_control;
+    st->ops.startup=site_startup;
     st->ops.status=site_status;
     st->peerkeys_path=0;
     st->peerkeys_tmpl.buffer=0;

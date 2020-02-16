@@ -247,7 +247,7 @@ static void start_sites(dict_t *config) {
 		cfgfatal(site->loc,"system","non-site closure in site list");
 	    }
 	    s=site->data.closure->interface;
-	    s->control(s->st,True);
+	    s->startup(s->st);
 	}
     }
 }

@@ -659,11 +659,11 @@ void log_early_init(void);
 
 /* Pretty much a placeholder; allows starting and stopping of processing,
    key expiry, etc. */
-typedef void site_control_fn(void *st, bool_t run);
+typedef void site_startup_fn(void *st);
 typedef uint32_t site_status_fn(void *st);
 struct site_if {
     void *st;
-    site_control_fn *control;
+    site_startup_fn *startup;
     site_status_fn *status;
 };
 
