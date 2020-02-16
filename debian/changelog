@@ -14,7 +14,7 @@ secnet (0.6.0~) unstable; urgency=medium
   * Drop support for using the same loaded rsa key with multiple different
     hash algorithms (which was broken in 0.5.0).  Right now we support
     only `sha1' and `md5' so everyone should be using `sha1'.
-    Installations which specified `md5' aywhere may need config changes.
+    Installations which specified `md5' anywhere may need config changes.
 
   Major new featureset (use of which is not adviseable yet):
   * New facilities for negotiating about the signing keys to use for
