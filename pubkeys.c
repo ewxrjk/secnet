@@ -30,7 +30,8 @@ void keyset_dispose(struct peer_keyset **ks_io)
     ks->refcount--;
     assert(ks->refcount>=0);
     if (ks->refcount) return;
-    for (int ki=0; ki<ks->nkeys; ki++) {
+    int ki;
+    for (ki=0; ki<ks->nkeys; ki++) {
 	struct sigpubkey_if *pk=ks->keys[ki].pubkey;
 	pk->dispose(pk->st);
     }
