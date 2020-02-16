@@ -1712,8 +1712,9 @@ static void set_link_quality(struct site *st)
 
 static void enter_state_run(struct site *st)
 {
-    slog(st,LOG_STATE,"entering state RUN%s",
-	 current_valid(st) ? " (keyed)" : " (unkeyed)");
+    if (st->state!=SITE_STOP)
+	slog(st,LOG_STATE,"entering state RUN%s",
+	     current_valid(st) ? " (keyed)" : " (unkeyed)");
     st->state=SITE_RUN;
     st->timeout=0;
 
@@ -2297,6 +2298,13 @@ static void site_phase_shutdown_hook(void *sst, uint32_t newphase)
     send_msg7(st,"shutting down");
 }
 
+static void site_phase_run_hook(void *sst, uint32_t newphase)
+{
+    struct site *st=sst;
+    slog(st,LOG_STATE,"entering phase RUN in state %s",
+	 state_name(st->state));
+}
+
 static void site_childpersist_clearkeys(void *sst, uint32_t newphase)
 {
     struct site *st=sst;
@@ -2552,6 +2560,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     enter_state_stop(st);
 
     add_hook(PHASE_SHUTDOWN,site_phase_shutdown_hook,st);
+    add_hook(PHASE_RUN,     site_phase_run_hook,     st);
     add_hook(PHASE_CHILDPERSIST,site_childpersist_clearkeys,st);
 
     return new_closure(&st->cl);
