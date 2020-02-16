@@ -2734,8 +2734,10 @@ static void transport_peers_init(struct site *st, transport_peers *peers) {
     peers->npeers= 0;
 }
 static void transport_peers_clear(struct site *st, transport_peers *peers) {
+    bool_t need_debug=!!peers->npeers;
     peers->npeers= 0;
-    transport_peers_debug(st,peers,"clear",0,0,0);
+    if (need_debug)
+	transport_peers_debug(st,peers,"clear",0,0,0);
 }
 static void transport_peers_copy(struct site *st, transport_peers *dst,
 				 const transport_peers *src) {
