@@ -787,8 +787,7 @@ static bool_t unpick_msg(struct site *st, uint32_t type,
     if (type_is_msg23(type) && m->remote.extrainfo.size) {
 	m->n_pubkeys_accepted_nom = buf_unprepend_uint8(&m->remote.extrainfo);
 	if (!m->n_pubkeys_accepted_nom) return False;
-	int ki_nom;
-	for (ki_nom=0; ki_nom<m->n_pubkeys_accepted_nom; ki_nom++) {
+	for (int ki_nom=0; ki_nom<m->n_pubkeys_accepted_nom; ki_nom++) {
 	    CHECK_AVAIL(&m->remote.extrainfo,KEYIDSZ);
 	    struct sigkeyid *kid = buf_unprepend(&m->remote.extrainfo,KEYIDSZ);
 	    if (ki_nom<MAX_SIG_KEYS) m->pubkeys_accepted[ki_nom] = kid;
