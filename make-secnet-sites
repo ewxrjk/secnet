@@ -591,10 +591,10 @@ class rsakey (pubkey):
 		self.n=w[3].bignum_10('rsa','rsa n')
 		if len(w) >= 5: w[4].email()
 		self.a='rsa1'
-		self.d=base91s_encode(b'%d %s %s' %
-				      (self.l,
-				       self.e.encode('ascii'),
-				       self.n.encode('ascii')))
+		self.d=base91s_encode(('%d %s %s' %
+				       (self.l,
+					self.e,
+					self.n)).encode('ascii'))
 		# ^ this allows us to use the pubkey.forsites()
 		# method for output in versions>=2
 	def __str__(self):
