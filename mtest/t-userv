@@ -49,3 +49,7 @@ if {![catch {
 	* { error "huh ? $emsg" }
     }
 }
+
+#----- resulting sites file is processable -----
+
+eval run-mss $tmp/out.sites >$tmp/out.conf
