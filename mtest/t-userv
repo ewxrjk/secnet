@@ -35,3 +35,17 @@ if {![catch {
     }
 }
 
+#----- wrong group is rejected -----
+
+set bad [lreplace $good 1 1 Gwrong]
+
+if {![catch {
+    eval run-mss-userv $bad
+} emsg]} {
+    error "should have failed"
+} else {
+    switch -glob $emsg {
+	{*caller not in group Ginside*} { }
+	* { error "huh ? $emsg" }
+    }
+}
