@@ -293,6 +293,9 @@ class PkmElide(PkmBase):
 class OpBase():
 	# Base case is reading a sites file from self.inputfilee.
 	# And writing a sites file to self.sitesfile.
+	def check_group(self,group,w):
+		if len(w) >= 3:
+			w[2].groupname()
 	def positional_args(self, av):
 		if len(av.arg)>3:
 			print("Too many arguments")
@@ -321,7 +324,6 @@ class OpBase():
 class OpConf(OpBase):
 	opts = ['--conf']
 	help = 'sites.conf generation mode (default)'
-	def check_group(self,group,w): pass
 	def write_out(self):
 		if self.outputfile is None:
 			of=sys.stdout
