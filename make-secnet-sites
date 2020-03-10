@@ -369,7 +369,7 @@ class OpUserv(OpBase):
 		for i in ugs.split():
 			if self.group==i: ok=1
 		if not ok:
-			print("caller not in group %s"%group)
+			print("caller not in group %s"%self.group.groupname())
 			sys.exit(1)
 	def check_group(self,group,w):
 		if group!=self.group: complain("Incorrect group!")
