@@ -19,6 +19,11 @@ set netlink(outside) {
 set ports(inside) {16913 16910}
 set ports(outside) 16900
 
+set defnet_v4 198.51.100
+set defnet_v6 2001:db8:ff00
+set defaddr_v4 ${defnet_v4}.1
+set defaddr_v6 ${defnet_v6}::1
+
 set extra(inside) {
     local-mobile True;
     mtu-target 1260;
@@ -44,6 +49,7 @@ proc mkconf {location site} {
     global ports
     global extra
     global netlinkfh
+    global defaddr_v4 defaddr_v6
     upvar #0 privkey($site) privkey
     set pipefp $tmp/$site.netlink
     foreach tr {t r} {
@@ -83,7 +89,7 @@ exec cat
 	append cfg "$delim
 	    udp {
                 port $port;
-                address \"::1\", \"127.0.0.1\";
+                address \"$defaddr_v6\", \"$defaddr_v4\";
 		buffer sysbuffer(4096);
 	    }
 	"
@@ -145,6 +151,8 @@ exec cat
     set f [open $sitesconf r]
     while {[gets $f l] >= 0} {
 	regsub {\"[^\"]*test-example/pubkeys/} $l "\"$pubkeys/" l
+	regsub -all {\"\[127\.0\.0\.1\]\"} $l "\"\[$defaddr_v4\]\"" l
+	regsub -all {\"\[::1]\"}           $l "\"\[$defaddr_v6\]\"" l
 	set l [sitesconf_hook $l]
 	append cfg $l "\n"
     }
