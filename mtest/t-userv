@@ -53,3 +53,5 @@ if {![catch {
 #----- resulting sites file is processable -----
 
 eval run-mss $tmp/out.sites >$tmp/out.conf
+
+diff-mss-sites-conf mtest/e-userv.conf $tmp/out.conf
