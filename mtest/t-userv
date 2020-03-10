@@ -55,3 +55,12 @@ if {![catch {
 eval run-mss $tmp/out.sites >$tmp/out.conf
 
 diff-mss-sites-conf mtest/e-userv.conf $tmp/out.conf
+
+#----- works without group in `location' line -----
+
+set testgf $tmp/Ginside.no-group
+
+exec sed < mtest/Ginside.sites > $testgf {/^location / s/ root$//}
+
+set testargs [lreplace $good end end $testgf]
+eval run-mss-userv $testargs
