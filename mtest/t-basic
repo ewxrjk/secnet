@@ -4,5 +4,5 @@ source mtest/common.tcl
 
 run-mss --no-conf-key-prefix --pubkeys-elide test-example/sites $tmp/out.conf
 
-set seddery { sed -n 's/^[ \t]*//; /^[^#]/p' }
-diff  mtest/e-basic.conf $tmp/out.conf $seddery
+diff-mss-sites-conf mtest/e-basic.conf $tmp/out.conf
+

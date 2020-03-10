@@ -32,6 +32,11 @@ proc diff-output {expected got suffix} {
     diff mtest/$expected$suffix $tmp/$got$suffix $seddery
 }
 
+proc diff-mss-sites-conf {expected got} {
+    set seddery { sed -n 's/^[ \t]*//; /^[^#]/p' }
+    diff $expected $got $seddery
+}
+
 file mkdir $tmp/groupfiles
 
 set env(PYTHONHASHSEED) 0
