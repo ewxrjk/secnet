@@ -375,7 +375,7 @@ class OpUserv(OpBase):
 			sys.exit(1)
 	def check_group(self,group,w):
 		if group!=self.group: complain("Incorrect group!")
-		w[2].groupname()
+		OpBase.check_group(self,group,w)
 	def read_in(self):
 		self.headerinput=pfilepath(self.header,allow_include=True)
 		self.userinput=sys.stdin.readlines()
