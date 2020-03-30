@@ -24,6 +24,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <errno.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -356,9 +357,18 @@ static void run(void)
     int allocdfds=0, shortfall=0;
 
     do {
+#if USE_MONOTONIC
+	struct timespec ts;
+	if (clock_gettime(CLOCK_MONOTONIC, &ts)!=0) {
+	    fatal_perror("main loop: clock_gettime(CLOCK_MONOTONIC,)");
+	}
+	tv_now_global.tv_sec =  ts.tv_sec;
+	tv_now_global.tv_usec = ts.tv_nsec / 1000;
+#else /* !USE_MONOTONIC */
 	if (gettimeofday(&tv_now_global, NULL)!=0) {
 	    fatal_perror("main loop: gettimeofday");
 	}
+#endif /* !USE_MONOTONIC */
 	now_global=((uint64_t)tv_now_global.tv_sec*(uint64_t)1000)+
 	           ((uint64_t)tv_now_global.tv_usec/(uint64_t)1000);
 	idx=0;

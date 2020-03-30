@@ -4250,9 +4250,7 @@ $as_echo "#define USE_MONOTONIC 1" >>confdefs.h
 
 else
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Using non-monotonic clock, due to lack of adns_if_monotonic" >&5
-$as_echo "$as_me: WARNING: Using non-monotonic clock, due to lack of adns_if_monotonic" >&2;}
-
+:
 fi
 
 

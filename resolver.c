@@ -211,6 +211,9 @@ static list_t *adnsresolver_apply(closure_t *self, struct cloc loc,
     conf=dict_read_string(d,"config",False,"adns",loc);
 
     adns_initflags iflags = 0;
+#if USE_MONOTONIC
+    iflags |= adns_if_monotonic;
+#endif
 
     if (conf) {
 	if (adns_init_strcfg(&st->ast, iflags, 0, conf)) {
