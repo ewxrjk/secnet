@@ -1,6 +1,35 @@
 secnet (0.6.1~) unstable; urgency=medium
 
-  * 
+  Logging bugfixes:
+  * Fix completely broken startup logging.  Config errors would not
+    be repoorted other than via the exit status!  (Broken in 0.6.0.)
+  * Suppress various uninteresting messages during startup, to
+    avoid noise during successful startup.
+  * Move "starting" message earlier.
+  
+  make-secnet-sites bugfixes:
+  * Fix error handling if caller is in wrong group.
+  * Fix regressions in handling of delegated sites file fragments
+    (especially wrt the optional group parameter to `location').
+    Broken since security fixes in 0.5.0.
+
+  Fixes to example config file:
+  * Use new name-prefixed format for map(site...) runes.  Old runes
+    were desupported by make-secnet-sites security fix (in 0.5.0).
+  * Fix "transform" syntax (broken since 0.3.0).
+
+  Other bugfixes and improvements:
+  * rsa: Do not crash if private key file is not accessible when
+    running --just-check-config.  (Broken since 0.6.0.)
+  * rsa: Print errno value if we fail to open key file.
+  * config parsing: When closure is of wrong type, give details.
+  * Use CLOCK_MONOTONIC for all our timing needs (but only when
+    built against an as-yet-unpublished adns feature).
+
+  Supporting changes:
+  * Tests for some of the changes.
+  * Minor internal refactorings and improvements.
+  * Merge subdirmk 1.0.
 
  --
 
