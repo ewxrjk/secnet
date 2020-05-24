@@ -2408,7 +2408,7 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
 	    cfgfatal(loc,"site","%s is not a closure\n",dictkey);	\
 	closure_t *cl=item->data.closure;				\
 	if (cl->type!=CL_TYPE)						\
-	    cfgfatal(loc,"site","%s closure wrong type\n",dictkey);	\
+	    cfgfatal_cl_type(loc,"site",cl,CL_TYPE,dictkey);	        \
 	st->things[i]=cl->interface;					\
     }									\
 }while(0)
