@@ -137,6 +137,14 @@ else
     AC_MSG_WARN([Disabling IPv6 support])
 fi
 
+AC_CHECK_DECL([adns_if_monotonic],[
+    AC_DEFINE([USE_MONOTONIC],[1],[Use CLOCK_MONOTONIC and adns_if_monotonic])
+],[
+    AC_MSG_WARN([Using non-monotonic clock, due to lack of adns_if_monotonic])
+],[AC_INCLUDES_DEFAULT
+#include <adns.h>
+])
+
 SUBDIRMK_MAKEFILES(common.make)
 
 AC_OUTPUT(,
