@@ -462,6 +462,11 @@ extern sigscheme_loadpub  rsa1_loadpub;
 #define CL_BUFFER      13
 #define CL_NETLINK     14
 #define CL_PRIVCACHE   15
+/* When editing this list, edit closure_type_names[] too */
+
+extern const char *const closure_type_names[];
+
+const char *closure_type_name(uint32_t ty, char buf[]);
 
 struct buffer_if;
 

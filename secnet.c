@@ -51,6 +51,32 @@ static char *pidfile=NULL;
 bool_t require_root_privileges=False;
 cstring_t require_root_privileges_explanation=NULL;
 
+const char *const closure_type_names[] = {
+ [ CL_PURE       ] = "PURE"       ,
+ [ CL_RESOLVER   ] = "RESOLVER"	  ,
+ [ CL_RANDOMSRC  ] = "RANDOMSRC"  ,
+ [ CL_SIGPUBKEY  ] = "SIGPUBKEY"  ,
+ [ CL_SIGPRIVKEY ] = "SIGPRIVKEY" ,
+ [ CL_COMM       ] = "COMM"	  ,
+ [ CL_IPIF       ] = "IPIF"	  ,
+ [ CL_LOG        ] = "LOG"	  ,
+ [ CL_SITE       ] = "SITE"	  ,
+ [ CL_TRANSFORM  ] = "TRANSFORM"  ,
+ [ CL_DH         ] = "DH"	  ,
+ [ CL_HASH       ] = "HASH"	  ,
+ [ CL_BUFFER     ] = "BUFFER"	  ,
+ [ CL_NETLINK    ] = "NETLINK"	  ,
+ [ CL_PRIVCACHE  ] = "PRIVCACHE"  ,
+};
+
+const char *closure_type_name(uint32_t ty, char buf[]) {
+    if (ty < ARRAY_SIZE(closure_type_names))
+	return closure_type_names[ty];
+    sprintf(buf, "CL#%.6u", (unsigned)ty);
+    buf[9] = 0;
+    return buf;
+}
+
 static pid_t secnet_pid;
 
 /* Structures dealing with poll() call */
