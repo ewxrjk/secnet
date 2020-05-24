@@ -843,6 +843,10 @@ extern NORETURN(cfgfatal_maybefile(FILE *maybe_f, struct cloc loc,
 				   const char *message, ...))
     FORMAT(printf,4,5);
 
+extern NORETURN(cfgfatal_cl_type(struct cloc loc, const char *facility,
+				 closure_t *cl, uint32_t exp_type, 
+				 const char *name));
+
 extern void Message(uint32_t class, const char *message, ...)
     FORMAT(printf,2,3);
 extern void log_from_fd(int fd, cstring_t prefix, struct log_if *log);

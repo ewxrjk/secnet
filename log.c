@@ -162,6 +162,13 @@ void cfgfatal_maybefile(FILE *maybe_f, struct cloc loc, cstring_t facility,
     va_end(args);
 }    
 
+void cfgfatal_cl_type(struct cloc loc, const char *facility,
+		      closure_t *cl, uint32_t exp_type, const char *name)
+{
+    assert(cl->type != exp_type);
+    cfgfatal(loc,facility,"\"%s\" is the wrong type of closure\n",name);
+}
+
 void cfgfatal(struct cloc loc, cstring_t facility, const char *message, ...)
 {
     va_list args;

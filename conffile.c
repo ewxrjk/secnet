@@ -667,7 +667,7 @@ void *find_cl_if(dict_t *dict, cstring_t name, uint32_t type,
     }
     cl=i->data.closure;
     if (cl->type!=type) {
-	cfgfatal(loc,desc,"\"%s\" is the wrong type of closure\n",name);
+	cfgfatal_cl_type(loc,desc,cl,type,name);
     }
     return cl->interface;
 }
