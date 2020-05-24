@@ -210,12 +210,14 @@ static list_t *adnsresolver_apply(closure_t *self, struct cloc loc,
     d=i->data.dict;
     conf=dict_read_string(d,"config",False,"adns",loc);
 
+    adns_initflags iflags = 0;
+
     if (conf) {
-	if (adns_init_strcfg(&st->ast, 0, 0, conf)) {
+	if (adns_init_strcfg(&st->ast, iflags, 0, conf)) {
 	    fatal_perror("Failed to initialise ADNS");
 	}
     } else {
-	if (adns_init(&st->ast, 0, 0)) {
+	if (adns_init(&st->ast, iflags, 0)) {
 	    fatal_perror("Failed to initialise ADNS");
 	}
     }
