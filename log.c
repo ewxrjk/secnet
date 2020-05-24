@@ -659,9 +659,14 @@ void log_from_fd(int fd, cstring_t prefix, struct log_if *log)
 }
 
 static struct logfile startup_log;
+void log_early_setlevel(void)
+{
+    startup_log.level=message_level;
+}
 void log_early_init(void)
 {
     logfile_file_init(&startup_log,stderr,"startup");
+    log_early_setlevel();
     system_log=&startup_log.ops;;
 }
 

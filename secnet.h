@@ -654,6 +654,7 @@ static inline void cfgfile_log_init(struct cfgfile_log *cfl,
 }
 
 void log_early_init(void);
+void log_early_setlevel(void);
 
 /* SITE interface */
 

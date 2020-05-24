@@ -500,6 +500,7 @@ int main(int argc, char **argv)
 
     enter_phase(PHASE_GETOPTS);
     parse_options(argc,argv);
+    log_early_setlevel();
 
     enter_phase(PHASE_READCONFIG);
     config=read_conffile(configfile);
