@@ -20,7 +20,7 @@
 .PHONY:	all clean realclean distclean dist install
 
 PACKAGE:=secnet
-VERSION=0.6.0
+VERSION=0.6.1
 
 VPATH:=@srcdir@
 srcdir:=@srcdir@

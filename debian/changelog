@@ -1,4 +1,4 @@
-secnet (0.6.1~) unstable; urgency=medium
+secnet (0.6.1) unstable; urgency=medium
 
   Logging bugfixes:
   * Fix completely broken startup logging.  Config errors would not
@@ -31,7 +31,7 @@ secnet (0.6.1~) unstable; urgency=medium
   * Minor internal refactorings and improvements.
   * Merge subdirmk 1.0.
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 24 May 2020 22:14:26 +0100
 
 secnet (0.6.0) unstable; urgency=medium
 
