@@ -791,9 +791,10 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
     if (!f) {
 	if (just_check_config) {
 	    Message(M_WARNING,"rsa-private (%s:%d): cannot open keyfile "
-		    "\"%s\"; assuming it's valid while we check the "
-		    "rest of the configuration\n",loc.file,loc.line,filename);
-	    return NULL;
+		    "\"%s\" (%s); assuming it's valid while we check the "
+		    "rest of the configuration\n",
+		    loc.file,loc.line,filename,strerror(errno));
+	    return list_new();
 	} else {
 	    fatal_perror("rsa-private (%s:%d): cannot open file \"%s\"",
 			 loc.file,loc.line,filename);
