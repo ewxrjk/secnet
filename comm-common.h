@@ -30,7 +30,7 @@ struct comm_notify_entry {
     void *state;
     LIST_ENTRY(comm_notify_entry) entry;
 };
-LIST_HEAD(comm_notify_list, comm_notify_entry) notify;
+LIST_HEAD(comm_notify_list, comm_notify_entry);
 
 struct commcommon { /* must be first so that void* is comm_common* */
     closure_t cl;
