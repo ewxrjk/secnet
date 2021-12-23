@@ -21,7 +21,7 @@ sinclude(ac_prog_cc_no_writeable_strings.m4)
 
 m4_include(subdirmk/subdirmk.ac)
 
-AC_INIT(secnet,0.1.18+,secnet@chiark.greenend.org.uk)
+AC_INIT(secnet,0.1.18+,secnet-discuss@chiark.greenend.org.uk)
 AC_CONFIG_SRCDIR(secnet.c)
 AC_CONFIG_HEADER(config.h)
 
