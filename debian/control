@@ -4,7 +4,7 @@ Priority: extra
 Maintainer: Ian Jackson <ijackson@chiark.greenend.org.uk>
 Uploaders: Stephen Early <steve@greenend.org.uk>,
            Richard Kettlewell <rjk@terraraq.org.uk>
-Build-Depends: debhelper (>= 5), libgmp3-dev, libadns1-dev, bison, flex,
+Build-Depends: debhelper (>= 12), libgmp3-dev, libadns1-dev, bison, flex,
                libbsd-dev, python3, tclx, tcl, libtcl-chiark-1
 Standards-Version: 3.0.1
 
