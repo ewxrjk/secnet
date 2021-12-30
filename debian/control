@@ -11,6 +11,7 @@ Standards-Version: 3.0.1
 Package: secnet
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Pre-Depends: ${misc:Pre-Depends}
 Recommends: python3
 Description: VPN software for distributed networks
  secnet allows multiple private networks, each 'hidden' behind a single
