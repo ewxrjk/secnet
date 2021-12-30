@@ -314,3 +314,12 @@ OUTPUT STRUCTURE
 	named `netlink' used to set the `link' key in each site
 	definition.  Usually, this will be constructed by a partial
 	application of the built-in `userv-ipif' or `tun' closures.
+
+
+
+
+-- 
+This file is part of secnet.
+See LICENCE and this file CREDITS for full list of copyright holders.
+SPDX-License-Identifier: GPL-3.0-or-later
+There is NO WARRANTY.

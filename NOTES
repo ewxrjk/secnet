@@ -450,3 +450,10 @@ With PROD, the period of broken communication due to a key exchange
 interrupted by a restart is limited to the key exchange total
 retransmission timeout, rather than also including the key exchange
 retry timeout.
+
+
+-- 
+This file is part of secnet.
+See LICENCE and CREDITS for full list of copyright holders.
+SPDX-License-Identifier: GPL-3.0-or-later
+There is NO WARRANTY.

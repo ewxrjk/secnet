@@ -110,3 +110,10 @@ QED.
  each other in the effects specified in POSIX.1-2017 when they
  operate on regular files or symbolic links:
   ... rename ... open ...
+
+
+-- 
+This file is part of secnet.
+See LICENCE and CREDITS for full list of copyright holders.
+SPDX-License-Identifier: GPL-3.0-or-later
+There is NO WARRANTY.

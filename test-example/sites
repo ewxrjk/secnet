@@ -1,3 +1,8 @@
+# This file is part of secnet.
+# See LICENCE and this file CREDITS for full list of copyright holders.
+# SPDX-License-Identifier: GPL-3.0-or-later
+# There is NO WARRANTY.
+
 vpn test-example
 contact devnull@example.com
 dh 8db5f2c15ac96d9f3382d1ef4688fba14dc7908ae7dfd71a9cfe7f479a75d506dc53f159aeaf488bde073fe544bc91c099f101fcf60074f30c06e36263c03ca9e07931ce3fc235fe1171dc6d9316fb097bd4362891e2c36e234e7c16b038fd97b1f165c710e90537de66ee4f54001f5712b050d4e07de3fba07607b19b64f6c3 2

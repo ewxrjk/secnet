@@ -329,3 +329,10 @@ The sequence number skew detection code in transform.c now only
 complains about 'reverse skew' - replays of packets that are too
 old. 'Forward skew' (gaps in the sequence numbers of received packets)
 is now tolerated silently, to cope with large amounts of packet loss.
+
+
+-- 
+This file is part of secnet.
+See LICENCE and CREDITS for full list of copyright holders.
+SPDX-License-Identifier: GPL-3.0-or-later
+There is NO WARRANTY.

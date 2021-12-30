@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# This file is part of secnet.
+# See LICENCE and this file CREDITS for full list of copyright holders.
+# SPDX-License-Identifier: GPL-3.0-or-later
+# There is NO WARRANTY.
+
 # best to run this in a git-worktree
 # example runes in main tree:
 #  git-branch -f pretest && git-branch -f tested `git-merge-base HEAD tested` && git-checkout wip

@@ -1,4 +1,11 @@
 /*
+ * This file is part of secnet.
+ * See LICENCE and this file CREDITS for full list of copyright holders.
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * There is NO WARRANTY.
+ */
+
+/*
    test-example/bogus-setup-request 127.0.0.1 19098 test-example/inside/inside 127.0.0.1 16096 test-example/outside/outside
   */
 

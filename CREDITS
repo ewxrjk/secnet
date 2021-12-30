@@ -23,3 +23,10 @@ Joachim Henke - basE91 encoding format and the corresponding C library
 Adrien Béraud, Guillaume Jacquenot, SunDwarf - python basE91 library
 Joey Hess - some elements of the Debian packaging
 Miquel van Smoorenburg, Ian Murdock - original init script example
+
+
+-- 
+This file is part of secnet.
+See LICENCE and this file CREDITS for full list of copyright holders.
+SPDX-License-Identifier: GPL-3.0-or-later
+There is NO WARRANTY.
