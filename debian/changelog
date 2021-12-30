@@ -1,6 +1,42 @@
 secnet (0.6.2~alpha0) unstable; urgency=medium
 
-  * 
+  Bugfixes to code and build system:
+  * site: promote creation of st->scratch, allowing new pubkey scheme
+    to work even when secnet is restarting.
+  * comm-common.h: Remove unused `notify' variable.  [Colin Watson]
+  * Dir.sd.mk: Prevent builtin make rule overwriting conffile.c.
+
+  Documentation:
+  * configure: Correct bug reporting address.  Report from Colin Watson.
+  * example.conf improvements:
+      - Comment out some tuning overrides
+      - Improve syntax by deleting one of the two map examples
+      - Add a commented-out mobile site setting
+      - Add mtu-target
+  * OLD-NEWS, OLD-BUGS: Rename from NEWS and BUGS, and don't ship OLD-BUGS.
+
+  Debian packaging changes:
+  * debian/rules: Use dh sequencer.  Resulting changes:
+      - We now provide debug symbols in the new Debian way.
+      - The way the prerm stops secnet accords with modern practice.
+  * init script: source /lib/lsb/init-functions.
+  * Expand Description.
+  * debhelper compat: bump to 12 (stretch-backports).
+  * debian/rules: Use dh_prep instead of deprecated dh_clean -k.
+  * Adjust Priority (as per modern policy and lintian).
+  * Add some lintian overrides.
+  * Add missing Pre-Depends on init-system-helpers.
+
+  Credits and legal documentation improvements:
+  * Add missing credits for base91 and python argparse extension.
+    ensure some packaging credits exist in all the places they should be.
+  * Add copyright/credits notices to many files which were missing them.
+  * Move and centralise legal information into its own file, LICENCE.
+
+  Testing improvements:
+  * comprehensive-test: Actually allow OLD_SECNET_DIR set to ''
+  * test-example/common.conf: Fix a reference to the sites file.
+  * test-example/null-fake-userv: New test utility script.
 
  --
 
