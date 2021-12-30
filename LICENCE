@@ -1,0 +1,79 @@
+secnet - flexible VPN software
+==============================
+
+secnet is
+  Copyright 1995-2003 Stephen Early <steve@greenend.org.uk>
+  Copyright 2002-2014 Ian Jackson <ijackson@chiark.greenend.org.uk>
+  Copyright 1991      Massachusetts Institute of Technology
+  Copyright 1998      Ross Anderson, Eli Biham, Lars Knudsen
+  Copyright 1993      Colin Plumb
+  Copyright 1998      James H. Brown, Steve Reid
+  Copyright 2000      Vincent Rijmen, Antoon Bosselaers, Paulo Barreto
+  Copyright 2001      Joey Hess
+  Copyright 2000-2006 Joachim Henkea
+  Copyright 2012-2016 Adrien Béraud
+  Copyright 2015      Guillaume Jacquenot
+  Copyright 2016      SunDwarf aka eyesismine
+  Copyright 2001      Saul Kravitz
+  Copyright 2004      Fabrice Bellard
+  Copyright 2002      Guido Draheim
+  Copyright 2005-2010 Free Software Foundation, Inc.
+  Copyright 1995-2001 Jonathan Amery
+  Copyright 1995-2003 Peter Benie
+  Copyright 2011      Richard Kettlewell
+  Copyright 2012      Matthew Vernon
+  Copyright 2013-2019 Mark Wooding
+  Copyright 1995-2013 Simon Tatham
+
+
+GPLv3+
+======
+
+secnet is distributed under the terms of the GNU General Public
+License, version 3 or later.
+
+secnet is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+The file COPYING in the source tree contains a copy of the GNU GPL v3.
+A copy of this licence can be found on Debian systems (and
+derivatives) in /usr/share/common-licenses/GPL-3.
+
+Some files contain a notice with the abbreviated form:
+  SPDX-License-Identifier: GPL-3.0-or-later
+As is conventional, this should be read as a licence grant.
+
+
+Incorporated works
+==================
+
+Some of the source code has more liberal licences, all of which are
+GPLv3+-compatible.  See the individual source files (or directories)
+for details.
+
+These portions can be used, distributed, and modified, separately,
+under the more liberal licence.  But when they are used or distributed
+as part of secnet, the GPL applies to the combination.
+
+
+Contributing
+============
+
+Contributions to secnet are accepted based on the git commit
+Signed-off-by convention, by which the contributors' certify their
+contributions according to the Developer Certificate of Origin version
+1.1 - see the file DEVELOPER-CERTIFICATE.
+
+In accordance with the Developer Certificate of Origin, if you make a
+contribution to one of the incorporated works with a more liberal
+licence, you will be taken to have made your contribution under that
+more liberal licence.
+
+If you create a new file please be sure to add an appropriate licence
+header.  In the main parts of secnet this should be something like:
+ * This file is part of secnet.
+ * See LICENCE and CREDITS for full list of copyright holders.
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * There is NO WARRANTY.

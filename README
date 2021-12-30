@@ -1,42 +1,7 @@
 secnet - flexible VPN software
 
-* Copying
-
-secnet is
-  Copyright 1995-2003 Stephen Early <steve@greenend.org.uk>
-  Copyright 2002-2014 Ian Jackson <ijackson@chiark.greenend.org.uk>
-  Copyright 1991      Massachusetts Institute of Technology
-  Copyright 1998      Ross Anderson, Eli Biham, Lars Knudsen
-  Copyright 1993      Colin Plumb
-  Copyright 1998      James H. Brown, Steve Reid
-  Copyright 2000      Vincent Rijmen, Antoon Bosselaers, Paulo Barreto
-  Copyright 2000-2006 Joachim Henkea
-  Copyright 2012-2016 Adrien Béraud
-  Copyright 2015      Guillaume Jacquenot
-  Copyright 2016      SunDwarf aka eyesismine
-  Copyright 2001      Saul Kravitz
-  Copyright 2004      Fabrice Bellard
-  Copyright 2002      Guido Draheim
-  Copyright 2005-2010 Free Software Foundation, Inc.
-  Copyright 1995-2001 Jonathan Amery
-  Copyright 1995-2003 Peter Benie
-  Copyright 2011      Richard Kettlewell
-  Copyright 2012      Matthew Vernon
-  Copyright 2013-2019 Mark Wooding
-  Copyright 1995-2013 Simon Tatham
-
-secnet is distributed under the terms of the GNU General Public
-License, version 3 or later.  Some individual files have more
-permissive licences; where this is the case, it is documented in the
-header comment for the files in question.
-
-secnet is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-for more details.
-
-The file COPYING contains a copy of the GNU GPL v3.  Some of the
-source code has more liberal licences, all GPLv3+-compatible.
+See LICENCE for legal information and CREDITS for a list of
+contributors.
 
 
 * Introduction
