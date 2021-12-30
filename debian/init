@@ -1,15 +1,10 @@
 #! /bin/sh
 # /etc/init.d/secnet
 #
-# skeleton	example file to build /etc/init.d/ scripts.
-#		This file should be used to construct scripts for /etc/init.d.
-#
-#		Written by Miquel van Smoorenburg <miquels@cistron.nl>.
-#		Modified for Debian GNU/Linux
-#		by Ian Murdock <imurdock@gnu.ai.mit.edu>.
-#
-# Version:	@(#)skeleton  1.8  03-Mar-1998  miquels@cistron.nl
-#
+# This file is part of secnet.
+# See LICENCE and CREDITS for full list of copyright holders.
+# SPDX-License-Identifier: GPL-3.0-or-later
+# There is NO WARRANTY.
 
 ### BEGIN INIT INFO
 # Provides:          secnet
