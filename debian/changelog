@@ -1,4 +1,4 @@
-secnet (0.6.2~alpha0) unstable; urgency=medium
+secnet (0.6.2) unstable; urgency=medium
 
   Bugfixes to code and build system:
   * site: promote creation of st->scratch, allowing new pubkey scheme
@@ -39,7 +39,7 @@ secnet (0.6.2~alpha0) unstable; urgency=medium
   * test-example/common.conf: Fix a reference to the sites file.
   * test-example/null-fake-userv: New test utility script.
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 30 Dec 2021 15:10:12 +0000
 
 secnet (0.6.1) unstable; urgency=medium
 
