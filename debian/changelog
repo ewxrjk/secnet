@@ -20,6 +20,7 @@ secnet (0.6.2~alpha0) unstable; urgency=medium
       - We now provide debug symbols in the new Debian way.
       - The way the prerm stops secnet accords with modern practice.
   * init script: source /lib/lsb/init-functions.
+  * init script: make "restart" work if secnet is not running.
   * Expand Description.
   * debhelper compat: bump to 12 (stretch-backports).
   * debian/rules: Use dh_prep instead of deprecated dh_clean -k.
