@@ -29,6 +29,9 @@ NAME=secnet
 DESC="VPN server"
 
 test -f $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
 test -f /etc/secnet/secnet.conf || exit 0
 test -f /etc/default/secnet && . /etc/default/secnet
 

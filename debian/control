@@ -10,7 +10,7 @@ Standards-Version: 3.0.1
 
 Package: secnet
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, lsb-base
 Pre-Depends: ${misc:Pre-Depends}
 Recommends: python3
 Description: VPN software for distributed networks
