@@ -78,6 +78,12 @@ STALE_PYTHON_FILES=	$(foreach e, py pyc, \
 %.yy.c %.yy.h:	%.fl
 	flex --header=$*.yy.h -o$*.yy.c $<
 
+%.c: %.y
+# make has a builtin rule to run yacc, but we don't want that because
+# our conffile.c is handwritten, and we use conffile.yy.c for the
+# bison output.  There is no need to do likewise for flex because
+# our flex input files are end in .fl, not .l.
+
 %.tab.c %.tab.h:	%.y
 	bison -d -o $@ $<
 
