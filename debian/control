@@ -1,6 +1,6 @@
 Source: secnet
 Section: net
-Priority: extra
+Priority: optional
 Maintainer: Ian Jackson <ijackson@chiark.greenend.org.uk>
 Uploaders: Stephen Early <steve@greenend.org.uk>,
            Richard Kettlewell <rjk@terraraq.org.uk>
