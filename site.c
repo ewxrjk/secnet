@@ -2344,6 +2344,9 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->peerkeys_tmpl.buffer=0;
     st->peerkeys_current=st->peerkeys_kex=0;
 
+    buffer_new(&st->scratch,SETUP_BUFFER_LEN);
+    BUF_ALLOC(&st->scratch,"site:scratch");
+
     /* First parameter must be a dict */
     item=list_elem(args,0);
     if (!item || item->type!=t_dict)
@@ -2507,9 +2510,6 @@ static list_t *site_apply(closure_t *self, struct cloc loc, dict_t *context,
     st->our_name_later=(strcmp(st->localname,st->remotename)>0);
 
     buffer_new(&st->buffer,SETUP_BUFFER_LEN);
-
-    buffer_new(&st->scratch,SETUP_BUFFER_LEN);
-    BUF_ALLOC(&st->scratch,"site:scratch");
 
     /* We are interested in poll(), but only for timeouts. We don't have
        any fds of our own. */
