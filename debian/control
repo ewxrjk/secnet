@@ -14,4 +14,12 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: python3
 Description: VPN software for distributed networks
  secnet allows multiple private networks, each 'hidden' behind a single
- globally-routable IP address, to be bridged together.
+ globally-routable IP address, to be bridged together.  It also
+ supports individual client systems which may connect to multiple
+ upstreams.
+ .
+ Compared to many other systems, secnet has good handling of mobile
+ endpoints (mobile client nodes), and extremely flexible configuration.
+ However, it is not easy to configure.
+ .
+ secnet is the main VPN program used by greenend.org.uk.
