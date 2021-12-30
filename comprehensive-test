@@ -15,7 +15,7 @@ for arg in "$@"; do
     esac
 done
 
-case "${OLD_SECNET_DIR:?must be set, perhaps to the empty string}" in
+case "${OLD_SECNET_DIR-:?must be set, perhaps to the empty string}" in
     ''|/*)
         ;;
     ../*)
