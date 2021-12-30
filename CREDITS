@@ -10,6 +10,9 @@ Free Software Foundation and Scott G. Miller - SHA-512 implementation
 Free Software Foundation and Paul Eggert - u64.h
 Massachusetts Institute of Technology - install-sh
 
+Joachim Henkea - base91 specificaation and C implementation
+Adrien Béraud, Guillaume Jacquenot, SunDwarf aka eyesismine - base91 python
+
 Simon Tatham, Jonathan Amery, Ian Jackson - testing and debugging
 Simon Tatham - RSA signatures using Chinese Remainder Theorem
 Simon Tatham - endianness cleanups in transform.c
