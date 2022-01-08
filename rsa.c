@@ -82,6 +82,7 @@ static void verror_tryload(struct load_ctx *l, struct cloc loc,
     vslilog(l->u.tryload.log,class,message,args);
 }
 
+FORMAT(printf, 4, 0)
 static void verror_cfgfatal(struct load_ctx *l, struct cloc loc,
 			    FILE *maybe_f,
 			    const char *message, va_list args)

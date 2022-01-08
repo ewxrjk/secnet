@@ -18,6 +18,7 @@
 # https://www.gnu.org/licenses/gpl.html.
 
 set -e
+aclocal
 autoconf
 autoheader
 # ^ although configure will run autoheader if we didn't, our

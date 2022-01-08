@@ -32,4 +32,4 @@ CFLAGS:=-Wall @WRITESTRINGS@ @CFLAGS@ -Werror \
 	-Wpointer-arith -Wformat=2 -Winit-self \
 	-Wswitch-enum -Wunused-variable -Wunused-function -Wbad-function-cast \
 	-Wno-strict-aliasing -fno-strict-aliasing \
-	-Wno-bool-operation -Wno-stringop-truncation
+	-Wno-bool-operation

@@ -124,6 +124,8 @@ AC_CACHE_CHECK([required gcc -std flag],[secnet_cv_gcc_std_flag],[
 ])
 CFLAGS="$CFLAGS$secnet_cv_gcc_std_flag"
 
+AX_CHECK_COMPILE_FLAG([-Werror -Wno-stringop-truncation],[CFLAGS="$CFLAGS -Wno-stringop-truncation"])
+
 AC_MSG_NOTICE([Checking requirements for IPv6 support...])
 enable_ipv6=true
 m4_define(NO_IPV6,[enable_ipv6=false])
