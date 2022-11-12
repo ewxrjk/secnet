@@ -1,4 +1,4 @@
-secnet (0.6.3~) unstable; urgency=medium
+secnet (0.6.3) unstable; urgency=medium
 
   Copyright and source code notices:
   * Include notices and licences of all included elements in LICENCE,
@@ -8,7 +8,7 @@ secnet (0.6.3~) unstable; urgency=medium
   * Add a README.source.
   * Update my own copyright year.
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Nov 2022 18:37:17 +0000
 
 secnet (0.6.2) unstable; urgency=medium
 
