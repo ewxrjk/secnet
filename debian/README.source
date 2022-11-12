@@ -1,0 +1,26 @@
+The source code for this package is maintained in git.
+The primary upstream branch is here:
+  https://www.chiark.greenend.org.uk/ucgi/~ianmdlvl/git/secnet.git/
+
+Upstream releases are announced here:
+  https://www.chiark.greenend.org.uk/mailman/listinfo/sgo-software-announce
+
+There is no distinction between the upstream and Debian branches
+at this time.  We don't maintain a Debian delta (patches), nor Debian
+revision numbers.
+
+
+Some items are included using git-subtree, notably subdirmk:
+
+This designed to be "git-subtree"'d into one's package.  That
+is the way the upstream package uses it.
+
+It would be possible to make it a separate package and build-depend on
+it, at the cost of some additional work.  The upside would be a very
+small amount of disk space saving, and largely theoretical saving of
+work in case of a need to do a security update for subdirmk (which
+seems unlikely to be critical since it's build system software which
+is designed to execute its input) - and that all only in the case
+where a second package in Debian uses subdirmk.
+
+We are deferring this work until subdirmk becomes more widely used.
