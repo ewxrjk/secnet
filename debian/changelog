@@ -1,17 +1,5 @@
 secnet (0.6.5) unstable; urgency=medium
 
-  * Bump version number for re-push.  (See dgit bug #977845.)
-
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Nov 2022 18:53:48 +0000
-
-secnet (0.6.4) unstable; urgency=medium
-
-  * Bump version number for re-push.  (See dgit bug #977845.)
-
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Nov 2022 18:50:33 +0000
-
-secnet (0.6.3) unstable; urgency=medium
-
   Copyright and source code notices:
   * Include notices and licences of all included elements in LICENCE,
     not just in the files themselvves.
@@ -20,7 +8,10 @@ secnet (0.6.3) unstable; urgency=medium
   * Add a README.source.
   * Update my own copyright year.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Nov 2022 18:37:17 +0000
+  * Versions 0.6.3 and 0.6.4 burned due to failed uploads.
+    (See dgit bug #944855.)
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Nov 2022 18:58:02 +0000
 
 secnet (0.6.2) unstable; urgency=medium
 
