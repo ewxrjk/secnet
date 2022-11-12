@@ -17,35 +17,38 @@ dnl
 dnl @version $Id: ac_prog_cc_no_writeable_strings.m4,v 1.1 2002/02/20 16:18:18 steve Exp $
 dnl @author Guido Draheim <guidod@gmx.de>
 
-dnl [This appears to be a previous version of
-dnl  ax_cflags_no_writable_strings.m4 which is nowadays to be found in
-dnl  the Autoconf Archive.  It was imported there on 2007-02-14
-dnl  in commit 16aee45643e593e2833e4dff19df7b5f14267a79 where the file
-dnl  has a GPLv2 permission notice.  Therefore I feel justified in
-dnl  adding the copyright permission notice below: -iwj]
+dnl  This is an older version of ax_cflags_no_writable_strings.m4
+dnl  which is nowadays to be found in the Autoconf Archive.  Nowadays,
+dnl  this file has this permission notice there::
 dnl
-dnl  This file is Free Software.  It has been copied into secnet.
+dnl  Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
 dnl
-dnl  Copyright 2002 Guido Draheim
+dnl  This program is free software; you can redistribute it and/or modify it
+dnl  under the terms of the GNU General Public License as published by the
+dnl  Free Software Foundation; either version 3 of the License, or (at your
+dnl  option) any later version.
 dnl
-dnl  You may redistribute secnet as a whole and/or modify it under the
-dnl  terms of the GNU General Public License as published by the Free
-dnl  Software Foundation; either version 3, or (at your option) any
-dnl  later version.
+dnl  This program is distributed in the hope that it will be useful, but
+dnl  WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+dnl  Public License for more details.
 dnl
-dnl  You may redistribute this file and/or modify it under the terms of
-dnl  the GNU General Public License as published by the Free Software
-dnl  Foundation; either version 2, or (at your option) any later
-dnl  version.
+dnl  You should have received a copy of the GNU General Public License along
+dnl  with this program. If not, see <https://www.gnu.org/licenses/>.
 dnl
-dnl  This software is distributed in the hope that it will be useful,
-dnl  but WITHOUT ANY WARRANTY; without even the implied warranty of
-dnl  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-dnl  GNU General Public License for more details.
+dnl  As a special exception, the respective Autoconf Macro's copyright owner
+dnl  gives unlimited permission to copy, distribute and modify the configure
+dnl  scripts that are the output of Autoconf when processing the Macro. You
+dnl  need not follow the terms of the GNU General Public License when using
+dnl  or distributing such scripts, even though portions of the text of the
+dnl  Macro appear in them. The GNU General Public License (GPL) does govern
+dnl  all other use of the material that constitutes the Autoconf Macro.
 dnl
-dnl  You should have received a copy of the GNU General Public License
-dnl  along with this software; if not, see
-dnl  https://www.gnu.org/licenses/gpl.html.
+dnl  This special exception to the GPL applies to versions of the Autoconf
+dnl  Macro released by the Autoconf Archive. When you make and distribute a
+dnl  modified version of the Autoconf Macro, you may extend this special
+dnl  exception to the GPL to apply to your modified version as well.
+
 
 AC_DEFUN([AC_PROG_CC_NO_WRITEABLE_STRINGS], [
   pushdef([CV],ac_cv_prog_cc_no_writeable_strings)dnl
