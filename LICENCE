@@ -342,6 +342,27 @@ argparseactionnoyes.py
   all retrieved 4.11.2019 and rechecked 12.11.2022
 
 
+subdirmk
+--------
+
+Copyright 2019-2020 Ian Jackson
+Copyright 2019 Mark Wooding
+
+    subdirmk and its example is free software; you can redistribute it
+    and/or modify it under the terms of the GNU Library General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public
+    License along with this library as the file LGPL-2.
+    If not, see https://www.gnu.org/.
+
+
 configure
 ---------
 
