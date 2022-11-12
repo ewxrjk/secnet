@@ -1,3 +1,9 @@
+secnet (0.6.5) unstable; urgency=medium
+
+  * Bump version number for re-push.  (See dgit bug #977845.)
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Nov 2022 18:53:48 +0000
+
 secnet (0.6.4) unstable; urgency=medium
 
   * Bump version number for re-push.  (See dgit bug #977845.)
