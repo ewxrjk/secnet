@@ -504,9 +504,6 @@ static void polypath_sendmsg_interf(struct polypath *st,
 	}
 	if (!(errno==EAFNOSUPPORT || errno==ENETUNREACH))
 	    reasonable=True;
-	lg_perror(LG,M_DEBUG,errno,"%s [%s] xmit %"PRIu32" bytes to %s",
-		  interf->name,iaddr_to_string(&us->addr),
-		  buf->size,iaddr_to_string(&dest->ia));
     }
     if (!wanted)
 	return;
