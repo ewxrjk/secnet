@@ -210,8 +210,8 @@ u64.h
   Written by Paul Eggert.
 
 
-base91/
--------
+base91-c/
+---------
 
   Copyright (c) 2000-2006 Joachim Henke
 
