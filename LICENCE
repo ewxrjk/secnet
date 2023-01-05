@@ -84,67 +84,57 @@ under the more liberal licence.  But when they are used or distributed
 as part of secnet, the GPL applies to the combination.
 
 
-install-sh
-----------
+ac_prog_cc_no_writeable_strings.m4
+-----------------------------------
 
-Copyright 1991 by the Massachusetts Institute of Technology
+This is a version of ax_cflags_no_writable_strings.m4 which is
+now in the Autoconf Archive, where it has this permission notice:
 
-  Permission to use, copy, modify, distribute, and sell this software
-  and its documentation for any purpose is hereby granted without fee,
-  provided that the above copyright notice appear in all copies and
-  that both that copyright notice and this permission notice appear in
-  supporting documentation, and that the name of M.I.T. not be used in
-  advertising or publicity pertaining to distribution of the software
-  without specific, written prior permission.  M.I.T. makes no
-  representations about the suitability of this software for any
-  purpose.  It is provided "as is" without express or implied
-  warranty.
+  Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
 
+  This program is free software; you can redistribute it and/or modify it
+  under the terms of the GNU General Public License as published by the
+  Free Software Foundation; either version 3 of the License, or (at your
+  option) any later version.
 
-serpent.c, serpentsboxes.h
----------------------------
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+  Public License for more details.
 
-Authored by Ross Anderson, Eli Biham, Lars Knudsen.
+  You should have received a copy of the GNU General Public License along
+  with this program. If not, see <https://www.gnu.org/licenses/>.
 
-Quoting the Serpent web page:
+  As a special exception, the respective Autoconf Macro's copyright owner
+  gives unlimited permission to copy, distribute and modify the configure
+  scripts that are the output of Autoconf when processing the Macro. You
+  need not follow the terms of the GNU General Public License when using
+  or distributing such scripts, even though portions of the text of the
+  Macro appear in them. The GNU General Public License (GPL) does govern
+  all other use of the material that constitutes the Autoconf Macro.
 
-  Serpent is now completely in the public domain, and we impose no
-  restrictions on its use. This was announced on the 21st August at
-  the First AES Candidate Conference.  The optimised implementations
-  in the submission package are now under the General Public License
-  (GPL), although some comments in the code still say otherwise. You
-  are welcome to use Serpent for any application.  If you do use it,
-  we would appreciate it if you would let us know!
-
-https://www.cl.cam.ac.uk/~rja14/serpent.html
-
-I have indeed corresponded with Ross Anderson about the use of Serpent
-in secnet, and have updated the source comments to reflect the licence
-upgrade.
+  This special exception to the GPL applies to versions of the Autoconf
+  Macro released by the Autoconf Archive. When you make and distribute a
+  modified version of the Autoconf Macro, you may extend this special
+  exception to the GPL to apply to your modified version as well.
 
 
-md5.[ch]
---------
+argparseactionnoyes.py
+----------------------
 
-Authored by Colin Plumb in 1993.  Public domain statement:
+  Copyright 2012 "Omnifarious" (a user on StackOverFlow)
+  Copyright 2013 "btel" (a user on StackOverFlow)
 
-  This code implements the MD5 message-digest algorithm.
-  The algorithm is due to Ron Rivest.  This code was
-  written by Colin Plumb in 1993, no copyright is claimed.
-  This code is in the public domain; do with it what you wish.
+  https://stackoverflow.com/questions/9234258/in-python-argparse-is-it-possible-to-have-paired-no-something-something-arg/20422915#20422915
 
-I interpet this as a blanket permision.
+  CC-BY-SA 4.0
+  https://creativecommons.org/licenses/by-sa/4.0/legalcode
+  by virtue of
+  https://stackoverflow.com/legal/terms-of-service#licensing
+  which says everything is CC-BY-SA and has a link to v4.0
+  (And which is therefore compatible with secnet's GPLv3)
 
-
-sha1.c
-------
-
-Authored by Steve Reid and modified by James H. Brown,
-Saul Kravitz, and Ian Jackson.
-
-  100% Public Domain
-
-I interpet this as a blanket permision.
+  all retrieved 4.11.2019 and rechecked 12.11.2022
 
 
 aes.[ch]
@@ -169,45 +159,6 @@ Original licence:
   WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
   EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-sha512.[ch]
------------
-
-  Copyright (C) 2005, 2006, 2008, 2009, 2010 Free Software Foundation, Inc.
-
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  Written by David Madore, considerably copypasting from
-  Scott G. Miller's sha1.c
-
-
-u64.h
------
-
-  uint64_t-like operations that work even on hosts lacking uint64_t
-
-  Copyright (C) 2006, 2009, 2010 Free Software Foundation, Inc.
-
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  Written by Paul Eggert.
 
 
 base91-c/
@@ -278,57 +229,115 @@ base91-python/
   POSSIBILITY OF SUCH DAMAGE.
 
 
-ac_prog_cc_no_writeable_strings.m4
------------------------------------
+configure
+---------
 
-This is a version of ax_cflags_no_writable_strings.m4 which is
-now in the Autoconf Archive, where it has this permission notice:
+This is autogenerated from various other inputs, including FSF code in
+utotools, regarding which the FSF say this:
 
-  Copyright (c) 2008 Guido U. Draheim <guidod@gmx.de>
+  Copyright (C) 1992-1996, 1998-2012 Free Software Foundation, Inc.
 
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the
-  Free Software Foundation; either version 3 of the License, or (at your
-  option) any later version.
+  This configure script is free software; the Free Software Foundation
+  gives unlimited permission to copy, distribute and modify it.
 
-  This program is distributed in the hope that it will be useful, but
-  WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
-  Public License for more details.
-
-  You should have received a copy of the GNU General Public License along
-  with this program. If not, see <https://www.gnu.org/licenses/>.
-
-  As a special exception, the respective Autoconf Macro's copyright owner
-  gives unlimited permission to copy, distribute and modify the configure
-  scripts that are the output of Autoconf when processing the Macro. You
-  need not follow the terms of the GNU General Public License when using
-  or distributing such scripts, even though portions of the text of the
-  Macro appear in them. The GNU General Public License (GPL) does govern
-  all other use of the material that constitutes the Autoconf Macro.
-
-  This special exception to the GPL applies to versions of the Autoconf
-  Macro released by the Autoconf Archive. When you make and distribute a
-  modified version of the Autoconf Macro, you may extend this special
-  exception to the GPL to apply to your modified version as well.
+However, in fact, the script is GPLv3+ because it contains pieces
+derived from secnet's aclocal.m4, etc.
 
 
-argparseactionnoyes.py
-----------------------
+debian/
+-------
 
-  Copyright 2012 "Omnifarious" (a user on StackOverFlow)
-  Copyright 2013 "btel" (a user on StackOverFlow)
+debian/init is from an original init script example by Miquel van
+Smoorenburg and Ian Murdock.  Modified by Richard Kettlewell.
 
-  https://stackoverflow.com/questions/9234258/in-python-argparse-is-it-possible-to-have-paired-no-something-something-arg/20422915#20422915
+debian/rules was once from an example from Joey Hess and is now
+(after most of it was deleted) probably entirely the work of Ian
+Jackson.
 
-  CC-BY-SA 4.0
-  https://creativecommons.org/licenses/by-sa/4.0/legalcode
-  by virtue of
-  https://stackoverflow.com/legal/terms-of-service#licensing
-  which says everything is CC-BY-SA and has a link to v4.0
-  (And which is therefore compatible with secnet's GPLv3)
+The remainder of debian/ is by the authors of Secnet (with possible
+future changes made by Debian contributors).
 
-  all retrieved 4.11.2019 and rechecked 12.11.2022
+
+install-sh
+----------
+
+Copyright 1991 by the Massachusetts Institute of Technology
+
+  Permission to use, copy, modify, distribute, and sell this software
+  and its documentation for any purpose is hereby granted without fee,
+  provided that the above copyright notice appear in all copies and
+  that both that copyright notice and this permission notice appear in
+  supporting documentation, and that the name of M.I.T. not be used in
+  advertising or publicity pertaining to distribution of the software
+  without specific, written prior permission.  M.I.T. makes no
+  representations about the suitability of this software for any
+  purpose.  It is provided "as is" without express or implied
+  warranty.
+
+
+md5.[ch]
+--------
+
+Authored by Colin Plumb in 1993.  Public domain statement:
+
+  This code implements the MD5 message-digest algorithm.
+  The algorithm is due to Ron Rivest.  This code was
+  written by Colin Plumb in 1993, no copyright is claimed.
+  This code is in the public domain; do with it what you wish.
+
+I interpet this as a blanket permision.
+
+
+serpent.c, serpentsboxes.h
+---------------------------
+
+Authored by Ross Anderson, Eli Biham, Lars Knudsen.
+
+Quoting the Serpent web page:
+
+  Serpent is now completely in the public domain, and we impose no
+  restrictions on its use. This was announced on the 21st August at
+  the First AES Candidate Conference.  The optimised implementations
+  in the submission package are now under the General Public License
+  (GPL), although some comments in the code still say otherwise. You
+  are welcome to use Serpent for any application.  If you do use it,
+  we would appreciate it if you would let us know!
+
+https://www.cl.cam.ac.uk/~rja14/serpent.html
+
+I have indeed corresponded with Ross Anderson about the use of Serpent
+in secnet, and have updated the source comments to reflect the licence
+upgrade.
+
+
+sha1.c
+------
+
+Authored by Steve Reid and modified by James H. Brown,
+Saul Kravitz, and Ian Jackson.
+
+  100% Public Domain
+
+I interpet this as a blanket permision.
+
+
+sha512.[ch]
+-----------
+
+  Copyright (C) 2005, 2006, 2008, 2009, 2010 Free Software Foundation, Inc.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  Written by David Madore, considerably copypasting from
+  Scott G. Miller's sha1.c
 
 
 subdirmk/
@@ -352,30 +361,21 @@ Copyright 2019 Mark Wooding
     If not, see https://www.gnu.org/.
 
 
-debian/
--------
+u64.h
+-----
 
-debian/init is from an original init script example by Miquel van
-Smoorenburg and Ian Murdock.  Modified by Richard Kettlewell.
+  uint64_t-like operations that work even on hosts lacking uint64_t
 
-debian/rules was once from an example from Joey Hess and is now
-(after most of it was deleted) probably entirely the work of Ian
-Jackson.
+  Copyright (C) 2006, 2009, 2010 Free Software Foundation, Inc.
 
-The remainder of debian/ is by the authors of Secnet (with possible
-future changes made by Debian contributors).
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-configure
----------
-
-This is autogenerated from various other inputs, including FSF code in
-utotools, regarding which the FSF say this:
-
-  Copyright (C) 1992-1996, 1998-2012 Free Software Foundation, Inc.
-
-  This configure script is free software; the Free Software Foundation
-  gives unlimited permission to copy, distribute and modify it.
-
-However, in fact, the script is GPLv3+ because it contains pieces
-derived from secnet's aclocal.m4, etc.
+  Written by Paul Eggert.
