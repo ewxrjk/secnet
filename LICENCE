@@ -360,6 +360,10 @@ Copyright 2019 Mark Wooding
     License along with this library as the file LGPL-2.
     If not, see https://www.gnu.org/.
 
+    A copy of this licence can be found on Debian systems (and
+    derivatives) in /usr/share/common-licenses/LGPL-3.
+
+
 
 u64.h
 -----
