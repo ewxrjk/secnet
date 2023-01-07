@@ -5,7 +5,8 @@ Maintainer: Ian Jackson <ijackson@chiark.greenend.org.uk>
 Uploaders: Stephen Early <steve@greenend.org.uk>,
            Richard Kettlewell <rjk@terraraq.org.uk>
 Build-Depends: debhelper (>= 12), libgmp3-dev, libadns1-dev, bison, flex,
-               libbsd-dev, python3, tclx, tcl, libtcl-chiark-1
+               libbsd-dev, python3, tclx, tcl, libtcl-chiark-1,
+               netbase
 Standards-Version: 4.6.0
 
 Package: secnet
