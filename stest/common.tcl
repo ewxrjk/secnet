@@ -190,36 +190,39 @@ proc spawn-secnet {location site} {
     }
     set argl [list $secnet -dvnc $cf]
     set divertk SECNET_STEST_DIVERT_$site
-    puts "spawn:"
+    set spawn_info "spawn:"
     foreach k [array names env] {
 	switch -glob $k {
 	    SECNET_STEST_DIVERT_* -
 	    SECNET_TEST_BUILDDIR - OLD_SECNET_DIR { }
 	    *SECNET* -
-	    *PRELOAD* { puts -nonewline " $k=$env($k)" }
+	    *PRELOAD* { append spawn_info " $k=$env($k)" }
 	}
     }
     if {[info exists env($divertk)]} {
-	switch -glob $env($divertk) {
-	    i - {i *} {
-		regsub {^i} $env($divertk) {} divert_prefix
-		puts "$divert_prefix $argl"
-		puts -nonewline "run ^ command, hit return "
-		flush stdout
-		gets stdin
-		set argl {}
-	    }
-	    0 - "" {
-		puts " $argl"
-	    }
-	    /* - ./* {
-		puts " $argl"
-		set argl [split $env($divertk)]
-		puts "... $argl"
-	    }
-	    * {
-		error "$divertk not understood"
-	    }
+	set divert $env($divertk)
+    } else {
+	set divert {}
+    }
+    switch -glob $divert {
+	i - {i *} {
+	    regsub {^i} $divert {} divert_prefix
+	    puts "$spawn_info $divert_prefix $argl"
+	    puts -nonewline "run ^ command, hit return "
+	    flush stdout
+	    gets stdin
+	    set argl {}
+	}
+	0 - "" {
+	    puts "$spawn_info $argl"
+	}
+	/* - ./* {
+	    puts "$spawn_info $argl"
+	    set argl [split $divert]
+	    puts "... $argl"
+	}
+	* {
+	    error "$divertk not understood"
 	}
     }
     if {[llength $argl]} { 
