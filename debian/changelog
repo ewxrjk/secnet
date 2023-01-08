@@ -1,6 +1,16 @@
 secnet (0.6.6~) unstable; urgency=medium
 
-  * 
+  Bugfix:
+  * polypath: Do not separately log xmit failures.
+
+  Tests:
+  * stest: Fix debugging output about spawning secnet
+
+  Packaging:
+  * Add missing build-dependency on netbase.  Closes: #1028102.
+  * Copyright notices and LICENCE (aka debian/copyright) fixes
+    and improvements.  [Requested by Debian ftpmaster]
+  * Add Debian upload step to release checklist.
 
  --
 
