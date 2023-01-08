@@ -1,4 +1,4 @@
-secnet (0.6.6~) unstable; urgency=medium
+secnet (0.6.6) unstable; urgency=medium
 
   Bugfix:
   * polypath: Do not separately log xmit failures.
@@ -12,7 +12,7 @@ secnet (0.6.6~) unstable; urgency=medium
     and improvements.  [Requested by Debian ftpmaster]
   * Add Debian upload step to release checklist.
 
- --
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sun, 08 Jan 2023 18:20:09 +0000
 
 secnet (0.6.5) unstable; urgency=medium
 
