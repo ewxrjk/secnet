@@ -254,6 +254,9 @@ include subdirmk/regen.mk
 #       git-push origin v${VERSION//\~/_} v${VERSION//\~/_}~0:master
 #       dcmd rsync -v ../bpd/secnet_${VERSION}_multi.changes chiark:/home/ianmdlvl/public-html/secnet/download/
 #
+#  8a. Upload to Debian:
+#       dgit push-source
+#
 #  9. Sort out html.  On chiark as user secnet:
 #       cd ~secnet/public-html/release/
 #       mkdir $VERSION
