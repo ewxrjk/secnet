@@ -1,8 +1,13 @@
-secnet (0.6.7~) unstable; urgency=medium
+secnet (0.6.7) unstable; urgency=medium
 
-  * 
+  * Upstream release of changes since 0.6.2.
+    (Versions 0.6.5 and 0.6.6 were Debian-only; 0.6.3 and 0.6.4
+    were not properly released at all and should be disregarded.)
 
- --
+  Packaging bugfix:
+  * Update VERSION in Makefile.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Mon, 09 Jan 2023 00:15:21 +0000
 
 secnet (0.6.6) unstable; urgency=medium
 
