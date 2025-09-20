@@ -11,22 +11,22 @@
 /* Define to 1 to use IPv6 support in system and adns */
 #undef CONFIG_IPV6
 
-/* Define to 1 if you have the `fmemopen' function. */
+/* Define to 1 if you have the 'fmemopen' function. */
 #undef HAVE_FMEMOPEN
 
-/* Define to 1 if you have the `funopen' function. */
+/* Define to 1 if you have the 'funopen' function. */
 #undef HAVE_FUNOPEN
 
-/* Define to 1 if you have the `adns' library (-ladns). */
+/* Define to 1 if you have the 'adns' library (-ladns). */
 #undef HAVE_LIBADNS
 
-/* Define to 1 if you have the `gmp' library (-lgmp). */
+/* Define to 1 if you have the 'gmp' library (-lgmp). */
 #undef HAVE_LIBGMP
 
-/* Define to 1 if you have the `gmp2' library (-lgmp2). */
+/* Define to 1 if you have the 'gmp2' library (-lgmp2). */
 #undef HAVE_LIBGMP2
 
-/* Define to 1 if you have the `socket' library (-lsocket). */
+/* Define to 1 if you have the 'socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 
 /* Define to 1 if you have the <linux/if_tun.h> header file. */
