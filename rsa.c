@@ -803,7 +803,7 @@ static list_t *rsapriv_apply(closure_t *self, struct cloc loc, dict_t *context,
 
     bool_t do_validity_check=True;
     i=list_elem(args,1);
-    if (i && i->type==t_bool && i->data.bool==False) {
+    if (i && i->type==t_bool && i->data.bool_==False) {
 	Message(M_INFO,"rsa-private (%s:%d): skipping RSA key validity "
 		"check\n",loc.file,loc.line);
 	do_validity_check=False;

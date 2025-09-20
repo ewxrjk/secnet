@@ -82,7 +82,7 @@ static list_t *random_apply(closure_t *self, struct cloc loc,
 	    cfgfatal(arg2->loc,"randomsource",
 		     "blocking parameter (arg2) must be bool\n");
 	}
-	st->ops.blocking=arg2->data.bool;
+	st->ops.blocking=arg2->data.bool_;
     }
 
     if (!filename) {

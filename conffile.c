@@ -478,8 +478,8 @@ static dict_t *process_config(struct p_node *c)
     dict_t *root;
     dict_t *context;
     item_t *i;
-    list_t *false;
-    list_t *true;
+    list_t *false_;
+    list_t *true_;
 
     root=dict_new(NULL);
     context=root;
@@ -489,29 +489,29 @@ static dict_t *process_config(struct p_node *c)
        length, so they line up nicely...  thanks VKC and SGT (who also
        point out that "mayhap" is a good "maybe" value as well) */
     i=new_item(t_bool,no_loc);
-    i->data.bool=False;
-    false=list_append(NULL,i);
+    i->data.bool_=False;
+    false_=list_append(NULL,i);
     i=new_item(t_bool,no_loc);
-    i->data.bool=True;
-    true=list_append(NULL,i);
-    dict_add(root,"false",false);
-    dict_add(root,"False",false);
-    dict_add(root,"FALSE",false);
-    dict_add(root,"no",false);
-    dict_add(root,"No",false);
-    dict_add(root,"NO",false);
-    dict_add(root,"nowise",false);
-    dict_add(root,"Nowise",false);
-    dict_add(root,"NOWISE",false);
-    dict_add(root,"true",true);
-    dict_add(root,"True",true);
-    dict_add(root,"TRUE",true);
-    dict_add(root,"yes",true);
-    dict_add(root,"Yes",true);
-    dict_add(root,"YES",true);
-    dict_add(root,"verily",true);
-    dict_add(root,"Verily",true);
-    dict_add(root,"VERILY",true);
+    i->data.bool_=True;
+    true_=list_append(NULL,i);
+    dict_add(root,"false",false_);
+    dict_add(root,"False",false_);
+    dict_add(root,"FALSE",false_);
+    dict_add(root,"no",false_);
+    dict_add(root,"No",false_);
+    dict_add(root,"NO",false_);
+    dict_add(root,"nowise",false_);
+    dict_add(root,"Nowise",false_);
+    dict_add(root,"NOWISE",false_);
+    dict_add(root,"true",true_);
+    dict_add(root,"True",true_);
+    dict_add(root,"TRUE",true_);
+    dict_add(root,"yes",true_);
+    dict_add(root,"Yes",true_);
+    dict_add(root,"YES",true_);
+    dict_add(root,"verily",true_);
+    dict_add(root,"Verily",true_);
+    dict_add(root,"VERILY",true_);
 
     add_closure(root,"makelist",makelist);
     add_closure(root,"readfile",readfile);
@@ -762,7 +762,7 @@ bool_t dict_read_bool(dict_t *dict, cstring_t key, bool_t required,
     if (i->type!=t_bool) {
 	cfgfatal(loc,desc,"\"%s\" must be a boolean\n",key);
     }
-    r=i->data.bool;
+    r=i->data.bool_;
     return r;
 }
 

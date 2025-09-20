@@ -146,7 +146,7 @@ static list_t *dh_apply(closure_t *self, struct cloc loc, dict_t *context,
     }
 
     i=list_elem(args,2);
-    if (i && i->type==t_bool && i->data.bool==False) {
+    if (i && i->type==t_bool && i->data.bool_==False) {
 	Message(M_INFO,"diffie-hellman (%s:%d): skipping modulus "
 		"primality check\n",loc.file,loc.line);
     } else {

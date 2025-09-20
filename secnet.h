@@ -160,7 +160,7 @@ enum types { t_null, t_bool, t_string, t_number, t_dict, t_closure };
 struct item {
     enum types type;
     union {
-	bool_t bool;
+	bool_t bool_;
 	string_t string;
 	uint32_t number;
 	dict_t *dict;

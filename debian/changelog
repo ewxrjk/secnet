@@ -1,6 +1,7 @@
 secnet (0.6.8~) unstable; urgency=medium
 
-  * 
+  * Avoid using `bool`, `false` and `true` as identifiers.
+    Fixes conflicts with modern C and GCC-15.  Closes: #1097866.
 
  --
 
