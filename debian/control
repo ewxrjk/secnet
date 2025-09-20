@@ -25,6 +25,6 @@ Description: VPN software for distributed networks
  However, it is not easy to configure.
  .
  secnet works well with userv-ipif (allowing it to run without needing
- root privilege) and hippotat (not currently in Debian).
+ root privilege) and hippotat.
  .
  secnet is the main VPN program used by greenend.org.uk.

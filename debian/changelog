@@ -2,6 +2,8 @@ secnet (0.6.8~) unstable; urgency=medium
 
   * Avoid using `bool`, `false` and `true` as identifiers.
     Fixes conflicts with modern C and GCC-15.  Closes: #1097866.
+  * Remove now-false caveat that hippotat isn't packaged.  It is, now.
+    [Report from Tomas Pospisek]  Closes: #1066029.
 
  --
 
