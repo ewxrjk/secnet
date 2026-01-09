@@ -2082,7 +2082,7 @@ static bool_t site_incoming(void *sst, struct buffer_if *buf,
 
     uint32_t dest=get_uint32(buf->start);
     uint32_t msgtype=get_uint32(buf->start+8);
-    struct msg msg;
+    struct msg msg = { 0 };
       /* initialised by named_for_us, or process_msgN for N!=1 */
 
     if (msgtype==LABEL_MSG1) {

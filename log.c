@@ -183,6 +183,7 @@ void cfgfatal(struct cloc loc, cstring_t facility, const char *message, ...)
     va_end(args);
 }
 
+FORMAT(printf,3,0)
 void cfgfile_log__vmsg(void *sst, int class, const char *message, va_list args)
 {
     struct cfgfile_log *st=sst;
