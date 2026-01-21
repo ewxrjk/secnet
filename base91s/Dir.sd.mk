@@ -17,4 +17,4 @@ $(&OBJECTS): &base91.h
 &:local+global &LDFLAGS &LDLIBS
 
 &base91s: $(&OBJECTS)
-	$(CC) -o$@ $(&LDFLAGS) $^ $(&LDLIBS)
+	$(CC) -o$@ $(CFLAGS) $(&LDFLAGS) $^ $(&LDLIBS)

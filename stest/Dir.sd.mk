@@ -20,7 +20,7 @@
 $(&OBJECTS) : ALL_CFLAGS += -D_REENTRANT -fPIC -Wno-unused-result
 
 &udp-preload.so: $(&OBJECTS)
-	$(CC) -shared -Wl,-soname,$@.1 $^ -o $@ -ldl
+	$(CC) $(CFLAGS) -shared -Wl,-soname,$@.1 $^ -o $@ -ldl
 
 # These test scripts use little cpu but contain sleeps etc.  So when
 # there are several, we are going to want to run *loads* in parallel.
