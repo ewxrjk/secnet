@@ -238,7 +238,7 @@ include subdirmk/regen.mk
 #     finalise debian/changelog (removing ~ from version) and commit.
 #
 #  4. Build source and binaries:
-#       dgit -wgf sbuild -A -c stretch -j8
+#       dgit -wgf sbuild -A -c trixie -j8
 #
 #  5. dpkg -i on zealot just to check
 #       dpkg -i ~ian/things/Fvpn/bpd/secnet_${VERSION}_amd64.deb
