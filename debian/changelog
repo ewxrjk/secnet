@@ -1,8 +1,19 @@
-secnet (0.6.9~) unstable; urgency=medium
+secnet (0.6.9) unstable; urgency=medium
 
-  * 
+  * Upstream release of changes since 0.6.7.  (0.6.8 was Debian-only.)
 
- --
+  Packaging:
+  * Arrange for log rotation.  Closes: #1053571.
+    Users may need to set USER in /etc/default/secnet.  See NEWS.Debian.
+  * Prebuilt binaries are now built for current Debian stable ("trixie").
+
+  Build fixes:
+  * Remove a spurious const; fixes build with new glibc.
+    [Report from Aurelien Jarno]  Closes: #1128749.
+  * Fixes and workarounds for building with Clang (21).
+    [Richard Kettlewell]
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 09 Apr 2026 23:15:08 +0100
 
 secnet (0.6.8) unstable; urgency=medium
 
