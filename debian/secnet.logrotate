@@ -1,0 +1,9 @@
+/var/log/secnet {
+    rotate 4
+    daily
+    postrotate
+        # If secnet is configured to run as a non-root user,
+	# set USER in /etc/default/secnet or this may not be effective.
+        /etc/init.d/secnet log-reopen
+    endscript
+}

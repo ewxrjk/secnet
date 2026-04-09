@@ -21,6 +21,8 @@ set -e
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/usr/sbin/secnet
 NAME=secnet
+USER=
+LOGFILE=/var/log/secnet
 DESC="VPN server"
 
 test -f $DAEMON || exit 0
@@ -45,18 +47,18 @@ case "$1" in
 	    /var/run/$NAME.pid --exec $DAEMON
 	echo "$NAME."
 	;;
-  #reload)
-	#
-	#	If the daemon can reload its config files on the fly
-	#	for example by sending it SIGHUP, do it here.
-	#
-	#	If the daemon responds to changes in its config file
-	#	directly anyway, make this a do-nothing entry.
-	#
-	# echo "Reloading $DESC configuration files."
-	# start-stop-daemon --stop --signal 1 --quiet --pidfile \
-	#	/var/run/$NAME.pid --exec $DAEMON
-  #;;
+  log-reopen)
+        if [ "x$USER" != x ] && ! test -f /var/log/secnet; then (
+	    echo "Recreating $DESC logfile $LOGFILE owned by $USER."
+	    umask 027
+	    touch -- "$LOGFILE"
+	    chown $USER:adm "$LOGFILE"
+	); fi
+
+	echo "Causing $DESC to reopen its logfiles."
+	start-stop-daemon --stop --signal 1 --quiet --oknodo 	\
+	    --quiet --pidfile /var/run/$NAME.pid --exec $DAEMON
+  	;;
   restart|force-reload)
 	#
 	#	If the "reload" option is implemented, move the "force-reload"
@@ -73,7 +75,7 @@ case "$1" in
 	;;
   *)
 	N=/etc/init.d/$NAME
-	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	echo "Usage: $N {start|stop|restart|force-reload|log-reopen}" >&2
 	exit 1
 	;;
 esac
