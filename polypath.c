@@ -219,7 +219,7 @@ static void polypath_process_monitor_line(struct polypath *st, char *orgl,
 
     char *space=strchr(l,' ');
     if (!space) BAD("no first space");
-    const char *ifname=space+1;
+    char *ifname=space+1;
 
     space=strchr(ifname,' ');
     if (!space) BAD("no second space");
