@@ -1,0 +1,10 @@
+secnet (0.6.9) unstable; urgency=medium
+
+  * Log rotation is now done by default in the Debian package.
+
+    If your secnet is configured (in secnet.conf) to drop privilege,
+    you need to add a setting USER in /etc/default/secnet,
+    or it won't be able to reopen the logfile.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Thu, 09 Apr 2026 23:03:33 +0100
+
