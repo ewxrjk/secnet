@@ -1,3 +1,10 @@
+secnet (0.6.10) unstable; urgency=medium
+
+  Packaging:
+  * Fix logrotate snippet, adding `missingok`.  Hopefully fixes #1136304.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Tue, 12 May 2026 00:08:24 +0100
+
 secnet (0.6.9) unstable; urgency=medium
 
   * Upstream release of changes since 0.6.7.  (0.6.8 was Debian-only.)
